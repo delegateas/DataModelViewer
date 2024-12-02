@@ -1,9 +1,9 @@
 import Image from "next/image";
-import List from "./List";
+import List from "../generated/List";
 
 export default function Home() {
   return (
-    <div className='flex flex-col gap-5'>
+    <div className='flex flex-col gap-5 mx-5'>
       <List />
     </div>
   );

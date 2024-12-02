@@ -6,4 +6,5 @@ var dataverseService = new DataverseService();
 var entities = (await dataverseService.GetFilteredMetadata()).ToList();
 
 WebsiteBuilder.AddList(entities);
+WebsiteBuilder.AddNav(entities);
 
