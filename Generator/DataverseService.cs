@@ -31,20 +31,17 @@ namespace Generator
                 tokenProviderFunction: url => TokenProviderFunction(url, cache, logger));
         }
 
-        public async Task<IEnumerable<(EntityMetadata Entity, List<AttributeMetadata> Attributes)>> GetFilteredMetadata()
+        public async Task<IEnumerable<(EntityMetadata Entity, int RootComponentBehavior, List<AttributeMetadata> Attributes)>> GetFilteredMetadata()
         {
             var entities = await GetEntityMetadata();
             var solutionComponents = await GetEntitiesAndAttributesInSolutions();
-            var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.includesAll);
+            var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
 
-            var relevantEntities = entities.Where(e => entitiesInSolution.ContainsKey(e.MetadataId!.Value)).ToList();
+            var relevantEntities = entities.Where(e => entitiesInSolution.ContainsKey(e.MetadataId!.Value));
             var entitiesWithFilteredAttributes =
-                relevantEntities.Select(e => (e, 
-                    entitiesInSolution[e.MetadataId!.Value] 
-                    ? e.Attributes.ToList()
-                    : e.Attributes.Where(x => x.MetadataId != null).Where(a => attributesInSolution.Contains(a.MetadataId!.Value)).ToList()));
-            return entitiesWithFilteredAttributes.Where(x => x.Item2.Count > 0);
+                relevantEntities.Select(e => (e, entitiesInSolution[e.MetadataId!.Value], entitiesInSolution[e.MetadataId!.Value] == 0 ? e.Attributes.Where(x => x.SchemaName.StartsWith("msys_")).ToList() : e.Attributes.Where(x => x.MetadataId != null).Where(a => attributesInSolution.Contains(a.MetadataId!.Value)).ToList()));
+            return entitiesWithFilteredAttributes.Where(x => x.Item3.Count > 0);
 
         }
 
@@ -72,7 +69,7 @@ namespace Generator
             return resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid"));
         }
 
-        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, bool includesAll)>> GetEntitiesAndAttributesInSolutions()
+        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior)>> GetEntitiesAndAttributesInSolutions()
         {
             var solutionIds = await GetSolutionIds();
 
@@ -92,7 +89,7 @@ namespace Generator
             return
                 client.RetrieveMultiple(entityQuery)
                 .Entities
-                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.GetAttributeValue<OptionSetValue>("componenttype").Value == 0))
+                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1))
                 .ToList();
         }
 
