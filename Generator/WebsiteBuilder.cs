@@ -10,7 +10,7 @@ namespace Generator;
 internal class WebsiteBuilder
 {
 
-    internal static void AddList(IEnumerable<(EntityMetadata Entity, List<AttributeMetadata> Attributes)> entities)
+    internal static void AddList(IEnumerable<(EntityMetadata Entity, int RootComponentBehavior, List<AttributeMetadata> Attributes)> entities)
     {
         var sb = new StringBuilder();
         sb.AppendLine("import Section from \"./Section\"");
@@ -19,8 +19,13 @@ internal class WebsiteBuilder
 
         foreach (var entity in entities)
         {
-            sb.AppendLine($"<Section name=\"{entity.Entity.SchemaName}\">");
-            foreach (var attr in entity.Attributes)
+            sb.AppendLine($"<Section name=\"{entity.Entity.DisplayName.UserLocalizedLabel?.Label}({entity.Entity.SchemaName})\">");
+            var attributes =
+                entity.Attributes
+                .Where(x => x.DisplayName.UserLocalizedLabel != null && x.Description.UserLocalizedLabel != null)
+                .OrderBy(x => x.SchemaName);
+
+            foreach (var attr in attributes)
             {
                 sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{attr.DisplayName.UserLocalizedLabel.Label}</p>");
                 sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{attr.SchemaName}</p>");
@@ -35,7 +40,7 @@ internal class WebsiteBuilder
         sb.AppendLine(@"");
         sb.AppendLine(@"export default List");
 
-        File.WriteAllText("C:\\git\\DataModelViewer\\DataModelViewer\\Website\\src\\List.tsx", sb.ToString());
+        File.WriteAllText("D:\\git\\DataModelViewer\\Website\\src\\List.tsx", sb.ToString());
     }
 
     private static string GetType(AttributeMetadata attribute)
