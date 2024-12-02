@@ -14,6 +14,7 @@ internal class WebsiteBuilder
     {
         var sb = new StringBuilder();
         sb.AppendLine("import Section from \"./Section\"");
+        sb.AppendLine("import SectionRow from \"./SectionRow\"");
         sb.AppendLine(@"function List() {");
         sb.AppendLine(@"    return <>");
 
@@ -22,10 +23,7 @@ internal class WebsiteBuilder
             sb.AppendLine($"<Section name=\"{entity.Entity.SchemaName}\">");
             foreach (var attr in entity.Attributes)
             {
-                sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{attr.DisplayName.UserLocalizedLabel.Label}</p>");
-                sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{attr.SchemaName}</p>");
-                sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{GetType(attr)}</p>");
-                sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{attr.Description.UserLocalizedLabel.Label}</p>");
+                sb.AppendLine($"<SectionRow displayName=\"{attr.DisplayName.UserLocalizedLabel.Label}\" schemaName=\"{attr.SchemaName}\" type=\"{GetType(attr)}\" description={{\"{attr.Description.UserLocalizedLabel.Label.Replace("\"","\\\"")}\"}} />");
             }
             sb.AppendLine(@"</Section>");
         }
@@ -35,7 +33,7 @@ internal class WebsiteBuilder
         sb.AppendLine(@"");
         sb.AppendLine(@"export default List");
 
-        File.WriteAllText("C:\\git\\DataModelViewer\\DataModelViewer\\Website\\src\\List.tsx", sb.ToString());
+        File.WriteAllText("../../../../Website/app/List.tsx", sb.ToString());
     }
 
     private static string GetType(AttributeMetadata attribute)

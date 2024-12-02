@@ -35,12 +35,15 @@ namespace Generator
         {
             var entities = await GetEntityMetadata();
             var solutionComponents = await GetEntitiesAndAttributesInSolutions();
-            var entitiesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 1).Select(x => x.ObjectId));
+            var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.includesAll);
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
 
-            var relevantEntities = entities.Where(e => entitiesInSolution.Contains(e.MetadataId!.Value));
+            var relevantEntities = entities.Where(e => entitiesInSolution.ContainsKey(e.MetadataId!.Value)).ToList();
             var entitiesWithFilteredAttributes =
-                relevantEntities.Select(e => (e, e.Attributes.Where(x => x.MetadataId != null).Where(a => attributesInSolution.Contains(a.MetadataId!.Value)).ToList()));
+                relevantEntities.Select(e => (e, 
+                    entitiesInSolution[e.MetadataId!.Value] 
+                    ? e.Attributes.ToList()
+                    : e.Attributes.Where(x => x.MetadataId != null).Where(a => attributesInSolution.Contains(a.MetadataId!.Value)).ToList()));
             return entitiesWithFilteredAttributes.Where(x => x.Item2.Count > 0);
 
         }
@@ -69,13 +72,13 @@ namespace Generator
             return resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid"));
         }
 
-        public async Task<IEnumerable<(Guid ObjectId, int ComponentType)>> GetEntitiesAndAttributesInSolutions()
+        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, bool includesAll)>> GetEntitiesAndAttributesInSolutions()
         {
             var solutionIds = await GetSolutionIds();
 
             var entityQuery = new QueryExpression("solutioncomponent")
             {
-                ColumnSet = new ColumnSet("objectid", "componenttype"),
+                ColumnSet = new ColumnSet("objectid", "componenttype", "rootcomponentbehavior"),
                 Criteria = new FilterExpression(LogicalOperator.And)
                 {
                     Conditions =
@@ -89,7 +92,7 @@ namespace Generator
             return
                 client.RetrieveMultiple(entityQuery)
                 .Entities
-                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value))
+                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.GetAttributeValue<OptionSetValue>("componenttype").Value == 0))
                 .ToList();
         }
 

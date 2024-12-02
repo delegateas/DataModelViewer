@@ -1,6 +1,8 @@
+'use client'
+
 import { useState } from "react"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./components/ui/collapsible"
-import { Button } from "./components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible"
+import { Button } from "../components/ui/button"
 import { ChevronDown, ChevronRight } from "lucide-react"
 
 function Section({name, children}: {name: string, children: React.ReactNode}) {
