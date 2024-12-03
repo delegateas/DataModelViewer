@@ -7,7 +7,7 @@ pool:
 variables:
   azureSubscription: 'Dev'
   resourceGroupName: 'rg-msysdatamodel-dev'
-  location: 'Sweden Central'
+  location: 'swedencentral'
   bicepTemplateFile: 'Infrastructure/main.bicep'
 
 stages:
