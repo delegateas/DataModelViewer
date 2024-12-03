@@ -1,0 +1,42 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureSubscription: 'Dev'
+  resourceGroupName: 'rg-msysdatamodel-dev'
+  location: 'Sweden Central'
+  bicepTemplateFile: 'Infrastructure/main.bicep'
+
+stages:
+- stage: CreateInfrastructure
+  jobs:
+  - job: DeployBicep
+    displayName: 'Deploy Bicep Template'
+    steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az group create --name $(resourceGroupName) --location $(location)
+          az deployment group create --resource-group $(resourceGroupName) --template-file $(bicepTemplateFile)
+
+# - stage: DeployStaticWebsite
+#   dependsOn: CreateInfrastructure
+#   jobs:
+#   - job: DeployWebsite
+#     displayName: 'Deploy Static Website'
+#     steps:
+#     - task: AzureCLI@2
+#       inputs:
+#         azureSubscription: $(azureSubscription)
+#         scriptType: 'bash'
+#         scriptLocation: 'inlineScript'
+#         inlineScript: |
+#           az storage account create --name $(storageAccountName) --resource-group $(resourceGroupName) --location $(location) --sku Standard_LRS --kind StorageV2
+#           az storage blob service-properties update --account-name $(storageAccountName) --static-website --index-document index.html --404-document 404.html
+#           az storage blob upload-batch --account-name $(storageAccountName) --source ./static-website --destination '$web'
