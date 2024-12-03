@@ -20,7 +20,7 @@ internal class WebsiteBuilder
 
         foreach (var entity in entities.OrderBy(x => x.Entity.DisplayName.UserLocalizedLabel.Label))
         {
-            sb.AppendLine($"        <Section displayName=\"{entity.Entity.DisplayName.UserLocalizedLabel?.Label}\" schemaName=\"{entity.Entity.SchemaName}\">");
+            sb.AppendLine($"        <Section displayName=\"{entity.Entity.DisplayName.UserLocalizedLabel?.Label}\" schemaName=\"{entity.Entity.SchemaName}\" description=\"{entity.Entity.Description.UserLocalizedLabel?.Label.Replace("\"", "\\\"").Replace("\n", "\\n")}\">");
             var attributes =
                 entity.Attributes
                 .Where(x => x.DisplayName.UserLocalizedLabel != null && x.Description.UserLocalizedLabel != null)

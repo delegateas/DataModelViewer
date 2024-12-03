@@ -86,3 +86,9 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .striped div:nth-child(even) {
+    @apply bg-gray-100
+  }
+}
