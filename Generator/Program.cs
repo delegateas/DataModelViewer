@@ -1,9 +1,16 @@
 ﻿using Generator;
-using System;
-using System.Text;
+using Microsoft.Extensions.Configuration;
 
-var dataverseService = new DataverseService();
+var configuration = 
+    new ConfigurationBuilder()
+    .AddEnvironmentVariables()
+    .AddJsonFile("appsettings.local.json", optional: true)
+    .Build();
+
+var dataverseService = new DataverseService(configuration);
 var entities = (await dataverseService.GetFilteredMetadata()).ToList();
 
-WebsiteBuilder.AddList(entities);
+
+var websiteBuilder = new WebsiteBuilder(configuration, entities);
+websiteBuilder.AddData();
 

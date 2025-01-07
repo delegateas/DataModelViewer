@@ -382,3 +382,5 @@ MigrationBackup/
 /Dataverse/test/PluginTests/LiveDebug/LiveDebugConnectionString.local.txt
 /Dataverse/test/PluginTests/LiveDebug/ExperimentalCloning/SourceConnectionString.local.txt
 /Dataverse/test/PluginTests/LiveDebug/ExperimentalCloning/TargetConnectionString.local.txt
+/Website/generated
+Generator/appsettings.local.json

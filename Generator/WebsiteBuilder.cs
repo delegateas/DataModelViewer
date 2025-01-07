@@ -1,50 +1,65 @@
-﻿using Microsoft.Xrm.Sdk.Metadata;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Generator.DTO;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Generator;
 
 internal class WebsiteBuilder
 {
+    private readonly IConfiguration configuration;
+    private readonly List<Record> records;
+    private readonly string OutputFolder;
 
-    internal static void AddList(IEnumerable<(EntityMetadata Entity, int RootComponentBehavior, List<AttributeMetadata> Attributes)> entities)
+    public WebsiteBuilder(IConfiguration configuration, List<Record> records)
+    {
+        this.configuration = configuration;
+        this.records = records;
+
+        // Assuming execution in bin/xxx/net8.0
+        OutputFolder = configuration["OutputFolder"] ?? Path.Combine(System.Reflection.Assembly.GetExecutingAssembly().Location, "../../../../../Website/generated");
+        Directory.CreateDirectory(OutputFolder);
+    }
+    internal void AddData()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("import Section from \"./Section\"");
-        sb.AppendLine(@"function List() {");
-        sb.AppendLine(@"    return <>");
-
-        foreach (var entity in entities)
+        sb.AppendLine("import { GroupType } from \"@/lib/Types\";");
+        sb.AppendLine("");
+        sb.AppendLine("export let Groups: GroupType[] = [");
+        var groups = records.GroupBy(x => x.Group).OrderBy(x => x.Key);
+        foreach (var group in groups)
         {
-            sb.AppendLine($"<Section name=\"{entity.Entity.DisplayName.UserLocalizedLabel?.Label}({entity.Entity.SchemaName})\">");
-            var attributes =
-                entity.Attributes
-                .Where(x => x.DisplayName.UserLocalizedLabel != null && x.Description.UserLocalizedLabel != null)
-                .OrderBy(x => x.SchemaName);
+            var groupName = group.Key ?? "Ungrouped";
 
-            foreach (var attr in attributes)
+            sb.AppendLine("  {");
+            sb.AppendLine($"    \"Name\":\"{groupName}\",");
+
+            sb.AppendLine("    \"Entities\":[");
+            foreach (var entity in group.OrderBy(x => x.DisplayName))
             {
-                sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{attr.DisplayName.UserLocalizedLabel.Label}</p>");
-                sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{attr.SchemaName}</p>");
-                sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{GetType(attr)}</p>");
-                sb.AppendLine($"        <p  className=\"py-2 border-b-2\">{attr.Description.UserLocalizedLabel.Label}</p>");
+                sb.AppendLine("      {");
+                sb.AppendLine($"        \"DisplayName\":\"{entity.DisplayName}\",");
+                sb.AppendLine($"        \"SchemaName\":\"{entity.SchemaName}\",");
+                sb.AppendLine($"        \"Description\":\"{entity.Description}\",");
+                sb.AppendLine("        \"Attributes\":[");
+
+                var attributes =
+                    entity.Attributes
+                    .OrderBy(x => x.DisplayName);
+
+                foreach (var attr in attributes)
+                {
+                    sb.AppendLine($"          {JsonConvert.SerializeObject(attr)},");
+                }
+                sb.AppendLine("        ]");
+                sb.AppendLine("      },");
             }
-            sb.AppendLine(@"</Section>");
+            sb.AppendLine("    ]");
+            sb.AppendLine("  },");
         }
 
-        sb.AppendLine(@"    </>");
-        sb.AppendLine(@"}");
-        sb.AppendLine(@"");
-        sb.AppendLine(@"export default List");
+        sb.AppendLine("]");
 
-        File.WriteAllText("D:\\git\\DataModelViewer\\Website\\src\\List.tsx", sb.ToString());
-    }
-
-    private static string GetType(AttributeMetadata attribute)
-    {
-        return attribute.AttributeTypeName.Value;
+        File.WriteAllText(Path.Combine(OutputFolder, "Data.ts"), sb.ToString());
     }
 }
