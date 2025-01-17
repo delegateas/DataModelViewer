@@ -31,15 +31,15 @@ openssl rand -base64 32
 ```
 
 # Setting in pipeline
-The pipeline expects a variable group called `DataModel`. It should have the following variables
+The pipeline expects a variable group called `DataModel`. It must have the following variables
 
-* AZURE_CLIENT_ID: Client id for an app reg with access to the Dataverse Environment
-* AZURE_CLIENT_SECRET: Client Secret for an app reg with access to the Dataverse Environment
-* AZURE_TENANT_ID: Tenant Id for the environment for an app reg with access to the Dataverse Environment
-* azureSubscription: Name of a service connection to Azure
-* location: Location for the resource group in Azure
-* resourceGroupName: Resource Group in Azure
-* DataverseUrl: Url for the Dataverse Environment
-* SolutionName: Comma-seperated list of solutions to generate the site for
-* Code: Password used to login to the generated site
-* SESSION_SECRET: key to encrypt the session token with
+* AZURE_CLIENT_ID: Client id for an Azure App Registration with access to the Dataverse Environment.
+* AZURE_CLIENT_SECRET: Client Secret for the above.
+* AZURE_TENANT_ID: Azure Tenant ID (where your App Regustration is placed and resource group will be placed).
+* azureSubscription: Name of the service connection created from ADO to Azure.
+* location: Location for the resource group in Azure.
+* resourceGroupName: Name of the Resource Group in Azure. If this matches an existing group in the location above that will be used for the DMV resources, if not a new resource group will be created.
+* DataverseUrl: URL for the Dataverse environment which the data model will be based on.
+* SolutionName: Comma-seperated list of solutions to based DMV on.
+* Code: Password used by DMV users to login to the generated site.
+* SESSION_SECRET: Key to encrypt the session token with (used by the code, you can set it to whatever you like).
