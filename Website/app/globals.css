@@ -92,3 +92,24 @@ body {
     @apply bg-gray-100
   }
 }
+
+@media (max-width: 768px) {
+  .card {
+    @apply flex flex-col border rounded-lg p-4 mb-4;
+  }
+  .card-header {
+    @apply font-bold text-lg mb-2;
+  }
+  .card-content {
+    @apply flex flex-col gap-2;
+  }
+  .card-row {
+    @apply flex flex-row justify-between;
+  }
+  .card-label {
+    @apply font-medium;
+  }
+  .card-value {
+    @apply text-right;
+  }
+}
