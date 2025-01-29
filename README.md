@@ -1,3 +1,9 @@
+# Data Model Viewer
+![image](https://github.com/user-attachments/assets/9d91e37c-7e46-4654-b31d-5bc3e5d632ea)
+Allows you to expose your Dataverse data model as a website.
+## Grouping
+Add a # xxx to your entity description in order to group that entity in group xxx.
+
 # Settings to run locally
 ## Managed Identity
 We use DefaultCredential to authenticate to Azure. So set the right profile in Visual Studio.
