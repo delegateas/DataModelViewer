@@ -129,13 +129,19 @@ namespace Generator
                 return (null, description);
            
             var newlineIndex = description.IndexOf("\n");
-            if (newlineIndex == -1)
-                return (description.Substring(1).Trim(), null);
+            if (newlineIndex != -1) 
+            {
+                var group = description.Substring(1, newlineIndex - 1).Trim();
+                description = description.Substring(newlineIndex + 1);
+                return (group, description);
+            }
 
-            var group = description.Substring(1, newlineIndex - 1).Trim();
-            description = description.Substring(newlineIndex + 1);
-            return (group, description);
-           
+            var withoutHashtag = description.Substring(1).Trim();
+            var firstSpace = withoutHashtag.IndexOf(" ");
+            if (firstSpace != -1)
+                return (withoutHashtag.Substring(0, firstSpace), withoutHashtag.Substring(firstSpace + 1));
+
+            return (withoutHashtag, null);  
         }
 
         public async Task<IEnumerable<EntityMetadata>> GetEntityMetadata(List<Guid> entityObjectIds)
@@ -164,7 +170,7 @@ namespace Generator
 
         private async Task<(string PublisherPrefix, List<Guid> SolutionIds)> GetSolutionIds()
         {
-            var solutionNameArg = configuration["SolutionNames"];
+            var solutionNameArg = configuration["DataverseSolutionNames"];
             if (solutionNameArg == null)
             {
                 throw new Exception("Specify one or more solutions");

@@ -34,9 +34,9 @@ stages:
     - script: dotnet run --project Generator/Generator.csproj --OutputFolder $(Build.SourcesDirectory)/Website/generated
       displayName: 'Generate files'
       env:
-        AZURE_TENANT_ID: $(AZURE_TENANT_ID)
-        AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
-        AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)
+        AZURE_TENANT_ID: $(AzureTenantId)
+        AZURE_CLIENT_ID: $(AzureClientId)
+        AZURE_CLIENT_SECRET: $(AzureClientSecret)
         DataverseUrl: $(DataverseUrl)
       
     - task: NodeTool@0
@@ -68,12 +68,12 @@ stages:
     - task: AzureCLI@2
       displayName: 'Create Azure Resources'
       inputs:
-        azureSubscription: $(azureSubscription)
+        azureSubscription: $(AzureServiceConnectionName)
         scriptType: 'pscore'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          az group create --name $(resourceGroupName) --location $(location)
-          $jsonResult = az deployment group create --resource-group $(resourceGroupName) --template-file $(bicepTemplateFile) --parameters code=$(Code) --parameters sessionSecret=$(SESSION_SECRET) | ConvertFrom-Json
+          az group create --name $(AzureResourceGroupName) --location $(AzureLocation)
+          $jsonResult = az deployment group create --resource-group $(AzureResourceGroupName) --template-file $(bicepTemplateFile) --parameters websitePassword=$(WebsitePassword) --parameters sessionSecret=$(WebsiteSessionSecret) | ConvertFrom-Json
           $webAppName = $jsonResult.properties.outputs.webAppName.value
           Write-Host "##vso[task.setvariable variable=webAppName]$webAppName"
 
@@ -82,7 +82,7 @@ stages:
 
     - task: AzureWebApp@1
       inputs:
-        azureSubscription: $(azureSubscription)
+        azureSubscription: $(AzureServiceConnectionName)
         appType: 'webAppLinux'
         appName: $(webAppName)
         package: '$(Pipeline.Workspace)/WebApp/WebApp.zip'

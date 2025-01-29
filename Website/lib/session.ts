@@ -4,11 +4,11 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from 'next/navigation'
 
-const secretKey = process.env.SESSION_SECRET;
+const secretKey = process.env.WebsiteSessionSecret;
 const encodedKey = new TextEncoder().encode(secretKey);
 
 export type Session = {
-    code: string;
+    password: string;
     expiresAt: Date;
 }
 
@@ -33,9 +33,9 @@ export async function decrypt(session: string | undefined = '') {
     }
 }
 
-export async function createSession(code: string) {
+export async function createSession(password: string) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const session = await encrypt({ code, expiresAt });
+    const session = await encrypt({ password, expiresAt });
     (await cookies()).set(
         "session",
         session,

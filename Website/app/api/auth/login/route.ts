@@ -3,10 +3,10 @@
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-    const body: { code: string } = await req.json();
-    const validCode = process.env.CODE;
+    const body: { password: string } = await req.json();
+    const validPassword = process.env.WebsitePassword;
 
-    if (body.code !== validCode) {
+    if (body.password !== validPassword) {
         return NextResponse.json({}, { status: 401 });
     }
 

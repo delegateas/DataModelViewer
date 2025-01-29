@@ -1,4 +1,5 @@
-param code string
+@secure()
+param websitePassword string
 @secure()
 param sessionSecret string
 
@@ -30,11 +31,11 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
 
       appSettings: [
         {
-          name: 'CODE'
-          value: code
+          name: 'WebsitePassword'
+          value: websitePassword
         }
         {
-          name: 'SESSION_SECRET'
+          name: 'WebsiteSessionSecret'
           value: sessionSecret
         }
         {

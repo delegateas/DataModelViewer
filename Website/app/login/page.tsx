@@ -14,19 +14,19 @@ export default function LoginPage() {
         event.preventDefault();
 
         const formData = new FormData(event.currentTarget);
-        const code = formData.get("code")
+        const password = formData.get("password")
 
         const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ password }),
         });
 
         if (response.ok) {
 
-            await createSession(code?.valueOf() as string);
+            await createSession(password?.valueOf() as string);
             router.push("/");
         } else {
             alert("Failed to login");
@@ -36,8 +36,8 @@ export default function LoginPage() {
     return (
         <div className="flex items-center justify-center h-screen w-full">
             <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-5 border border-gray-300 rounded-lg">
-                <Label htmlFor="code">Code</Label>
-                <Input id="code" type="text" name="code" />
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="text" name="password" />
                 <Button type="submit">Login</Button>
             </form>
         </div>
