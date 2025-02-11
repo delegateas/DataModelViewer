@@ -35,7 +35,7 @@ function Section({
     return <div ref={contentRef} className="mb-5">
         <a className="flex flex-row gap-2 items-center hover:underline" href={`?selected=${entity.SchemaName}`}><Link /> <h2 className="text-xl">{entity.DisplayName} ({entity.SchemaName})</h2></a>
         <p className="my-4">{entity.Description}</p>
-        <Table className="border">
+        <Table className="border hidden md:table">
             <TableHeader>
                 <TableRow className="bg-gray-100">
                     <TableHead className="w-1/6 text-black font-bold">Display Name</TableHead>
