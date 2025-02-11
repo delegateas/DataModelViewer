@@ -92,6 +92,28 @@ namespace Generator
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 
+            var oneToMany = (entity.OneToManyRelationships ?? Enumerable.Empty<OneToManyRelationshipMetadata>())
+                .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity))
+                .Select(x => new DTO.Relationship(
+                    x.ReferencingEntityNavigationPropertyName,
+                    x.ReferencingEntity,
+                    x.ReferencingAttribute,
+                    x.SchemaName,
+                    IsManyToMany: false,
+                    x.CascadeConfiguration))
+                .ToList();
+
+            var manyToMany = (entity.ManyToManyRelationships ?? Enumerable.Empty<ManyToManyRelationshipMetadata>())
+                .Where(x => logicalToSchema.ContainsKey(x.Entity2LogicalName))
+                .Select(x => new DTO.Relationship(
+                    x.Entity2NavigationPropertyName,
+                    x.Entity2LogicalName,
+                    "-",
+                    x.SchemaName,
+                    IsManyToMany: true,
+                    null))
+                .ToList();
+
             var (group, description) = GetGroupAndDescription(entity);
 
             return new Record(
@@ -103,7 +125,8 @@ namespace Generator
                     entity.IsActivity ?? false,
                     entity.OwnershipType ?? OwnershipTypes.UserOwned,
                     entity.HasNotes ?? false,
-                    attributes);
+                    attributes,
+                    oneToMany.Concat(manyToMany).ToList());
         }
 
         private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, string> logicalToSchema)

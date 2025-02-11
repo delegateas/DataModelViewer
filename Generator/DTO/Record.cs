@@ -12,5 +12,6 @@ internal record Record(
     bool IsActivity,
     OwnershipTypes Ownership,
     bool IsNotesEnabled,
-    List<Attribute> Attributes);
+    List<Attribute> Attributes,
+    List<Relationship> Relationships);
 
