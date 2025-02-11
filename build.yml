@@ -4,7 +4,7 @@ schedules:
     displayName: Daily build at 03:00 AM
     branches:
       include:
-      - master
+      - main
 
 pool:
   vmImage: 'ubuntu-latest'
