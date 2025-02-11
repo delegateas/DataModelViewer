@@ -63,7 +63,7 @@ function Section({
 }
 
 function GetEntityDetails(entity: EntityType) {
-    let details: JSX.Element[] = []
+    const details: JSX.Element[] = []
     if (entity.IsAuditEnabled) {
         details.push(<Tooltip key={`${entity.SchemaName}audit`}><TooltipTrigger asChild><Eye /></TooltipTrigger><TooltipContent><p>Audit Enabled</p></TooltipContent></Tooltip>)
     }
@@ -90,7 +90,7 @@ function GetEntityDetails(entity: EntityType) {
 }
 
 function GetDetailsComponent(attribute: AttributeType) {
-    let details: JSX.Element[] = []
+    const details: JSX.Element[] = []
     switch (attribute.RequiredLevel) {
         case RequiredLevel.None:
             break;
