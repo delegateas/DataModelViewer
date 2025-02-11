@@ -3,17 +3,41 @@ export type GroupType = {
     Entities: EntityType[]
 }
 
+export const enum OwnershipType {
+    None = 0,
+    UserOwned = 1,
+    TeamOwned = 2,
+    BusinessOwned = 4,
+    OrganizationOwned = 8,
+    BusinessParented = 16
+}
+
 export type EntityType = {
     DisplayName: string,
     SchemaName: string,
     Description: string | null,
+    Group: string | null,
+    IsAuditEnabled: boolean,
+    IsActivity: boolean,
+    IsNotesEnabled: boolean,
+    Ownership: OwnershipType,
     Attributes: AttributeType[]
+}
+
+export const enum RequiredLevel {
+    None = 0,
+    SystemRequired = 1,
+    ApplicationRequired = 2,
+    Recommended = 3
 }
 
 export type BaseAttribute = {
     DisplayName: string,
     SchemaName: string,
     Description: string | null,
+    RequiredLevel: RequiredLevel,
+    IsAuditEnabled: boolean,
+    IsColumnSecured: boolean,
 }
 
 export type ChoiceAttributeType = BaseAttribute & {

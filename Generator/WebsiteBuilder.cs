@@ -37,22 +37,23 @@ internal class WebsiteBuilder
             sb.AppendLine("    \"Entities\":[");
             foreach (var entity in group.OrderBy(x => x.DisplayName))
             {
-                sb.AppendLine("      {");
-                sb.AppendLine($"        \"DisplayName\":\"{entity.DisplayName}\",");
-                sb.AppendLine($"        \"SchemaName\":\"{entity.SchemaName}\",");
-                sb.AppendLine($"        \"Description\":\"{entity.Description}\",");
-                sb.AppendLine("        \"Attributes\":[");
+                sb.AppendLine($"      {JsonConvert.SerializeObject(entity)},");
+                //sb.AppendLine("      {");
+                //sb.AppendLine($"        \"DisplayName\":\"{entity.DisplayName}\",");
+                //sb.AppendLine($"        \"SchemaName\":\"{entity.SchemaName}\",");
+                //sb.AppendLine($"        \"Description\":\"{entity.Description}\",");
+                //sb.AppendLine("        \"Attributes\":[");
 
-                var attributes =
-                    entity.Attributes
-                    .OrderBy(x => x.DisplayName);
+                //var attributes =
+                //    entity.Attributes
+                //    .OrderBy(x => x.DisplayName);
 
-                foreach (var attr in attributes)
-                {
-                    sb.AppendLine($"          {JsonConvert.SerializeObject(attr)},");
-                }
-                sb.AppendLine("        ]");
-                sb.AppendLine("      },");
+                //foreach (var attr in attributes)
+                //{
+                //    sb.AppendLine($"          {JsonConvert.SerializeObject(attr)},");
+                //}
+                //sb.AppendLine("        ]");
+                //sb.AppendLine("      },");
             }
             sb.AppendLine("    ]");
             sb.AppendLine("  },");

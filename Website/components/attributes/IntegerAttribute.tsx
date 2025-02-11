@@ -1,14 +1,8 @@
 import { IntegerAttributeType } from "@/lib/Types"
-import { TableCell, TableRow } from "../ui/table"
 import { formatNumberSeperator } from "@/lib/utils"
 
 export default function IntegerAttribute({ attribute } : { attribute: IntegerAttributeType }) {
-    return <TableRow>
-        <TableCell>{attribute.DisplayName}</TableCell>
-        <TableCell>{attribute.SchemaName}</TableCell>
-        <TableCell>{attribute.Format} ({FormatNumber(attribute.MinValue)} to {FormatNumber(attribute.MaxValue)})</TableCell>
-        <TableCell>{attribute.Description}</TableCell>
-        </TableRow>
+    return <>{attribute.Format} ({FormatNumber(attribute.MinValue)} to {FormatNumber(attribute.MaxValue)})</>
 }
 
 function FormatNumber(number: number) {

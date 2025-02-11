@@ -99,6 +99,10 @@ namespace Generator
                     entity.SchemaName,
                     group,
                     description?.PrettyDescription(),
+                    entity.IsAuditEnabled.Value,
+                    entity.IsActivity ?? false,
+                    entity.OwnershipType ?? OwnershipTypes.UserOwned,
+                    entity.HasNotes ?? false,
                     attributes);
         }
 

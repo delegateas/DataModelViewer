@@ -8,18 +8,17 @@ public abstract class Attribute
     public string SchemaName { get; }
     public string Description { get; }
     public string AttributeType => GetType().Name;
+    public AttributeRequiredLevel RequiredLevel { get; }
+    public bool IsAuditEnabled { get; }
+    public bool IsColumnSecured { get; }
 
-    protected Attribute(string displayName, string schemaName, string? description)
+    protected Attribute(AttributeMetadata metadata)
     {
-        DisplayName = displayName;
-        SchemaName = schemaName;
-        Description = description;
-    }
-
-    protected Attribute(AttributeMetadata metadata) : this(
-        metadata.DisplayName.UserLocalizedLabel?.Label ?? string.Empty,
-        metadata.SchemaName,
-        metadata.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty)
-    {
+        DisplayName = metadata.DisplayName.UserLocalizedLabel?.Label ?? string.Empty;
+        SchemaName = metadata.SchemaName;
+        Description = metadata.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty;
+        RequiredLevel = metadata.RequiredLevel.Value;
+        IsAuditEnabled = metadata.IsAuditEnabled.Value;
+        IsColumnSecured = metadata.IsSecured ?? false;
     }
 }

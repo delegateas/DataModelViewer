@@ -1,22 +1,16 @@
 import { DecimalAttributeType } from "@/lib/Types"
-import { TableCell, TableRow } from "../ui/table"
 import { formatNumberSeperator } from "@/lib/utils"
 
-export default function MoneyAttribute({ attribute }: { attribute: DecimalAttributeType}) {
+export default function MoneyAttribute({ attribute }: { attribute: DecimalAttributeType }) {
     const formatNumber =
-        attribute.Type === "Money" 
-        ? FormatMoney 
-        : FormatDecimal
+        attribute.Type === "Money"
+            ? FormatMoney
+            : FormatDecimal
 
-    return <TableRow>
-        <TableCell>{attribute.DisplayName}</TableCell>
-        <TableCell>{attribute.SchemaName}</TableCell>
-        <TableCell className="flex flex-col">
-            <p>{attribute.Type} ({formatNumber(attribute.MinValue)} to {formatNumber(attribute.MaxValue)})</p>
-            <p>Precision: {attribute.Precision}</p>
-        </TableCell>
-        <TableCell>{attribute.Description}</TableCell>
-    </TableRow>
+    return <>
+        <p>{attribute.Type} ({formatNumber(attribute.MinValue)} to {formatNumber(attribute.MaxValue)})</p>
+        <p>Precision: {attribute.Precision}</p>
+    </>
 }
 
 function FormatMoney(number: number) {

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { AppSidebar } from "./AppSiderbar";
 import List from "./List";
+import { TooltipProvider } from "./ui/tooltip";
 
 export function DatamodelView() {
     const [selected, setSelected] = useState<string | null>(null);
@@ -17,7 +18,9 @@ export function DatamodelView() {
     return <>
         <AppSidebar selected={selected} onSelect={entity => setSelected(entity)} />
         <div className='flex flex-col gap-5 mx-5 mt-5 w-full'>
-            <List selected={selected} onSelect={entity => setSelected(entity)} />
+            <TooltipProvider>
+                <List selected={selected} onSelect={entity => setSelected(entity)} />
+            </TooltipProvider>
         </div>
     </>;
 }
