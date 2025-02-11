@@ -37,7 +37,7 @@ openssl rand -base64 32
 ```
 
 # Setting in pipeline
-The pipeline expects a variable group called `DataModel`. It must have the following variables
+The pipeline expects a variable group called `DataModel`. It must have the following variables. The app user only requires the `Environment Maker` security role.
 
 * AzureClientId: Client id for an Azure App Registration with access to the Dataverse Environment.
 * AzureClientSecret: Client Secret for the above.

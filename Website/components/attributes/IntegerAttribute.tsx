@@ -1,5 +1,6 @@
 import { IntegerAttributeType } from "@/lib/Types"
 import { TableCell, TableRow } from "../ui/table"
+import { formatNumberSeperator } from "@/lib/utils"
 
 export default function IntegerAttribute({ attribute } : { attribute: IntegerAttributeType }) {
     return <TableRow>
@@ -15,5 +16,5 @@ function FormatNumber(number: number) {
         return "Max"
     if (number === -2147483648)
         return "Min"
-    return number
+    return formatNumberSeperator(number)
 }

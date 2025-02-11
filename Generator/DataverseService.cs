@@ -66,7 +66,7 @@ namespace Generator
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
                 .ToList();
 
-            var entitiesBeingGenerated = new HashSet<string>(records.Select(x => x.EntityMetadata.LogicalName));
+            var logicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.EntityMetadata.SchemaName);
 
             return records
                 .Select(x => MakeRecord(
@@ -75,7 +75,7 @@ namespace Generator
                     entityIdToRootBehavior, 
                     attributesInSolution, 
                     publisherPrefix,
-                    entitiesBeingGenerated));
+                    logicalToSchema));
         }
 
         private static Record MakeRecord(
@@ -84,11 +84,11 @@ namespace Generator
             Dictionary<Guid, int> entityIdToRootBehavior,
             HashSet<Guid> attributesInSolution,
             string publisherPrefix,
-            HashSet<string> entitiesBeingGenerated)
+            Dictionary<string, string> logicalToSchema)
         {
             var attributes =
                 relevantAttributes
-                .Select(metadata => GetAttribute(metadata, entity, entitiesBeingGenerated))
+                .Select(metadata => GetAttribute(metadata, entity, logicalToSchema))
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 
@@ -102,13 +102,13 @@ namespace Generator
                     attributes);
         }
 
-        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, HashSet<string> entitiesBeingGenerated)
+        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, string> logicalToSchema)
         {
             return metadata switch
             {
                 PicklistAttributeMetadata picklist => new ChoiceAttribute(picklist),
                 MultiSelectPicklistAttributeMetadata multiSelect => new ChoiceAttribute(multiSelect),
-                LookupAttributeMetadata lookup => new LookupAttribute(lookup, entitiesBeingGenerated),
+                LookupAttributeMetadata lookup => new LookupAttribute(lookup, logicalToSchema),
                 StatusAttributeMetadata status => new StatusAttribute(status, (StateAttributeMetadata)entity.Attributes.First(x => x is StateAttributeMetadata)),
                 StringAttributeMetadata stringMetadata => new StringAttribute(stringMetadata),
                 IntegerAttributeMetadata integer => new IntegerAttribute(integer),

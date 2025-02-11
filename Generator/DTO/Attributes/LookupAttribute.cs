@@ -5,11 +5,14 @@ namespace Generator.DTO.Attributes;
 
 internal class LookupAttribute : Attribute
 {
-    public IEnumerable<LookupTarget> Targets { get; }
+    public IEnumerable<string> Targets { get; }
 
-    public LookupAttribute(LookupAttributeMetadata metadata, HashSet<string> entitiesBeingGenerated)
+    public LookupAttribute(LookupAttributeMetadata metadata, Dictionary<string, string> logicalToSchema)
         : base(metadata)
     {
-        Targets = metadata.Targets.Select(x => new LookupTarget(x, entitiesBeingGenerated.Contains(x)));
+        Targets = 
+            metadata.Targets
+            .Where(x => logicalToSchema.ContainsKey(x))
+            .Select(x => logicalToSchema[x]);
     }
 }

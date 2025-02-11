@@ -10,7 +10,10 @@ internal class StringAttribute : Attribute
     public StringAttribute(StringAttributeMetadata metadata)
         : base(metadata)
     {
-        Format = metadata.Format?.ToString() ?? "Unknown Format";
+        Format = 
+            string.IsNullOrEmpty(metadata.AutoNumberFormat)
+                ? metadata.Format?.ToString() ?? "Unknown Format"
+                : $"AutoNumber{metadata.AutoNumberFormat}";
         MaxLength = metadata.MaxLength;
     }
 

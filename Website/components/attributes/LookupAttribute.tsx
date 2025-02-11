@@ -10,15 +10,11 @@ export default function LookupAttribute({ attribute, onSelect } : { attribute: L
             <p className="font-bold">Lookup</p>
             <div className="flex flex-col items-start">
                 {attribute.Targets
-                .sort((a, b) => a.ShouldLink === b.ShouldLink ? 0 : a.ShouldLink ? -1 : 1)
-                .map(target =>
-                    target.ShouldLink 
-                    ? <Button 
-                        key={target.Name} 
+                .map(target => <Button 
+                        key={target} 
                         variant="ghost" 
                         className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline" 
-                        onClick={() => onSelect(target.Name)}>{target.Name}</Button>
-                    : <p className="text-base" key={target.Name}>{target.Name}</p>)}
+                        onClick={() => onSelect(target)}>{target}</Button>)}
             </div>
         </TableCell>
         <TableCell>{attribute.Description}</TableCell>

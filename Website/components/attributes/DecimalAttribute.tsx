@@ -1,5 +1,6 @@
 import { DecimalAttributeType } from "@/lib/Types"
 import { TableCell, TableRow } from "../ui/table"
+import { formatNumberSeperator } from "@/lib/utils"
 
 export default function MoneyAttribute({ attribute }: { attribute: DecimalAttributeType}) {
     const formatNumber =
@@ -23,7 +24,7 @@ function FormatMoney(number: number) {
         return "Max"
     if (number === -922337203685477)
         return "Min"
-    return number
+    return formatNumberSeperator(number)
 }
 
 function FormatDecimal(number: number) {
@@ -31,5 +32,5 @@ function FormatDecimal(number: number) {
         return "Max"
     if (number === -100000000000)
         return "Min"
-    return number
+    return formatNumberSeperator(number)
 }

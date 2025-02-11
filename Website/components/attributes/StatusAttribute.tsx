@@ -1,5 +1,6 @@
 import { StatusAttributeType, StatusOption } from "@/lib/Types"
 import { TableCell, TableRow } from "../ui/table"
+import { formatNumberSeperator } from "@/lib/utils"
 
 export default function StatusAttribute({ attribute }: { attribute: StatusAttributeType }) {
     const groupedOptions = attribute.Options.reduce((acc, option) => {
@@ -22,7 +23,7 @@ export default function StatusAttribute({ attribute }: { attribute: StatusAttrib
                     {groupedOptions[state].map(option =>
                         <div className="contents" key={option.Value}>
                             <p>{option.Name}</p>
-                            <p>{option.Value}</p>
+                            <p>{formatNumberSeperator(option.Value)}</p>
                         </div>)}
                 </div>)}
         </TableCell>

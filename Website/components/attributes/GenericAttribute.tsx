@@ -5,7 +5,7 @@ export default function GenericAttribute({ attribute } : { attribute: GenericAtt
     return <TableRow>
         <TableCell>{attribute.DisplayName}</TableCell>
         <TableCell>{attribute.SchemaName}</TableCell>
-        <TableCell>Generic {attribute.Type}</TableCell>
+        <TableCell>{attribute.Type}</TableCell>
         <TableCell>{attribute.Description}</TableCell>
         </TableRow>
 }

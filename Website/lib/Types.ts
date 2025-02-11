@@ -48,10 +48,7 @@ export type IntegerAttributeType = BaseAttribute & {
 
 export type LookupAttributeType = BaseAttribute & {
     AttributeType: "LookupAttribute",
-    Targets: {
-        Name: string,
-        ShouldLink: boolean,
-    }[],
+    Targets: string[],
 }
 
 export type DecimalAttributeType = BaseAttribute & {

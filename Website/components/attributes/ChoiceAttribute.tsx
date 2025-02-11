@@ -1,5 +1,6 @@
 import { ChoiceAttributeType } from "@/lib/Types"
 import { TableCell, TableRow } from "../ui/table"
+import { formatNumberSeperator } from "@/lib/utils"
 
 export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttributeType }) {
     return <TableRow>
@@ -13,7 +14,7 @@ export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttrib
                 {attribute.Options.map(option =>
                     <div className="contents" key={option.Value}>
                         <p>{option.Name}{option.Value == attribute.DefaultValue ? " (Default)" : ""}</p>
-                        <p>{option.Value}{GetColorBox(option.Color)}</p>
+                        <p>{formatNumberSeperator(option.Value)}{GetColorBox(option.Color)}</p>
                         {option.Description && <p className="col-span-2 italic">{option.Description}</p>}
                     </div>)}
             </div>

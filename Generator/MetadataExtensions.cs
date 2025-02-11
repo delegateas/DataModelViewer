@@ -59,13 +59,6 @@ public static class MetadataExtensions
             return true;
         }
 
-        if (attribute.AttributeType == AttributeTypeCode.Uniqueidentifier &&
-            displayName == entityDisplayName &&
-            description == "Unique identifier for entity instances")
-        {
-            return true;
-        }
-
         return false;
     }
 
