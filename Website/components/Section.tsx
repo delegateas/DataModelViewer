@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import BooleanAttribute from "./attributes/BooleanAttribute"
 import FileAttribute from "./attributes/FileAttribute"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
+import Relationships from "./Relationships"
 
 function Section({
     entity,
@@ -37,6 +38,7 @@ function Section({
         <a className="flex flex-row gap-2 items-center hover:underline" href={`?selected=${entity.SchemaName}`}><Link /> <h2 className="text-xl">{entity.DisplayName} ({entity.SchemaName})</h2></a>
         {GetEntityDetails(entity)}
         <p className="my-4">{entity.Description}</p>
+        <h2 className="mt-4 mb-1 font-bold">Attributes</h2>
         <Table className="border">
             <TableHeader>
                 <TableRow className="bg-gray-100">
@@ -59,6 +61,8 @@ function Section({
                 )}
             </TableBody>
         </Table>
+        
+        { entity.Relationships.length > 0 && <Relationships entity={entity} onSelect={onSelect} /> }
     </div>
 }
 
@@ -134,7 +138,7 @@ function GetAttributeComponent(entity: EntityType, attribute: AttributeType, onS
             return <StringAttribute key={attribute.SchemaName + entity.SchemaName} attribute={attribute} />
         case "BooleanAttribute":
             return <BooleanAttribute key={attribute.SchemaName + entity.SchemaName} attribute={attribute} />
-            case "FileAttribute":
+        case "FileAttribute":
             return <FileAttribute key={attribute.SchemaName + entity.SchemaName} attribute={attribute} />
         default:
             return null

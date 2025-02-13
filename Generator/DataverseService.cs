@@ -67,6 +67,7 @@ namespace Generator
                 .ToList();
 
             var logicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.EntityMetadata.SchemaName);
+            var attributeLogicalToSchema = entityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes.ToDictionary(x => x.LogicalName, x => x.DisplayName.UserLocalizedLabel?.Label ?? x.SchemaName));
 
             return records
                 .Select(x => MakeRecord(
@@ -75,7 +76,8 @@ namespace Generator
                     entityIdToRootBehavior, 
                     attributesInSolution, 
                     publisherPrefix,
-                    logicalToSchema));
+                    logicalToSchema,
+                    attributeLogicalToSchema));
         }
 
         private static Record MakeRecord(
@@ -84,7 +86,8 @@ namespace Generator
             Dictionary<Guid, int> entityIdToRootBehavior,
             HashSet<Guid> attributesInSolution,
             string publisherPrefix,
-            Dictionary<string, string> logicalToSchema)
+            Dictionary<string, string> logicalToSchema,
+            Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema)
         {
             var attributes =
                 relevantAttributes
@@ -96,18 +99,18 @@ namespace Generator
                 .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity))
                 .Select(x => new DTO.Relationship(
                     x.ReferencingEntityNavigationPropertyName,
-                    x.ReferencingEntity,
-                    x.ReferencingAttribute,
+                    logicalToSchema[x.ReferencingEntity],
+                    attributeLogicalToSchema[x.ReferencingEntity][x.ReferencingAttribute],
                     x.SchemaName,
                     IsManyToMany: false,
                     x.CascadeConfiguration))
                 .ToList();
 
             var manyToMany = (entity.ManyToManyRelationships ?? Enumerable.Empty<ManyToManyRelationshipMetadata>())
-                .Where(x => logicalToSchema.ContainsKey(x.Entity2LogicalName))
+                .Where(x => logicalToSchema.ContainsKey(x.Entity1LogicalName))
                 .Select(x => new DTO.Relationship(
-                    x.Entity2NavigationPropertyName,
-                    x.Entity2LogicalName,
+                    x.Entity1NavigationPropertyName,
+                    logicalToSchema[x.Entity1LogicalName],
                     "-",
                     x.SchemaName,
                     IsManyToMany: true,
