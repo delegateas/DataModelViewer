@@ -22,6 +22,7 @@ export type EntityType = {
     IsNotesEnabled: boolean,
     Ownership: OwnershipType,
     Attributes: AttributeType[]
+    Relationships: RelationshipType[]
 }
 
 export const enum RequiredLevel {
@@ -122,3 +123,32 @@ export type AttributeType =
     | StringAttributeType
     | BooleanAttributeType
     | FileAttributeType
+
+export enum CascadeType {
+    None = 0,
+    Cascade = 1,
+    Active = 2,
+    UserOwned = 3,
+    RemoveLink = 4,
+    Restrict = 5,
+}
+
+export type CascadeConfigurationType = {
+    Assign: CascadeType,
+    Delete: CascadeType,
+    Archive: CascadeType,
+    Merge: CascadeType,
+    Reparent: CascadeType,
+    Share: CascadeType,
+    Unshare: CascadeType,
+    RollupView: CascadeType,
+}
+
+export type RelationshipType = {
+    Name: string,
+    TableSchema: string,
+    LookupDisplayName: string,
+    RelationshipSchema: string,
+    IsManyToMany: boolean,
+    CascadeConfiguration: CascadeConfigurationType | null
+}

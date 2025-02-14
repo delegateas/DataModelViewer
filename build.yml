@@ -2,6 +2,7 @@ trigger: none
 schedules:
   - cron: "0 3 * * *"
     displayName: Daily build at 03:00 AM
+    always: true
     branches:
       include:
       - main

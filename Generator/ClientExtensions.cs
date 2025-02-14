@@ -10,7 +10,7 @@ public static class ClientExtensions
     {
         var resp = await client.ExecuteAsync(new RetrieveEntityRequest()
         {
-            EntityFilters = EntityFilters.Attributes,
+            EntityFilters = EntityFilters.All,
             MetadataId = objectId,
             RetrieveAsIfPublished = true
         }, token);
