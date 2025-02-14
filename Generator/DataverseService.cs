@@ -2,6 +2,7 @@
 using Azure.Identity;
 using Generator.DTO;
 using Generator.DTO.Attributes;
+using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,7 @@ namespace Generator
             var entityIdToRootBehavior = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
             var entityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
+            var logicalNameToSecurityRoles = await GetSecurityRoles();
 
             var relevantEntities = entityMetadata.Where(e => entityIdToRootBehavior.ContainsKey(e.MetadataId!.Value)).ToList();
             var entityLogicalNamesInSolution =
@@ -73,15 +75,21 @@ namespace Generator
             var attributeLogicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.RelevantAttributes.ToDictionary(x => x.LogicalName, x => x.DisplayName.UserLocalizedLabel?.Label ?? x.SchemaName));
 
             return records
-                .Select(x => MakeRecord(
-                    x.EntityMetadata,
-                    x.RelevantAttributes,
-                    x.RelevantManyToMany,
-                    entityIdToRootBehavior,
-                    attributesInSolution,
-                    publisherPrefix,
-                    logicalToSchema,
-                    attributeLogicalToSchema));
+                .Select(x =>
+                {
+                    logicalNameToSecurityRoles.TryGetValue(x.EntityMetadata.LogicalName, out var securityRoles);
+
+                    return MakeRecord(
+                        x.EntityMetadata,
+                        x.RelevantAttributes,
+                        x.RelevantManyToMany,
+                        entityIdToRootBehavior,
+                        attributesInSolution,
+                        publisherPrefix,
+                        logicalToSchema,
+                        attributeLogicalToSchema,
+                        securityRoles ?? new List<SecurityRole>());
+                });
         }
 
         private static Record MakeRecord(
@@ -92,7 +100,8 @@ namespace Generator
             HashSet<Guid> attributesInSolution,
             string publisherPrefix,
             Dictionary<string, string> logicalToSchema,
-            Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema)
+            Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
+            List<SecurityRole> securityRoles)
         {
             var attributes =
                 relevantAttributes
@@ -136,7 +145,8 @@ namespace Generator
                     entity.OwnershipType ?? OwnershipTypes.UserOwned,
                     entity.HasNotes ?? false,
                     attributes,
-                    oneToMany.Concat(manyToMany).ToList());
+                    oneToMany.Concat(manyToMany).ToList(),
+                    securityRoles);
         }
 
         private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, string> logicalToSchema)
@@ -258,6 +268,85 @@ namespace Generator
                 .Entities
                 .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1))
                 .ToList();
+        }
+
+        private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles()
+        {
+            var query = new QueryExpression("role")
+            {
+                ColumnSet = new ColumnSet("name"),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression("name", ConditionOperator.BeginsWith, "LF")
+                    }
+                },
+                LinkEntities =
+                {
+                    new LinkEntity("role", "roleprivileges", "roleid", "roleid", JoinOperator.Inner)
+                    {
+                        EntityAlias = "rolepriv",
+                        Columns = new ColumnSet("privilegedepthmask"),
+                        LinkEntities =
+                        {
+                            new LinkEntity("roleprivileges", "privilege", "privilegeid", "privilegeid", JoinOperator.Inner)
+                            {
+                                EntityAlias = "priv",
+                                Columns = new ColumnSet("accessright"),
+                                LinkEntities =
+                                {
+                                    new LinkEntity("privilege", "privilegeobjecttypecodes", "privilegeid", "privilegeid", JoinOperator.Inner)
+                                    {
+                                        EntityAlias = "privotc",
+                                        Columns = new ColumnSet("objecttypecode")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var roles = await client.RetrieveMultipleAsync(query);
+
+            var privileges = roles.Entities.Select(e =>
+            {
+                var name = e.GetAttributeValue<string>("name");
+                var depth = (PrivilegeDepth)e.GetAttributeValue<AliasedValue>("rolepriv.privilegedepthmask").Value;
+                var accessRight = (AccessRights)e.GetAttributeValue<AliasedValue>("priv.accessright").Value;
+                var objectTypeCode = e.GetAttributeValue<AliasedValue>("privotc.objecttypecode").Value as string;
+
+                return new
+                {
+                    name,
+                    depth,
+                    accessRight,
+                    objectTypeCode = objectTypeCode ?? string.Empty,
+                };
+            });
+
+            return privileges
+                .GroupBy(x => x.objectTypeCode)
+                .ToDictionary(byLogicalName => byLogicalName.Key, byLogicalName =>
+                    byLogicalName
+                    .GroupBy(x => x.name)
+                    .Select(byRole =>
+                    {
+                        var accessrightToDepth = byRole.GroupBy(x => x.accessRight).ToDictionary(x => x.Key, x => x.First().depth);
+                        return new SecurityRole(
+                            byRole.Key,
+                            byLogicalName.Key,
+                            accessrightToDepth.GetValueOrDefault(AccessRights.CreateAccess),
+                            accessrightToDepth.GetValueOrDefault(AccessRights.ReadAccess),
+                            accessrightToDepth.GetValueOrDefault(AccessRights.WriteAccess),
+                            accessrightToDepth.GetValueOrDefault(AccessRights.DeleteAccess),
+                            accessrightToDepth.GetValueOrDefault(AccessRights.AppendAccess),
+                            accessrightToDepth.GetValueOrDefault(AccessRights.AppendToAccess),
+                            accessrightToDepth.GetValueOrDefault(AccessRights.AssignAccess)
+                        );
+                    })
+                    .ToList());
         }
 
         private static async Task<string> TokenProviderFunction(string dataverseUrl, IMemoryCache cache, ILogger logger)
