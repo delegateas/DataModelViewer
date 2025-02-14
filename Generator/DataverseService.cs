@@ -67,7 +67,7 @@ namespace Generator
                 .ToList();
 
             var logicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.EntityMetadata.SchemaName);
-            var attributeLogicalToSchema = entityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes.ToDictionary(x => x.LogicalName, x => x.DisplayName.UserLocalizedLabel?.Label ?? x.SchemaName));
+            var attributeLogicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.RelevantAttributes.ToDictionary(x => x.LogicalName, x => x.DisplayName.UserLocalizedLabel?.Label ?? x.SchemaName));
 
             return records
                 .Select(x => MakeRecord(
@@ -96,7 +96,7 @@ namespace Generator
                 .ToList();
 
             var oneToMany = (entity.OneToManyRelationships ?? Enumerable.Empty<OneToManyRelationshipMetadata>())
-                .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity))
+                .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity) && attributeLogicalToSchema[x.ReferencingEntity].ContainsKey(x.ReferencingAttribute))
                 .Select(x => new DTO.Relationship(
                     x.ReferencingEntityNavigationPropertyName,
                     logicalToSchema[x.ReferencingEntity],
