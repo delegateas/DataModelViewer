@@ -13,5 +13,6 @@ internal record Record(
     OwnershipTypes Ownership,
     bool IsNotesEnabled,
     List<Attribute> Attributes,
+    List<Relationship> Relationships,
     List<SecurityRole> SecurityRoles);
 

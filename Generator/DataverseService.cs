@@ -41,7 +41,7 @@ namespace Generator
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
         {
             var (publisherPrefix, solutionIds) = await GetSolutionIds();
-            var solutionComponents = await GetEntitiesAndAttributesInSolutions(solutionIds);
+            var solutionComponents = await GetSolutionComponents(solutionIds);
             var entityIdToRootBehavior = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
             var entityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
@@ -53,7 +53,6 @@ namespace Generator
                 .Select(e => e.LogicalName)
                 .ToHashSet();
 
-
             var records =
                 relevantEntities
                 .Select(x => new
@@ -62,13 +61,18 @@ namespace Generator
                     RelevantAttributes =
                         x.GetRelevantAttributes(entityIdToRootBehavior, attributesInSolution, publisherPrefix, entityLogicalNamesInSolution)
                         .Where(x => x.DisplayName.UserLocalizedLabel?.Label != null)
-                        .ToList()
+                        .ToList(),
+                    RelevantManyToMany =
+                        x.ManyToManyRelationships
+                        .Where(r => entityLogicalNamesInSolution.Contains(r.IntersectEntityName.ToLower()))
+                        .ToList(),
                 })
                 .Where(x => x.RelevantAttributes.Count > 0)
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
                 .ToList();
 
             var logicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.EntityMetadata.SchemaName);
+            var attributeLogicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.RelevantAttributes.ToDictionary(x => x.LogicalName, x => x.DisplayName.UserLocalizedLabel?.Label ?? x.SchemaName));
 
             return records
                 .Select(x =>
@@ -78,10 +82,12 @@ namespace Generator
                     return MakeRecord(
                         x.EntityMetadata,
                         x.RelevantAttributes,
+                        x.RelevantManyToMany,
                         entityIdToRootBehavior,
                         attributesInSolution,
                         publisherPrefix,
                         logicalToSchema,
+                        attributeLogicalToSchema,
                         securityRoles ?? new List<SecurityRole>());
                 });
         }
@@ -89,16 +95,42 @@ namespace Generator
         private static Record MakeRecord(
             EntityMetadata entity,
             List<AttributeMetadata> relevantAttributes,
+            List<ManyToManyRelationshipMetadata> relevantManyToMany,
             Dictionary<Guid, int> entityIdToRootBehavior,
             HashSet<Guid> attributesInSolution,
             string publisherPrefix,
             Dictionary<string, string> logicalToSchema,
+            Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
             List<SecurityRole> securityRoles)
         {
             var attributes =
                 relevantAttributes
                 .Select(metadata => GetAttribute(metadata, entity, logicalToSchema))
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
+                .ToList();
+
+            var oneToMany = (entity.OneToManyRelationships ?? Enumerable.Empty<OneToManyRelationshipMetadata>())
+                .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity) && attributeLogicalToSchema[x.ReferencingEntity].ContainsKey(x.ReferencingAttribute))
+                .Select(x => new DTO.Relationship(
+                    x.ReferencingEntityNavigationPropertyName,
+                    logicalToSchema[x.ReferencingEntity],
+                    attributeLogicalToSchema[x.ReferencingEntity][x.ReferencingAttribute],
+                    x.SchemaName,
+                    IsManyToMany: false,
+                    x.CascadeConfiguration))
+                .ToList();
+
+            var manyToMany = relevantManyToMany
+                .Where(x => logicalToSchema.ContainsKey(x.Entity1LogicalName))
+                .Select(x => new DTO.Relationship(
+                    x.Entity1AssociatedMenuConfiguration.Behavior == AssociatedMenuBehavior.UseLabel
+                    ? x.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel?.Label ?? x.Entity1NavigationPropertyName
+                    : x.Entity1NavigationPropertyName,
+                    logicalToSchema[x.Entity1LogicalName],
+                    "-",
+                    x.SchemaName,
+                    IsManyToMany: true,
+                    null))
                 .ToList();
 
             var (group, description) = GetGroupAndDescription(entity);
@@ -113,6 +145,7 @@ namespace Generator
                     entity.OwnershipType ?? OwnershipTypes.UserOwned,
                     entity.HasNotes ?? false,
                     attributes,
+                    oneToMany.Concat(manyToMany).ToList(),
                     securityRoles);
         }
 
@@ -215,7 +248,7 @@ namespace Generator
             return (publisher.GetAttributeValue<string>("customizationprefix"), resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList());
         }
 
-        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior)>> GetEntitiesAndAttributesInSolutions(List<Guid> solutionIds)
+        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior)>> GetSolutionComponents(List<Guid> solutionIds)
         {
             var entityQuery = new QueryExpression("solutioncomponent")
             {
