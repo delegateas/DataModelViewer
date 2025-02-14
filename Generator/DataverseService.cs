@@ -40,7 +40,7 @@ namespace Generator
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
         {
             var (publisherPrefix, solutionIds) = await GetSolutionIds();
-            var solutionComponents = await GetEntitiesAndAttributesInSolutions(solutionIds);
+            var solutionComponents = await GetSolutionComponents(solutionIds);
             var entityIdToRootBehavior = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
             var entityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
@@ -51,16 +51,19 @@ namespace Generator
                 .Select(e => e.LogicalName)
                 .ToHashSet();
 
-
             var records =
                 relevantEntities
                 .Select(x => new
                 {
                     EntityMetadata = x,
-                    RelevantAttributes = 
+                    RelevantAttributes =
                         x.GetRelevantAttributes(entityIdToRootBehavior, attributesInSolution, publisherPrefix, entityLogicalNamesInSolution)
                         .Where(x => x.DisplayName.UserLocalizedLabel?.Label != null)
-                        .ToList()
+                        .ToList(),
+                    RelevantManyToMany =
+                        x.ManyToManyRelationships
+                        .Where(r => entityLogicalNamesInSolution.Contains(r.IntersectEntityName.ToLower()))
+                        .ToList(),
                 })
                 .Where(x => x.RelevantAttributes.Count > 0)
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
@@ -72,9 +75,10 @@ namespace Generator
             return records
                 .Select(x => MakeRecord(
                     x.EntityMetadata,
-                    x.RelevantAttributes, 
-                    entityIdToRootBehavior, 
-                    attributesInSolution, 
+                    x.RelevantAttributes,
+                    x.RelevantManyToMany,
+                    entityIdToRootBehavior,
+                    attributesInSolution,
                     publisherPrefix,
                     logicalToSchema,
                     attributeLogicalToSchema));
@@ -83,6 +87,7 @@ namespace Generator
         private static Record MakeRecord(
             EntityMetadata entity,
             List<AttributeMetadata> relevantAttributes,
+            List<ManyToManyRelationshipMetadata> relevantManyToMany,
             Dictionary<Guid, int> entityIdToRootBehavior,
             HashSet<Guid> attributesInSolution,
             string publisherPrefix,
@@ -106,7 +111,7 @@ namespace Generator
                     x.CascadeConfiguration))
                 .ToList();
 
-            var manyToMany = (entity.ManyToManyRelationships ?? Enumerable.Empty<ManyToManyRelationshipMetadata>())
+            var manyToMany = relevantManyToMany
                 .Where(x => logicalToSchema.ContainsKey(x.Entity1LogicalName))
                 .Select(x => new DTO.Relationship(
                     x.Entity1AssociatedMenuConfiguration.Behavior == AssociatedMenuBehavior.UseLabel
@@ -159,9 +164,9 @@ namespace Generator
             var description = entity.Description.UserLocalizedLabel?.Label ?? string.Empty;
             if (!description.StartsWith("#"))
                 return (null, description);
-           
+
             var newlineIndex = description.IndexOf("\n");
-            if (newlineIndex != -1) 
+            if (newlineIndex != -1)
             {
                 var group = description.Substring(1, newlineIndex - 1).Trim();
                 description = description.Substring(newlineIndex + 1);
@@ -173,7 +178,7 @@ namespace Generator
             if (firstSpace != -1)
                 return (withoutHashtag.Substring(0, firstSpace), withoutHashtag.Substring(firstSpace + 1));
 
-            return (withoutHashtag, null);  
+            return (withoutHashtag, null);
         }
 
         public async Task<IEnumerable<EntityMetadata>> GetEntityMetadata(List<Guid> entityObjectIds)
@@ -233,7 +238,7 @@ namespace Generator
             return (publisher.GetAttributeValue<string>("customizationprefix"), resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList());
         }
 
-        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior)>> GetEntitiesAndAttributesInSolutions(List<Guid> solutionIds)
+        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior)>> GetSolutionComponents(List<Guid> solutionIds)
         {
             var entityQuery = new QueryExpression("solutioncomponent")
             {
