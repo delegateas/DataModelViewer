@@ -109,7 +109,9 @@ namespace Generator
             var manyToMany = (entity.ManyToManyRelationships ?? Enumerable.Empty<ManyToManyRelationshipMetadata>())
                 .Where(x => logicalToSchema.ContainsKey(x.Entity1LogicalName))
                 .Select(x => new DTO.Relationship(
-                    x.Entity1NavigationPropertyName,
+                    x.Entity1AssociatedMenuConfiguration.Behavior == AssociatedMenuBehavior.UseLabel
+                    ? x.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel?.Label ?? x.Entity1NavigationPropertyName
+                    : x.Entity1NavigationPropertyName,
                     logicalToSchema[x.Entity1LogicalName],
                     "-",
                     x.SchemaName,
