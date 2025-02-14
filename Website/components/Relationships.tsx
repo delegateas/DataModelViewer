@@ -8,12 +8,12 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
     <Table className="border">
         <TableHeader>
             <TableRow className="bg-gray-100">
-                <TableHead className="w-1/6">Name</TableHead>
-                <TableHead className="w-1/6">Related Table</TableHead>
-                <TableHead className="w-1/6">Lookup Field</TableHead>
-                <TableHead className="w-1/6">Schema Name</TableHead>
-                <TableHead className="w-1/12">Type</TableHead>
-                <TableHead className="w-3/12">Behavior</TableHead>
+                <TableHead className="w-1/6 text-black font-bold">Name</TableHead>
+                <TableHead className="w-1/6 text-black font-bold">Related Table</TableHead>
+                <TableHead className="w-1/6 text-black font-bold">Lookup Field</TableHead>
+                <TableHead className="w-1/12 text-black font-bold">Type</TableHead>
+                <TableHead className="w-3/12 text-black font-bold">Behavior</TableHead>
+                <TableHead className="w-1/6 text-black font-bold">Schema Name</TableHead>
             </TableRow>
         </TableHeader>
         <TableBody className="striped">
@@ -26,9 +26,9 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
                             className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline"
                             onClick={() => onSelect(relationship.TableSchema)}>{relationship.TableSchema}</Button>}</TableCell>
                     <TableCell>{relationship.LookupDisplayName}</TableCell>
-                    <TableCell>{relationship.RelationshipSchema}</TableCell>
                     <TableCell>{relationship.IsManyToMany ? "N:N" : "1:N"}</TableCell>
                     <TableCell>{GetCascadeConfiguration(relationship.CascadeConfiguration)}</TableCell>
+                    <TableCell>{relationship.RelationshipSchema}</TableCell>
                 </TableRow>
             )}
         </TableBody>
