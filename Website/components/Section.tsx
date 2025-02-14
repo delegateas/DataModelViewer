@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect } from "react"
-import { Building, CircleAlert, CirclePlus, ClipboardList, Eye, Link, Lock, Paperclip, Users } from "lucide-react"
+import { Ban, Boxes, Building, Building2, CircleAlert, CirclePlus, ClipboardList, Eye, Link, Lock, Paperclip, User, Users } from "lucide-react"
 import { useScrollTo } from "@/hooks/useScrollTo"
-import { AttributeType, EntityType, OwnershipType, RequiredLevel } from "@/lib/Types"
+import { AttributeType, EntityType, OwnershipType, PrivilegeDepth, RequiredLevel } from "@/lib/Types"
 import ChoiceAttribute from "./attributes/ChoiceAttribute"
 import DateTimeAttribute from "./attributes/DateTimeAttribute"
 import GenericAttribute from "./attributes/GenericAttribute"
@@ -36,7 +36,20 @@ function Section({
 
     return <div ref={contentRef} className="mb-5">
         <a className="flex flex-row gap-2 items-center hover:underline" href={`?selected=${entity.SchemaName}`}><Link /> <h2 className="text-xl">{entity.DisplayName} ({entity.SchemaName})</h2></a>
-        {GetEntityDetails(entity)}
+        <div className="flex flex-row justify-between items-center">
+            {GetEntityDetails(entity)}
+            <div>
+                {entity.SecurityRoles.map(role => <div>
+                    <div>Create {GetDepthIcon(role.Create)}</div>
+                    <div>Read {GetDepthIcon(role.Read)}</div>
+                    <div>Write {GetDepthIcon(role.Write)}</div>
+                    <div>Delete {GetDepthIcon(role.Delete)}</div>
+                    <div>Append {GetDepthIcon(role.Append)}</div>
+                    <div>Append To {GetDepthIcon(role.AppendTo)}</div>
+                    <div>Assign {GetDepthIcon(role.Assign)}</div>
+                </div>)}
+            </div>
+        </div>
         <p className="my-4">{entity.Description}</p>
         <h2 className="mt-4 mb-1 font-bold">Attributes</h2>
         <Table className="border">
@@ -61,9 +74,19 @@ function Section({
                 )}
             </TableBody>
         </Table>
-        
-        { entity.Relationships.length > 0 && <Relationships entity={entity} onSelect={onSelect} /> }
+
+        {entity.Relationships.length > 0 && <Relationships entity={entity} onSelect={onSelect} />}
     </div>
+}
+
+function GetDepthIcon(depth: PrivilegeDepth) {
+    switch (depth) {
+        case PrivilegeDepth.None: return <Ban />;
+        case PrivilegeDepth.Basic: return <User />;
+        case PrivilegeDepth.Local: return <Users />;
+        case PrivilegeDepth.Deep: return <Boxes />;
+        case PrivilegeDepth.Global: return <Building2 />;
+    }
 }
 
 function GetEntityDetails(entity: EntityType) {
