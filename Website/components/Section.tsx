@@ -34,23 +34,29 @@ function Section({
         }
     }, [isSelected])
 
-    return <div ref={contentRef} className="mb-5">
-        <a className="flex flex-row gap-2 items-center hover:underline" href={`?selected=${entity.SchemaName}`}><Link /> <h2 className="text-xl">{entity.DisplayName} ({entity.SchemaName})</h2></a>
-        <div className="flex flex-row justify-between items-center">
-            {GetEntityDetails(entity)}
-            <div>
-                {entity.SecurityRoles.map(role => <div>
-                    <div>Create {GetDepthIcon(role.Create)}</div>
-                    <div>Read {GetDepthIcon(role.Read)}</div>
-                    <div>Write {GetDepthIcon(role.Write)}</div>
-                    <div>Delete {GetDepthIcon(role.Delete)}</div>
-                    <div>Append {GetDepthIcon(role.Append)}</div>
-                    <div>Append To {GetDepthIcon(role.AppendTo)}</div>
-                    <div>Assign {GetDepthIcon(role.Assign)}</div>
-                </div>)}
+    return <div ref={contentRef} className="mb-10">
+        <div className="flex flex-row justify-between items-start">
+            <div className="w-1/2 pr-5">
+                <a className="flex flex-row gap-2 items-center hover:underline" href={`?selected=${entity.SchemaName}`}><Link /> <h2 className="text-xl">{entity.DisplayName} ({entity.SchemaName})</h2></a>
+                {GetEntityDetails(entity)}
+                <p className="my-4">{entity.Description}</p>
+            </div>
+            <div className="grid grid-cols-2 border-l-2 pl-5 mr-20 gap-2 items-center">
+                {entity.SecurityRoles.map(role =>
+                    <div key={role.Name} className="contents">
+                        <p className="font-bold pr-3">{role.Name}</p>
+                        <div className="flex flex-row gap-2">
+                            <div className="flex flex-col items-center"><p className="w-max">Create</p>{GetDepthIcon(role.Create)}</div>
+                            <div className="flex flex-col items-center"><p className="w-max">Read</p>{GetDepthIcon(role.Read)}</div>
+                            <div className="flex flex-col items-center"><p className="w-max">Write</p>{GetDepthIcon(role.Write)}</div>
+                            <div className="flex flex-col items-center"><p className="w-max">Delete</p>{GetDepthIcon(role.Delete)}</div>
+                            <div className="flex flex-col items-center"><p className="w-max">Append</p>{GetDepthIcon(role.Append)}</div>
+                            <div className="flex flex-col items-center"><p className="w-max">Append To</p>{GetDepthIcon(role.AppendTo)}</div>
+                            <div className="flex flex-col items-center"><p className="w-max">Assign</p>{GetDepthIcon(role.Assign)}</div>
+                        </div>
+                    </div>)}
             </div>
         </div>
-        <p className="my-4">{entity.Description}</p>
         <h2 className="mt-4 mb-1 font-bold">Attributes</h2>
         <Table className="border">
             <TableHeader>
@@ -79,37 +85,41 @@ function Section({
     </div>
 }
 
+function GetTooltipIcon(icon: JSX.Element, text: string) {
+    return <Tooltip key={text}><TooltipTrigger asChild>{icon}</TooltipTrigger><TooltipContent><p>{text}</p></TooltipContent></Tooltip>
+}
+
 function GetDepthIcon(depth: PrivilegeDepth) {
     switch (depth) {
-        case PrivilegeDepth.None: return <Ban />;
-        case PrivilegeDepth.Basic: return <User />;
-        case PrivilegeDepth.Local: return <Users />;
-        case PrivilegeDepth.Deep: return <Boxes />;
-        case PrivilegeDepth.Global: return <Building2 />;
+        case PrivilegeDepth.None: return GetTooltipIcon(<Ban />, "None");
+        case PrivilegeDepth.Basic: return GetTooltipIcon(<User />, "User");
+        case PrivilegeDepth.Local: return GetTooltipIcon(<Users />, "Business Unit");
+        case PrivilegeDepth.Deep: return GetTooltipIcon(<Boxes />, "Parent: Child Business Units");
+        case PrivilegeDepth.Global: return GetTooltipIcon(<Building2 />, "Organization");
     }
 }
 
 function GetEntityDetails(entity: EntityType) {
     const details: JSX.Element[] = []
     if (entity.IsAuditEnabled) {
-        details.push(<Tooltip key={`${entity.SchemaName}audit`}><TooltipTrigger asChild><Eye /></TooltipTrigger><TooltipContent><p>Audit Enabled</p></TooltipContent></Tooltip>)
+        details.push(GetTooltipIcon(<Eye />, "Audit Enabled"))
     }
 
     if (entity.IsActivity) {
-        details.push(<Tooltip key={`${entity.SchemaName}activity`}><TooltipTrigger asChild><ClipboardList /></TooltipTrigger><TooltipContent><p>Is Activity</p></TooltipContent></Tooltip>)
+        details.push(GetTooltipIcon(<ClipboardList />, "Is Activity"))
     }
 
     if (entity.IsNotesEnabled) {
-        details.push(<Tooltip key={`${entity.SchemaName}notes`}><TooltipTrigger asChild><Paperclip /></TooltipTrigger><TooltipContent><p>Notes Enabled</p></TooltipContent></Tooltip>)
+        details.push(GetTooltipIcon(<Paperclip />, "Notes Enabled"))
     }
 
     switch (entity.Ownership) {
         case OwnershipType.OrganizationOwned:
-            details.push(<Tooltip key={`${entity.SchemaName}org`}><TooltipTrigger asChild><Building /></TooltipTrigger><TooltipContent><p>Organization Owned</p></TooltipContent></Tooltip>)
+            details.push(GetTooltipIcon(<Building />, "Organization Owned"))
             break;
         case OwnershipType.UserOwned:
         case OwnershipType.TeamOwned:
-            details.push(<Tooltip key={`${entity.SchemaName}userteam`}><TooltipTrigger asChild><Users /></TooltipTrigger><TooltipContent><p>User/Team Owned</p></TooltipContent></Tooltip>)
+            details.push(GetTooltipIcon(<Users />, "User/Team Owned"))
             break;
     }
 
