@@ -35,16 +35,16 @@ function Section({
     }, [isSelected])
 
     return <div ref={contentRef} className="mb-10">
-        <div className="flex flex-row justify-between items-start">
+        <div className="flex flex-row justify-start items-start">
             <div className="w-1/2 pr-5">
                 <a className="flex flex-row gap-2 items-center hover:underline" href={`?selected=${entity.SchemaName}`}><Link /> <h2 className="text-xl">{entity.DisplayName} ({entity.SchemaName})</h2></a>
                 {GetEntityDetails(entity)}
                 <p className="my-4">{entity.Description}</p>
             </div>
-            <div className="grid grid-cols-2 border-l-2 pl-5 mr-20 gap-2 items-center">
+            <div className="flex flex-col justify-center border-l-2 pl-5 mr-20 gap-2 items-end">
                 {entity.SecurityRoles.map(role =>
-                    <div key={role.Name} className="contents">
-                        <p className="font-bold pr-3">{role.Name}</p>
+                    <div key={role.Name} className="flex flex-row justify-end items-center">
+                        <p className="font-bold pr-3 w-max">{role.Name}</p>
                         <div className="flex flex-row gap-2">
                             <div className="flex flex-col items-center"><p className="w-max">Create</p>{GetDepthIcon(role.Create)}</div>
                             <div className="flex flex-col items-center"><p className="w-max">Read</p>{GetDepthIcon(role.Read)}</div>

@@ -11,8 +11,8 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
                 <TableHead className="w-1/6 text-black font-bold">Name</TableHead>
                 <TableHead className="w-1/6 text-black font-bold">Related Table</TableHead>
                 <TableHead className="w-1/6 text-black font-bold">Lookup Field</TableHead>
-                <TableHead className="w-1/12 text-black font-bold">Type</TableHead>
-                <TableHead className="w-3/12 text-black font-bold">Behavior</TableHead>
+                <TableHead className="w-1/6 text-black font-bold">Type</TableHead>
+                <TableHead className="w-1/6 text-black font-bold">Behavior</TableHead>
                 <TableHead className="w-1/6 text-black font-bold">Schema Name</TableHead>
             </TableRow>
         </TableHeader>
