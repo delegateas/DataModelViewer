@@ -17,10 +17,12 @@ export function DatamodelView() {
 
     return <>
         <AppSidebar selected={selected} onSelect={entity => setSelected(entity)} />
-        <div className='flex flex-col gap-5 mx-5 mt-5 w-full'>
-            <TooltipProvider>
-                <List selected={selected} onSelect={entity => setSelected(entity)} />
-            </TooltipProvider>
+        <div className='flex-1 flex flex-col min-w-0 overflow-auto'>
+            <div className='px-5 pt-5 pb-20'>
+                <TooltipProvider>
+                    <List selected={selected} onSelect={entity => setSelected(entity)} />
+                </TooltipProvider>
+            </div>
         </div>
     </>;
 }

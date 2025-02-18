@@ -10,16 +10,22 @@ export default function StatusAttribute({ attribute }: { attribute: StatusAttrib
         return acc
     }, {} as Record<string, StatusOption[]>)
 
-    return <>{groupedOptions && Object.keys(groupedOptions).map(state =>
-        <div className="grid grid-cols-2 mb-4 gap-y-1" key={state}>
-            <p className="font-bold col-span-2">{state}</p>
-            <p className="font-bold">Name</p>
-            <p className="font-bold">Value</p>
-            {groupedOptions[state].map(option =>
-                <div className="contents" key={option.Value}>
-                    <p>{option.Name}</p>
-                    <p>{formatNumberSeperator(option.Value)}</p>
-                </div>)}
-        </div>)}
-    </>
+    return (
+        <div className="flex flex-col gap-4">
+            <span className="font-bold">State/Status</span>
+            {Object.entries(groupedOptions).map(([state, options]) => (
+                <div key={state} className="flex flex-col gap-1">
+                    <span className="font-medium">{state}</span>
+                    <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 pl-4">
+                        {options.map(option => (
+                            <div key={option.Value} className="contents">
+                                <span>{option.Name}</span>
+                                <span>{formatNumberSeperator(option.Value)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
 }
