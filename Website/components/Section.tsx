@@ -30,7 +30,7 @@ function Section({
 }) {
     const isSelected = selected?.toLowerCase() === entity.SchemaName.toLocaleLowerCase()
     const [contentRef, shouldScrollTo] = useScrollTo<HTMLDivElement>()
-    
+
     useEffect(() => {
         if (isSelected) {
             shouldScrollTo(true)
@@ -39,13 +39,14 @@ function Section({
 
     return (
         <div ref={contentRef} className="mb-10">
-            <div className="flex flex-col 2xl:grid 2xl:grid-cols-2 min-w-0">
-                <div className="min-w-0 2xl:pr-5">
+            <div className="flex flex-col xl:flex-row xl:justify-between min-w-0">
+                <div className="min-w-0 xl:pr-5">
                     <EntityHeader entity={entity} />
                 </div>
-                <div className="min-w-0 border-t 2xl:border-t-0 2xl:border-l 2xl:pl-5 mt-5 pt-5 2xl:mt-0 2xl:pt-0 2xl:justify-items-end 2xl:pr-5">
-                    <SecurityRoles roles={entity.SecurityRoles} />
-                </div>
+                {entity.SecurityRoles.length > 0 &&
+                    <div className="w-fit border-t xl:border-t-0 xl:border-l xl:px-5 mt-5 pt-5 xl:mt-0 xl:pt-0">
+                        <SecurityRoles roles={entity.SecurityRoles} />
+                    </div>}
             </div>
 
             <h2 className="mt-4 mb-1 font-bold">Attributes</h2>
