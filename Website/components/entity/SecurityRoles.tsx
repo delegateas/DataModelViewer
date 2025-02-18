@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (
-        <div className="flex flex-col gap-2 2xl:items-end w-fit">
+        <div className="flex flex-col gap-2 w-fit">
             {roles.map(role => (
                 <SecurityRoleRow key={role.Name} role={role} />
             ))}

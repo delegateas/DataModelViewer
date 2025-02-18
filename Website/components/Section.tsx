@@ -43,7 +43,7 @@ function Section({
                 <div className="min-w-0 2xl:pr-5">
                     <EntityHeader entity={entity} />
                 </div>
-                <div className="min-w-0 border-t 2xl:border-t-0 2xl:border-l 2xl:pl-5 mt-5 pt-5 2xl:mt-0 2xl:pt-0">
+                <div className="min-w-0 border-t 2xl:border-t-0 2xl:border-l 2xl:pl-5 mt-5 pt-5 2xl:mt-0 2xl:pt-0 2xl:justify-items-end 2xl:pr-5">
                     <SecurityRoles roles={entity.SecurityRoles} />
                 </div>
             </div>
