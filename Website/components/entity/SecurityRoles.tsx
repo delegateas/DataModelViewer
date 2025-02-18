@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (
-        <div className="w-full lg:w-auto flex flex-col justify-center lg:border-l-2 lg:pl-5 gap-2">
+        <div className="flex flex-col gap-2 2xl:items-end w-fit">
             {roles.map(role => (
                 <SecurityRoleRow key={role.Name} role={role} />
             ))}
@@ -16,9 +16,9 @@ export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
 
 function SecurityRoleRow({ role }: { role: SecurityRole }) {
     return (
-        <div className="flex flex-col lg:flex-row justify-start lg:justify-end items-start lg:items-center gap-2">
-            <p className="font-bold lg:pr-3 lg:w-max">{role.Name}</p>
-            <div className="grid grid-cols-4 lg:flex lg:flex-row gap-2">
+        <div className="flex flex-col 2xl:flex-row items-start 2xl:items-center gap-2">
+            <p className="font-bold 2xl:pr-3 2xl:w-max">{role.Name}</p>
+            <div className="flex flex-row gap-2">
                 <PrivilegeIcon name="Create" depth={role.Create} />
                 <PrivilegeIcon name="Read" depth={role.Read} />
                 <PrivilegeIcon name="Write" depth={role.Write} />
