@@ -375,10 +375,7 @@ namespace Generator
 
             logger.LogTrace("Using Default Managed Identity");
 
-            return new DefaultAzureCredential(new DefaultAzureCredentialOptions
-            {
-                TenantId = configuration.GetValue<string>("TenantId") ?? "common"
-            });  // in azure this will be managed identity, locally this depends... se midway of this post for the how local identity is chosen: https://dreamingincrm.com/2021/11/16/connecting-to-dataverse-from-function-app-using-managed-identity/
+            return new DefaultAzureCredential();  // in azure this will be managed identity, locally this depends... se midway of this post for the how local identity is chosen: https://dreamingincrm.com/2021/11/16/connecting-to-dataverse-from-function-app-using-managed-identity/
         }
 
         private static string BuildScopeString(string dataverseUrl)
