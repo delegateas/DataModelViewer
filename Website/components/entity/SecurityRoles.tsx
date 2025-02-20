@@ -2,7 +2,7 @@
 
 import { SecurityRole, PrivilegeDepth } from "@/lib/Types";
 import { Ban, User, Users, Boxes, Building2 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../ui/hybridtooltop";
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (
@@ -72,9 +72,9 @@ function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
     }
 
     return (
-        <Tooltip>
-            <TooltipTrigger asChild>{icon}</TooltipTrigger>
-            <TooltipContent>{tooltip}</TooltipContent>
-        </Tooltip>
+        <HybridTooltip>
+            <HybridTooltipTrigger asChild>{icon}</HybridTooltipTrigger>
+            <HybridTooltipContent>{tooltip}</HybridTooltipContent>
+        </HybridTooltip>
     );
 }
