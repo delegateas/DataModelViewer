@@ -23,7 +23,8 @@ export type EntityType = {
     Ownership: OwnershipType,
     Attributes: AttributeType[],
     Relationships: RelationshipType[],
-    SecurityRoles: SecurityRole[]
+    SecurityRoles: SecurityRole[],
+    IconBase64: string | null,
 }
 
 export const enum RequiredLevel {
