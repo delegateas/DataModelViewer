@@ -4,7 +4,6 @@ import { GroupType } from "@/lib/Types"
 import Section from "./Section"
 import { useEffect } from "react"
 import { useScrollTo } from "@/hooks/useScrollTo"
-import { Link } from "lucide-react"
 
 function Group({ group, selected, onSelect }: { group: GroupType, selected: string | null, onSelect: (entity: string) => void }) {
     const isSelected = selected?.toLowerCase() === group.Name.toLocaleLowerCase()
