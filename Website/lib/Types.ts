@@ -33,6 +33,11 @@ export const enum RequiredLevel {
     Recommended = 3
 }
 
+export const enum CalculationMethods {
+    Calculated = 0,
+    Rollup = 1,
+}
+
 export type BaseAttribute = {
     DisplayName: string,
     SchemaName: string,
@@ -40,6 +45,7 @@ export type BaseAttribute = {
     RequiredLevel: RequiredLevel,
     IsAuditEnabled: boolean,
     IsColumnSecured: boolean,
+    CalculationMethod: CalculationMethods | null,
 }
 
 export type ChoiceAttributeType = BaseAttribute & {
