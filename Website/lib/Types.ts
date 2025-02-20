@@ -21,8 +21,9 @@ export type EntityType = {
     IsActivity: boolean,
     IsNotesEnabled: boolean,
     Ownership: OwnershipType,
-    Attributes: AttributeType[]
-    Relationships: RelationshipType[]
+    Attributes: AttributeType[],
+    Relationships: RelationshipType[],
+    SecurityRoles: SecurityRole[]
 }
 
 export const enum RequiredLevel {
@@ -151,4 +152,24 @@ export type RelationshipType = {
     RelationshipSchema: string,
     IsManyToMany: boolean,
     CascadeConfiguration: CascadeConfigurationType | null
+}
+
+export enum PrivilegeDepth {
+    None = 0,
+    Basic = 1,
+    Local = 2,
+    Deep = 4,
+    Global = 8,
+}
+
+export type SecurityRole = {
+    Name: string,
+    LogicalName: string,
+    Create: PrivilegeDepth,
+    Read: PrivilegeDepth,
+    Write: PrivilegeDepth,
+    Delete: PrivilegeDepth,
+    Append: PrivilegeDepth,
+    AppendTo: PrivilegeDepth,
+    Assign: PrivilegeDepth
 }
