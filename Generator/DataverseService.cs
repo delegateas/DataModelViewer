@@ -47,7 +47,8 @@ namespace Generator
             var entityIdToRootBehavior = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
             var entityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
-            var logicalNameToSecurityRoles = await GetSecurityRoles();
+            var rolesInSolution = solutionComponents.Where(solutionComponents => solutionComponents.ComponentType == 20).Select(x => x.ObjectId).ToList();
+            var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution);
 
             var relevantEntities = entityMetadata.Where(e => entityIdToRootBehavior.ContainsKey(e.MetadataId!.Value)).ToList();
             var entityLogicalNamesInSolution =
@@ -259,7 +260,7 @@ namespace Generator
                 {
                     Conditions =
                     {
-                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2 }),
+                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20 }),
                         new ConditionExpression("solutionid", ConditionOperator.In, solutionIds)
                     }
                 }
@@ -272,7 +273,7 @@ namespace Generator
                 .ToList();
         }
 
-        private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles()
+        private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles(List<Guid> rolesInSolution)
         {
             var query = new QueryExpression("role")
             {
@@ -281,7 +282,7 @@ namespace Generator
                 {
                     Conditions =
                     {
-                        new ConditionExpression("name", ConditionOperator.BeginsWith, "LF")
+                        new ConditionExpression("roleid", ConditionOperator.In, rolesInSolution)
                     }
                 },
                 LinkEntities =

@@ -47,5 +47,6 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * AzureResourceGroupName: Name of the Resource Group in Azure. If this matches an existing group in the location above that will be used for the DMV resources, if not a new resource group will be created.
 * DataverseUrl: URL for the Dataverse environment which the data model will be based on.
 * DataverseSolutionNames: Comma-seperated list of solutions to based DMV on.
+* SolutionId: Used for the url of the web app
 * WebsitePassword: Password used by DMV users to login to the generated site.
 * WebsiteSessionSecret: Key to encrypt the session token with (You can set it to whatever you like, but recommended 32 random characters).

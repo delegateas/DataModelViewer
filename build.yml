@@ -75,7 +75,7 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           az group create --name $(AzureResourceGroupName) --location $(AzureLocation)
-          $jsonResult = az deployment group create --resource-group $(AzureResourceGroupName) --template-file $(bicepTemplateFile) --parameters websitePassword=$(WebsitePassword) --parameters sessionSecret=$(WebsiteSessionSecret) | ConvertFrom-Json
+          $jsonResult = az deployment group create --resource-group $(AzureResourceGroupName) --template-file $(bicepTemplateFile) --parameters websitePassword=$(WebsitePassword) --parameters sessionSecret=$(WebsiteSessionSecret) --parameters solutionId=$(SolutionId) | ConvertFrom-Json
           $webAppName = $jsonResult.properties.outputs.webAppName.value
           Write-Host "##vso[task.setvariable variable=webAppName]$webAppName"
 
