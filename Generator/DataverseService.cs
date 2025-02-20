@@ -22,6 +22,8 @@ namespace Generator
 
         public DataverseService(IConfiguration configuration)
         {
+            this.configuration = configuration;
+
             var cache = new MemoryCache(new MemoryCacheOptions());
             var logger = new LoggerFactory().CreateLogger<DataverseService>();
 
@@ -35,7 +37,7 @@ namespace Generator
                 instanceUrl: new Uri(dataverseUrl),
                 tokenProviderFunction: url => TokenProviderFunction(url, cache, logger));
 
-            this.configuration = configuration;
+          
         }
 
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
@@ -221,7 +223,7 @@ namespace Generator
             if (solutionNameArg == null)
             {
                 throw new Exception("Specify one or more solutions");
-            }
+            }   
             var solutionNames = solutionNameArg.Split(",").Select(x => x.Trim().ToLower()).ToList();
 
             var resp = await client.RetrieveMultipleAsync(new QueryExpression("solution")
@@ -349,7 +351,7 @@ namespace Generator
                     .ToList());
         }
 
-        private static async Task<string> TokenProviderFunction(string dataverseUrl, IMemoryCache cache, ILogger logger)
+        private async Task<string> TokenProviderFunction(string dataverseUrl, IMemoryCache cache, ILogger logger)
         {
             var cacheKey = $"AccessToken_{dataverseUrl}";
 
@@ -365,10 +367,18 @@ namespace Generator
             })).Token;
         }
 
-        private static DefaultAzureCredential GetTokenCredential(ILogger logger)
+        private TokenCredential GetTokenCredential(ILogger logger)
         {
+           
+            if(configuration["DataverseClientId"] != null && configuration["DataverseClientSecret"] != null)
+                return new ClientSecretCredential(configuration["TenantId"], configuration["DataverseClientId"], configuration["DataverseClientSecret"]);
+
             logger.LogTrace("Using Default Managed Identity");
-            return new DefaultAzureCredential();  // in azure this will be managed identity, locally this depends... se midway of this post for the how local identity is chosen: https://dreamingincrm.com/2021/11/16/connecting-to-dataverse-from-function-app-using-managed-identity/
+
+            return new DefaultAzureCredential(new DefaultAzureCredentialOptions
+            {
+                TenantId = configuration.GetValue<string>("TenantId") ?? "common"
+            });  // in azure this will be managed identity, locally this depends... se midway of this post for the how local identity is chosen: https://dreamingincrm.com/2021/11/16/connecting-to-dataverse-from-function-app-using-managed-identity/
         }
 
         private static string BuildScopeString(string dataverseUrl)
