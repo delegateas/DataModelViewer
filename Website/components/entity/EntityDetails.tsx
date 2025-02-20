@@ -2,7 +2,7 @@
 
 import { EntityType, OwnershipType } from "@/lib/Types";
 import { Eye, ClipboardList, Paperclip, Building, Users } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../ui/hybridtooltop";
 
 type EntityDetailType = {
     icon: JSX.Element;
@@ -15,10 +15,10 @@ export function EntityDetails({ entity }: { entity: EntityType }) {
     return (
         <div className="flex flex-row gap-1 py-1">
             {details.map((detail, index) => (
-                <Tooltip key={index}>
-                    <TooltipTrigger asChild>{detail.icon}</TooltipTrigger>
-                    <TooltipContent>{detail.tooltip}</TooltipContent>
-                </Tooltip>
+                <HybridTooltip key={index}>
+                    <HybridTooltipTrigger asChild>{detail.icon}</HybridTooltipTrigger>
+                    <HybridTooltipContent>{detail.tooltip}</HybridTooltipContent>
+                </HybridTooltip>
             ))}
         </div>
     );
