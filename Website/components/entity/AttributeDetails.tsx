@@ -1,7 +1,7 @@
 'use client'
 
-import { AttributeType, RequiredLevel } from "@/lib/Types";
-import { CircleAlert, CirclePlus, Eye, Lock } from "lucide-react";
+import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
+import { Calculator, CircleAlert, CirclePlus, Eye, Lock, Sigma } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
@@ -14,6 +14,15 @@ export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
             break;
         case RequiredLevel.Recommended:
             details.push({ icon: <CirclePlus className="h-4 w-4" />, tooltip: "Recommended" });
+            break;
+    }
+
+    switch (attribute.CalculationMethod) {
+        case CalculationMethods.Calculated:
+            details.push({ icon: <Calculator className="h-4 w-4" />, tooltip: "Calculated" });
+            break;
+        case CalculationMethods.Rollup:
+            details.push({ icon: <Sigma className="h-4 w-4" />, tooltip: "Rollup" });
             break;
     }
 

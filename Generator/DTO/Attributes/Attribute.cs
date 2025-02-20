@@ -11,6 +11,7 @@ public abstract class Attribute
     public AttributeRequiredLevel RequiredLevel { get; }
     public bool IsAuditEnabled { get; }
     public bool IsColumnSecured { get; }
+    public CalculationMethods? CalculationMethod { get; }
 
     protected Attribute(AttributeMetadata metadata)
     {
@@ -20,5 +21,29 @@ public abstract class Attribute
         RequiredLevel = metadata.RequiredLevel.Value;
         IsAuditEnabled = metadata.IsAuditEnabled.Value;
         IsColumnSecured = metadata.IsSecured ?? false;
+        CalculationMethod = GetCalculationMethod(metadata);
+    }
+
+    private CalculationMethods? GetCalculationMethod(AttributeMetadata metadata)
+    {
+        var definition = metadata switch
+        {
+            BooleanAttributeMetadata booleanAttribute => booleanAttribute.FormulaDefinition,
+            DateTimeAttributeMetadata dateTimeAttribute => dateTimeAttribute.FormulaDefinition,
+            DecimalAttributeMetadata decimalAttribute => decimalAttribute.FormulaDefinition,
+            DoubleAttributeMetadata doubleAttribute => doubleAttribute.FormulaDefinition,
+            IntegerAttributeMetadata integerAttribute => integerAttribute.FormulaDefinition,
+            MoneyAttributeMetadata moneyAttribute => moneyAttribute.FormulaDefinition,
+            PicklistAttributeMetadata picklistAttribute => picklistAttribute.FormulaDefinition,
+            StringAttributeMetadata stringAttribute => stringAttribute.FormulaDefinition,
+            _ => string.Empty
+        };
+
+        if (string.IsNullOrEmpty(definition))
+            return null;
+
+        return definition.Contains("RollupRuleStep")
+            ? CalculationMethods.Rollup
+            : CalculationMethods.Calculated;
     }
 }
