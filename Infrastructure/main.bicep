@@ -1,14 +1,14 @@
+param solutionId string
 @secure()
 param websitePassword string
 @secure()
 param sessionSecret string
 
-var solutionId = 'msysdatamodel'
 var location = resourceGroup().location
 
 @description('Create an App Service Plan')
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
-  name: 'asp-${solutionId}-dev'
+  name: 'asp-${solutionId}'
   location: location
   sku: {
     name: 'F1'
@@ -21,7 +21,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
 
 @description('Create a Web App')
 resource webApp 'Microsoft.Web/sites@2021-02-01' = {
-  name: 'wa-${solutionId}-dev'
+  name: 'wa-${solutionId}'
   location: location
   properties: {
     serverFarmId: appServicePlan.id
