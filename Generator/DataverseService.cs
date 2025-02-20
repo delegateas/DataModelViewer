@@ -56,6 +56,8 @@ namespace Generator
                 .Select(e => e.LogicalName)
                 .ToHashSet();
 
+            var entityIconMap = await GetEntityIconMap(relevantEntities);
+
             var records =
                 relevantEntities
                 .Select(x => new
@@ -91,7 +93,8 @@ namespace Generator
                         publisherPrefix,
                         logicalToSchema,
                         attributeLogicalToSchema,
-                        securityRoles ?? new List<SecurityRole>());
+                        securityRoles ?? new List<SecurityRole>(),
+                        entityIconMap);
                 });
         }
 
@@ -104,7 +107,8 @@ namespace Generator
             string publisherPrefix,
             Dictionary<string, string> logicalToSchema,
             Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
-            List<SecurityRole> securityRoles)
+            List<SecurityRole> securityRoles,
+            Dictionary<string, string> entityIconMap)
         {
             var attributes =
                 relevantAttributes
@@ -138,6 +142,8 @@ namespace Generator
 
             var (group, description) = GetGroupAndDescription(entity);
 
+            entityIconMap.TryGetValue(entity.IconVectorName ?? string.Empty, out string? iconBase64);
+
             return new Record(
                     entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty,
                     entity.SchemaName,
@@ -149,7 +155,8 @@ namespace Generator
                     entity.HasNotes ?? false,
                     attributes,
                     oneToMany.Concat(manyToMany).ToList(),
-                    securityRoles);
+                    securityRoles,
+                    iconBase64);
         }
 
         private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, string> logicalToSchema)
@@ -352,7 +359,27 @@ namespace Generator
                     .ToList());
         }
 
-        private async Task<string> TokenProviderFunction(string dataverseUrl, IMemoryCache cache, ILogger logger)
+        private async Task<Dictionary<string, string>> GetEntityIconMap(IEnumerable<EntityMetadata> entities)
+        {
+            var webresourceNames = entities.Select(x => x.IconVectorName).Where(x => x != null).ToList();
+
+            var query = new QueryExpression("webresource")
+            {
+                ColumnSet = new ColumnSet("content","name"),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression("name", ConditionOperator.In, webresourceNames)
+                    }
+                }
+            };
+
+            var webresources = await client.RetrieveMultipleAsync(query);
+            return webresources.Entities.ToDictionary(x => x.GetAttributeValue<string>("name"), x => x.GetAttributeValue<string>("content"));
+        }
+
+            private async Task<string> TokenProviderFunction(string dataverseUrl, IMemoryCache cache, ILogger logger)
         {
             var cacheKey = $"AccessToken_{dataverseUrl}";
 

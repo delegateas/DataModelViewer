@@ -14,5 +14,6 @@ internal record Record(
     bool IsNotesEnabled,
     List<Attribute> Attributes,
     List<Relationship> Relationships,
-    List<SecurityRole> SecurityRoles);
+    List<SecurityRole> SecurityRoles,
+    string? IconBase64);
 
