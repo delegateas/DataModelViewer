@@ -17,16 +17,16 @@ export function DatamodelView() {
     }, [entityParam])
 
     return <>
-        <AppSidebar selected={selected} onSelect={entity => setSelected(entity)} />
-        <SidebarTrigger className="top-0 sticky" />
-        <div className='flex-1 flex flex-col min-w-0 overflow-auto'>
-            <div className="pr-5 pt-5 pb-20">
-                <TouchProvider>
+        <TouchProvider>
+            <AppSidebar selected={selected} onSelect={entity => setSelected(entity)} />
+            <SidebarTrigger className="top-0 sticky" />
+            <div className='flex-1 flex flex-col min-w-0 overflow-auto'>
+                <div className="pr-5 pt-5 pb-20">
                     <TooltipProvider delayDuration={0}>
                         <List selected={selected} onSelect={entity => setSelected(entity)} />
                     </TooltipProvider>
-                </TouchProvider>
+                </div>
             </div>
-        </div>
+        </TouchProvider>
     </>;
 }
