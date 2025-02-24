@@ -6,7 +6,7 @@ import { AppSidebar } from "./AppSiderbar";
 import List from "./List";
 import { TooltipProvider } from "./ui/tooltip";
 import { TouchProvider } from "./ui/hybridtooltop";
-import { SidebarTrigger, useSidebar } from "./ui/sidebar";
+import { useSidebar } from "./ui/sidebar";
 import { Button } from "./ui/button";
 import { PanelLeftOpen } from "lucide-react";
 
