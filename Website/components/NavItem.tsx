@@ -36,7 +36,8 @@ export default function NavItem({
                         {group.Entities.map(entity =>
                             <SidebarMenuItem key={entity.SchemaName}>
                                 <SidebarMenuButton onClick={() => onSelect(entity.SchemaName)}>
-                                    {entity.DisplayName}
+                                    {entity.IconBase64 != null && <span><img className="h-4 w-4" src={`data:image/svg+xml;base64,${entity.IconBase64}`} /></span>}
+                                    <span>{entity.DisplayName}</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>)}
                     </SidebarMenu>
