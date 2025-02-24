@@ -34,5 +34,5 @@ export const HybridTooltipTrigger = (props: TooltipTriggerProps & PopoverTrigger
 export const HybridTooltipContent = (props: TooltipContentProps & PopoverContentProps) => {
   const isTouch = useTouch();
 
-  return isTouch ? <PopoverContent {...props} /> : <TooltipContent {...props} />;
+  return isTouch ? <PopoverContent className='w-fit' {...props} /> : <TooltipContent {...props} />;
 };
