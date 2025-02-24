@@ -2,7 +2,7 @@ import { IntegerAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
 
 export default function IntegerAttribute({ attribute } : { attribute: IntegerAttributeType }) {
-    return <>{attribute.Format} ({FormatNumber(attribute.MinValue)} to {FormatNumber(attribute.MaxValue)})</>
+    return <><span className="font-bold">{attribute.Format}</span> ({FormatNumber(attribute.MinValue)} to {FormatNumber(attribute.MaxValue)})</>
 }
 
 function FormatNumber(number: number) {

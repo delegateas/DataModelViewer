@@ -20,7 +20,7 @@ export default function StatusAttribute({ attribute }: { attribute: StatusAttrib
                         {options.map(option => (
                             <div key={option.Value} className="contents">
                                 <span>{option.Name}</span>
-                                <span>{formatNumberSeperator(option.Value)}</span>
+                                <span className="text-right">{formatNumberSeperator(option.Value)}</span>
                             </div>
                         ))}
                     </div>

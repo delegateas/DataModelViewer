@@ -10,11 +10,11 @@ const TouchContext = createContext<boolean | undefined>(undefined);
 const useTouch = () => useContext(TouchContext);
 
 export const TouchProvider = (props: PropsWithChildren) => {
-  const [isTouch, setTouch] = useState<boolean>();
+  const [isTouch, setTouch] = useState<boolean>(true);
 
-  useEffect(() => {
-    setTouch(window.matchMedia('(pointer: coarse)').matches);
-  }, []);
+  // useEffect(() => {
+  //   setTouch(window.matchMedia('(pointer: coarse)').matches);
+  // }, []);
 
   return <TouchContext.Provider value={isTouch} {...props} />;
 };
@@ -34,5 +34,5 @@ export const HybridTooltipTrigger = (props: TooltipTriggerProps & PopoverTrigger
 export const HybridTooltipContent = (props: TooltipContentProps & PopoverContentProps) => {
   const isTouch = useTouch();
 
-  return isTouch ? <PopoverContent {...props} /> : <TooltipContent {...props} />;
+  return isTouch ? <PopoverContent className='w-fit' {...props} /> : <TooltipContent {...props} />;
 };
