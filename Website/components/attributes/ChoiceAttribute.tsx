@@ -18,7 +18,7 @@ export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttrib
                         <div className="flex items-center gap-2">
                             <span>{option.Name}</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end">
                             <span>{formatNumberSeperator(option.Value)}</span>
                             {option.Color && (
                                 <span className="w-4 h-4" style={{ backgroundColor: option.Color }}></span>
