@@ -7,7 +7,7 @@ import { TooltipContentProps, TooltipProps, TooltipTriggerProps } from '@radix-u
 import { PopoverContentProps, PopoverProps, PopoverTriggerProps } from '@radix-ui/react-popover';
 
 const TouchContext = createContext<boolean | undefined>(undefined);
-const useTouch = () => useContext(TouchContext);
+export const useTouch = () => useContext(TouchContext);
 
 export const TouchProvider = (props: PropsWithChildren) => {
   const [isTouch, setTouch] = useState<boolean>();
