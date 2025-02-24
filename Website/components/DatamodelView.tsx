@@ -6,8 +6,6 @@ import { AppSidebar } from "./AppSiderbar";
 import List from "./List";
 import { TooltipProvider } from "./ui/tooltip";
 import { TouchProvider } from "./ui/hybridtooltop";
-import { Button } from "./ui/button";
-import { PanelLeftOpen } from "lucide-react";
 import { SidebarTrigger } from "./ui/sidebar";
 
 export function DatamodelView() {
