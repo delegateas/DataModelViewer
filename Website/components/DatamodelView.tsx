@@ -18,7 +18,7 @@ export function DatamodelView() {
 
     return <>
         <AppSidebar selected={selected} onSelect={entity => setSelected(entity)} />
-        <SidebarTrigger />
+        <SidebarTrigger className="top-0 sticky" />
         <div className='flex-1 flex flex-col min-w-0 overflow-auto'>
             <div className="pr-5 pt-5 pb-20">
                 <TouchProvider>
