@@ -11,6 +11,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
 using System.Collections.Concurrent;
+using System.Reflection;
 using Attribute = Generator.DTO.Attributes.Attribute;
 
 namespace Generator
@@ -37,7 +38,7 @@ namespace Generator
                 instanceUrl: new Uri(dataverseUrl),
                 tokenProviderFunction: url => TokenProviderFunction(url, cache, logger));
 
-          
+
         }
 
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
@@ -142,7 +143,7 @@ namespace Generator
 
             var (group, description) = GetGroupAndDescription(entity);
 
-            entityIconMap.TryGetValue(entity.IconVectorName ?? string.Empty, out string? iconBase64);
+            entityIconMap.TryGetValue(entity.LogicalName, out string? iconBase64);
 
             return new Record(
                     entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty,
@@ -231,7 +232,7 @@ namespace Generator
             if (solutionNameArg == null)
             {
                 throw new Exception("Specify one or more solutions");
-            }   
+            }
             var solutionNames = solutionNameArg.Split(",").Select(x => x.Trim().ToLower()).ToList();
 
             var resp = await client.RetrieveMultipleAsync(new QueryExpression("solution")
@@ -361,25 +362,54 @@ namespace Generator
 
         private async Task<Dictionary<string, string>> GetEntityIconMap(IEnumerable<EntityMetadata> entities)
         {
-            var webresourceNames = entities.Select(x => x.IconVectorName).Where(x => x != null).ToList();
+            var logicalNameToIconName =
+                entities
+                .Where(x => x.IconVectorName != null)
+                .ToDictionary(x => x.LogicalName, x => x.IconVectorName);
 
             var query = new QueryExpression("webresource")
             {
-                ColumnSet = new ColumnSet("content","name"),
+                ColumnSet = new ColumnSet("content", "name"),
                 Criteria = new FilterExpression(LogicalOperator.And)
                 {
                     Conditions =
                     {
-                        new ConditionExpression("name", ConditionOperator.In, webresourceNames)
+                        new ConditionExpression("name", ConditionOperator.In, logicalNameToIconName.Values.ToList())
                     }
                 }
             };
 
             var webresources = await client.RetrieveMultipleAsync(query);
-            return webresources.Entities.ToDictionary(x => x.GetAttributeValue<string>("name"), x => x.GetAttributeValue<string>("content"));
+            var iconNameToSvg = webresources.Entities.ToDictionary(x => x.GetAttributeValue<string>("name"), x => x.GetAttributeValue<string>("content"));
+
+            var logicalNameToSvg =
+                logicalNameToIconName
+                .Where(x => iconNameToSvg.ContainsKey(x.Value) && !string.IsNullOrEmpty(iconNameToSvg[x.Value]))
+                .ToDictionary(x => x.Key, x => iconNameToSvg.GetValueOrDefault(x.Value) ?? string.Empty);
+
+            var sourceDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var iconDirectory = Path.Combine(sourceDirectory ?? string.Empty, "../../../entityicons");
+
+            var iconFiles = Directory.GetFiles(iconDirectory).ToDictionary(x => Path.GetFileNameWithoutExtension(x), x => x);
+
+            foreach (var entity in entities)
+            {
+                if (logicalNameToSvg.ContainsKey(entity.LogicalName))
+                {
+                    continue;
+                }
+
+                var iconKey = $"svg_{entity.ObjectTypeCode}";
+                if (iconFiles.ContainsKey(iconKey))
+                {
+                    logicalNameToSvg[entity.LogicalName] = Convert.ToBase64String(File.ReadAllBytes(iconFiles[iconKey]));
+                }
+            }
+
+            return logicalNameToSvg;
         }
 
-            private async Task<string> TokenProviderFunction(string dataverseUrl, IMemoryCache cache, ILogger logger)
+        private async Task<string> TokenProviderFunction(string dataverseUrl, IMemoryCache cache, ILogger logger)
         {
             var cacheKey = $"AccessToken_{dataverseUrl}";
 
@@ -397,8 +427,8 @@ namespace Generator
 
         private TokenCredential GetTokenCredential(ILogger logger)
         {
-           
-            if(configuration["DataverseClientId"] != null && configuration["DataverseClientSecret"] != null)
+
+            if (configuration["DataverseClientId"] != null && configuration["DataverseClientSecret"] != null)
                 return new ClientSecretCredential(configuration["TenantId"], configuration["DataverseClientId"], configuration["DataverseClientSecret"]);
 
             logger.LogTrace("Using Default Managed Identity");

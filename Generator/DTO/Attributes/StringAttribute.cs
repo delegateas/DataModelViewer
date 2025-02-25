@@ -19,7 +19,7 @@ internal class StringAttribute : Attribute
 
     public StringAttribute(MemoAttributeMetadata metadata) : base(metadata)
     {
-        Format = metadata.Format?.ToString() ?? "Unknown Format";
+        Format = metadata.FormatName?.Value ?? metadata.Format?.ToString() ?? "Unknown Format";
         MaxLength = metadata.MaxLength;
     }
 }
