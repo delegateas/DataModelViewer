@@ -29,8 +29,10 @@ Add `Website/.env` file to run this locally.
 }
 ```
 
-`WebsitePassword` is the login password for the site.
+`WebsitePassword` is the login password for the site. Set it to what you want end users to input.
+
 `WebsiteSessionSecret` is a key used to encrypt the session cookie. Generate one with openssl, found in Git Bash or as a download on the web.
+
 ```
 openssl rand -base64 32
 ```
