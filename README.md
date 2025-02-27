@@ -47,7 +47,7 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * AzureClientSecret: Client Secret for the above.
 * AzureTenantId: Azure Tenant ID (where your App Regustration is placed and resource group will be placed).
 * AzureServiceConnectionName: Name of the service connection created from ADO to Azure.
-* AzureLocation: Location for the resource group in Azure.
+* AzureLocation: Location for the resource group in Azure (e.g. westeurope).
 * AzureResourceGroupName: Name of the Resource Group in Azure. If this matches an existing group in the location above that will be used for the DMV resources, if not a new resource group will be created.
 * DataverseUrl: URL for the Dataverse environment which the data model will be based on.
 * DataverseSolutionNames: Comma-seperated list of solutions to based DMV on.
