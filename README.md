@@ -38,7 +38,7 @@ openssl rand -base64 32
 ```
 
 ## Running it
-Generate data by running the Generator project from Visual Studio. Afterwards go into the Website folder from VS Code and open the terminal. If this the first time running it, type `npm install`. Start the website on localhost by running `npm run dev`.
+Generate data by running the Generator project from Visual Studio. Afterwards go into the Website folder from VS Code and open the terminal. If this the first time running it, type `npm install`. Start the website on localhost by running `npm run dev`. Click the link in the terminal to view the website.
 
 # Setting in pipeline
 You do not need to clone this repository to use it. From Azure Devops you can setup a pipeline from a GitHub repository. Point it to this one.
