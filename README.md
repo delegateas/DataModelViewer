@@ -21,7 +21,7 @@ Add `Generator/appsettings.local.json` as a file and paste your environment and 
 Remember to set the file to Copy If Newer
  
 ## Website
-Add Website/.env file to run this locally.
+Add `Website/.env` file to run this locally.
 
 ```
 {
