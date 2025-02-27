@@ -41,7 +41,7 @@ openssl rand -base64 32
 Generate data by running the Generator project from Visual Studio. Afterwards go into the Website folder from VS Code and open the terminal. If this the first time running it, type `npm install`. Start the website on localhost by running `npm run dev`. Click the link in the terminal to view the website.
 
 # Setting in pipeline
-You do not need to clone this repository to use it. From Azure Devops you can setup a pipeline from a GitHub repository. Point it to this one. It requires a GitHub account to connect Azure Devops to GitHub. It will be granted high privileges, so consider creating a GitHub account with your work email.
+If you are part of the Delegate Org you do not need to clone this repository to use it. From Azure Devops you can setup a pipeline from a GitHub repository. Point it to this one. It requires a GitHub account to connect Azure Devops to GitHub. It will be granted high privileges, so consider creating a GitHub account with your work email.
 
 The pipeline expects a variable group called `DataModel`. It must have the following variables. The app user only requires the `Environment Maker` security role.
 
