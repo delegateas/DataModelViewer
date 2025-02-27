@@ -5,9 +5,6 @@ Allows you to expose your Dataverse data model as a website.
 Add a # xxx to your entity description in order to group that entity in group xxx.
 
 # Settings to run locally
-## Managed Identity
-We use DefaultCredential to authenticate to Azure. So set the right profile in Visual Studio.
-
 ## Generator
 Add `Generator/appsettings.local.json` as a file and paste your environment and solutions. Remember that the solutions must have the same publisher prefix.
 
@@ -37,6 +34,9 @@ Add `Website/.env` file to run this locally.
 ```
 openssl rand -base64 32
 ```
+
+## Running it
+Generate data by running the Generator project from Visual Studio. Afterwards go into the Website folder from VS Code and open the terminal. If this the first time running it, type `npm install`. Start the website on localhost by running `npm run dev`.
 
 # Setting in pipeline
 You do not need to clone this repository to use it. From Azure Devops you can setup a pipeline from a GitHub repository. Point it to this one.
