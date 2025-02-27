@@ -21,12 +21,12 @@ Add `Generator/appsettings.local.json` as a file and paste your environment and 
 Remember to set the file to Copy If Newer
  
 ## Website
-You can add a .env file to run this locally.
+Add Website/.env file to run this locally.
 
 ```
 {
     WebsitePassword=YourPassword
-    WebsiteSessionSecret="ASdjjOIjoij1389dj9aJSd908a+9dj98j91aj90djs0="
+    WebsiteSessionSecret=YourSecret
 }
 ```
 
