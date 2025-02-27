@@ -19,6 +19,8 @@ Add `Generator/appsettings.local.json` as a file and paste your environment and 
 ```
 
 Remember to set the file to Copy If Newer
+
+Authentication is handled using `DefaultAzureCredential`. If you are using Visual Studio you can select a user that is used for all of these credentials. Go to Tools -> Options -> Search for Azure -> Account Selection. Login and select a user that has access to that Dataverse Environment.
  
 ## Website
 Add `Website/.env` file to run this locally.
@@ -37,6 +39,8 @@ openssl rand -base64 32
 ```
 
 # Setting in pipeline
+You do not need to clone this repository to use it. From Azure Devops you can setup a pipeline from a GitHub repository. Point it to this one.
+
 The pipeline expects a variable group called `DataModel`. It must have the following variables. The app user only requires the `Environment Maker` security role.
 
 * AzureClientId: Client id for an Azure App Registration with access to the Dataverse Environment.
