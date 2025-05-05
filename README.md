@@ -59,4 +59,5 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * Go to portal.azure.com 
 * Find the App Service under your speicifed resource group and open it
 * Go to Settings > Configuration and set the Startup Command to ``node server.js``
+![image](https://github.com/user-attachments/assets/0d7a3511-ffa2-4013-b403-7da10b49e817)
 * Go back to Overview and click Browse
