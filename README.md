@@ -51,6 +51,13 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * AzureResourceGroupName: Name of the Resource Group in Azure. If this matches an existing group in the location above that will be used for the DMV resources, if not a new resource group will be created.
 * DataverseUrl: URL for the Dataverse environment which the data model will be based on.
 * DataverseSolutionNames: Comma-seperated list of solutions to based DMV on.
-* SolutionId: Used for the url of the web app
+* WebsiteName: Used for the url of the web app
 * WebsitePassword: Password used by DMV users to login to the generated site.
 * WebsiteSessionSecret: Key to encrypt the session token with (You can set it to whatever you like, but recommended 32 random characters).
+
+## After deployment
+* Go to portal.azure.com 
+* Find the App Service under your speicifed resource group and open it
+* Go to Settings > Configuration and set the Startup Command to ``node server.js``
+![image](https://github.com/user-attachments/assets/0d7a3511-ffa2-4013-b403-7da10b49e817)
+* Go back to Overview and click Browse
