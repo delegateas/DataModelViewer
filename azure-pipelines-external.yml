@@ -1,0 +1,55 @@
+# Azure DevOps Pipeline for DataModelViewer (Reusable Template)
+#
+# This pipeline is intended to be copied to other Azure DevOps projects.
+# It clones the public DataModelViewer repository and runs the build and deploy steps
+# using the shared template (azure-pipelines-steps.yml).
+#
+# USAGE:
+# 1. Copy this file and azure-pipelines-steps.yml to your Azure DevOps repo.
+# 2. Set up the required variable group and service connection in your Azure DevOps project.
+# 3. Adjust the parameters below as needed for your environment.
+#
+# Required variables (set as pipeline variables or variable group):
+#   - AzureServiceConnectionName
+#   - AzureResourceGroupName
+#   - AzureLocation
+#   - WebsitePassword
+#   - WebsiteSessionSecret
+#   - WebsiteName
+#   - AzureTenantId
+#   - AzureClientId
+#   - AzureClientSecret
+#   - DataverseUrl
+
+trigger: none
+pr: none
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  - group: "DataModel"  # Change this to your variable group name if needed
+  - name: bicepTemplateFile
+    value: "Infrastructure/main.bicep"
+
+steps:
+  - checkout: none  # Prevent default checkout
+
+  - script: |
+      git clone https://github.com/delegateas/DataModelViewer.git .
+    displayName: "Clone DataModelViewer public repository"
+
+stages:
+- template: azure-pipelines-steps.yml
+  parameters:
+    bicepTemplateFile: $(bicepTemplateFile)
+    azureServiceConnectionName: $(AzureServiceConnectionName)
+    azureResourceGroupName: $(AzureResourceGroupName)
+    azureLocation: $(AzureLocation)
+    websitePassword: $(WebsitePassword)
+    websiteSessionSecret: $(WebsiteSessionSecret)
+    websiteName: $(WebsiteName)
+    azureTenantId: $(AzureTenantId)
+    azureClientId: $(AzureClientId)
+    azureClientSecret: $(AzureClientSecret)
+    dataverseUrl: $(DataverseUrl)
