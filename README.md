@@ -61,3 +61,33 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * Go to Settings > Configuration and set the Startup Command to ``node server.js``
 ![image](https://github.com/user-attachments/assets/0d7a3511-ffa2-4013-b403-7da10b49e817)
 * Go back to Overview and click Browse
+
+# Using the Azure DevOps External Pipeline Template
+
+The `azure-pipelines-external.yml` file is a reusable Azure DevOps pipeline template designed to simplify building and deploying DataModelViewer from other Azure DevOps projects. This allows you to integrate DataModelViewer deployment into your own pipelines with minimal setup.
+
+## How to Use
+
+1. **Copy Required Files**  
+   Copy the following files from this repository into your Azure DevOps project repository:
+   - `azure-pipelines-external.yml`
+   - `azure-pipelines-build-jobs.yml`
+   - `azure-pipelines-deploy-jobs.yml`
+
+2. **Set Up Variables and Service Connection**  
+   - Create a variable group (e.g., `DataModel`) in your Azure DevOps project with all required variables (see the "Setting in pipeline" section above for details).
+   - Ensure you have an Azure Resource Manager service connection configured (the name should match `AzureServiceConnectionName`).
+
+3. **Configure the Pipeline**  
+   - Add a new pipeline in Azure DevOps using the `azure-pipelines-external.yml` file as the pipeline definition.
+   - Adjust the parameters in the YAML file as needed for your environment (e.g., variable group name, resource group, location).
+
+4. **Pipeline Execution**  
+   - The pipeline will clone the public DataModelViewer repository, build the application, and deploy it using the shared templates.
+   - The pipeline is scheduled to run daily at 03:00 AM by default. You can adjust or remove the schedule as needed.
+
+## Notes
+
+- The external pipeline expects the same variable group and variables as described in the "Setting in pipeline" section.
+- You can further customize the pipeline by editing the YAML files as needed for your organization's requirements.
+- For more details, see the comments at the top of `azure-pipelines-external.yml`.
