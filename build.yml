@@ -17,74 +17,16 @@ variables:
     value: "Infrastructure/main.bicep"
 
 stages:
-  - stage: Build
-    jobs:
-      - job: BuildApp
-        displayName: "Build App"
-        steps:
-          - task: UseDotNet@2
-            displayName: "Use .Net 8"
-            inputs:
-              version: 8.x
-
-          - script: dotnet restore
-            displayName: "Restore NuGet"
-
-          - script: dotnet build --no-restore --configuration Release
-            displayName: "Build generator"
-
-          - script: dotnet run --project Generator/Generator.csproj --OutputFolder $(Build.SourcesDirectory)/Website/generated
-            displayName: "Generate files"
-            env:
-              AZURE_TENANT_ID: $(AzureTenantId)
-              AZURE_CLIENT_ID: $(AzureClientId)
-              AZURE_CLIENT_SECRET: $(AzureClientSecret)
-              DataverseUrl: $(DataverseUrl)
-
-          - task: NodeTool@0
-            displayName: "Install Node.js"
-            inputs:
-              versionSpec: "20.x"
-              displayName: "Install Node.js"
-
-          - script: npm install && npm run build && mv .next/static .next/standalone/.next/static && mv public .next/standalone/public
-            workingDirectory: $(Build.SourcesDirectory)/Website
-            displayName: "Build Next.js app"
-
-          - task: ArchiveFiles@2
-            inputs:
-              rootFolderOrFile: "$(Build.SourcesDirectory)/Website/.next/standalone"
-              includeRootFolder: false
-              archiveType: "zip"
-              archiveFile: "$(Build.ArtifactStagingDirectory)/WebApp.zip"
-              replaceExistingArchive: true
-
-          - publish: $(Build.ArtifactStagingDirectory)/WebApp.zip
-            artifact: WebApp
-
-  - stage: Deploy
-    jobs:
-      - job: DeployApp
-        displayName: "Deploy App"
-        steps:
-          - task: AzureCLI@2
-            displayName: "Create Azure Resources"
-            inputs:
-              azureSubscription: $(AzureServiceConnectionName)
-              scriptType: "pscore"
-              scriptLocation: "inlineScript"
-              inlineScript: |
-                az group create --name $(AzureResourceGroupName) --location $(AzureLocation)
-                $jsonResult = az deployment group create --resource-group $(AzureResourceGroupName) --template-file $(bicepTemplateFile) --parameters websitePassword=$(WebsitePassword) --parameters sessionSecret=$(WebsiteSessionSecret) --parameters solutionId=$(WebsiteName) | ConvertFrom-Json
-                $webAppName = $jsonResult.properties.outputs.webAppName.value
-                Write-Host "##vso[task.setvariable variable=webAppName]$webAppName"
-
-          - download: current
-            artifact: WebApp
-
-          - task: AzureWebApp@1
-            inputs:
-              azureSubscription: $(AzureServiceConnectionName)
-              appType: "webAppLinux"
-              appName: $(webAppName)
-              package: "$(Pipeline.Workspace)/WebApp/WebApp.zip"
+- template: azure-pipelines-steps.yml
+  parameters:
+    bicepTemplateFile: $(bicepTemplateFile)
+    azureServiceConnectionName: $(AzureServiceConnectionName)
+    azureResourceGroupName: $(AzureResourceGroupName)
+    azureLocation: $(AzureLocation)
+    websitePassword: $(WebsitePassword)
+    websiteSessionSecret: $(WebsiteSessionSecret)
+    websiteName: $(WebsiteName)
+    azureTenantId: $(AzureTenantId)
+    azureClientId: $(AzureClientId)
+    azureClientSecret: $(AzureClientSecret)
+    dataverseUrl: $(DataverseUrl)
