@@ -1,0 +1,48 @@
+# Template for DataModelViewer deploy steps
+# Usage: reference this template in a job's steps section
+
+parameters:
+  - name: bicepTemplateFile
+    type: string
+    default: 'Infrastructure/main.bicep'
+  - name: azureServiceConnectionName
+    type: string
+    default: ''
+  - name: azureResourceGroupName
+    type: string
+    default: ''
+  - name: azureLocation
+    type: string
+    default: ''
+  - name: websitePassword
+    type: string
+    default: ''
+  - name: websiteSessionSecret
+    type: string
+    default: ''
+  - name: websiteName
+    type: string
+    default: ''
+
+steps:
+  - task: AzureCLI@2
+    displayName: "Create Azure Resources"
+    inputs:
+      azureSubscription: ${{ parameters.azureServiceConnectionName }}
+      scriptType: "pscore"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az group create --name ${{ parameters.azureResourceGroupName }} --location ${{ parameters.azureLocation }}
+        $jsonResult = az deployment group create --resource-group ${{ parameters.azureResourceGroupName }} --template-file ${{ parameters.bicepTemplateFile }} --parameters websitePassword=${{ parameters.websitePassword }} --parameters sessionSecret=${{ parameters.websiteSessionSecret }} --parameters solutionId=${{ parameters.websiteName }} | ConvertFrom-Json
+        $webAppName = $jsonResult.properties.outputs.webAppName.value
+        Write-Host "##vso[task.setvariable variable=webAppName]$webAppName"
+
+  - download: current
+    artifact: WebApp
+
+  - task: AzureWebApp@1
+    inputs:
+      azureSubscription: ${{ parameters.azureServiceConnectionName }}
+      appType: "webAppLinux"
+      appName: $(webAppName)
+      package: "$(Pipeline.Workspace)/WebApp/WebApp.zip"

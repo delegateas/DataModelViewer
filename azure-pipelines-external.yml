@@ -2,10 +2,10 @@
 #
 # This pipeline is intended to be copied to other Azure DevOps projects.
 # It clones the public DataModelViewer repository and runs the build and deploy steps
-# using the shared template (azure-pipelines-steps.yml).
+# using the shared templates (azure-pipelines-build-jobs.yml and azure-pipelines-deploy-jobs.yml).
 #
 # USAGE:
-# 1. Copy this file and azure-pipelines-steps.yml to your Azure DevOps repo.
+# 1. Copy this file and the two job templates to your Azure DevOps repo.
 # 2. Set up the required variable group and service connection in your Azure DevOps project.
 # 3. Adjust the parameters below as needed for your environment.
 #
@@ -32,24 +32,42 @@ variables:
   - name: bicepTemplateFile
     value: "Infrastructure/main.bicep"
 
-steps:
-  - checkout: none  # Prevent default checkout
-
-  - script: |
-      git clone https://github.com/delegateas/DataModelViewer.git .
-    displayName: "Clone DataModelViewer public repository"
-
 stages:
-- template: azure-pipelines-steps.yml
-  parameters:
-    bicepTemplateFile: $(bicepTemplateFile)
-    azureServiceConnectionName: $(AzureServiceConnectionName)
-    azureResourceGroupName: $(AzureResourceGroupName)
-    azureLocation: $(AzureLocation)
-    websitePassword: $(WebsitePassword)
-    websiteSessionSecret: $(WebsiteSessionSecret)
-    websiteName: $(WebsiteName)
-    azureTenantId: $(AzureTenantId)
-    azureClientId: $(AzureClientId)
-    azureClientSecret: $(AzureClientSecret)
-    dataverseUrl: $(DataverseUrl)
+  - stage: Build
+    displayName: "Build Stage"
+    jobs:
+      - job: BuildApp
+        displayName: "Build App"
+        steps:
+          - checkout: none
+          - script: |
+              git clone https://github.com/delegateas/DataModelViewer.git $(Build.SourcesDirectory)
+            displayName: "Clone DataModelViewer public repository"
+          - template: azure-pipelines-build-jobs.yml
+            parameters:
+              bicepTemplateFile: $(bicepTemplateFile)
+              azureTenantId: $(AzureTenantId)
+              azureClientId: $(AzureClientId)
+              azureClientSecret: $(AzureClientSecret)
+              dataverseUrl: $(DataverseUrl)
+
+  - stage: Deploy
+    displayName: "Deploy Stage"
+    dependsOn: Build
+    jobs:
+      - job: DeployApp
+        displayName: "Deploy App"
+        steps:
+          - checkout: none
+          - script: |
+              git clone https://github.com/delegateas/DataModelViewer.git $(Build.SourcesDirectory)
+            displayName: "Clone DataModelViewer public repository"
+          - template: azure-pipelines-deploy-jobs.yml
+            parameters:
+              bicepTemplateFile: $(bicepTemplateFile)
+              azureServiceConnectionName: $(AzureServiceConnectionName)
+              azureResourceGroupName: $(AzureResourceGroupName)
+              azureLocation: $(AzureLocation)
+              websitePassword: $(WebsitePassword)
+              websiteSessionSecret: $(WebsiteSessionSecret)
+              websiteName: $(WebsiteName)
