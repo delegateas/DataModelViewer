@@ -1,0 +1,62 @@
+# Template for DataModelViewer build steps
+# Usage: reference this template in a job's steps section
+
+parameters:
+  - name: bicepTemplateFile
+    type: string
+    default: 'Infrastructure/main.bicep'
+  - name: azureTenantId
+    type: string
+    default: ''
+  - name: azureClientId
+    type: string
+    default: ''
+  - name: azureClientSecret
+    type: string
+    default: ''
+  - name: dataverseUrl
+    type: string
+    default: ''
+
+steps:
+  - task: UseDotNet@2
+    displayName: "Use .Net 8"
+    inputs:
+      version: 8.x
+
+  - script: dotnet restore
+    displayName: "Restore NuGet"
+    workingDirectory: $(Build.SourcesDirectory)
+
+  - script: dotnet build --no-restore --configuration Release
+    displayName: "Build generator"
+    workingDirectory: $(Build.SourcesDirectory)
+
+  - script: dotnet run --project Generator/Generator.csproj --OutputFolder $(Build.SourcesDirectory)/Website/generated
+    displayName: "Generate files"
+    env:
+      AZURE_TENANT_ID: ${{ parameters.azureTenantId }}
+      AZURE_CLIENT_ID: ${{ parameters.azureClientId }}
+      AZURE_CLIENT_SECRET: ${{ parameters.azureClientSecret }}
+      DataverseUrl: ${{ parameters.dataverseUrl }}
+
+  - task: NodeTool@0
+    displayName: "Install Node.js"
+    inputs:
+      versionSpec: "20.x"
+      displayName: "Install Node.js"
+
+  - script: npm install && npm run build && mv .next/static .next/standalone/.next/static && mv public .next/standalone/public
+    workingDirectory: $(Build.SourcesDirectory)/Website
+    displayName: "Build Next.js app"
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: "$(Build.SourcesDirectory)/Website/.next/standalone"
+      includeRootFolder: false
+      archiveType: "zip"
+      archiveFile: "$(Build.ArtifactStagingDirectory)/WebApp.zip"
+      replaceExistingArchive: true
+
+  - publish: $(Build.ArtifactStagingDirectory)/WebApp.zip
+    artifact: WebApp
