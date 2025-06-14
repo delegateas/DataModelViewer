@@ -5,7 +5,6 @@ import { CascadeConfiguration } from "./entity/CascadeConfiguration"
 
 function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (entity: string) => void }) {
     return <>
-        <h2 className="mt-4 mb-1 font-bold">Relationships</h2>
         <div className="overflow-x-auto">
             <Table className="border w-full">
                 <TableHeader>

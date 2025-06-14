@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useScrollTo } from "@/hooks/useScrollTo"
 import { AttributeType, EntityType } from "@/lib/Types"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
 import { EntityHeader } from "./entity/EntityHeader"
 import { SecurityRoles } from "./entity/SecurityRoles"
 import { AttributeDetails } from "./entity/AttributeDetails"
@@ -18,6 +19,8 @@ import IntegerAttribute from "./attributes/IntegerAttribute"
 import LookupAttribute from "./attributes/LookupAttribute"
 import StatusAttribute from "./attributes/StatusAttribute"
 import StringAttribute from "./attributes/StringAttribute"
+import { KeyRound, Tags, Unplug } from "lucide-react"
+
 
 function Section({
     entity,
@@ -39,43 +42,75 @@ function Section({
 
     return (
         <div ref={contentRef} className="mb-10">
-            <div className="flex flex-col xl:flex-row xl:justify-between min-w-0">
-                <div className="min-w-0 xl:pr-5">
-                    <EntityHeader entity={entity} />
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md">
+                <div className="flex flex-col xl:flex-row xl:justify-between min-w-0">
+                    <div className="min-w-0 xl:pr-5">
+                        <EntityHeader entity={entity} />
+                    </div>
+                    {entity.SecurityRoles.length > 0 &&
+                        <div className="w-fit border-t xl:border-t-0 xl:border-l xl:px-5 mt-5 pt-5 xl:mt-0 xl:pt-0">
+                            <SecurityRoles roles={entity.SecurityRoles} />
+                        </div>}
                 </div>
-                {entity.SecurityRoles.length > 0 &&
-                    <div className="w-fit border-t xl:border-t-0 xl:border-l xl:px-5 mt-5 pt-5 xl:mt-0 xl:pt-0">
-                        <SecurityRoles roles={entity.SecurityRoles} />
-                    </div>}
-            </div>
 
-            <h2 className="mt-4 mb-1 font-bold">Attributes</h2>
-            <div className="overflow-x-auto">
-                <Table className="border w-full">
-                    <TableHeader>
-                        <TableRow className="bg-gray-100">
-                            <TableHead className="w-[15%] text-black font-bold">Display Name</TableHead>
-                            <TableHead className="w-[15%] text-black font-bold">Schema Name</TableHead>
-                            <TableHead className="w-[30%] text-black font-bold">Type</TableHead>
-                            <TableHead className="w-[5%] text-black font-bold">Details</TableHead>
-                            <TableHead className="w-[35%] text-black font-bold">Description</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody className="striped">
-                        {entity.Attributes.map((attribute) => (
-                            <TableRow key={attribute.SchemaName}>
-                                <TableCell className="break-words">{attribute.DisplayName}</TableCell>
-                                <TableCell className="break-words">{attribute.SchemaName}</TableCell>
-                                <TableCell className="break-words">{getAttributeComponent(entity, attribute, onSelect)}</TableCell>
-                                <TableCell><AttributeDetails attribute={attribute} /></TableCell>
-                                <TableCell className="break-words">{attribute.Description}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                <div className="mt-6 space-y-4">
+                    <Tabs defaultValue="attributes">
+                        <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
+                            <TabsList className="bg-transparent p-0">
+                                <TabsTrigger value="attributes" className="data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
+                                    <Tags className="mr-2 h-4 w-4" />Attributes [{entity.Attributes.length}]
+                                </TabsTrigger>
+                                {entity.Relationships.length ? 
+                                    <TabsTrigger value="relationships" className="data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
+                                        <Unplug className="mr-2 h-4 w-4" />Relationships [{entity.Relationships.length}]
+                                    </TabsTrigger> 
+                                    : <></> 
+                                }
+                                <TabsTrigger value="keys" className="data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
+                                    <KeyRound className="mr-2 h-4 w-4" />Keys [{}]
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="attributes" className="m-0 p-0">
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
+                                                <TableHead className="w-[15%] text-black font-bold py-3">Display Name</TableHead>
+                                                <TableHead className="w-[15%] text-black font-bold py-3">Schema Name</TableHead>
+                                                <TableHead className="w-[30%] text-black font-bold py-3">Type</TableHead>
+                                                <TableHead className="w-[5%] text-black font-bold py-3">Details</TableHead>
+                                                <TableHead className="w-[35%] text-black font-bold py-3">Description</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody className="striped">
+                                            {entity.Attributes.map((attribute, index) => (
+                                                <TableRow 
+                                                    key={attribute.SchemaName} 
+                                                    className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
+                                                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                                    }`}
+                                                >
+                                                    <TableCell className="break-words font-medium py-3">{attribute.DisplayName}</TableCell>
+                                                    <TableCell className="break-words text-gray-600 py-3">{attribute.SchemaName}</TableCell>
+                                                    <TableCell className="break-words py-3">{getAttributeComponent(entity, attribute, onSelect)}</TableCell>
+                                                    <TableCell className="py-3"><AttributeDetails attribute={attribute} /></TableCell>
+                                                    <TableCell className="break-words text-gray-600 py-3">{attribute.Description}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="relationships" className="m-0 p-0">
+                                <Relationships entity={entity} onSelect={onSelect} />
+                            </TabsContent>
+                            <TabsContent value="keys" className="m-0 p-0">
+                                <div className="p-4 text-gray-500 text-center">No keys available</div>
+                            </TabsContent>
+                        </div>
+                    </Tabs>
+                </div>
             </div>
-
-            {entity.Relationships.length > 0 && <Relationships entity={entity} onSelect={onSelect} />}
         </div>
     )
 }
