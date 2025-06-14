@@ -1,7 +1,7 @@
 'use client'
 
 import { SecurityRole, PrivilegeDepth } from "@/lib/Types";
-import { Ban, User, Users, Boxes, Building2 } from "lucide-react";
+import { Ban, User, Users, Boxes, Building2, Minus } from "lucide-react";
 import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../ui/hybridtooltop";
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
@@ -26,6 +26,7 @@ function SecurityRoleRow({ role }: { role: SecurityRole }) {
                 <PrivilegeIcon name="Append" depth={role.Append} />
                 <PrivilegeIcon name="Append To" depth={role.AppendTo} />
                 <PrivilegeIcon name="Assign" depth={role.Assign} />
+                <PrivilegeIcon name="Share" depth={role.Share} />
             </div>
         </div>
     );
@@ -41,34 +42,38 @@ function PrivilegeIcon({ name, depth }: { name: string, depth: PrivilegeDepth | 
 }
 
 function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
-    if (depth === null || depth === undefined) return null;
 
     let icon = null;
     let tooltip = "";
 
-    switch (depth) {
-        case PrivilegeDepth.None:
-            icon = <Ban className="h-4 w-4" />;
-            tooltip = "None";
-            break;
-        case PrivilegeDepth.Basic:
-            icon = <User className="h-4 w-4" />;
-            tooltip = "User";
-            break;
-        case PrivilegeDepth.Local:
-            icon = <Users className="h-4 w-4" />;
-            tooltip = "Business Unit";
-            break;
-        case PrivilegeDepth.Deep:
-            icon = <Boxes className="h-4 w-4" />;
-            tooltip = "Parent: Child Business Units";
-            break;
-        case PrivilegeDepth.Global:
-            icon = <Building2 className="h-4 w-4" />;
-            tooltip = "Organization";
-            break;
-        default:
-            return null;
+    if (depth === null || depth === undefined) {
+        icon = <Minus className="h-4 w-4" />;
+        tooltip = "Unavailable";
+    } else {
+        switch (depth) {
+            case PrivilegeDepth.None:
+                icon = <Ban className="h-4 w-4" />;
+                tooltip = "None";
+                break;
+            case PrivilegeDepth.Basic:
+                icon = <User className="h-4 w-4" />;
+                tooltip = "User";
+                break;
+            case PrivilegeDepth.Local:
+                icon = <Users className="h-4 w-4" />;
+                tooltip = "Business Unit";
+                break;
+            case PrivilegeDepth.Deep:
+                icon = <Boxes className="h-4 w-4" />;
+                tooltip = "Parent: Child Business Units";
+                break;
+            case PrivilegeDepth.Global:
+                icon = <Building2 className="h-4 w-4" />;
+                tooltip = "Organization";
+                break;
+            default:
+                return null;
+        }
     }
 
     return (
