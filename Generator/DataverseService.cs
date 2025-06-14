@@ -49,9 +49,8 @@ namespace Generator
             var entityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
             var rolesInSolution = solutionComponents.Where(solutionComponents => solutionComponents.ComponentType == 20).Select(x => x.ObjectId).ToList();
-            var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution);
-
             var relevantEntities = entityMetadata.Where(e => entityIdToRootBehavior.ContainsKey(e.MetadataId!.Value)).ToList();
+            var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution, relevantEntities.ToDictionary(x => x.LogicalName, x => x.OwnershipType));
             var entityLogicalNamesInSolution =
                 relevantEntities
                 .Select(e => e.LogicalName)
@@ -281,7 +280,7 @@ namespace Generator
                 .ToList();
         }
 
-        private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles(List<Guid> rolesInSolution)
+        private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles(List<Guid> rolesInSolution, Dictionary<string, OwnershipTypes?> ownershiptype)
         {
             var query = new QueryExpression("role")
             {
@@ -304,7 +303,7 @@ namespace Generator
                             new LinkEntity("roleprivileges", "privilege", "privilegeid", "privilegeid", JoinOperator.Inner)
                             {
                                 EntityAlias = "priv",
-                                Columns = new ColumnSet("accessright", "canbelocal"),
+                                Columns = new ColumnSet("accessright"),
                                 LinkEntities =
                                 {
                                     new LinkEntity("privilege", "privilegeobjecttypecodes", "privilegeid", "privilegeid", JoinOperator.Inner)
@@ -326,7 +325,6 @@ namespace Generator
                 var name = e.GetAttributeValue<string>("name");
                 var depth = (PrivilegeDepth)e.GetAttributeValue<AliasedValue>("rolepriv.privilegedepthmask").Value;
                 var accessRight = (AccessRights)e.GetAttributeValue<AliasedValue>("priv.accessright").Value;
-                var canBeLocal = (bool)e.GetAttributeValue<AliasedValue>("priv.canbelocal").Value;
                 var objectTypeCode = e.GetAttributeValue<AliasedValue>("privotc.objecttypecode").Value as string;
 
                 return new
@@ -334,10 +332,16 @@ namespace Generator
                     name,
                     depth,
                     accessRight,
-                    canBeLocal,
                     objectTypeCode = objectTypeCode ?? string.Empty,
                 };
             });
+
+            static PrivilegeDepth? GetDepth(Dictionary<AccessRights, PrivilegeDepth> dict, AccessRights right, bool isOrgOwned = false)
+            {
+                if (!dict.TryGetValue(right, out var value))
+                    return isOrgOwned ? null : 0;
+                return value;
+            }
 
             return privileges
                 .GroupBy(x => x.objectTypeCode)
@@ -346,21 +350,23 @@ namespace Generator
                     .GroupBy(x => x.name)
                     .Select(byRole =>
                     {
-                        var accessrightToDepth = byRole
+                        var accessRights = byRole
                             .GroupBy(x => x.accessRight)
                             .ToDictionary(x => x.Key, x => x.First().depth);
+
+                        var isOrgOwned = ownershiptype.GetValueOrDefault(byLogicalName.Key) == OwnershipTypes.OrganizationOwned;
 
                         return new SecurityRole(
                             byRole.Key,
                             byLogicalName.Key,
-                            accessrightToDepth.GetValueOrDefault(AccessRights.CreateAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.ReadAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.WriteAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.DeleteAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.AppendAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.AppendToAccess),
-                            accessrightToDepth.TryGetValue(AccessRights.AssignAccess, out var assign) ? assign : null,
-                            accessrightToDepth.TryGetValue(AccessRights.ShareAccess, out var share) ? share : null
+                            GetDepth(accessRights, AccessRights.CreateAccess),
+                            GetDepth(accessRights, AccessRights.ReadAccess),
+                            GetDepth(accessRights, AccessRights.WriteAccess),
+                            GetDepth(accessRights, AccessRights.DeleteAccess),
+                            GetDepth(accessRights, AccessRights.AppendAccess),
+                            GetDepth(accessRights, AccessRights.AppendToAccess),
+                            GetDepth(accessRights, AccessRights.AssignAccess, isOrgOwned),
+                            GetDepth(accessRights, AccessRights.ShareAccess, isOrgOwned)
                         );
                     })
                     .ToList());
