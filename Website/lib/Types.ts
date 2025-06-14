@@ -178,5 +178,6 @@ export type SecurityRole = {
     Delete: PrivilegeDepth,
     Append: PrivilegeDepth,
     AppendTo: PrivilegeDepth,
-    Assign: PrivilegeDepth
+    Assign: PrivilegeDepth | null,
+    Share: PrivilegeDepth | null
 }

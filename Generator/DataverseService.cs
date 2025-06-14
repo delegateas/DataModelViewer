@@ -304,7 +304,7 @@ namespace Generator
                             new LinkEntity("roleprivileges", "privilege", "privilegeid", "privilegeid", JoinOperator.Inner)
                             {
                                 EntityAlias = "priv",
-                                Columns = new ColumnSet("accessright"),
+                                Columns = new ColumnSet("accessright", "canbelocal"),
                                 LinkEntities =
                                 {
                                     new LinkEntity("privilege", "privilegeobjecttypecodes", "privilegeid", "privilegeid", JoinOperator.Inner)
@@ -326,6 +326,7 @@ namespace Generator
                 var name = e.GetAttributeValue<string>("name");
                 var depth = (PrivilegeDepth)e.GetAttributeValue<AliasedValue>("rolepriv.privilegedepthmask").Value;
                 var accessRight = (AccessRights)e.GetAttributeValue<AliasedValue>("priv.accessright").Value;
+                var canBeLocal = (bool)e.GetAttributeValue<AliasedValue>("priv.canbelocal").Value;
                 var objectTypeCode = e.GetAttributeValue<AliasedValue>("privotc.objecttypecode").Value as string;
 
                 return new
@@ -333,6 +334,7 @@ namespace Generator
                     name,
                     depth,
                     accessRight,
+                    canBeLocal,
                     objectTypeCode = objectTypeCode ?? string.Empty,
                 };
             });
@@ -344,7 +346,14 @@ namespace Generator
                     .GroupBy(x => x.name)
                     .Select(byRole =>
                     {
-                        var accessrightToDepth = byRole.GroupBy(x => x.accessRight).ToDictionary(x => x.Key, x => x.First().depth);
+                        var accessrightToDepth = byRole
+                            .Where(x => // Only include Share and Assign if canBeLocal == true
+                                x.accessRight != AccessRights.AssignAccess &&
+                                x.accessRight != AccessRights.ShareAccess ||
+                                x.canBeLocal)
+                            .GroupBy(x => x.accessRight)
+                            .ToDictionary(x => x.Key, x => x.First().depth);
+
                         return new SecurityRole(
                             byRole.Key,
                             byLogicalName.Key,
@@ -354,7 +363,8 @@ namespace Generator
                             accessrightToDepth.GetValueOrDefault(AccessRights.DeleteAccess),
                             accessrightToDepth.GetValueOrDefault(AccessRights.AppendAccess),
                             accessrightToDepth.GetValueOrDefault(AccessRights.AppendToAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.AssignAccess)
+                            accessrightToDepth.TryGetValue(AccessRights.AssignAccess, out var assign) ? assign : null,
+                            accessrightToDepth.TryGetValue(AccessRights.ShareAccess, out var share) ? share : null
                         );
                     })
                     .ToList());
