@@ -347,10 +347,6 @@ namespace Generator
                     .Select(byRole =>
                     {
                         var accessrightToDepth = byRole
-                            .Where(x => // Only include Share and Assign if canBeLocal == true
-                                x.accessRight != AccessRights.AssignAccess &&
-                                x.accessRight != AccessRights.ShareAccess ||
-                                x.canBeLocal)
                             .GroupBy(x => x.accessRight)
                             .ToDictionary(x => x.Key, x => x.First().depth);
 
