@@ -31,14 +31,13 @@ function Section({
     return (
         <div ref={contentRef} className="mb-10">
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
-                <div className="flex flex-col xl:flex-row xl:justify-between min-w-0">
-                    <div className="min-w-0 xl:pr-5">
-                        <EntityHeader entity={entity} />
-                    </div>
-                    {entity.SecurityRoles.length > 0 &&
-                        <div className="w-fit border-t xl:border-t-0 xl:border-l xl:px-5 mt-5 pt-5 xl:mt-0 xl:pt-0">
+                <div className="flex flex-row flex-wrap min-w-0 p-6">
+                    <EntityHeader entity={entity} />
+                    {entity.SecurityRoles.length > 0 && (
+                        <div className="w-1/2 pl-6 border-l border-gray-100">
                             <SecurityRoles roles={entity.SecurityRoles} />
-                        </div>}
+                        </div>
+                    )}
                 </div>
 
                 <Tabs defaultValue="attributes">

@@ -6,13 +6,40 @@ import { EntityDetails } from "./EntityDetails";
 
 export function EntityHeader({ entity }: { entity: EntityType }) {
     return (
-        <div className="min-w-0">
-            <a className="flex flex-row gap-2 items-center hover:underline" href={`?selected=${entity.SchemaName}`}>
-                {entity.IconBase64 == null ? <Link className="h-4 w-4" /> : <img className="h-4 w-4" src={`data:image/svg+xml;base64,${entity.IconBase64}`} />}
-                <h2 className="text-xl break-all">{entity.DisplayName} ({entity.SchemaName})</h2>
-            </a>
-            <EntityDetails entity={entity} />
-            <p className="my-4 break-words">{entity.Description}</p>
+        <div className="min-w-0 w-1/2 pr-6">
+            <div className="flex items-center gap-3 mb-3">
+                <div className="flex-shrink-0">
+                    {entity.IconBase64 == null ? 
+                        <Link className="h-6 w-6 text-gray-600" /> : 
+                        <img className="h-6 w-6" src={`data:image/svg+xml;base64,${entity.IconBase64}`} />
+                    }
+                </div>
+                <div className="min-w-0">
+                    <a 
+                        className="group flex items-center gap-2 hover:no-underline" 
+                        href={`?selected=${entity.SchemaName}`}
+                    >
+                        <h2 className="text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                            {entity.DisplayName}
+                        </h2>
+                        <span className="text-sm text-gray-500 font-mono">
+                            {entity.SchemaName}
+                        </span>
+                    </a>
+                </div>
+            </div>
+            
+            <div className="mb-4">
+                <EntityDetails entity={entity} />
+            </div>
+
+            {entity.Description && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                    <p className="text-gray-600 leading-relaxed">
+                        {entity.Description}
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
