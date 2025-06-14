@@ -5,7 +5,9 @@ import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from ".
 import { Button } from "./ui/button"
 import { CascadeConfiguration } from "./entity/CascadeConfiguration"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { Input } from "./ui/input"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
@@ -13,6 +15,8 @@ type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' |
 function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (entity: string) => void }) {
     const [sortColumn, setSortColumn] = useState<SortColumn>(null)
     const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+    const [typeFilter, setTypeFilter] = useState<string>("all")
+    const [searchQuery, setSearchQuery] = useState("")
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -31,9 +35,28 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
     }
 
     const getSortedRelationships = () => {
-        if (!sortColumn || !sortDirection) return entity.Relationships
+        let filteredRelationships = entity.Relationships
+        
+        if (typeFilter !== "all") {
+            filteredRelationships = filteredRelationships.filter(rel => 
+                (typeFilter === "many-to-many" && rel.IsManyToMany) || 
+                (typeFilter === "one-to-many" && !rel.IsManyToMany)
+            )
+        }
+        
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase()
+            filteredRelationships = filteredRelationships.filter(rel => 
+                rel.Name.toLowerCase().includes(query) ||
+                rel.TableSchema.toLowerCase().includes(query) ||
+                rel.LookupDisplayName.toLowerCase().includes(query) ||
+                rel.RelationshipSchema.toLowerCase().includes(query)
+            )
+        }
 
-        return [...entity.Relationships].sort((a, b) => {
+        if (!sortColumn || !sortDirection) return filteredRelationships
+
+        return [...filteredRelationships].sort((a, b) => {
             let aValue = ''
             let bValue = ''
 
@@ -77,7 +100,50 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
         return <ArrowUpDown className="ml-2 h-4 w-4" />
     }
 
+    const relationshipTypes = [
+        { value: "all", label: "All Types" },
+        { value: "many-to-many", label: "Many-to-Many" },
+        { value: "one-to-many", label: "One-to-Many" }
+    ]
+
     return <>
+        <div className="p-4 border-b flex gap-4">
+            <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search relationships..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8"
+                />
+            </div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                    {relationshipTypes.map(type => (
+                        <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            {(searchQuery || typeFilter !== "all") && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                        setSearchQuery("")
+                        setTypeFilter("all")
+                    }}
+                    className="h-10 w-10 text-gray-500 hover:text-gray-700"
+                    title="Clear filters"
+                >
+                    <X className="h-4 w-4" />
+                </Button>
+            )}
+        </div>
         <div className="overflow-x-auto">
             <Table className="w-full">
                 <TableHeader>
