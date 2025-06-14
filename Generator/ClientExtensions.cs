@@ -17,4 +17,15 @@ public static class ClientExtensions
 
         return ((RetrieveEntityResponse)resp).EntityMetadata;
     }
+    public static async Task<EntityMetadata> RetrieveEntityByLogicalNameAsync(this ServiceClient client, string logicalName, CancellationToken token)
+    {
+        var resp = await client.ExecuteAsync(new RetrieveEntityRequest()
+        {
+            EntityFilters = EntityFilters.Entity,
+            LogicalName = logicalName,
+            RetrieveAsIfPublished = true
+        }, token);
+
+        return ((RetrieveEntityResponse)resp).EntityMetadata;
+    }
 }

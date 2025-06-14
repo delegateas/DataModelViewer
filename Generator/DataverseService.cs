@@ -20,13 +20,14 @@ namespace Generator
     {
         private readonly ServiceClient client;
         private readonly IConfiguration configuration;
+        private readonly ILogger<DataverseService> logger;
 
-        public DataverseService(IConfiguration configuration)
+        public DataverseService(IConfiguration configuration, ILogger<DataverseService> logger)
         {
             this.configuration = configuration;
+            this.logger = logger;
 
             var cache = new MemoryCache(new MemoryCacheOptions());
-            var logger = new LoggerFactory().CreateLogger<DataverseService>();
 
             var dataverseUrl = configuration["DataverseUrl"];
             if (dataverseUrl == null)
@@ -46,21 +47,35 @@ namespace Generator
             var (publisherPrefix, solutionIds) = await GetSolutionIds();
             var solutionComponents = await GetSolutionComponents(solutionIds);
             var entityIdToRootBehavior = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
-            var entityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
+            var solutionEntityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
             var rolesInSolution = solutionComponents.Where(solutionComponents => solutionComponents.ComponentType == 20).Select(x => x.ObjectId).ToList();
             var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution);
 
-            var relevantEntities = entityMetadata.Where(e => entityIdToRootBehavior.ContainsKey(e.MetadataId!.Value)).ToList();
-            var entityLogicalNamesInSolution =
-                relevantEntities
-                .Select(e => e.LogicalName)
-                .ToHashSet();
+            var entityLogicalNamesInSolution = solutionEntityMetadata.Select(e => e.LogicalName).ToHashSet();
 
-            var entityIconMap = await GetEntityIconMap(relevantEntities);
+            logger.LogDebug("There are {Count} entities in the solution.", entityLogicalNamesInSolution.Count);
+
+            // Collect all referenced entities from attributes and add (needed for lookup attributes)
+            var relatedEntityLogicalNames = new HashSet<string>();
+            foreach (var entity in solutionEntityMetadata)
+            {
+                var entityLogicalNamesOutsideSolution = entity.Attributes.OfType<LookupAttributeMetadata>()
+                    .Where(attr => attr.MetadataId.HasValue && attributesInSolution.Contains(attr.MetadataId.Value))
+                    .SelectMany(attr => attr.Targets)
+                    .Distinct()
+                    .Where(target => !entityLogicalNamesInSolution.Contains(target));
+                foreach (var target in entityLogicalNamesOutsideSolution) relatedEntityLogicalNames.Add(target);
+            }
+
+            logger.LogDebug("There are {Count} entities referenced outside the solution.", relatedEntityLogicalNames.Count);
+            var referencedEntityMetadata = await GetEntityMetadataByLogicalName(relatedEntityLogicalNames.ToList());
+
+            var allEntityMetadata = solutionEntityMetadata.Concat(referencedEntityMetadata).ToList();
+            var entityIconMap = await GetEntityIconMap(allEntityMetadata);
 
             var records =
-                relevantEntities
+                solutionEntityMetadata
                 .Select(x => new
                 {
                     EntityMetadata = x,
@@ -77,8 +92,8 @@ namespace Generator
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
                 .ToList();
 
-            var logicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.EntityMetadata.SchemaName);
-            var attributeLogicalToSchema = records.ToDictionary(x => x.EntityMetadata.LogicalName, x => x.RelevantAttributes.ToDictionary(x => x.LogicalName, x => x.DisplayName.UserLocalizedLabel?.Label ?? x.SchemaName));
+            var logicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => new ExtendedEntityInformation { Name = x.SchemaName, IsInSolution = solutionEntityMetadata.Any(e => e.LogicalName == x.LogicalName) });
+            var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes.ToDictionary(x => x.LogicalName, x => x.DisplayName.UserLocalizedLabel?.Label ?? x.SchemaName));
 
             return records
                 .Select(x =>
@@ -106,7 +121,7 @@ namespace Generator
             Dictionary<Guid, int> entityIdToRootBehavior,
             HashSet<Guid> attributesInSolution,
             string publisherPrefix,
-            Dictionary<string, string> logicalToSchema,
+            Dictionary<string, ExtendedEntityInformation> logicalToSchema,
             Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
             List<SecurityRole> securityRoles,
             Dictionary<string, string> entityIconMap)
@@ -121,7 +136,7 @@ namespace Generator
                 .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity) && attributeLogicalToSchema[x.ReferencingEntity].ContainsKey(x.ReferencingAttribute))
                 .Select(x => new DTO.Relationship(
                     x.ReferencingEntityNavigationPropertyName,
-                    logicalToSchema[x.ReferencingEntity],
+                    logicalToSchema[x.ReferencingEntity].Name,
                     attributeLogicalToSchema[x.ReferencingEntity][x.ReferencingAttribute],
                     x.SchemaName,
                     IsManyToMany: false,
@@ -134,7 +149,7 @@ namespace Generator
                     x.Entity1AssociatedMenuConfiguration.Behavior == AssociatedMenuBehavior.UseLabel
                     ? x.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel?.Label ?? x.Entity1NavigationPropertyName
                     : x.Entity1NavigationPropertyName,
-                    logicalToSchema[x.Entity1LogicalName],
+                    logicalToSchema[x.Entity1LogicalName].Name,
                     "-",
                     x.SchemaName,
                     IsManyToMany: true,
@@ -160,7 +175,7 @@ namespace Generator
                     iconBase64);
         }
 
-        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, string> logicalToSchema)
+        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, ExtendedEntityInformation> logicalToSchema)
         {
             return metadata switch
             {
@@ -220,6 +235,29 @@ namespace Generator
                 async (objectId, token) =>
                 {
                     metadata.Add(await client.RetrieveEntityAsync(objectId, token));
+
+                });
+
+            return metadata;
+        }
+        public async Task<IEnumerable<EntityMetadata>> GetEntityMetadataByLogicalName(List<string> entityLogicalNames)
+        {
+            ConcurrentBag<EntityMetadata> metadata = new();
+
+            // Disable affinity cookie
+            client.EnableAffinityCookie = false;
+
+            var parallelOptions = new ParallelOptions()
+            {
+                MaxDegreeOfParallelism = client.RecommendedDegreesOfParallelism
+            };
+
+            await Parallel.ForEachAsync(
+                source: entityLogicalNames,
+                parallelOptions: parallelOptions,
+                async (logicalName, token) =>
+                {
+                    metadata.Add(await client.RetrieveEntityByLogicalNameAsync(logicalName, token));
 
                 });
 
