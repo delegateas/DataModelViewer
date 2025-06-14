@@ -30,7 +30,7 @@ function Section({
 
     return (
         <div ref={contentRef} className="mb-10">
-            <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-lg border border-gray-300 shadow-md">
                 <div className="flex flex-row flex-wrap min-w-0 p-6">
                     <EntityHeader entity={entity} />
                     {entity.SecurityRoles.length > 0 && (
