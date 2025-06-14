@@ -7,12 +7,12 @@ var configuration =
     .AddEnvironmentVariables()
     .AddJsonFile("appsettings.local.json", optional: true)
     .Build();
-var verbose = configuration.GetValue("Verbose", false);
+var verbose = configuration.GetValue("Verbosity", LogLevel.Information);
 
 using var loggerFactory = LoggerFactory.Create(builder =>
 {
     builder
-        .SetMinimumLevel(verbose ? LogLevel.Trace : LogLevel.Information)
+        .SetMinimumLevel(verbose)
         .AddConsole();
 });
 var logger = loggerFactory.CreateLogger<DataverseService>();

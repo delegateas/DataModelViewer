@@ -93,7 +93,7 @@ namespace Generator
                 .ToList();
 
             var logicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => new ExtendedEntityInformation { Name = x.SchemaName, IsInSolution = solutionEntityMetadata.Any(e => e.LogicalName == x.LogicalName) });
-            var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes.ToDictionary(x => x.LogicalName, x => x.DisplayName.UserLocalizedLabel?.Label ?? x.SchemaName));
+            var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.UserLocalizedLabel?.Label ?? attr.SchemaName) ?? []);
 
             return records
                 .Select(x =>
