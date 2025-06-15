@@ -5,6 +5,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Button } from "./ui/button"
 import { deleteSession } from "@/lib/session";
@@ -19,8 +20,9 @@ export function AppSidebar({
 }) {  
   return (
     <Sidebar>
-      <SidebarHeader>
-        <Button onClick={() => deleteSession()}>Sign Out</Button>
+      <SidebarHeader className="flex flex-row">
+        <Button className="flex-1" onClick={() => deleteSession()}>Sign Out</Button>
+        <SidebarTrigger />
       </SidebarHeader>
       <SidebarContent>
         <NavItems selected={selected} onSelect={onSelect} />
