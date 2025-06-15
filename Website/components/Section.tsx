@@ -8,6 +8,7 @@ import { EntityHeader } from "./entity/EntityHeader"
 import { SecurityRoles } from "./entity/SecurityRoles"
 import Relationships from "./Relationships"
 import Attributes from "./Attributes"
+import Keys from "./Keys"
 import { KeyRound, Sheet, Tags, Unplug } from "lucide-react"
 
 function Section({
@@ -53,7 +54,7 @@ function Section({
                                 : <></> 
                             }
                             <TabsTrigger value="keys" className="data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
-                                <KeyRound className="mr-2 h-4 w-4" />Keys [{}]
+                                <KeyRound className="mr-2 h-4 w-4" />Keys [{entity.Keys.length}]
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="attributes" className="m-0 p-0">
@@ -63,7 +64,7 @@ function Section({
                             <Relationships entity={entity} onSelect={onSelect} />
                         </TabsContent>
                         <TabsContent value="keys" className="m-0 p-0">
-                            <div className="p-4 text-gray-500 text-center">No keys available</div>
+                            <Keys entity={entity} />
                         </TabsContent>
                     </div>
                 </Tabs>

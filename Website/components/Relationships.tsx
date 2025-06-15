@@ -145,83 +145,112 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
             )}
         </div>
         <div className="overflow-x-auto">
-            <Table className="w-full">
-                <TableHeader>
-                    <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
-                        <TableHead 
-                            className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('name')}
-                        >
-                            <div className="flex items-center">
-                                Name
-                                <SortIcon column="name" />
-                            </div>
-                        </TableHead>
-                        <TableHead 
-                            className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('tableSchema')}
-                        >
-                            <div className="flex items-center">
-                                Related Table
-                                <SortIcon column="tableSchema" />
-                            </div>
-                        </TableHead>
-                        <TableHead 
-                            className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('lookupField')}
-                        >
-                            <div className="flex items-center">
-                                Lookup Field
-                                <SortIcon column="lookupField" />
-                            </div>
-                        </TableHead>
-                        <TableHead 
-                            className="w-[10%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('type')}
-                        >
-                            <div className="flex items-center">
-                                Type
-                                <SortIcon column="type" />
-                            </div>
-                        </TableHead>
-                        <TableHead className="w-[25%] text-black font-bold py-3">Behavior</TableHead>
-                        <TableHead 
-                            className="w-[20%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('schemaName')}
-                        >
-                            <div className="flex items-center">
-                                Schema Name
-                                <SortIcon column="schemaName" />
-                            </div>
-                        </TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {getSortedRelationships().map((relationship, index) =>
-                        <TableRow 
-                            key={relationship.RelationshipSchema}
-                            className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
-                                index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                            }`}
-                        >
-                            <TableCell className="break-words py-3">{relationship.Name}</TableCell>
-                            <TableCell className="py-3">
-                                <Button
-                                    key={relationship.TableSchema}
-                                    variant="ghost"
-                                    className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline break-words"
-                                    onClick={() => onSelect(relationship.TableSchema)}>
-                                    {relationship.TableSchema}
-                                </Button>
-                            </TableCell>
-                            <TableCell className="break-words py-3">{relationship.LookupDisplayName}</TableCell>
-                            <TableCell className="py-3">{relationship.IsManyToMany ? "N:N" : "1:N"}</TableCell>
-                            <TableCell className="py-3"><CascadeConfiguration config={relationship.CascadeConfiguration} /></TableCell>
-                            <TableCell className="break-words py-3">{relationship.RelationshipSchema}</TableCell>
-                        </TableRow>
+            {getSortedRelationships().length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                    {searchQuery || typeFilter !== "all" ? (
+                        <div className="flex flex-col items-center gap-2">
+                            <p>
+                                {searchQuery && typeFilter !== "all" 
+                                    ? `No ${typeFilter === "many-to-many" ? "many-to-many" : "one-to-many"} relationships found matching "${searchQuery}"`
+                                    : searchQuery 
+                                        ? `No relationships found matching "${searchQuery}"`
+                                        : `No ${typeFilter === "many-to-many" ? "many-to-many" : "one-to-many"} relationships available`
+                                }
+                            </p>
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    setSearchQuery("")
+                                    setTypeFilter("all")
+                                }}
+                                className="text-blue-600 hover:text-blue-700"
+                            >
+                                Clear filters
+                            </Button>
+                        </div>
+                    ) : (
+                        <p>No relationships available for this entity</p>
                     )}
-                </TableBody>
-            </Table>
+                </div>
+            ) : (
+                <Table className="w-full">
+                    <TableHeader>
+                        <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
+                            <TableHead 
+                                className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('name')}
+                            >
+                                <div className="flex items-center">
+                                    Name
+                                    <SortIcon column="name" />
+                                </div>
+                            </TableHead>
+                            <TableHead 
+                                className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('tableSchema')}
+                            >
+                                <div className="flex items-center">
+                                    Related Table
+                                    <SortIcon column="tableSchema" />
+                                </div>
+                            </TableHead>
+                            <TableHead 
+                                className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('lookupField')}
+                            >
+                                <div className="flex items-center">
+                                    Lookup Field
+                                    <SortIcon column="lookupField" />
+                                </div>
+                            </TableHead>
+                            <TableHead 
+                                className="w-[10%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('type')}
+                            >
+                                <div className="flex items-center">
+                                    Type
+                                    <SortIcon column="type" />
+                                </div>
+                            </TableHead>
+                            <TableHead className="w-[25%] text-black font-bold py-3">Behavior</TableHead>
+                            <TableHead 
+                                className="w-[20%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('schemaName')}
+                            >
+                                <div className="flex items-center">
+                                    Schema Name
+                                    <SortIcon column="schemaName" />
+                                </div>
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {getSortedRelationships().map((relationship, index) =>
+                            <TableRow 
+                                key={relationship.RelationshipSchema}
+                                className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
+                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                }`}
+                            >
+                                <TableCell className="break-words py-3">{relationship.Name}</TableCell>
+                                <TableCell className="py-3">
+                                    <Button
+                                        key={relationship.TableSchema}
+                                        variant="ghost"
+                                        className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline break-words"
+                                        onClick={() => onSelect(relationship.TableSchema)}>
+                                        {relationship.TableSchema}
+                                    </Button>
+                                </TableCell>
+                                <TableCell className="break-words py-3">{relationship.LookupDisplayName}</TableCell>
+                                <TableCell className="py-3">{relationship.IsManyToMany ? "N:N" : "1:N"}</TableCell>
+                                <TableCell className="py-3"><CascadeConfiguration config={relationship.CascadeConfiguration} /></TableCell>
+                                <TableCell className="break-words py-3">{relationship.RelationshipSchema}</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            )}
         </div>
     </>
 }

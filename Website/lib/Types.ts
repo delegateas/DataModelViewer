@@ -24,6 +24,7 @@ export type EntityType = {
     Attributes: AttributeType[],
     Relationships: RelationshipType[],
     SecurityRoles: SecurityRole[],
+    Keys: Key[],
     IconBase64: string | null,
 }
 
@@ -179,4 +180,10 @@ export type SecurityRole = {
     Append: PrivilegeDepth,
     AppendTo: PrivilegeDepth,
     Assign: PrivilegeDepth
+}
+
+export type Key = {
+    Name: string,
+    LogicalName: string,
+    KeyAttributes: string[]
 }

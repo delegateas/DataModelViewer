@@ -156,65 +156,94 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
             )}
         </div>
         <div className="overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
-                        <TableHead 
-                            className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('displayName')}
-                        >
-                            <div className="flex items-center">
-                                Display Name
-                                <SortIcon column="displayName" />
-                            </div>
-                        </TableHead>
-                        <TableHead 
-                            className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('schemaName')}
-                        >
-                            <div className="flex items-center">
-                                Schema Name
-                                <SortIcon column="schemaName" />
-                            </div>
-                        </TableHead>
-                        <TableHead 
-                            className="w-[30%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('type')}
-                        >
-                            <div className="flex items-center">
-                                Type
-                                <SortIcon column="type" />
-                            </div>
-                        </TableHead>
-                        <TableHead className="w-[5%] text-black font-bold py-3">Details</TableHead>
-                        <TableHead 
-                            className="w-[35%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleSort('description')}
-                        >
-                            <div className="flex items-center">
-                                Description
-                                <SortIcon column="description" />
-                            </div>
-                        </TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody className="striped">
-                    {getSortedAttributes().map((attribute, index) => (
-                        <TableRow 
-                            key={attribute.SchemaName} 
-                            className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
-                                index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                            }`}
-                        >
-                            <TableCell className="break-words font-medium py-3">{attribute.DisplayName}</TableCell>
-                            <TableCell className="break-words text-gray-600 py-3">{attribute.SchemaName}</TableCell>
-                            <TableCell className="break-words py-3">{getAttributeComponent(entity, attribute, onSelect)}</TableCell>
-                            <TableCell className="py-3"><AttributeDetails attribute={attribute} /></TableCell>
-                            <TableCell className="break-words text-gray-600 py-3">{attribute.Description}</TableCell>
+            {getSortedAttributes().length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                    {searchQuery || typeFilter !== "all" ? (
+                        <div className="flex flex-col items-center gap-2">
+                            <p>
+                                {searchQuery && typeFilter !== "all" 
+                                    ? `No ${typeFilter.replace("Attribute", "")} attributes found matching "${searchQuery}"`
+                                    : searchQuery 
+                                        ? `No attributes found matching "${searchQuery}"`
+                                        : `No ${typeFilter.replace("Attribute", "")} attributes available`
+                                }
+                            </p>
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    setSearchQuery("")
+                                    setTypeFilter("all")
+                                }}
+                                className="text-blue-600 hover:text-blue-700"
+                            >
+                                Clear filters
+                            </Button>
+                        </div>
+                    ) : (
+                        <p>No attributes available for this entity</p>
+                    )}
+                </div>
+            ) : (
+                <Table>
+                    <TableHeader>
+                        <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
+                            <TableHead 
+                                className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('displayName')}
+                            >
+                                <div className="flex items-center">
+                                    Display Name
+                                    <SortIcon column="displayName" />
+                                </div>
+                            </TableHead>
+                            <TableHead 
+                                className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('schemaName')}
+                            >
+                                <div className="flex items-center">
+                                    Schema Name
+                                    <SortIcon column="schemaName" />
+                                </div>
+                            </TableHead>
+                            <TableHead 
+                                className="w-[30%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('type')}
+                            >
+                                <div className="flex items-center">
+                                    Type
+                                    <SortIcon column="type" />
+                                </div>
+                            </TableHead>
+                            <TableHead className="w-[5%] text-black font-bold py-3">Details</TableHead>
+                            <TableHead 
+                                className="w-[35%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('description')}
+                            >
+                                <div className="flex items-center">
+                                    Description
+                                    <SortIcon column="description" />
+                                </div>
+                            </TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody className="striped">
+                        {getSortedAttributes().map((attribute, index) => (
+                            <TableRow 
+                                key={attribute.SchemaName} 
+                                className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
+                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                }`}
+                            >
+                                <TableCell className="break-words font-medium py-3">{attribute.DisplayName}</TableCell>
+                                <TableCell className="break-words text-gray-600 py-3">{attribute.SchemaName}</TableCell>
+                                <TableCell className="break-words py-3">{getAttributeComponent(entity, attribute, onSelect)}</TableCell>
+                                <TableCell className="py-3"><AttributeDetails attribute={attribute} /></TableCell>
+                                <TableCell className="break-words text-gray-600 py-3">{attribute.Description}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            )}
         </div>
     </>
 }
