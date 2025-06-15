@@ -172,12 +172,12 @@ export enum PrivilegeDepth {
 export type SecurityRole = {
     Name: string,
     LogicalName: string,
-    Create: PrivilegeDepth,
-    Read: PrivilegeDepth,
-    Write: PrivilegeDepth,
-    Delete: PrivilegeDepth,
-    Append: PrivilegeDepth,
-    AppendTo: PrivilegeDepth,
+    Create: PrivilegeDepth | null,
+    Read: PrivilegeDepth | null,
+    Write: PrivilegeDepth | null,
+    Delete: PrivilegeDepth | null,
+    Append: PrivilegeDepth | null,
+    AppendTo: PrivilegeDepth | null,
     Assign: PrivilegeDepth | null,
     Share: PrivilegeDepth | null
 }
