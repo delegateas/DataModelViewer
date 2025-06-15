@@ -6,7 +6,7 @@ import { EntityDetails } from "./EntityDetails";
 
 export function EntityHeader({ entity }: { entity: EntityType }) {
     return (
-        <div className="min-w-0 w-1/2 pr-6">
+        <div className="min-w-0 w-1/3 pr-6">
             <div className="flex items-center gap-3 mb-3">
                 <div className="flex-shrink-0">
                     {entity.IconBase64 == null ? 

@@ -8,7 +8,7 @@ import { EntityHeader } from "./entity/EntityHeader"
 import { SecurityRoles } from "./entity/SecurityRoles"
 import Relationships from "./Relationships"
 import Attributes from "./Attributes"
-import { KeyRound, Tags, Unplug } from "lucide-react"
+import { KeyRound, Sheet, Tags, Unplug } from "lucide-react"
 
 function Section({
     entity,
@@ -31,10 +31,10 @@ function Section({
     return (
         <div ref={contentRef} className="mb-10">
             <div className="bg-white rounded-lg border border-gray-300 shadow-md">
-                <div className="flex flex-row flex-wrap min-w-0 p-6">
+                <div className="flex flex-col xl:flex-row min-w-0 p-6">
                     <EntityHeader entity={entity} />
                     {entity.SecurityRoles.length > 0 && (
-                        <div className="w-1/2 pl-6 border-l border-gray-100">
+                        <div className="md:w-full xl:w-2/3 xl:pl-6 xl:border-l md:border-t xl:border-t-0 border-gray-100 mt-6 xl:mt-0 pt-6 xl:pt-0">
                             <SecurityRoles roles={entity.SecurityRoles} />
                         </div>
                     )}
