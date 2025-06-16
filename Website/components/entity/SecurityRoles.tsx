@@ -47,28 +47,28 @@ function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
     let tooltip = "";
 
     if (depth === null || depth === undefined) {
-        icon = <Minus className="h-4 w-4" />;
+        icon = <Minus className="h-4 w-4 text-black" />;
         tooltip = "Unavailable";
     } else {
         switch (depth) {
             case PrivilegeDepth.None:
-                icon = <Ban className="h-4 w-4" />;
+                icon = <Ban className="h-4 w-4 text-red-600" />;
                 tooltip = "None";
                 break;
             case PrivilegeDepth.Basic:
-                icon = <User className="h-4 w-4" />;
+                icon = <User className="h-4 w-4 text-gray-600" />;
                 tooltip = "User";
                 break;
             case PrivilegeDepth.Local:
-                icon = <Users className="h-4 w-4" />;
+                icon = <Users className="h-4 w-4 text-gray-600" />;
                 tooltip = "Business Unit";
                 break;
             case PrivilegeDepth.Deep:
-                icon = <Boxes className="h-4 w-4" />;
+                icon = <Boxes className="h-4 w-4 text-sky-600" />;
                 tooltip = "Parent: Child Business Units";
                 break;
             case PrivilegeDepth.Global:
-                icon = <Building2 className="h-4 w-4" />;
+                icon = <Building2 className="h-4 w-4 text-green-600" />;
                 tooltip = "Organization";
                 break;
             default:
