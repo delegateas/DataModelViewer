@@ -6,7 +6,7 @@ import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../ui
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (
-        <div className="flex flex-col gap-2 xl:items-end w-fit">
+        <div className="flex flex-col gap-2 w-full">
             {roles.map(role => (
                 <SecurityRoleRow key={role.Name} role={role} />
             ))}
@@ -16,9 +16,9 @@ export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
 
 function SecurityRoleRow({ role }: { role: SecurityRole }) {
     return (
-        <div className="flex flex-col xl:flex-row items-start xl:items-center gap-2">
-            <p className="font-bold xl:pr-3 xl:w-max">{role.Name}</p>
-            <div className="flex flex-row gap-2">
+        <div className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg p-4 border border-gray-100 w-full">
+            <p className="font-bold text-base text-wrap">{role.Name}</p>
+            <div className="flex gap-2 align-bottom">
                 <PrivilegeIcon name="Create" depth={role.Create} />
                 <PrivilegeIcon name="Read" depth={role.Read} />
                 <PrivilegeIcon name="Write" depth={role.Write} />
@@ -34,7 +34,7 @@ function SecurityRoleRow({ role }: { role: SecurityRole }) {
 
 function PrivilegeIcon({ name, depth }: { name: string, depth: PrivilegeDepth | null }) {
     return (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center min-w-[60px]">
             <p className="w-max text-sm">{name}</p>
             <GetDepthIcon depth={depth} />
         </div>

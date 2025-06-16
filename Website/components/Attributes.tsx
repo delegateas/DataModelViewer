@@ -1,18 +1,28 @@
 'use client'
 
-import { EntityType, RelationshipType } from "@/lib/Types"
+import { EntityType, AttributeType } from "@/lib/Types"
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "./ui/table"
 import { Button } from "./ui/button"
-import { CascadeConfiguration } from "./entity/CascadeConfiguration"
 import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Input } from "./ui/input"
+import { AttributeDetails } from "./entity/AttributeDetails"
+import BooleanAttribute from "./attributes/BooleanAttribute"
+import ChoiceAttribute from "./attributes/ChoiceAttribute"
+import DateTimeAttribute from "./attributes/DateTimeAttribute"
+import DecimalAttribute from "./attributes/DecimalAttribute"
+import FileAttribute from "./attributes/FileAttribute"
+import GenericAttribute from "./attributes/GenericAttribute"
+import IntegerAttribute from "./attributes/IntegerAttribute"
+import LookupAttribute from "./attributes/LookupAttribute"
+import StatusAttribute from "./attributes/StatusAttribute"
+import StringAttribute from "./attributes/StringAttribute"
 
 type SortDirection = 'asc' | 'desc' | null
-type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
+type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
 
-function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (entity: string) => void }) {
+function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entity: string) => void }) {
     const [sortColumn, setSortColumn] = useState<SortColumn>(null)
     const [sortDirection, setSortDirection] = useState<SortDirection>(null)
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -34,52 +44,45 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
         }
     }
 
-    const getSortedRelationships = () => {
-        let filteredRelationships = entity.Relationships
-        
+    const getSortedAttributes = () => {
+        let filteredAttributes = entity.Attributes
+
         if (typeFilter !== "all") {
-            filteredRelationships = filteredRelationships.filter(rel => 
-                (typeFilter === "many-to-many" && rel.IsManyToMany) || 
-                (typeFilter === "one-to-many" && !rel.IsManyToMany)
-            )
+            filteredAttributes = filteredAttributes.filter(attr => attr.AttributeType === typeFilter)
         }
-        
+
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
-            filteredRelationships = filteredRelationships.filter(rel => 
-                rel.Name.toLowerCase().includes(query) ||
-                rel.TableSchema.toLowerCase().includes(query) ||
-                rel.LookupDisplayName.toLowerCase().includes(query) ||
-                rel.RelationshipSchema.toLowerCase().includes(query)
+            filteredAttributes = filteredAttributes.filter(attr => 
+                attr.DisplayName.toLowerCase().includes(query) ||
+                attr.SchemaName.toLowerCase().includes(query) ||
+                attr.AttributeType.toLowerCase().includes(query) ||
+                (attr.Description?.toLowerCase().includes(query) ?? false)
             )
         }
 
-        if (!sortColumn || !sortDirection) return filteredRelationships
+        if (!sortColumn || !sortDirection) return filteredAttributes
 
-        return [...filteredRelationships].sort((a, b) => {
+        return [...filteredAttributes].sort((a, b) => {
             let aValue = ''
             let bValue = ''
 
             switch (sortColumn) {
-                case 'name':
-                    aValue = a.Name
-                    bValue = b.Name
-                    break
-                case 'tableSchema':
-                    aValue = a.TableSchema
-                    bValue = b.TableSchema
-                    break
-                case 'lookupField':
-                    aValue = a.LookupDisplayName
-                    bValue = b.LookupDisplayName
-                    break
-                case 'type':
-                    aValue = a.IsManyToMany ? "N:N" : "1:N"
-                    bValue = b.IsManyToMany ? "N:N" : "1:N"
+                case 'displayName':
+                    aValue = a.DisplayName
+                    bValue = b.DisplayName
                     break
                 case 'schemaName':
-                    aValue = a.RelationshipSchema
-                    bValue = b.RelationshipSchema
+                    aValue = a.SchemaName
+                    bValue = b.SchemaName
+                    break
+                case 'type':
+                    aValue = a.AttributeType
+                    bValue = b.AttributeType
+                    break
+                case 'description':
+                    aValue = a.Description || ''
+                    bValue = b.Description || ''
                     break
                 default:
                     return 0
@@ -100,10 +103,18 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
         return <ArrowUpDown className="ml-2 h-4 w-4" />
     }
 
-    const relationshipTypes = [
-        { value: "all", label: "All Types" },
-        { value: "many-to-many", label: "Many-to-Many" },
-        { value: "one-to-many", label: "One-to-Many" }
+    const attributeTypes = [
+        "all",
+        "ChoiceAttribute",
+        "DateTimeAttribute",
+        "GenericAttribute",
+        "IntegerAttribute",
+        "LookupAttribute",
+        "DecimalAttribute",
+        "StatusAttribute",
+        "StringAttribute",
+        "BooleanAttribute",
+        "FileAttribute"
     ]
 
     return <>
@@ -111,7 +122,7 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
             <div className="relative flex-1">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Search relationships..."
+                    placeholder="Search attributes..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-8"
@@ -122,9 +133,9 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
                     <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>
-                    {relationshipTypes.map(type => (
-                        <SelectItem key={type.value} value={type.value}>
-                            {type.label}
+                    {attributeTypes.map(type => (
+                        <SelectItem key={type} value={type}>
+                            {type === "all" ? "All Types" : type.replace("Attribute", "")}
                         </SelectItem>
                     ))}
                 </SelectContent>
@@ -145,16 +156,16 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
             )}
         </div>
         <div className="overflow-x-auto">
-            {getSortedRelationships().length === 0 ? (
+            {getSortedAttributes().length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                     {searchQuery || typeFilter !== "all" ? (
                         <div className="flex flex-col items-center gap-2">
                             <p>
                                 {searchQuery && typeFilter !== "all" 
-                                    ? `No ${typeFilter === "many-to-many" ? "many-to-many" : "one-to-many"} relationships found matching "${searchQuery}"`
+                                    ? `No ${typeFilter.replace("Attribute", "")} attributes found matching "${searchQuery}"`
                                     : searchQuery 
-                                        ? `No relationships found matching "${searchQuery}"`
-                                        : `No ${typeFilter === "many-to-many" ? "many-to-many" : "one-to-many"} relationships available`
+                                        ? `No attributes found matching "${searchQuery}"`
+                                        : `No ${typeFilter.replace("Attribute", "")} attributes available`
                                 }
                             </p>
                             <Button
@@ -169,52 +180,24 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
                             </Button>
                         </div>
                     ) : (
-                        <p>No relationships available for this entity</p>
+                        <p>No attributes available for this entity</p>
                     )}
                 </div>
             ) : (
-                <Table className="w-full">
+                <Table>
                     <TableHeader>
                         <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
                             <TableHead 
                                 className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                                onClick={() => handleSort('name')}
+                                onClick={() => handleSort('displayName')}
                             >
                                 <div className="flex items-center">
-                                    Name
-                                    <SortIcon column="name" />
+                                    Display Name
+                                    <SortIcon column="displayName" />
                                 </div>
                             </TableHead>
                             <TableHead 
                                 className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                                onClick={() => handleSort('tableSchema')}
-                            >
-                                <div className="flex items-center">
-                                    Related Table
-                                    <SortIcon column="tableSchema" />
-                                </div>
-                            </TableHead>
-                            <TableHead 
-                                className="w-[15%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                                onClick={() => handleSort('lookupField')}
-                            >
-                                <div className="flex items-center">
-                                    Lookup Field
-                                    <SortIcon column="lookupField" />
-                                </div>
-                            </TableHead>
-                            <TableHead 
-                                className="w-[10%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
-                                onClick={() => handleSort('type')}
-                            >
-                                <div className="flex items-center">
-                                    Type
-                                    <SortIcon column="type" />
-                                </div>
-                            </TableHead>
-                            <TableHead className="w-[25%] text-black font-bold py-3">Behavior</TableHead>
-                            <TableHead 
-                                className="w-[20%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
                                 onClick={() => handleSort('schemaName')}
                             >
                                 <div className="flex items-center">
@@ -222,32 +205,42 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
                                     <SortIcon column="schemaName" />
                                 </div>
                             </TableHead>
+                            <TableHead 
+                                className="w-[30%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('type')}
+                            >
+                                <div className="flex items-center">
+                                    Type
+                                    <SortIcon column="type" />
+                                </div>
+                            </TableHead>
+                            <TableHead className="w-[5%] text-black font-bold py-3">Details</TableHead>
+                            <TableHead 
+                                className="w-[35%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                onClick={() => handleSort('description')}
+                            >
+                                <div className="flex items-center">
+                                    Description
+                                    <SortIcon column="description" />
+                                </div>
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
-                        {getSortedRelationships().map((relationship, index) =>
+                    <TableBody className="striped">
+                        {getSortedAttributes().map((attribute, index) => (
                             <TableRow 
-                                key={relationship.RelationshipSchema}
+                                key={attribute.SchemaName} 
                                 className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
                                     index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                 }`}
                             >
-                                <TableCell className="break-words py-3">{relationship.Name}</TableCell>
-                                <TableCell className="py-3">
-                                    <Button
-                                        key={relationship.TableSchema}
-                                        variant="ghost"
-                                        className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline break-words"
-                                        onClick={() => onSelect(relationship.TableSchema)}>
-                                        {relationship.TableSchema}
-                                    </Button>
-                                </TableCell>
-                                <TableCell className="break-words py-3">{relationship.LookupDisplayName}</TableCell>
-                                <TableCell className="py-3">{relationship.IsManyToMany ? "N:N" : "1:N"}</TableCell>
-                                <TableCell className="py-3"><CascadeConfiguration config={relationship.CascadeConfiguration} /></TableCell>
-                                <TableCell className="break-words py-3">{relationship.RelationshipSchema}</TableCell>
+                                <TableCell className="break-words font-medium py-3">{attribute.DisplayName}</TableCell>
+                                <TableCell className="break-words text-gray-600 py-3">{attribute.SchemaName}</TableCell>
+                                <TableCell className="break-words py-3">{getAttributeComponent(entity, attribute, onSelect)}</TableCell>
+                                <TableCell className="py-3"><AttributeDetails attribute={attribute} /></TableCell>
+                                <TableCell className="break-words text-gray-600 py-3">{attribute.Description}</TableCell>
                             </TableRow>
-                        )}
+                        ))}
                     </TableBody>
                 </Table>
             )}
@@ -255,4 +248,33 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
     </>
 }
 
-export default Relationships;
+function getAttributeComponent(entity: EntityType, attribute: AttributeType, onSelect: (entity: string) => void) {
+    const key = `${attribute.SchemaName}-${entity.SchemaName}`;
+
+    switch (attribute.AttributeType) {
+        case 'ChoiceAttribute':
+            return <ChoiceAttribute key={key} attribute={attribute} />;
+        case 'DateTimeAttribute':
+            return <DateTimeAttribute key={key} attribute={attribute} />;
+        case 'GenericAttribute':
+            return <GenericAttribute key={key} attribute={attribute} />;
+        case 'IntegerAttribute':
+            return <IntegerAttribute key={key} attribute={attribute} />;
+        case 'LookupAttribute':
+            return <LookupAttribute key={key} attribute={attribute} onSelect={onSelect} />;
+        case 'DecimalAttribute':
+            return <DecimalAttribute key={key} attribute={attribute} />;
+        case 'StatusAttribute':
+            return <StatusAttribute key={key} attribute={attribute} />;
+        case 'StringAttribute':
+            return <StringAttribute key={key} attribute={attribute} />;
+        case 'BooleanAttribute':
+            return <BooleanAttribute key={key} attribute={attribute} />;
+        case 'FileAttribute':
+            return <FileAttribute key={key} attribute={attribute} />;
+        default:
+            return null;
+    }
+}
+
+export default Attributes 
