@@ -24,6 +24,7 @@ export type EntityType = {
     Attributes: AttributeType[],
     Relationships: RelationshipType[],
     SecurityRoles: SecurityRole[],
+    Keys: Key[],
     IconBase64: string | null,
 }
 
@@ -172,11 +173,18 @@ export enum PrivilegeDepth {
 export type SecurityRole = {
     Name: string,
     LogicalName: string,
-    Create: PrivilegeDepth,
-    Read: PrivilegeDepth,
-    Write: PrivilegeDepth,
-    Delete: PrivilegeDepth,
-    Append: PrivilegeDepth,
-    AppendTo: PrivilegeDepth,
-    Assign: PrivilegeDepth
+    Create: PrivilegeDepth | null,
+    Read: PrivilegeDepth | null,
+    Write: PrivilegeDepth | null,
+    Delete: PrivilegeDepth | null,
+    Append: PrivilegeDepth | null,
+    AppendTo: PrivilegeDepth | null,
+    Assign: PrivilegeDepth | null,
+    Share: PrivilegeDepth | null
+}
+
+export type Key = {
+    Name: string,
+    LogicalName: string,
+    KeyAttributes: string[]
 }
