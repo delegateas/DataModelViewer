@@ -38,7 +38,8 @@ openssl rand -base64 32
 ```
 
 ## Running it
-Generate data by running the Generator project from Visual Studio. Afterwards go into the Website folder from VS Code and open the terminal. If this the first time running it, type `npm install` (you need to have installed node.js first: https://nodejs.org/en/download/). Start the website on localhost by running `npm run dev`. Click the link in the terminal to view the website.
+Generate data by running the Generator project from Visual Studio. 
+Afterwards go into the "Website"-folder from VS Code and open the terminal (of the "Command Prompt" type). If this the first time running it, type `npm install` (you need to have installed node.js first: https://nodejs.org/en/download/). Start the website on localhost by running `npm run dev`. Click the link in the terminal to view the website.
 
 # Settings in pipeline
 The pipeline expects a variable group called `DataModel`. It must have the following variables. The app user only requires the `Environment Maker` security role.
