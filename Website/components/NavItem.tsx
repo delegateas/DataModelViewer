@@ -22,12 +22,12 @@ export default function NavItem({
         setIsExpanded(isSelected)
     }, [isSelected])
 
-    return <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="group/collapsible">
-        <SidebarGroup>
+    return <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className={`group/collapsible border m-2 rounded-md ${isExpanded ? 'border-blue-500' : ''}`}>
+        <SidebarGroup className="p-0">
             <SidebarGroupLabel asChild>
                 <CollapsibleTrigger
-                    className={`flex items-center w-full gap-2 rounded-md p-2 transition-colors cursor-pointer text-left border
-                        ${isExpanded ? 'bg-blue-100 text-blue-900 border-blue-500' : 'bg-sidebar-accent text-sidebar-accent-foreground'}
+                    className={`flex items-center w-full gap-2 rounded-md p-2 transition-colors cursor-pointer text-left
+                        ${isExpanded ? 'bg-blue-100 text-blue-900' : 'bg-sidebar-accent text-sidebar-accent-foreground'}
                         focus-visible:ring-2 focus-visible:ring-sidebar-ring outline-none`}
                     data-state={isExpanded ? 'open' : 'closed'}
                 >
@@ -42,7 +42,7 @@ export default function NavItem({
                         {group.Entities.map(entity =>
                             <SidebarMenuItem key={entity.SchemaName}>
                                 <SidebarMenuButton onClick={() => onSelect(entity.SchemaName)}>
-                                    {entity.IconBase64 != null && <span><img className="h-4 w-4" src={`data:image/svg+xml;base64,${entity.IconBase64}`} /></span>}
+                                    {entity.IconBase64 != null && <span><img className="h-4 w-4 ml-2" src={`data:image/svg+xml;base64,${entity.IconBase64}`} /></span>}
                                     <span>{entity.DisplayName}</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>)}

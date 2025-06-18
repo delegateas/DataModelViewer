@@ -23,8 +23,8 @@ type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
 
 function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entity: string) => void }) {
-    const [sortColumn, setSortColumn] = useState<SortColumn>(null)
-    const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+    const [sortColumn, setSortColumn] = useState<SortColumn>("displayName")
+    const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
 
