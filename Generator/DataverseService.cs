@@ -170,7 +170,7 @@ namespace Generator
 
                     var logicalNames = tables[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
                     foreach (var logicalName in logicalNames)
-                        if (!tablegroups.TryAdd(logicalName, g))
+                        if (!tablegroups.TryAdd(logicalName.Trim(), g.Trim()))
                         {
                             // TODO - replace with logger with other PR
                             Console.WriteLine($"Dublicate logicalname detected: {logicalName} (already in tablegroup '{tablegroups[logicalName]}', dublicate found in group '{g}')");
