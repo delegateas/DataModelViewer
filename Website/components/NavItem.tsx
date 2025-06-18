@@ -5,6 +5,7 @@ import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, Side
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { GroupType } from "../lib/Types";
 import { useEffect, useState } from "react";
+import { Label, SelectLabel } from "@radix-ui/react-select";
 
 export default function NavItem({
     group,
@@ -25,9 +26,15 @@ export default function NavItem({
     return <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="group/collapsible">
         <SidebarGroup>
             <SidebarGroupLabel asChild>
-                <CollapsibleTrigger>
-                    <a className="hover:underline" href={`?selected=${group.Name}`}><span className="font-bold text-base">{group.Name}</span></a>
-                    <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                <CollapsibleTrigger
+                    className={`flex items-center w-full gap-2 rounded-md p-2 transition-colors cursor-pointer text-left
+                        ${isExpanded ? 'bg-blue-100 text-blue-900' : 'bg-sidebar-accent text-sidebar-accent-foreground'}
+                        focus-visible:ring-2 focus-visible:ring-sidebar-ring outline-none`}
+                    data-state={isExpanded ? 'open' : 'closed'}
+                >
+                    <a className="flex-1 font-bold text-base text-left" href={`?selected=${group.Name}`}><span>{group.Name}</span></a>
+                    <p className="ml-auto font-semibold text-xs opacity-70">{group.Entities.length}</p>
+                    <ChevronDown className={`ml-2 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </CollapsibleTrigger>
             </SidebarGroupLabel>
             <CollapsibleContent>

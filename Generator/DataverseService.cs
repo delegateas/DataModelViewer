@@ -170,7 +170,7 @@ namespace Generator
 
                     var logicalNames = tables[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
                     foreach (var logicalName in logicalNames)
-                        if (!tablegroups.TryAdd(logicalName.Trim(), g.Trim()))
+                        if (!tablegroups.TryAdd(logicalName.Trim().ToLower(), tables[0].Trim()))
                         {
                             // TODO - replace with logger with other PR
                             Console.WriteLine($"Dublicate logicalname detected: {logicalName} (already in tablegroup '{tablegroups[logicalName]}', dublicate found in group '{g}')");
@@ -218,11 +218,15 @@ namespace Generator
             };
         }
 
-        private static (string? Group, string? Description) GetGroupAndDescription(EntityMetadata entity, IDictionary<string, string>? tableGroups = null)
+        private static (string? Group, string? Description) GetGroupAndDescription(EntityMetadata entity, IDictionary<string, string> tableGroups)
         {
             var description = entity.Description.UserLocalizedLabel?.Label ?? string.Empty;
             if (!description.StartsWith("#"))
+            {
+                if (tableGroups.TryGetValue(entity.LogicalName, out var tablegroup))
+                    return (tablegroup, description);
                 return (null, description);
+            }
 
             var newlineIndex = description.IndexOf("\n");
             if (newlineIndex != -1)
@@ -236,9 +240,6 @@ namespace Generator
             var firstSpace = withoutHashtag.IndexOf(" ");
             if (firstSpace != -1)
                 return (withoutHashtag.Substring(0, firstSpace), withoutHashtag.Substring(firstSpace + 1));
-
-            if (tableGroups != null && tableGroups.TryGetValue(entity.LogicalName, out var tablegroup))
-                return (tablegroup, description);
 
             return (withoutHashtag, null);
         }
