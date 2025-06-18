@@ -1,6 +1,6 @@
 'use client'
 
-import { EntityType, RelationshipType } from "@/lib/Types"
+import { EntityType } from "@/lib/Types"
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "./ui/table"
 import { Button } from "./ui/button"
 import { CascadeConfiguration } from "./entity/CascadeConfiguration"

@@ -1,6 +1,6 @@
 'use client'
 
-import { EntityType, Key } from "@/lib/Types"
+import { EntityType } from "@/lib/Types"
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "./ui/table"
 import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
@@ -110,7 +110,7 @@ function Keys({ entity }: { entity: EntityType }) {
                     <div className="p-8 text-center text-gray-500">
                         {searchQuery ? (
                             <div className="flex flex-col items-center gap-2">
-                                <p>No keys found matching "{searchQuery}"</p>
+                                <p>No keys found matching &quot;{searchQuery}&quot;</p>
                                 <Button
                                     variant="ghost"
                                     onClick={() => setSearchQuery("")}

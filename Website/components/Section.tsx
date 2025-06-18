@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useScrollTo } from "@/hooks/useScrollTo"
 import { EntityType } from "@/lib/Types"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
@@ -9,7 +9,7 @@ import { SecurityRoles } from "./entity/SecurityRoles"
 import Relationships from "./Relationships"
 import Attributes from "./Attributes"
 import Keys from "./Keys"
-import { KeyRound, Sheet, Tags, Unplug } from "lucide-react"
+import { KeyRound, Tags, Unplug } from "lucide-react"
 
 function Section({
     entity,
