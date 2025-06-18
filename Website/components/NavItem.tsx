@@ -5,7 +5,6 @@ import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, Side
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { GroupType } from "../lib/Types";
 import { useEffect, useState } from "react";
-import { Label, SelectLabel } from "@radix-ui/react-select";
 
 export default function NavItem({
     group,
@@ -27,8 +26,8 @@ export default function NavItem({
         <SidebarGroup>
             <SidebarGroupLabel asChild>
                 <CollapsibleTrigger
-                    className={`flex items-center w-full gap-2 rounded-md p-2 transition-colors cursor-pointer text-left
-                        ${isExpanded ? 'bg-blue-100 text-blue-900' : 'bg-sidebar-accent text-sidebar-accent-foreground'}
+                    className={`flex items-center w-full gap-2 rounded-md p-2 transition-colors cursor-pointer text-left border
+                        ${isExpanded ? 'bg-blue-100 text-blue-900 border-blue-500' : 'bg-sidebar-accent text-sidebar-accent-foreground'}
                         focus-visible:ring-2 focus-visible:ring-sidebar-ring outline-none`}
                     data-state={isExpanded ? 'open' : 'closed'}
                 >
