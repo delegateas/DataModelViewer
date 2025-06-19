@@ -43,18 +43,21 @@ function Section({
 
                 <Tabs defaultValue="attributes">
                     <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
-                        <TabsList className="bg-transparent p-0">
-                            <TabsTrigger value="attributes" className="data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
-                                <Tags className="mr-2 h-4 w-4" />Attributes [{entity.Attributes.length}]
+                        <TabsList className="bg-transparent p-0 flex overflow-x-auto no-scrollbar gap-1 sm:gap-2">
+                            <TabsTrigger value="attributes" className="flex items-center min-w-[120px] sm:min-w-[140px] px-2 sm:px-4 py-2 text-xs sm:text-sm md:text-base truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
+                                <Tags className="mr-2 h-4 w-4 shrink-0" />
+                                <span className="truncate">Attributes [{entity.Attributes.length}]</span>
                             </TabsTrigger>
                             {entity.Relationships.length ? 
-                                <TabsTrigger value="relationships" className="data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
-                                    <Unplug className="mr-2 h-4 w-4" />Relationships [{entity.Relationships.length}]
+                                <TabsTrigger value="relationships" className="flex items-center min-w-[140px] sm:min-w-[160px] px-2 sm:px-4 py-2 text-xs sm:text-sm md:text-base truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
+                                    <Unplug className="mr-2 h-4 w-4 shrink-0" />
+                                    <span className="truncate">Relationships [{entity.Relationships.length}]</span>
                                 </TabsTrigger> 
                                 : <></> 
                             }
-                            <TabsTrigger value="keys" className="data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
-                                <KeyRound className="mr-2 h-4 w-4" />Keys [{entity.Keys.length}]
+                            <TabsTrigger value="keys" className="flex items-center min-w-[100px] sm:min-w-[120px] px-2 sm:px-4 py-2 text-xs sm:text-sm md:text-base truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
+                                <KeyRound className="mr-2 h-4 w-4 shrink-0" />
+                                <span className="truncate">Keys [{entity.Keys.length}]</span>
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="attributes" className="m-0 p-0">
