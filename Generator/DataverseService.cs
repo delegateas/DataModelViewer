@@ -71,8 +71,8 @@ namespace Generator
             var relatedEntityLogicalNames = new HashSet<string>();
             foreach (var entity in solutionEntityMetadata)
             {
-                var entityLogicalNamesOutsideSolution = entity.Attributes.OfType<LookupAttributeMetadata>()
-                    .Where(attr => attr.MetadataId.HasValue && attributesInSolution.Contains(attr.MetadataId.Value))
+                var entityLogicalNamesOutsideSolution = entity.Attributes
+                    .OfType<LookupAttributeMetadata>()
                     .SelectMany(attr => attr.Targets)
                     .Distinct()
                     .Where(target => !entityLogicalNamesInSolution.Contains(target));
