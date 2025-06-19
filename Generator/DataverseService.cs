@@ -124,7 +124,8 @@ namespace Generator
                         attributeLogicalToSchema,
                         securityRoles ?? new List<SecurityRole>(),
                         keys ?? new List<Key>(),
-                        entityIconMap);
+                        entityIconMap,
+                        configuration);
                 });
         }
 
@@ -140,7 +141,8 @@ namespace Generator
             Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
             List<SecurityRole> securityRoles,
             List<Key> keys,
-            Dictionary<string, string> entityIconMap)
+            Dictionary<string, string> entityIconMap,
+            IConfiguration configuration)
         {
             var attributes =
                 relevantAttributes
@@ -172,7 +174,30 @@ namespace Generator
                     null))
                 .ToList();
 
-            var (group, description) = GetGroupAndDescription(entity);
+            Dictionary<string, string> tablegroups = []; // logicalname -> group
+            var tablegroupstring = configuration["TableGroups"];
+            if (tablegroupstring?.Length > 0)
+            {
+                var groupEntries = tablegroupstring.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var g in groupEntries)
+                {
+                    var tables = g.Split(':');
+                    if (tables.Length != 2)
+                    {
+                        logger.LogError($"Invalid format for tablegroup entry: ({g})");
+                        continue;
+                    }
+
+                    var logicalNames = tables[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var logicalName in logicalNames)
+                        if (!tablegroups.TryAdd(logicalName.Trim().ToLower(), tables[0].Trim()))
+                        {
+                            logger.LogWarning($"Dublicate logicalname detected: {logicalName} (already in tablegroup '{tablegroups[logicalName]}', dublicate found in group '{g}')");
+                            continue;
+                        }
+                }
+            }
+            var (group, description) = GetGroupAndDescription(entity, tablegroups);
 
             entityIconMap.TryGetValue(entity.LogicalName, out string? iconBase64);
 
@@ -212,11 +237,15 @@ namespace Generator
             };
         }
 
-        private static (string? Group, string? Description) GetGroupAndDescription(EntityMetadata entity)
+        private static (string? Group, string? Description) GetGroupAndDescription(EntityMetadata entity, IDictionary<string, string> tableGroups)
         {
             var description = entity.Description.UserLocalizedLabel?.Label ?? string.Empty;
             if (!description.StartsWith("#"))
+            {
+                if (tableGroups.TryGetValue(entity.LogicalName, out var tablegroup))
+                    return (tablegroup, description);
                 return (null, description);
+            }
 
             var newlineIndex = description.IndexOf("\n");
             if (newlineIndex != -1)
