@@ -22,7 +22,7 @@ export function DatamodelView() {
         <TouchProvider>
             <AppSidebar selected={selected} onSelect={entity => setSelected(entity)} />
             { !sidebar.open && !sidebar.isMobile ? <SidebarTrigger className="top-0 sticky" /> : <></> }
-            { !sidebar.open && sidebar.isMobile ? <SidebarTrigger className="fixed top-4 left-4 z-50 md:hidden bg-white rounded-full shadow p-6 border border-gray-200" /> : <></>}
+            { sidebar.isMobile ? <SidebarTrigger className="fixed top-4 left-4 z-50 md:hidden bg-white rounded-full shadow p-6 border border-gray-200" /> : <></>}
             <div className='flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50'>
                 <div className="p-6">
                     <TooltipProvider delayDuration={0}>
