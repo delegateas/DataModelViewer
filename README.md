@@ -55,6 +55,7 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * WebsiteName: Used for the url of the web app presenting the data model to the user. The full URL will be in the format "https://wa-{WebsiteName}.azurewebsites.net/" and must be globally unique. 
 * WebsitePassword: Password used by DMV users to login to the generated site.
 * WebsiteSessionSecret: Key to encrypt the session token with (You can set it to whatever you like, but recommended 32 random characters).
+* TableGroups: Enter a semi-colon separated list of group names and for each group a comma-separated list of table schema names within that group. Then this configuration will be used to order the tables in groups in the DMV side-menu. Example: `Org. tables: team, systemuser, businessunit; Sales: opportunity, lead`
 
 ## After deployment
 * Go to portal.azure.com 

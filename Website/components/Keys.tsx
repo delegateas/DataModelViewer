@@ -11,8 +11,8 @@ type SortColumn = 'name' | 'logicalName' | 'attributes' | null
 type SortDirection = 'asc' | 'desc' | null
 
 function Keys({ entity }: { entity: EntityType }) {
-    const [sortColumn, setSortColumn] = useState<SortColumn>(null)
-    const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+    const [sortColumn, setSortColumn] = useState<SortColumn>("name")
+    const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [searchQuery, setSearchQuery] = useState("")
 
     const handleSort = (column: SortColumn) => {
