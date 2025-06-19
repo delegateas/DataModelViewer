@@ -50,7 +50,7 @@ namespace Generator
             var solutionEntityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
             var rolesInSolution = solutionComponents.Where(solutionComponents => solutionComponents.ComponentType == 20).Select(x => x.ObjectId).ToList();
-            var logicalNameToKeys = entityMetadata.ToDictionary(
+            var logicalNameToKeys = solutionEntityMetadata.ToDictionary(
                 entity => entity.LogicalName,
                 entity => entity.Keys.Select(key => new Key(
                     key.DisplayName.UserLocalizedLabel?.Label ?? key.DisplayName.LocalizedLabels.First().Label,
@@ -58,7 +58,7 @@ namespace Generator
                     key.KeyAttributes)
                 ).ToList());
 
-            var relevantEntities = entityMetadata.Where(e => entityIdToRootBehavior.ContainsKey(e.MetadataId!.Value)).ToList();
+            var relevantEntities = solutionEntityMetadata.Where(e => entityIdToRootBehavior.ContainsKey(e.MetadataId!.Value)).ToList();
             var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution, relevantEntities.ToDictionary(x => x.LogicalName, x => x.Privileges));
             var entityLogicalNamesInSolution =
                 relevantEntities
