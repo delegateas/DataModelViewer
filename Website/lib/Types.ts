@@ -80,9 +80,14 @@ export type IntegerAttributeType = BaseAttribute & {
     MaxValue: number,
 }
 
+export type ExtendedEntityInformationType = {
+    Name: string;
+    IsInSolution: boolean;
+}
+
 export type LookupAttributeType = BaseAttribute & {
     AttributeType: "LookupAttribute",
-    Targets: string[],
+    Targets: ExtendedEntityInformationType[],
 }
 
 export type DecimalAttributeType = BaseAttribute & {
