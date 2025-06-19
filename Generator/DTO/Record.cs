@@ -4,7 +4,7 @@ using Attribute = Generator.DTO.Attributes.Attribute;
 namespace Generator.DTO;
 
 internal record Record(
-    string DisplayName, 
+    string DisplayName,
     string SchemaName,
     string? Group,
     string? Description,
@@ -15,5 +15,6 @@ internal record Record(
     List<Attribute> Attributes,
     List<Relationship> Relationships,
     List<SecurityRole> SecurityRoles,
+    List<Key> Keys,
     string? IconBase64);
 

@@ -50,9 +50,20 @@ namespace Generator
             var solutionEntityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
             var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
             var rolesInSolution = solutionComponents.Where(solutionComponents => solutionComponents.ComponentType == 20).Select(x => x.ObjectId).ToList();
-            var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution);
+            var logicalNameToKeys = entityMetadata.ToDictionary(
+                entity => entity.LogicalName,
+                entity => entity.Keys.Select(key => new Key(
+                    key.DisplayName.UserLocalizedLabel?.Label ?? key.DisplayName.LocalizedLabels.First().Label,
+                    key.LogicalName,
+                    key.KeyAttributes)
+                ).ToList());
 
-            var entityLogicalNamesInSolution = solutionEntityMetadata.Select(e => e.LogicalName).ToHashSet();
+            var relevantEntities = entityMetadata.Where(e => entityIdToRootBehavior.ContainsKey(e.MetadataId!.Value)).ToList();
+            var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution, relevantEntities.ToDictionary(x => x.LogicalName, x => x.Privileges));
+            var entityLogicalNamesInSolution =
+                relevantEntities
+                .Select(e => e.LogicalName)
+                .ToHashSet();
 
             logger.LogDebug("There are {Count} entities in the solution.", entityLogicalNamesInSolution.Count);
 
@@ -99,6 +110,7 @@ namespace Generator
                 .Select(x =>
                 {
                     logicalNameToSecurityRoles.TryGetValue(x.EntityMetadata.LogicalName, out var securityRoles);
+                    logicalNameToKeys.TryGetValue(x.EntityMetadata.LogicalName, out var keys);
 
                     return MakeRecord(
                         x.EntityMetadata,
@@ -110,6 +122,7 @@ namespace Generator
                         logicalToSchema,
                         attributeLogicalToSchema,
                         securityRoles ?? new List<SecurityRole>(),
+                        keys ?? new List<Key>(),
                         entityIconMap);
                 });
         }
@@ -124,6 +137,7 @@ namespace Generator
             Dictionary<string, ExtendedEntityInformation> logicalToSchema,
             Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
             List<SecurityRole> securityRoles,
+            List<Key> keys,
             Dictionary<string, string> entityIconMap)
         {
             var attributes =
@@ -172,6 +186,7 @@ namespace Generator
                     attributes,
                     oneToMany.Concat(manyToMany).ToList(),
                     securityRoles,
+                    keys,
                     iconBase64);
         }
 
@@ -319,7 +334,7 @@ namespace Generator
                 .ToList();
         }
 
-        private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles(List<Guid> rolesInSolution)
+        private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles(List<Guid> rolesInSolution, Dictionary<string, SecurityPrivilegeMetadata[]> priviledges)
         {
             var query = new QueryExpression("role")
             {
@@ -371,9 +386,16 @@ namespace Generator
                     name,
                     depth,
                     accessRight,
-                    objectTypeCode = objectTypeCode ?? string.Empty,
+                    objectTypeCode = objectTypeCode ?? string.Empty
                 };
             });
+
+            static PrivilegeDepth? GetDepth(Dictionary<AccessRights, PrivilegeDepth> dict, AccessRights right, SecurityPrivilegeMetadata? meta)
+            {
+                if (!dict.TryGetValue(right, out var value))
+                    return meta?.CanBeGlobal ?? false ? 0 : null;
+                return value;
+            }
 
             return privileges
                 .GroupBy(x => x.objectTypeCode)
@@ -382,17 +404,23 @@ namespace Generator
                     .GroupBy(x => x.name)
                     .Select(byRole =>
                     {
-                        var accessrightToDepth = byRole.GroupBy(x => x.accessRight).ToDictionary(x => x.Key, x => x.First().depth);
+                        var accessRights = byRole
+                            .GroupBy(x => x.accessRight)
+                            .ToDictionary(x => x.Key, x => x.First().depth);
+
+                        var priviledgeMetadata = priviledges.GetValueOrDefault(byLogicalName.Key) ?? [];
+
                         return new SecurityRole(
                             byRole.Key,
                             byLogicalName.Key,
-                            accessrightToDepth.GetValueOrDefault(AccessRights.CreateAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.ReadAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.WriteAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.DeleteAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.AppendAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.AppendToAccess),
-                            accessrightToDepth.GetValueOrDefault(AccessRights.AssignAccess)
+                            GetDepth(accessRights, AccessRights.CreateAccess, priviledgeMetadata.FirstOrDefault(p => p.PrivilegeType == PrivilegeType.Create)),
+                            GetDepth(accessRights, AccessRights.ReadAccess, priviledgeMetadata.FirstOrDefault(p => p.PrivilegeType == PrivilegeType.Read)),
+                            GetDepth(accessRights, AccessRights.WriteAccess, priviledgeMetadata.FirstOrDefault(p => p.PrivilegeType == PrivilegeType.Write)),
+                            GetDepth(accessRights, AccessRights.DeleteAccess, priviledgeMetadata.FirstOrDefault(p => p.PrivilegeType == PrivilegeType.Delete)),
+                            GetDepth(accessRights, AccessRights.AppendAccess, priviledgeMetadata.FirstOrDefault(p => p.PrivilegeType == PrivilegeType.Append)),
+                            GetDepth(accessRights, AccessRights.AppendToAccess, priviledgeMetadata.FirstOrDefault(p => p.PrivilegeType == PrivilegeType.AppendTo)),
+                            GetDepth(accessRights, AccessRights.AssignAccess, priviledgeMetadata.FirstOrDefault(p => p.PrivilegeType == PrivilegeType.Assign)),
+                            GetDepth(accessRights, AccessRights.ShareAccess, priviledgeMetadata.FirstOrDefault(p => p.PrivilegeType == PrivilegeType.Share))
                         );
                     })
                     .ToList());
