@@ -31,7 +31,7 @@ export default function NavItem({
                         focus-visible:ring-2 focus-visible:ring-sidebar-ring outline-none`}
                     data-state={isExpanded ? 'open' : 'closed'}
                 >
-                    <a className="flex-1 font-bold text-base text-left" href={`?selected=${group.Name}`}><span>{group.Name}</span></a>
+                    <a className="flex-1 font-bold text-base text-left truncate" href={`?selected=${group.Name}`}><span>{group.Name}</span></a>
                     <p className="ml-auto font-semibold text-xs opacity-70">{group.Entities.length}</p>
                     <ChevronDown className={`ml-2 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </CollapsibleTrigger>
