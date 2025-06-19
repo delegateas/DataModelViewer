@@ -113,6 +113,7 @@ namespace Generator
                     logicalNameToKeys.TryGetValue(x.EntityMetadata.LogicalName, out var keys);
 
                     return MakeRecord(
+                        logger,
                         x.EntityMetadata,
                         x.RelevantAttributes,
                         x.RelevantManyToMany,
@@ -129,6 +130,7 @@ namespace Generator
         }
 
         private static Record MakeRecord(
+            ILogger<DataverseService> logger,
             EntityMetadata entity,
             List<AttributeMetadata> relevantAttributes,
             List<ManyToManyRelationshipMetadata> relevantManyToMany,
@@ -182,8 +184,7 @@ namespace Generator
                     var tables = g.Split(':');
                     if (tables.Length != 2)
                     {
-                        // TODO - replace with logger with other PR
-                        Console.WriteLine($"Invalid format for tablegroup entry: ({g})");
+                        logger.LogError($"Invalid format for tablegroup entry: ({g})");
                         continue;
                     }
 
@@ -191,8 +192,7 @@ namespace Generator
                     foreach (var logicalName in logicalNames)
                         if (!tablegroups.TryAdd(logicalName.Trim().ToLower(), tables[0].Trim()))
                         {
-                            // TODO - replace with logger with other PR
-                            Console.WriteLine($"Dublicate logicalname detected: {logicalName} (already in tablegroup '{tablegroups[logicalName]}', dublicate found in group '{g}')");
+                            logger.LogWarning($"Dublicate logicalname detected: {logicalName} (already in tablegroup '{tablegroups[logicalName]}', dublicate found in group '{g}')");
                             continue;
                         }
                 }
