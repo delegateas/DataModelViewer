@@ -65,7 +65,7 @@ namespace Generator
                 .Select(e => e.LogicalName)
                 .ToHashSet();
 
-            logger.LogDebug("There are {Count} entities in the solution.", entityLogicalNamesInSolution.Count);
+            logger.LogInformation("There are {Count} entities in the solution.", entityLogicalNamesInSolution.Count);
 
             // Collect all referenced entities from attributes and add (needed for lookup attributes)
             var relatedEntityLogicalNames = new HashSet<string>();
@@ -79,7 +79,7 @@ namespace Generator
                 foreach (var target in entityLogicalNamesOutsideSolution) relatedEntityLogicalNames.Add(target);
             }
 
-            logger.LogDebug("There are {Count} entities referenced outside the solution.", relatedEntityLogicalNames.Count);
+            logger.LogInformation("There are {Count} entities referenced outside the solution.", relatedEntityLogicalNames.Count);
             var referencedEntityMetadata = await GetEntityMetadataByLogicalName(relatedEntityLogicalNames.ToList());
 
             var allEntityMetadata = solutionEntityMetadata.Concat(referencedEntityMetadata).ToList();
@@ -113,6 +113,7 @@ namespace Generator
                     logicalNameToKeys.TryGetValue(x.EntityMetadata.LogicalName, out var keys);
 
                     return MakeRecord(
+                        logger,
                         x.EntityMetadata,
                         x.RelevantAttributes,
                         x.RelevantManyToMany,
@@ -128,6 +129,7 @@ namespace Generator
         }
 
         private static Record MakeRecord(
+            ILogger<DataverseService> logger,
             EntityMetadata entity,
             List<AttributeMetadata> relevantAttributes,
             List<ManyToManyRelationshipMetadata> relevantManyToMany,
@@ -142,7 +144,7 @@ namespace Generator
         {
             var attributes =
                 relevantAttributes
-                .Select(metadata => GetAttribute(metadata, entity, logicalToSchema))
+                .Select(metadata => GetAttribute(metadata, entity, logicalToSchema, logger))
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 
@@ -190,13 +192,13 @@ namespace Generator
                     iconBase64);
         }
 
-        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, ExtendedEntityInformation> logicalToSchema)
+        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, ExtendedEntityInformation> logicalToSchema, ILogger<DataverseService> logger)
         {
             return metadata switch
             {
                 PicklistAttributeMetadata picklist => new ChoiceAttribute(picklist),
                 MultiSelectPicklistAttributeMetadata multiSelect => new ChoiceAttribute(multiSelect),
-                LookupAttributeMetadata lookup => new LookupAttribute(lookup, logicalToSchema),
+                LookupAttributeMetadata lookup => new LookupAttribute(lookup, logicalToSchema, logger),
                 StatusAttributeMetadata status => new StatusAttribute(status, (StateAttributeMetadata)entity.Attributes.First(x => x is StateAttributeMetadata)),
                 StringAttributeMetadata stringMetadata => new StringAttribute(stringMetadata),
                 IntegerAttributeMetadata integer => new IntegerAttribute(integer),

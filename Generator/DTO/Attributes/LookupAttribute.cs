@@ -1,4 +1,5 @@
-﻿using Microsoft.Xrm.Sdk.Metadata;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator.DTO.Attributes;
 
@@ -12,11 +13,14 @@ internal class LookupAttribute : Attribute
 {
     public IEnumerable<ExtendedEntityInformation> Targets { get; }
 
-    public LookupAttribute(LookupAttributeMetadata metadata, Dictionary<string, ExtendedEntityInformation> logicalToSchema)
+    public LookupAttribute(LookupAttributeMetadata metadata, Dictionary<string, ExtendedEntityInformation> logicalToSchema, ILogger<DataverseService> logger)
         : base(metadata)
     {
+        foreach (var target in metadata.Targets) { if (!logicalToSchema.ContainsKey(target)) logger.LogError($"Missing logicalname in logicalToSchema {target}, on entity {metadata.EntityLogicalName}."); }
+
         Targets =
             metadata.Targets
+            .Where(target => !logicalToSchema.ContainsKey(target))
             .Select(target => logicalToSchema[target]);
     }
 }
