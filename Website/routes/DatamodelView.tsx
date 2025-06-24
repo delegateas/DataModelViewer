@@ -2,11 +2,11 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { AppSidebar } from "./AppSiderbar";
-import List from "./List";
-import { TooltipProvider } from "./ui/tooltip";
-import { TouchProvider } from "./ui/hybridtooltop";
-import { SidebarTrigger, useSidebar } from "./ui/sidebar";
+import { AppSidebar } from "../components/AppSiderbar";
+import List from "../components/List";
+import { TooltipProvider } from "../components/ui/tooltip";
+import { TouchProvider } from "../components/ui/hybridtooltop";
+import { SidebarTrigger, useSidebar } from "../components/ui/sidebar";
 
 export function DatamodelView() {
     const [selected, setSelected] = useState<string | null>(null);

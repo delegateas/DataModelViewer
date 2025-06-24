@@ -1,9 +1,6 @@
-import { DatamodelView } from "@/components/DatamodelView";
-import { Loading } from "@/components/ui/loading";
-import { Suspense } from "react";
+"use client";
+import { DatamodelView } from "@/routes/DatamodelView";
 
 export default function Home() {
-  return <Suspense fallback={<Loading />}>
-      <DatamodelView />
-    </Suspense>
+  return <DatamodelView />;
 }
