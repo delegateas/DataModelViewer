@@ -2,10 +2,12 @@
 
 namespace Generator.DTO;
 
+
 public record Relationship(
-    string Name, 
-    string TableSchema, 
-    string LookupDisplayName, 
+    bool IsManaged,
+    string Name,
+    string TableSchema,
+    string LookupDisplayName,
     string RelationshipSchema,
     bool IsManyToMany,
     CascadeConfiguration? CascadeConfiguration);

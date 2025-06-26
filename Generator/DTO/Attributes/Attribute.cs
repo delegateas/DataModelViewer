@@ -4,6 +4,7 @@ namespace Generator.DTO.Attributes;
 
 public abstract class Attribute
 {
+    public bool IsManaged { get; }
     public string DisplayName { get; }
     public string SchemaName { get; }
     public string Description { get; }
@@ -15,6 +16,7 @@ public abstract class Attribute
 
     protected Attribute(AttributeMetadata metadata)
     {
+        IsManaged = metadata.IsManaged ?? false;
         DisplayName = metadata.DisplayName.UserLocalizedLabel?.Label ?? string.Empty;
         SchemaName = metadata.SchemaName;
         Description = metadata.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty;

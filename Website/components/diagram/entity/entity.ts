@@ -1,6 +1,7 @@
 import { AttributeType, EntityType } from '@/lib/Types';
 import { dia, util } from '@joint/core';
 import { EntityBody } from './EntityBody';
+import Attributes from '@/components/Attributes';
 
 export class EntityElement extends dia.Element {
 
@@ -10,36 +11,79 @@ export class EntityElement extends dia.Element {
         if (entity) this.updateAttributes(entity);
     }
 
-    updateAttributes(entity: EntityType) {
+    static getVisibleItemsAndPorts(entity: EntityType) {
         const itemHeight = 32;
         const headerHeight = 80;
-        const maxHeight = this.get('size')!.height;
+        const maxHeight = 360; // default size
         const availableHeight = maxHeight - headerHeight;
         const maxVisibleItems = Math.floor(availableHeight / itemHeight);
-        // thoughts only custom no MS lookups. Then we can add functionality to add extra lookups 
-        console.log(entity.Relationships.filter(r => !r.Name.startsWith("regarding") 
-            && !r.Name.startsWith("object") 
-            && !r.Name.startsWith("record") 
-            && !r.Name.startsWith("msa") 
-            && !r.Name.startsWith("master")))
-        const visibleItems = entity.Attributes.filter(attr => attr.AttributeType === "LookupAttribute" && attr.Targets.every(t => t.IsInSolution)).slice(0, maxVisibleItems);
+        const visibleItems = [
+            { DisplayName: "Key", SchemaName: entity.SchemaName + "id" } as AttributeType,
+            ...entity.Attributes.filter(attr =>
+                attr.AttributeType === "LookupAttribute" &&
+                !attr.IsManaged &&
+                !attr.SchemaName.startsWith("msdyn")
+            )
+        ].slice(0, maxVisibleItems);
+        // Map SchemaName to port name
+        const portMap: Record<string, string> = {};
+        for (const attr of visibleItems) {
+            portMap[attr.SchemaName.toLowerCase()] = `port-${attr.SchemaName.toLowerCase()}`;
+        }
+        return { visibleItems, portMap };
+    }
 
+    updateAttributes(entity: EntityType) {
+        const { visibleItems, portMap } = EntityElement.getVisibleItemsAndPorts(entity);
         const html = EntityBody({ entity, visibleItems });
 
-        // links for relationships
-        const itemAttrs: any = {};
-        visibleItems.forEach((_, i) => {
-            itemAttrs[`port-${i}`] = {
-                ref: 'body',
-                refX: '100%',
-                refY: 80 + i * itemHeight + itemHeight / 2,
-                xAlignment: 'middle',
-                yAlignment: 'middle',
-                magnet: true,
-                r: 6,
-                fill: '#2563eb',
-                stroke: '#1e40af'
+        // Markup
+        const baseMarkup = [
+            { tagName: 'rect', selector: 'body' },
+            { tagName: 'foreignObject', selector: 'fo' }
+        ];
+
+        this.set('markup', baseMarkup);
+
+        const itemHeight = 28;
+        const itemYSpacing = 8;
+        const itemXSpacing = 16;
+        const startY = 80 + itemYSpacing / 2;
+
+        const height = startY + visibleItems.length * (itemHeight + itemYSpacing);
+
+        // Generate ports and SVG attributes
+        const portItems = visibleItems.map((attr, i) => {
+            const portId = `port-${attr.SchemaName.toLowerCase()}`;
+            const y = startY + i * (itemHeight + itemYSpacing);
+
+            return {
+                id: portId,
+                group: 'attribute',
+                args: { x: itemXSpacing, y },
+                attrs: {
+                    'attribute-rect': {
+                        width: 480 - itemXSpacing * 2,
+                        fill: "transparent",
+                        height: itemHeight,
+                        magnet: true
+                    },
+                }
             };
+        });
+
+        this.set('ports', {
+            groups: {
+                attribute: {
+                    position: {
+                        name: 'absolute'
+                    },
+                    markup: [
+                        { tagName: 'rect', selector: 'attribute-rect' }
+                    ]
+                }
+            },
+            items: portItems
         });
 
         this.set('attrs', {
@@ -48,24 +92,10 @@ export class EntityElement extends dia.Element {
                 refWidth: '100%',
                 refHeight: '100%',
                 html
-            },
-            ...itemAttrs
+            }
         });
 
-        // Markup
-        const baseMarkup = [
-            { tagName: 'rect', selector: 'body' },
-            {
-                tagName: 'foreignObject',
-                selector: 'fo'
-            },
-            ...visibleItems.map((_, i) => ({
-                tagName: 'circle',
-                selector: `port-${i}`
-            }))
-        ];
-
-        this.set('markup', baseMarkup);
+        this.resize(480, height);
     }
 
     defaults() {

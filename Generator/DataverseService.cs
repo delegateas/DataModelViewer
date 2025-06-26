@@ -151,8 +151,9 @@ namespace Generator
                 .ToList();
 
             var oneToMany = (entity.OneToManyRelationships ?? Enumerable.Empty<OneToManyRelationshipMetadata>())
-                .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity) && attributeLogicalToSchema[x.ReferencingEntity].ContainsKey(x.ReferencingAttribute))
+                .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity) && logicalToSchema[x.ReferencingEntity].IsInSolution && attributeLogicalToSchema[x.ReferencingEntity].ContainsKey(x.ReferencingAttribute))
                 .Select(x => new DTO.Relationship(
+                    x.IsManaged ?? false,
                     x.ReferencingEntityNavigationPropertyName,
                     logicalToSchema[x.ReferencingEntity].Name,
                     attributeLogicalToSchema[x.ReferencingEntity][x.ReferencingAttribute],
@@ -162,8 +163,9 @@ namespace Generator
                 .ToList();
 
             var manyToMany = relevantManyToMany
-                .Where(x => logicalToSchema.ContainsKey(x.Entity1LogicalName))
+                .Where(x => logicalToSchema.ContainsKey(x.Entity1LogicalName) && logicalToSchema[x.Entity1LogicalName].IsInSolution)
                 .Select(x => new DTO.Relationship(
+                    x.IsManaged ?? false,
                     x.Entity1AssociatedMenuConfiguration.Behavior == AssociatedMenuBehavior.UseLabel
                     ? x.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel?.Label ?? x.Entity1NavigationPropertyName
                     : x.Entity1NavigationPropertyName,

@@ -41,6 +41,7 @@ export const enum CalculationMethods {
 }
 
 export type BaseAttribute = {
+    IsManaged: boolean,
     DisplayName: string,
     SchemaName: string,
     Description: string | null,
@@ -159,6 +160,7 @@ export type CascadeConfigurationType = {
 }
 
 export type RelationshipType = {
+    IsManaged: boolean,
     Name: string,
     TableSchema: string,
     LookupDisplayName: string,
