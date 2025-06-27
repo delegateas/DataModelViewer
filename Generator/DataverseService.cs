@@ -86,7 +86,7 @@ namespace Generator
                 {
                     EntityMetadata = x,
                     RelevantAttributes =
-                        x.GetRelevantAttributes()
+                        x.GetRelevantAttributes(attributesInSolution)
                         .Where(x => x.DisplayName.UserLocalizedLabel?.Label != null)
                         .ToList(),
                     RelevantManyToMany =
@@ -94,7 +94,6 @@ namespace Generator
                         .Where(r => entityLogicalNamesInSolution.Contains(r.IntersectEntityName.ToLower()))
                         .ToList(),
                 })
-                .Where(x => x.RelevantAttributes.Count > 0)
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
                 .ToList();
 
@@ -142,7 +141,7 @@ namespace Generator
             var oneToMany = (entity.OneToManyRelationships ?? Enumerable.Empty<OneToManyRelationshipMetadata>())
                 .Where(x => logicalToSchema.ContainsKey(x.ReferencingEntity) && logicalToSchema[x.ReferencingEntity].IsInSolution && attributeLogicalToSchema[x.ReferencingEntity].ContainsKey(x.ReferencingAttribute))
                 .Select(x => new DTO.Relationship(
-                    x.IsManaged ?? false,
+                    x.IsCustomRelationship ?? false,
                     x.ReferencingEntityNavigationPropertyName,
                     logicalToSchema[x.ReferencingEntity].Name,
                     attributeLogicalToSchema[x.ReferencingEntity][x.ReferencingAttribute],
@@ -154,7 +153,7 @@ namespace Generator
             var manyToMany = relevantManyToMany
                 .Where(x => logicalToSchema.ContainsKey(x.Entity1LogicalName) && logicalToSchema[x.Entity1LogicalName].IsInSolution)
                 .Select(x => new DTO.Relationship(
-                    x.IsManaged ?? false,
+                    x.IsCustomRelationship ?? false,
                     x.Entity1AssociatedMenuConfiguration.Behavior == AssociatedMenuBehavior.UseLabel
                     ? x.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel?.Label ?? x.Entity1NavigationPropertyName
                     : x.Entity1NavigationPropertyName,
@@ -272,7 +271,6 @@ namespace Generator
                 async (objectId, token) =>
                 {
                     metadata.Add(await client.RetrieveEntityAsync(objectId, token));
-
                 });
 
             return metadata;
@@ -295,7 +293,6 @@ namespace Generator
                 async (logicalName, token) =>
                 {
                     metadata.Add(await client.RetrieveEntityByLogicalNameAsync(logicalName, token));
-
                 });
 
             return metadata;
@@ -518,6 +515,9 @@ namespace Generator
 
             if (configuration["DataverseClientId"] != null && configuration["DataverseClientSecret"] != null)
                 return new ClientSecretCredential(configuration["TenantId"], configuration["DataverseClientId"], configuration["DataverseClientSecret"]);
+
+            if (configuration["DataverseClientId"] != null)
+                return new InteractiveBrowserCredential();
 
             logger.LogTrace("Using Default Managed Identity");
 

@@ -24,7 +24,7 @@ export class EntityElement extends dia.Element {
             { DisplayName: "Key", SchemaName: entity.SchemaName + "id" } as AttributeType,
             ...entity.Attributes.filter(attr =>
                 attr.AttributeType === "LookupAttribute" &&
-                !attr.IsManaged &&
+                !attr.IsCustom &&
                 !attr.SchemaName.startsWith("msdyn")
             )
         ].slice(0, maxVisibleItems);

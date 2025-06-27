@@ -4,7 +4,7 @@ namespace Generator.DTO;
 
 
 public record Relationship(
-    bool IsManaged,
+    bool IsCustom,
     string Name,
     string TableSchema,
     string LookupDisplayName,
