@@ -20,7 +20,7 @@ internal class LookupAttribute : Attribute
 
         Targets =
             metadata.Targets
-            .Where(target => !logicalToSchema.ContainsKey(target))
+            .Where(target => logicalToSchema.ContainsKey(target))
             .Select(target => logicalToSchema[target]);
     }
 }
