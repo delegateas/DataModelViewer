@@ -27,7 +27,7 @@ export function EntityBody({ entity, visibleItems }: IEntityBody): string {
             </div>
             <!-- ATTRIBUTES -->
             <div class="w-full flex flex-col">
-                ${visibleItems.map(attribute => (EntityAttribute({ attribute }))).join('')}
+                ${visibleItems.map((attribute, i) => (EntityAttribute({ attribute, isKey: i == 0 }))).join('')}
             </div>
         </div>
     `;

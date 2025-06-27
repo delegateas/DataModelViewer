@@ -1,13 +1,16 @@
 import { AttributeType, EntityType } from '@/lib/Types';
 import { dia, util } from '@joint/core';
 import { EntityBody } from './EntityBody';
-import Attributes from '@/components/Attributes';
+
+interface IEntityElement {
+    entity: EntityType;
+}
 
 export class EntityElement extends dia.Element {
 
     initialize(...args: any[]) {
         super.initialize(...args);
-        const entity = this.get('data');
+        const { entity } = this.get('data') as IEntityElement;
         if (entity) this.updateAttributes(entity);
     }
 
@@ -25,6 +28,7 @@ export class EntityElement extends dia.Element {
                 !attr.SchemaName.startsWith("msdyn")
             )
         ].slice(0, maxVisibleItems);
+
         // Map SchemaName to port name
         const portMap: Record<string, string> = {};
         for (const attr of visibleItems) {
@@ -47,43 +51,74 @@ export class EntityElement extends dia.Element {
 
         const itemHeight = 28;
         const itemYSpacing = 8;
-        const itemXSpacing = 16;
-        const startY = 80 + itemYSpacing / 2;
+        const startY = 80 + itemYSpacing * 2;
 
         const height = startY + visibleItems.length * (itemHeight + itemYSpacing);
 
-        // Generate ports and SVG attributes
-        const portItems = visibleItems.map((attr, i) => {
-            const portId = `port-${attr.SchemaName.toLowerCase()}`;
-            const y = startY + i * (itemHeight + itemYSpacing);
+        const leftPorts: dia.Element.Port[] = [];
+        const rightPorts: dia.Element.Port[] = [];
 
-            return {
+        visibleItems.forEach((attr, i) => {
+            const portId = `port-${attr.SchemaName.toLowerCase()}`;
+            const yPosition = startY + i * (itemHeight + itemYSpacing);
+
+            const portConfig = {
                 id: portId,
-                group: 'attribute',
-                args: { x: itemXSpacing, y },
+                group: attr.AttributeType === "LookupAttribute" ? 'right' : 'left',
+                args: { y: yPosition },
                 attrs: {
-                    'attribute-rect': {
-                        width: 480 - itemXSpacing * 2,
-                        fill: "transparent",
-                        height: itemHeight,
-                        magnet: true
-                    },
+                    circle: {
+                        r: 6,
+                        magnet: true,
+                        stroke: '#31d0c6',
+                        fill: '#fff',
+                        strokeWidth: 2
+                    }
                 }
             };
+
+            // Heuristic: If it's a LookupAttribute, treat as outgoing (right); otherwise, incoming (left)
+            if (attr.AttributeType === "LookupAttribute") {
+                portConfig.group = 'right';
+                rightPorts.push(portConfig);
+            } else {
+                portConfig.group = 'left';
+                leftPorts.push(portConfig);
+            }
         });
 
         this.set('ports', {
             groups: {
-                attribute: {
+                left: {
                     position: {
-                        name: 'absolute'
+                        name: 'left'
                     },
-                    markup: [
-                        { tagName: 'rect', selector: 'attribute-rect' }
-                    ]
+                    attrs: {
+                        circle: {
+                            r: 6,
+                            magnet: true,
+                            stroke: '#31d0c6',
+                            fill: '#fff',
+                            strokeWidth: 2
+                        }
+                    }
+                },
+                right: {
+                    position: {
+                        name: 'right'
+                    },
+                    attrs: {
+                        circle: {
+                            r: 6,
+                            magnet: true,
+                            stroke: '#31d0c6',
+                            fill: '#fff',
+                            strokeWidth: 2
+                        }
+                    }
                 }
             },
-            items: portItems
+            items: [...leftPorts, ...rightPorts]
         });
 
         this.set('attrs', {
