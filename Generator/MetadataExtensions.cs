@@ -8,7 +8,7 @@ public static class MetadataExtensions
 
     private static readonly Func<AttributeMetadata, bool> IsCustomOrModifiedStandardField = (AttributeMetadata attribute) =>
     {
-        bool isCustomField = attribute.IsCustomAttribute ?? false;
+        bool isCustomField = attribute.IsCustomAttribute.HasValue && attribute.IsCustomAttribute.Value;
         bool hasBeenModified = attribute.ModifiedOn.HasValue && attribute.CreatedOn.HasValue && attribute.ModifiedOn != attribute.CreatedOn;
 
         return isCustomField || hasBeenModified;
