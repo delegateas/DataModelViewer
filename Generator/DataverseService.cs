@@ -38,19 +38,20 @@ namespace Generator
             client = new ServiceClient(
                 instanceUrl: new Uri(dataverseUrl),
                 tokenProviderFunction: url => TokenProviderFunction(url, cache, logger));
-
-
         }
 
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
         {
             var (publisherPrefix, solutionIds) = await GetSolutionIds();
-            var solutionComponents = await GetSolutionComponents(solutionIds);
-            var entityIdToRootBehavior = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
-            var solutionEntityMetadata = await GetEntityMetadata(entityIdToRootBehavior.Keys.ToList());
-            var attributesInSolution = new HashSet<Guid>(solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId));
-            var rolesInSolution = solutionComponents.Where(solutionComponents => solutionComponents.ComponentType == 20).Select(x => x.ObjectId).ToList();
-            var logicalNameToKeys = solutionEntityMetadata.ToDictionary(
+            var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type)
+
+            var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).Select(x => x.ObjectId).ToList();
+            var attributesInSolution = solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId).ToHashSet();
+            var rolesInSolution = solutionComponents.Where(x => x.ComponentType == 20).Select(x => x.ObjectId).ToList();
+
+            var entitiesInSolutionMetadata = await GetEntityMetadata(entitiesInSolution);
+
+            var logicalNameToKeys = entitiesInSolutionMetadata.ToDictionary(
                 entity => entity.LogicalName,
                 entity => entity.Keys.Select(key => new Key(
                     key.DisplayName.UserLocalizedLabel?.Label ?? key.DisplayName.LocalizedLabels.First().Label,
@@ -58,18 +59,13 @@ namespace Generator
                     key.KeyAttributes)
                 ).ToList());
 
-            var relevantEntities = solutionEntityMetadata.Where(e => entityIdToRootBehavior.ContainsKey(e.MetadataId!.Value)).ToList();
-            var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution, relevantEntities.ToDictionary(x => x.LogicalName, x => x.Privileges));
-            var entityLogicalNamesInSolution =
-                relevantEntities
-                .Select(e => e.LogicalName)
-                .ToHashSet();
+            var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution, entitiesInSolutionMetadata.ToDictionary(x => x.LogicalName, x => x.Privileges));
+            var entityLogicalNamesInSolution = entitiesInSolutionMetadata.Select(e => e.LogicalName).ToHashSet();
 
             logger.LogInformation("There are {Count} entities in the solution.", entityLogicalNamesInSolution.Count);
-
             // Collect all referenced entities from attributes and add (needed for lookup attributes)
             var relatedEntityLogicalNames = new HashSet<string>();
-            foreach (var entity in solutionEntityMetadata)
+            foreach (var entity in entitiesInSolutionMetadata)
             {
                 var entityLogicalNamesOutsideSolution = entity.Attributes
                     .OfType<LookupAttributeMetadata>()
@@ -78,20 +74,19 @@ namespace Generator
                     .Where(target => !entityLogicalNamesInSolution.Contains(target));
                 foreach (var target in entityLogicalNamesOutsideSolution) relatedEntityLogicalNames.Add(target);
             }
-
             logger.LogInformation("There are {Count} entities referenced outside the solution.", relatedEntityLogicalNames.Count);
             var referencedEntityMetadata = await GetEntityMetadataByLogicalName(relatedEntityLogicalNames.ToList());
 
-            var allEntityMetadata = solutionEntityMetadata.Concat(referencedEntityMetadata).ToList();
+            var allEntityMetadata = entitiesInSolutionMetadata.Concat(referencedEntityMetadata).ToList();
             var entityIconMap = await GetEntityIconMap(allEntityMetadata);
 
             var records =
-                solutionEntityMetadata
+                entitiesInSolutionMetadata
                 .Select(x => new
                 {
                     EntityMetadata = x,
                     RelevantAttributes =
-                        x.GetRelevantAttributes(entityIdToRootBehavior, attributesInSolution, publisherPrefix, entityLogicalNamesInSolution)
+                        x.GetRelevantAttributes()
                         .Where(x => x.DisplayName.UserLocalizedLabel?.Label != null)
                         .ToList(),
                     RelevantManyToMany =
@@ -103,7 +98,7 @@ namespace Generator
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
                 .ToList();
 
-            var logicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => new ExtendedEntityInformation { Name = x.SchemaName, IsInSolution = solutionEntityMetadata.Any(e => e.LogicalName == x.LogicalName) });
+            var logicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => new ExtendedEntityInformation { Name = x.SchemaName, IsInSolution = entitiesInSolutionMetadata.Any(e => e.LogicalName == x.LogicalName) });
             var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.UserLocalizedLabel?.Label ?? attr.SchemaName) ?? []);
 
             return records
@@ -117,13 +112,10 @@ namespace Generator
                         x.EntityMetadata,
                         x.RelevantAttributes,
                         x.RelevantManyToMany,
-                        entityIdToRootBehavior,
-                        attributesInSolution,
-                        publisherPrefix,
                         logicalToSchema,
                         attributeLogicalToSchema,
-                        securityRoles ?? new List<SecurityRole>(),
-                        keys ?? new List<Key>(),
+                        securityRoles ?? [],
+                        keys ?? [],
                         entityIconMap,
                         configuration);
                 });
@@ -134,9 +126,6 @@ namespace Generator
             EntityMetadata entity,
             List<AttributeMetadata> relevantAttributes,
             List<ManyToManyRelationshipMetadata> relevantManyToMany,
-            Dictionary<Guid, int> entityIdToRootBehavior,
-            HashSet<Guid> attributesInSolution,
-            string publisherPrefix,
             Dictionary<string, ExtendedEntityInformation> logicalToSchema,
             Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
             List<SecurityRole> securityRoles,
@@ -345,7 +334,7 @@ namespace Generator
             return (publisher.GetAttributeValue<string>("customizationprefix"), resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList());
         }
 
-        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior)>> GetSolutionComponents(List<Guid> solutionIds)
+        public async Task<IEnumerable<(Guid ObjectId, int ComponentType)>> GetSolutionComponents(List<Guid> solutionIds)
         {
             var entityQuery = new QueryExpression("solutioncomponent")
             {
@@ -354,7 +343,7 @@ namespace Generator
                 {
                     Conditions =
                     {
-                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20 }),
+                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20 }), // entity, attribute, role (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
                         new ConditionExpression("solutionid", ConditionOperator.In, solutionIds)
                     }
                 }
@@ -363,7 +352,7 @@ namespace Generator
             return
                 (await client.RetrieveMultipleAsync(entityQuery))
                 .Entities
-                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1))
+                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value))
                 .ToList();
         }
 
