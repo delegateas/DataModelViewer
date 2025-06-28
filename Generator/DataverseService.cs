@@ -43,9 +43,10 @@ namespace Generator
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
         {
             var (publisherPrefix, solutionIds) = await GetSolutionIds();
-            var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type)
+            var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type, rootcomponentbehavior)
 
             var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).Select(x => x.ObjectId).ToList();
+            var entityRootBehaviour = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
             var attributesInSolution = solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId).ToHashSet();
             var rolesInSolution = solutionComponents.Where(x => x.ComponentType == 20).Select(x => x.ObjectId).ToList();
 
@@ -86,7 +87,7 @@ namespace Generator
                 {
                     EntityMetadata = x,
                     RelevantAttributes =
-                        x.GetRelevantAttributes()
+                        x.GetRelevantAttributes(attributesInSolution, entityRootBehaviour)
                         .Where(x => x.DisplayName.UserLocalizedLabel?.Label != null)
                         .ToList(),
                     RelevantManyToMany =
@@ -332,7 +333,7 @@ namespace Generator
             return (publisher.GetAttributeValue<string>("customizationprefix"), resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList());
         }
 
-        public async Task<IEnumerable<(Guid ObjectId, int ComponentType)>> GetSolutionComponents(List<Guid> solutionIds)
+        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior)>> GetSolutionComponents(List<Guid> solutionIds)
         {
             var entityQuery = new QueryExpression("solutioncomponent")
             {
@@ -350,7 +351,7 @@ namespace Generator
             return
                 (await client.RetrieveMultipleAsync(entityQuery))
                 .Entities
-                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value))
+                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1))
                 .ToList();
         }
 
@@ -517,7 +518,7 @@ namespace Generator
             if (configuration["DataverseClientId"] != null && configuration["DataverseClientSecret"] != null)
                 return new ClientSecretCredential(configuration["TenantId"], configuration["DataverseClientId"], configuration["DataverseClientSecret"]);
 
-            logger.LogTrace("Using Default Managed Identity");
+            return new InteractiveBrowserCredential();
 
             return new DefaultAzureCredential();  // in azure this will be managed identity, locally this depends... se midway of this post for the how local identity is chosen: https://dreamingincrm.com/2021/11/16/connecting-to-dataverse-from-function-app-using-managed-identity/
         }

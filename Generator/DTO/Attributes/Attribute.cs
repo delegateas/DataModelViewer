@@ -4,6 +4,8 @@ namespace Generator.DTO.Attributes;
 
 public abstract class Attribute
 {
+    public bool IsCustomAttribute { get; set; }
+    public bool IsPrimaryId { get; set; }
     public string DisplayName { get; }
     public string SchemaName { get; }
     public string Description { get; }
@@ -15,6 +17,8 @@ public abstract class Attribute
 
     protected Attribute(AttributeMetadata metadata)
     {
+        IsPrimaryId = metadata.IsPrimaryId ?? false;
+        IsCustomAttribute = metadata.IsCustomAttribute ?? false;
         DisplayName = metadata.DisplayName.UserLocalizedLabel?.Label ?? string.Empty;
         SchemaName = metadata.SchemaName;
         Description = metadata.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty;
