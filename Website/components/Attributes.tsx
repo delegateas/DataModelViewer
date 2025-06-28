@@ -4,7 +4,7 @@ import { EntityType, AttributeType } from "@/lib/Types"
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "./ui/table"
 import { Button } from "./ui/button"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Search, X, PencilOff, Pencil } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Input } from "./ui/input"
 import { AttributeDetails } from "./entity/AttributeDetails"
@@ -26,6 +26,7 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
     const [sortColumn, setSortColumn] = useState<SortColumn>("displayName")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
+    const [hideStandardFields, setHideStandardFields] = useState<boolean>(true)
     const [searchQuery, setSearchQuery] = useState("")
 
     const handleSort = (column: SortColumn) => {
@@ -60,6 +61,8 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
                 (attr.Description?.toLowerCase().includes(query) ?? false)
             )
         }
+
+        if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute);
 
         if (!sortColumn || !sortDirection) return filteredAttributes
 
@@ -140,6 +143,17 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
                     ))}
                 </SelectContent>
             </Select>
+            <Button
+                variant="destructive"
+                size="icon"
+                onClick={() => setHideStandardFields(!hideStandardFields)}
+                className="h-10 w-10 bg-gray-100 hover:bg-gray-300 text-gray-500 hover:text-gray-700"
+                title="Control customfields"
+            >
+                {
+                    hideStandardFields ? <PencilOff className="w-4 h-4" /> : <Pencil className="w-4 h-4" />
+                }
+            </Button>
             {(searchQuery || typeFilter !== "all") && (
                 <Button
                     variant="ghost"

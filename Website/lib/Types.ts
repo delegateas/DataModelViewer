@@ -41,7 +41,8 @@ export const enum CalculationMethods {
 }
 
 export type BaseAttribute = {
-    IsCustom: boolean,
+    IsPrimaryId: boolean;
+    IsCustomAttribute: boolean;
     DisplayName: string,
     SchemaName: string,
     Description: string | null,

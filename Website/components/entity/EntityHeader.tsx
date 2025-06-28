@@ -16,7 +16,7 @@ export function EntityHeader({ entity }: { entity: EntityType }) {
                 </div>
                 <div className="min-w-0">
                     <a 
-                        className="group flex items-center gap-2 hover:no-underline" 
+                        className="group flex items-center gap-2 hover:no-underline flex-wrap" 
                         href={`?selected=${entity.SchemaName}`}
                     >
                         <h2 className="text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
