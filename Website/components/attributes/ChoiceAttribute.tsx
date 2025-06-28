@@ -1,5 +1,6 @@
 import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
+import { CheckCircle, Circle } from "lucide-react"
 
 export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttributeType }) {
     return (
@@ -7,25 +8,41 @@ export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttrib
             <div className="flex items-center gap-2">
                 <span className="font-bold">{attribute.Type}-select</span>
                 {attribute.DefaultValue !== null && attribute.DefaultValue !== -1 && (
-                    <span className="text-gray-500 text-sm">
-                        (Default: {attribute.Options.find(o => o.Value === attribute.DefaultValue)?.Name})
+                    <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Default: {attribute.Options.find(o => o.Value === attribute.DefaultValue)?.Name}
                     </span>
                 )}
             </div>
-            <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 pl-4">
+            <div className="space-y-1">
                 {attribute.Options.map(option => (
-                    <div key={option.Value} className="contents">
-                        <div className="flex items-center gap-2">
-                            <span>{option.Name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 justify-end">
-                            <span>{formatNumberSeperator(option.Value)}</span>
-                            {option.Color && (
-                                <span className="w-4 h-4" style={{ backgroundColor: option.Color }}></span>
-                            )}
+                    <div key={option.Value}>
+                        <div className="flex items-center justify-between py-1">
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                    {option.Value === attribute.DefaultValue ? (
+                                        <CheckCircle className="w-3 h-3 text-green-600" />
+                                    ) : (
+                                        <Circle className="w-3 h-3 text-gray-400" />
+                                    )}
+                                    <span className="text-sm">{option.Name}</span>
+                                </div>
+                                {option.Color && (
+                                    <div 
+                                        className="w-3 h-3 rounded-full border border-gray-300 shadow-sm" 
+                                        style={{ backgroundColor: option.Color }}
+                                        title={`Color: ${option.Color}`}
+                                    />
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded font-mono">
+                                    {formatNumberSeperator(option.Value)}
+                                </span>
+                            </div>
                         </div>
                         {option.Description && (
-                            <div className="col-span-2 text-sm text-gray-500 italic pl-4 break-words">
+                            <div className="text-xs text-gray-600 italic pl-6 break-words">
                                 {option.Description}
                             </div>
                         )}
