@@ -1,23 +1,30 @@
 import { LookupAttributeType } from "@/lib/Types"
 import { Button } from "../ui/button"
-import { Label } from "@radix-ui/react-label"
+import { FileSearch, FileX2 } from "lucide-react"
 
 export default function LookupAttribute({ attribute, onSelect }: { attribute: LookupAttributeType, onSelect: (entity: string) => void }) {
     return <>
         <p className="font-bold">Lookup</p>
-        <div className="flex flex-col items-start">
+        <div className="flex flex-wrap gap-1 mt-1">
             {attribute.Targets
                 .map(target => target.IsInSolution ? 
                     <Button
                         key={target.Name}
-                        variant="ghost"
-                        className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline"
-                        onClick={() => onSelect(target.Name)}>{target.Name}
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs flex items-center gap-1 hover:bg-blue-50 hover:border-blue-300"
+                        onClick={() => onSelect(target.Name)}
+                    >
+                        <FileSearch className="w-3 h-3" />
+                        {target.Name}
                     </Button> : 
-                    <Label 
+                    <div 
                         key={target.Name} 
-                        className="p-0 text-base dark:text-gray-300 hover:no-underline">{target.Name}
-                    </Label>)}
+                        className="h-6 px-2 text-xs flex items-center gap-1 bg-gray-100 text-gray-600 rounded border"
+                    >
+                        <FileX2 className="w-3 h-3" />
+                        {target.Name}
+                    </div>)}
         </div>
     </>
 }
