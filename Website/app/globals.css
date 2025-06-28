@@ -91,4 +91,10 @@ body {
   .striped tr:nth-child(even) {
     @apply bg-gray-100
   }
+  
+  .dotted-background {
+    background-color: #fef3c7;
+    background-image: radial-gradient(circle, #000 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
 }

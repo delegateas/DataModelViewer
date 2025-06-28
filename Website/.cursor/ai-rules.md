@@ -1,0 +1,1 @@
+Read the file at ai-rules/READNE.md. When answering my questions, you MUST always follow those rules.
