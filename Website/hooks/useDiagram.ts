@@ -1,6 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { dia } from '@joint/core';
-import { GroupType, EntityType } from '@/lib/Types';
+import { GroupType, EntityType, AttributeType } from '@/lib/Types';
+import { createBackgroundDots } from '@/components/diagram/BackgroundDots';
+import { EntityElement } from '@/components/diagram/entity/entity';
 
 export interface DiagramState {
   zoom: number;
@@ -28,6 +30,7 @@ export interface DiagramActions {
   selectGroup: (group: GroupType) => void;
   updateMousePosition: (position: { x: number; y: number } | null) => void;
   updatePanPosition: (position: { x: number; y: number }) => void;
+  addAttributeToEntity: (entitySchemaName: string, attribute: AttributeType) => void;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -143,13 +146,52 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setPanPosition(position);
   }, []);
 
+  const addAttributeToEntity = useCallback((entitySchemaName: string, attribute: AttributeType) => {
+    if (!graphRef.current) return;
+
+    // Find the entity element in the graph
+    const entityElement = graphRef.current.getElements().find(el => 
+      el.get('type') === 'delegate.entity' && 
+      el.get('data')?.entity?.SchemaName === entitySchemaName
+    );
+
+    if (entityElement) {
+      // Update the entity's data to include the new attribute
+      const currentEntity = entityElement.get('data').entity;
+      const updatedEntity = {
+        ...currentEntity,
+        Attributes: [...currentEntity.Attributes, attribute]
+      };
+
+      // Update the element's data
+      entityElement.set('data', { entity: updatedEntity });
+
+      // Trigger the updateAttributes method to re-render the entity
+      const entityElementTyped = entityElement as EntityElement;
+      if (entityElementTyped.updateAttributes) {
+        entityElementTyped.updateAttributes(updatedEntity);
+      }
+
+      // Update the currentEntities state to reflect the change
+      setCurrentEntities(prev => 
+        prev.map(entity => 
+          entity.SchemaName === entitySchemaName 
+            ? { ...entity, Attributes: [...entity.Attributes, attribute] }
+            : entity
+        )
+      );
+
+      console.log(`Added attribute ${attribute.DisplayName} to entity ${entitySchemaName}`);
+    }
+  }, []);
+
   const initializePaper = useCallback((container: HTMLElement, options: any = {}) => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
       graphRef.current = new dia.Graph();
     }
 
-    // Create paper with dotted background
+    // Create paper with light amber background
     const paper = new dia.Paper({
       el: container,
       model: graphRef.current,
@@ -157,13 +199,19 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       height: '100%',
       gridSize: 8,
       background: { 
-        color: '#fef3c7', // Light yellow background
+        color: '#fef3c7', // Light amber background
         ...options.background
       },
       ...options
     });
 
     paperRef.current = paper;
+
+    // Add dotted background that scales with zoom
+    createBackgroundDots(graphRef.current!, paper);
+
+    // Re-add background dots when paper size changes (e.g., on resize)
+    paper.on('resize', () => createBackgroundDots(graphRef.current!, paper));
 
     // Setup event listeners
     paper.on('blank:pointerdown', () => {
@@ -295,5 +343,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     selectGroup,
     updateMousePosition,
     updatePanPosition,
+    addAttributeToEntity,
   };
 }; 

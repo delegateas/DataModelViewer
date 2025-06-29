@@ -17,15 +17,25 @@ export class EntityElement extends dia.Element {
     static getVisibleItemsAndPorts(entity: EntityType) {
         const itemHeight = 32;
         const headerHeight = 80;
-        const maxHeight = 360; // default size
-        const availableHeight = maxHeight - headerHeight;
+        const addButtonHeight = 32; // Space for add button
+        const maxHeight = 400; // increased from 360 to provide more space
+        const availableHeight = maxHeight - headerHeight - addButtonHeight;
         const maxVisibleItems = Math.floor(availableHeight / itemHeight);
+        
+        // Show key and important attributes (lookup, string, integer, etc.)
+        const importantAttributes = entity.Attributes.filter(attr =>
+            attr.AttributeType === "LookupAttribute" ||
+            attr.AttributeType === "StringAttribute" ||
+            attr.AttributeType === "IntegerAttribute" ||
+            attr.AttributeType === "DecimalAttribute" ||
+            attr.AttributeType === "DateTimeAttribute" ||
+            attr.AttributeType === "BooleanAttribute" ||
+            attr.AttributeType === "ChoiceAttribute"
+        ).filter(attr => attr.IsCustomAttribute);
+        
         const visibleItems = [
-            { DisplayName: "Key", SchemaName: entity.SchemaName + "id" } as AttributeType,
-            ...entity.Attributes.filter(attr =>
-                attr.AttributeType === "LookupAttribute" &&
-                attr.IsCustomAttribute
-            )
+            entity.Attributes.find(attr => attr.IsPrimaryId) ?? { DisplayName: "Key", SchemaName: entity.SchemaName + "id" } as AttributeType,
+            ...importantAttributes
         ].slice(0, maxVisibleItems);
 
         // Map SchemaName to port name
@@ -50,9 +60,11 @@ export class EntityElement extends dia.Element {
 
         const itemHeight = 28;
         const itemYSpacing = 8;
+        const addButtonHeight = 32; // Space for add button
         const startY = 80 + itemYSpacing * 2;
 
-        const height = startY + visibleItems.length * (itemHeight + itemYSpacing);
+        // Calculate height including the add button
+        const height = startY + visibleItems.length * (itemHeight + itemYSpacing) + addButtonHeight + itemYSpacing;
 
         const leftPorts: dia.Element.Port[] = [];
         const rightPorts: dia.Element.Port[] = [];
@@ -76,14 +88,16 @@ export class EntityElement extends dia.Element {
                 }
             };
 
-            // Heuristic: If it's a LookupAttribute, treat as outgoing (right); otherwise, incoming (left)
+            // Only LookupAttributes get ports (for relationships)
+            // Other attributes are just displayed in the entity
             if (attr.AttributeType === "LookupAttribute") {
                 portConfig.group = 'right';
                 rightPorts.push(portConfig);
-            } else {
+            } else if (i === 0) { // Key attribute gets a left port
                 portConfig.group = 'left';
                 leftPorts.push(portConfig);
             }
+            // Other attributes don't get ports - they're just displayed
         });
 
         this.set('ports', {

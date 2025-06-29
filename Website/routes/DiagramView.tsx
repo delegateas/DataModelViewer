@@ -18,10 +18,12 @@ import { PanelLeft, ZoomIn, ZoomOut } from 'lucide-react';
 import { DiagramProvider, useDiagramContext } from '@/contexts/DiagramContext';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { GroupSelector } from '@/components/diagram/GroupSelector';
-import { EntityInfoPanel } from '@/components/diagram/EntityInfoPanel';
 import { DiagramResetButton } from '@/components/diagram/DiagramResetButton';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
-import { calculateGridLayout, getDefaultLayoutOptions } from '@/components/diagram/GridLayoutManager';
+import { AddAttributeModal } from '@/components/diagram/AddAttributeModal';
+import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
+import { AttributeType } from '@/lib/Types';
+import { createBackgroundDots } from '@/components/diagram/BackgroundDots';
 
 interface IDiagramView {}
 
@@ -41,11 +43,15 @@ const DiagramContent: React.FC = () => {
         selectGroup,
         zoomIn,
         zoomOut,
-        resetView
+        resetView,
+        fitToScreen,
+        addAttributeToEntity
     } = useDiagramContext();
     
     const [selectedKey, setSelectedKey] = useState<string>();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isAddAttributeModalOpen, setIsAddAttributeModalOpen] = useState(false);
+    const [selectedEntityForAttribute, setSelectedEntityForAttribute] = useState<string>();
 
     // Auto-select first group on mount
     useEffect(() => {
@@ -57,6 +63,19 @@ const DiagramContent: React.FC = () => {
     useEffect(() => {
         document.addEventListener('click', (e) => {
             const target = (e.target as HTMLElement).closest('button[data-schema-name]') as HTMLElement;
+            const addButton = (e.target as HTMLElement).closest('button[data-add-attribute]') as HTMLElement;
+            
+            if (addButton) {
+                // Find the entity this add button belongs to
+                const entityElement = addButton.closest('[data-entity-schema]') as HTMLElement;
+                if (entityElement) {
+                    const entitySchema = entityElement.dataset.entitySchema;
+                    setSelectedEntityForAttribute(entitySchema);
+                    setIsAddAttributeModalOpen(true);
+                }
+                return;
+            }
+            
             if (!target) return;
 
             const schemaName = target.dataset.schemaName!;
@@ -74,9 +93,41 @@ const DiagramContent: React.FC = () => {
         // Clear existing elements
         graph.clear();
 
+        // Recreate background dots after clearing
+        createBackgroundDots(graph, paper);
+
         // Calculate grid layout
         const layoutOptions = getDefaultLayoutOptions();
-        const layout = calculateGridLayout(currentEntities, layoutOptions);
+        
+        // Get actual container dimensions
+        const containerRect = paper?.el?.getBoundingClientRect();
+        const actualContainerWidth = containerRect?.width || layoutOptions.containerWidth;
+        const actualContainerHeight = containerRect?.height || layoutOptions.containerHeight;
+        
+        // Update layout options with actual container dimensions
+        const updatedLayoutOptions = {
+            ...layoutOptions,
+            containerWidth: actualContainerWidth,
+            containerHeight: actualContainerHeight
+        };
+        
+        // Calculate actual heights for each entity
+        const entityHeights = currentEntities.map(entity => calculateEntityHeight(entity));
+        const maxEntityHeight = Math.max(...entityHeights, layoutOptions.entityHeight);
+        
+        console.log('Entity heights:', entityHeights);
+        console.log('Max entity height:', maxEntityHeight);
+        console.log('Container dimensions:', { width: actualContainerWidth, height: actualContainerHeight });
+        
+        // Use the maximum height for layout calculation to ensure proper spacing
+        const adjustedLayoutOptions = {
+            ...updatedLayoutOptions,
+            entityHeight: maxEntityHeight
+        };
+        
+        const layout = calculateGridLayout(currentEntities, adjustedLayoutOptions);
+        
+        console.log('Layout result:', { columns: layout.columns, rows: layout.rows, positions: layout.positions.length });
 
         // Store entity elements and port maps by SchemaName for easy lookup
         const entityMap = new Map();
@@ -95,7 +146,9 @@ const DiagramContent: React.FC = () => {
         
         util.nextFrame(() => {
             const allElements = graph.getElements();
-            const obstacles = allElements.map(el => el.getBBox().inflate(routerPadding));
+            // Filter out background dots from obstacles - only use actual entity elements
+            const entityElements = allElements.filter(el => el.get('type') !== 'background.dots');
+            const obstacles = entityElements.map(el => el.getBBox().inflate(routerPadding));
 
             // Create relationships
             for (const entity of currentEntities) {
@@ -119,6 +172,7 @@ const DiagramContent: React.FC = () => {
 
                         if (!sourcePort || !targetPort) continue;
 
+                        // Use a filled arrow for 'many' side, and a small circle for 'one' side
                         const link = new shapes.standard.Link({
                             source: { id: sourceId, port: sourcePort },
                             target: { id: targetId, port: targetPort },
@@ -140,7 +194,17 @@ const DiagramContent: React.FC = () => {
                             attrs: {
                                 line: {
                                     stroke: '#6366f1',
-                                    strokeWidth: 1,
+                                    strokeWidth: 2,
+                                    sourceMarker: {
+                                        type: 'ellipse',
+                                        cx: 0,
+                                        cy: 0,
+                                        rx: 4,
+                                        ry: 4,
+                                        fill: '#fff',
+                                        stroke: '#6366f1',
+                                        strokeWidth: 2
+                                    },
                                     targetMarker: {
                                         type: 'path',
                                         d: 'M 10 -5 L 0 0 L 10 5 Z',
@@ -148,23 +212,8 @@ const DiagramContent: React.FC = () => {
                                         stroke: '#6366f1'
                                     }
                                 }
-                            },
-                            labels: [
-                                {
-                                    position: 0.05,
-                                    attrs: {
-                                        text: { text: '*', fontSize: 18, fill: '#6366f1', fontWeight: 'bold' },
-                                        rect: { fill: 'white', stroke: 'none' }
-                                    }
-                                },
-                                {
-                                    position: 0.95,
-                                    attrs: {
-                                        text: { text: '+', fontSize: 18, fill: '#6366f1', fontWeight: 'bold' },
-                                        rect: { fill: 'white', stroke: 'none' }
-                                    }
-                                }
-                            ]
+                            }
+                            // No labels
                         });
 
                         link.addTo(graph);
@@ -175,7 +224,9 @@ const DiagramContent: React.FC = () => {
 
         const reroute = debounce(() => {
             const elements = graph.getElements().filter(el => el.get('type') !== 'standard.Link');
-            const obstacles = elements.map(el => {
+            // Filter out background dots from obstacles - only use actual entity elements
+            const entityElements = elements.filter(el => el.get('type') !== 'background.dots');
+            const obstacles = entityElements.map(el => {
                 const bbox = el.getBBox();
                 const inflated = bbox.inflate(routerPadding);
                 return inflated;
@@ -197,6 +248,11 @@ const DiagramContent: React.FC = () => {
         }, 100);
         graph.on('change:position change:size change:attrs.line', reroute);
 
+        // Auto-fit to screen after a short delay to ensure all elements are rendered
+        setTimeout(() => {
+            fitToScreen();
+        }, 200);
+
         return () => {
             graph.off('change:position change:size change:attrs.line', reroute);
         };
@@ -207,6 +263,36 @@ const DiagramContent: React.FC = () => {
         console.log(graph.getLinks())
         // const links = graph.getLinks().filter(link => link.target().id === selectedKey);
     }, [selectedKey, graph]);
+
+    useEffect(() => {
+        if (!paper) return;
+        // Add link click handler
+        const onLinkClick = (linkView: any, evt: any) => {
+            evt.stopPropagation();
+            // Placeholder: show relationship info and hide option coming soon!
+            alert('Relationship info and hide option coming soon!');
+        };
+        paper.on('link:pointerclick', onLinkClick);
+        return () => {
+            paper.off('link:pointerclick', onLinkClick);
+        };
+    }, [paper]);
+
+    const handleAddAttribute = (attribute: AttributeType) => {
+        if (!selectedEntityForAttribute) return;
+        addAttributeToEntity(selectedEntityForAttribute, attribute);
+        setIsAddAttributeModalOpen(false);
+        setSelectedEntityForAttribute(undefined);
+    };
+
+    // Find the entity display name for the modal
+    const selectedEntity = currentEntities.find(entity => entity.SchemaName === selectedEntityForAttribute);
+    const selectedEntityName = selectedEntity?.DisplayName;
+    
+    // Get available and visible attributes for the selected entity
+    const availableAttributes = selectedEntity?.Attributes || [];
+    const visibleAttributes = selectedEntity ? 
+        EntityElement.getVisibleItemsAndPorts(selectedEntity).visibleItems : [];
 
     return (
         <SidebarProvider>
@@ -223,11 +309,6 @@ const DiagramContent: React.FC = () => {
                             selectedGroup={selectedGroup}
                             onGroupSelect={selectGroup}
                         />
-                        
-                        <Separator />
-                        
-                        {/* Entity Information */}
-                        <EntityInfoPanel selectedGroup={selectedGroup} />
                         
                         <Separator />
                         
@@ -306,6 +387,16 @@ const DiagramContent: React.FC = () => {
                     </DiagramCanvas>
                 </div>
             </div>
+
+            {/* Add Attribute Modal */}
+            <AddAttributeModal
+                isOpen={isAddAttributeModalOpen}
+                onClose={() => setIsAddAttributeModalOpen(false)}
+                onAddAttribute={handleAddAttribute}
+                entityName={selectedEntityName}
+                availableAttributes={availableAttributes}
+                visibleAttributes={visibleAttributes}
+            />
         </SidebarProvider>
     );
 };

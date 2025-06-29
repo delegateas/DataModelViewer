@@ -1,7 +1,6 @@
 import React from 'react';
 import { GroupType } from '@/lib/Types';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { FolderOpen, Folder } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,7 +27,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       
       <Separator />
       
-      <ScrollArea className="h-[300px]">
+      <div className="h-[300px] flex flex-col overflow-y-scroll w-full">
         <div className="space-y-2">
           {groups.map((group) => {
             const isSelected = selectedGroup?.Name === group.Name;
@@ -51,8 +50,8 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                     <Folder className="h-4 w-4 text-muted-foreground" />
                   )}
                   
-                  <div className="flex-1 text-left">
-                    <div className="font-medium text-sm">
+                  <div className="flex-1 text-left truncate">
+                    <div className="font-medium text-sm truncate">
                       {group.Name}
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -68,7 +67,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }; 

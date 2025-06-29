@@ -13,7 +13,7 @@ export function EntityBody({ entity, visibleItems }: IEntityBody): string {
         : '/vercel.svg';
 
     return `
-        <div class="w-full p-[16px]">
+        <div class="w-full p-[16px]" data-entity-schema="${entity.SchemaName}">
 
             <!-- HEADER -->
             <div class="w-full flex items-center h-[48px] mb-[16px]">
@@ -28,6 +28,7 @@ export function EntityBody({ entity, visibleItems }: IEntityBody): string {
             <!-- ATTRIBUTES -->
             <div class="w-full flex flex-col">
                 ${visibleItems.map((attribute, i) => (EntityAttribute({ attribute, isKey: i == 0 }))).join('')}
+                ${EntityAttribute({ attribute: { DisplayName: '', SchemaName: '', AttributeType: 'GenericAttribute' } as any, isKey: false, isAddButton: true })}
             </div>
         </div>
     `;

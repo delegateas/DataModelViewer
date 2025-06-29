@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useDiagramContext } from '@/contexts/DiagramContext';
 
 interface DiagramCanvasProps {
@@ -7,6 +7,7 @@ interface DiagramCanvasProps {
 
 export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
   const { 
     isPanning, 
     initializePaper, 
@@ -17,18 +18,30 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
     if (canvasRef.current) {
       const paper = initializePaper(canvasRef.current, {
         background: {
-          color: '#fef3c7' // Light yellow background
+          color: 'transparent' // Make paper background transparent to show CSS dots
         }
       });
 
+      // Track container dimensions
+      const updateDimensions = () => {
+        if (canvasRef.current) {
+          const rect = canvasRef.current.getBoundingClientRect();
+          setContainerDimensions({ width: rect.width, height: rect.height });
+        }
+      };
+
+      updateDimensions();
+      window.addEventListener('resize', updateDimensions);
+
       return () => {
+        window.removeEventListener('resize', updateDimensions);
         destroyPaper();
       };
     }
   }, [initializePaper, destroyPaper]);
 
   return (
-    <div className="flex-1 relative overflow-hidden dotted-background">
+    <div className="flex-1 relative overflow-hidden bg-amber-50">
       <div 
         ref={canvasRef} 
         className={`w-full h-full ${isPanning ? 'cursor-grabbing' : 'cursor-default'}`}

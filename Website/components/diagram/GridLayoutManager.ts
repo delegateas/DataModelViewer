@@ -1,4 +1,5 @@
 import { EntityType } from '@/lib/Types';
+import { EntityElement } from '@/components/diagram/entity/entity';
 
 export interface GridLayoutOptions {
   containerWidth: number;
@@ -23,7 +24,22 @@ export interface GridLayoutResult {
 }
 
 /**
- * Calculates optimal grid layout for entities
+ * Calculates the actual height of an entity based on its visible attributes
+ */
+export const calculateEntityHeight = (entity: EntityType): number => {
+  const { visibleItems } = EntityElement.getVisibleItemsAndPorts(entity);
+  const itemHeight = 28;
+  const itemYSpacing = 8;
+  const addButtonHeight = 32; // Space for add button
+  const headerHeight = 80;
+  const startY = headerHeight + itemYSpacing * 2;
+  
+  // Calculate height including the add button
+  return startY + visibleItems.length * (itemHeight + itemYSpacing) + addButtonHeight + itemYSpacing;
+};
+
+/**
+ * Calculates optimal grid layout for entities based on screen aspect ratio
  */
 export const calculateGridLayout = (
   entities: EntityType[],
@@ -45,9 +61,46 @@ export const calculateGridLayout = (
   const availableWidth = containerWidth - (margin * 2);
   const availableHeight = containerHeight - (margin * 2);
 
-  // Calculate how many entities can fit in a row
-  const entitiesPerRow = Math.floor(availableWidth / (entityWidth + padding));
-  const columns = Math.max(1, entitiesPerRow);
+  // Calculate aspect ratio of available space
+  const aspectRatio = availableWidth / availableHeight;
+  
+  console.log('Layout calculation:', {
+    availableWidth,
+    availableHeight,
+    aspectRatio,
+    entityWidth,
+    entityHeight,
+    padding,
+    entityCount: entities.length
+  });
+  
+  // Determine optimal number of columns based on aspect ratio and entity count
+  let columns: number;
+  if (aspectRatio > 1.5) {
+    // Wide screen - prefer more columns
+    columns = Math.ceil(Math.sqrt(entities.length * aspectRatio));
+  } else if (aspectRatio < 0.8) {
+    // Tall screen - prefer fewer columns
+    columns = Math.ceil(Math.sqrt(entities.length / aspectRatio));
+  } else {
+    // Square-ish screen - balanced approach
+    columns = Math.ceil(Math.sqrt(entities.length));
+  }
+  
+  // Ensure we don't exceed available width
+  const maxColumnsByWidth = Math.floor(availableWidth / (entityWidth + padding));
+  columns = Math.min(columns, maxColumnsByWidth);
+  
+  // Ensure we have at least 1 column
+  columns = Math.max(1, columns);
+  
+  console.log('Column calculation:', {
+    initialColumns: columns,
+    maxColumnsByWidth,
+    finalColumns: columns
+  });
+  
+  // Calculate rows needed
   const rows = Math.ceil(entities.length / columns);
 
   // Calculate grid dimensions
@@ -85,20 +138,12 @@ export const calculateGridLayout = (
  */
 export const estimateEntityDimensions = (entity: EntityType): { width: number; height: number } => {
   // Base dimensions
-  const baseWidth = 200;
-  const baseHeight = 120;
-  
-  // Adjust based on number of attributes
-  const attributeCount = entity.Attributes.length;
-  const heightAdjustment = Math.min(attributeCount * 8, 80); // Max 80px additional height
-  
-  // Adjust based on name length
-  const nameLength = entity.DisplayName.length;
-  const widthAdjustment = Math.min(nameLength * 2, 60); // Max 60px additional width
+  const baseWidth = 480; // Match the entity width used in EntityElement
+  const height = calculateEntityHeight(entity); // Use actual calculated height
   
   return {
-    width: baseWidth + widthAdjustment,
-    height: baseHeight + heightAdjustment
+    width: baseWidth,
+    height: height
   };
 };
 
@@ -106,10 +151,10 @@ export const estimateEntityDimensions = (entity: EntityType): { width: number; h
  * Gets default layout options
  */
 export const getDefaultLayoutOptions = (): GridLayoutOptions => ({
-  containerWidth: 1200,
-  containerHeight: 800,
-  entityWidth: 200,
-  entityHeight: 120,
-  padding: 50,
-  margin: 100
+  containerWidth: 1920, // Use a wider default container
+  containerHeight: 1080, // Use a taller default container
+  entityWidth: 480,
+  entityHeight: 400, // This will be overridden by actual calculation
+  padding: 80, // Reduced padding for better space utilization
+  margin: 80
 }); 
