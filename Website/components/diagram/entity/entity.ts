@@ -15,28 +15,26 @@ export class EntityElement extends dia.Element {
     }
 
     static getVisibleItemsAndPorts(entity: EntityType) {
-        const itemHeight = 32;
-        const headerHeight = 80;
-        const addButtonHeight = 32; // Space for add button
-        const maxHeight = 400; // increased from 360 to provide more space
-        const availableHeight = maxHeight - headerHeight - addButtonHeight;
-        const maxVisibleItems = Math.floor(availableHeight / itemHeight);
+        // Get the primary key attribute
+        const primaryKeyAttribute = entity.Attributes.find(attr => attr.IsPrimaryId) ?? 
+            { DisplayName: "Key", SchemaName: entity.SchemaName + "id" } as AttributeType;
         
-        // Show key and important attributes (lookup, string, integer, etc.)
-        const importantAttributes = entity.Attributes.filter(attr =>
-            attr.AttributeType === "LookupAttribute" ||
-            attr.AttributeType === "StringAttribute" ||
-            attr.AttributeType === "IntegerAttribute" ||
-            attr.AttributeType === "DecimalAttribute" ||
-            attr.AttributeType === "DateTimeAttribute" ||
-            attr.AttributeType === "BooleanAttribute" ||
-            attr.AttributeType === "ChoiceAttribute"
-        ).filter(attr => attr.IsCustomAttribute);
+        // Get custom lookup attributes (initially visible)
+        const customLookupAttributes = entity.Attributes.filter(attr =>
+            attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute
+        );
         
+        // Get manually added attributes (stored in entity metadata)
+        const manuallyAddedAttributes = entity.Attributes.filter(attr => 
+            (entity as any).manuallyAddedAttributes?.includes(attr.SchemaName)
+        );
+        
+        // Combine primary key, custom lookup attributes, and manually added attributes
         const visibleItems = [
-            entity.Attributes.find(attr => attr.IsPrimaryId) ?? { DisplayName: "Key", SchemaName: entity.SchemaName + "id" } as AttributeType,
-            ...importantAttributes
-        ].slice(0, maxVisibleItems);
+            primaryKeyAttribute, 
+            ...customLookupAttributes,
+            ...manuallyAddedAttributes
+        ];
 
         // Map SchemaName to port name
         const portMap: Record<string, string> = {};
@@ -61,11 +59,12 @@ export class EntityElement extends dia.Element {
         const itemHeight = 28;
         const itemYSpacing = 8;
         const addButtonHeight = 32; // Space for add button
-        const startY = 80 + itemYSpacing * 2;
+        const headerHeight = 80;
+        const startY = headerHeight + itemYSpacing * 2;
 
-        // Calculate height including the add button
+        // Calculate height dynamically based on number of visible items
         const height = startY + visibleItems.length * (itemHeight + itemYSpacing) + addButtonHeight + itemYSpacing;
-
+        
         const leftPorts: dia.Element.Port[] = [];
         const rightPorts: dia.Element.Port[] = [];
 

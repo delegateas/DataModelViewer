@@ -39,6 +39,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   const zoomRef = useRef(1);
   const isPanningRef = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
+  const isAddingAttributeRef = useRef(false);
   
   const [zoom, setZoomState] = useState(1);
   const [isPanning, setIsPanningState] = useState(false);
@@ -147,10 +148,22 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   }, []);
 
   const addAttributeToEntity = useCallback((entitySchemaName: string, attribute: AttributeType) => {
-    if (!graphRef.current) return;
+    // Prevent double additions
+    if (isAddingAttributeRef.current) {
+      return;
+    }
+    
+    isAddingAttributeRef.current = true;
+    
+    if (!graphRef.current) {
+      isAddingAttributeRef.current = false;
+      return;
+    }
 
     // Find the entity element in the graph
-    const entityElement = graphRef.current.getElements().find(el => 
+    const allElements = graphRef.current.getElements();
+    
+    const entityElement = allElements.find(el => 
       el.get('type') === 'delegate.entity' && 
       el.get('data')?.entity?.SchemaName === entitySchemaName
     );
@@ -158,10 +171,33 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     if (entityElement) {
       // Update the entity's data to include the new attribute
       const currentEntity = entityElement.get('data').entity;
-      const updatedEntity = {
-        ...currentEntity,
-        Attributes: [...currentEntity.Attributes, attribute]
-      };
+      
+      // Check if attribute already exists in the entity
+      const attributeExists = currentEntity.Attributes.some((attr: AttributeType) => 
+        attr.SchemaName === attribute.SchemaName
+      );
+      
+      let updatedEntity;
+      if (attributeExists) {
+        // Attribute already exists, just mark it as manually added
+        updatedEntity = {
+          ...currentEntity,
+          manuallyAddedAttributes: [
+            ...(currentEntity.manuallyAddedAttributes || []),
+            ...(currentEntity.manuallyAddedAttributes?.includes(attribute.SchemaName) ? [] : [attribute.SchemaName])
+          ]
+        };
+      } else {
+        // Attribute doesn't exist, add it and mark as manually added
+        updatedEntity = {
+          ...currentEntity,
+          Attributes: [...currentEntity.Attributes, attribute],
+          manuallyAddedAttributes: [
+            ...(currentEntity.manuallyAddedAttributes || []),
+            attribute.SchemaName
+          ]
+        };
+      }
 
       // Update the element's data
       entityElement.set('data', { entity: updatedEntity });
@@ -173,16 +209,25 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       }
 
       // Update the currentEntities state to reflect the change
-      setCurrentEntities(prev => 
-        prev.map(entity => 
+      setCurrentEntities(prev => {
+        const updated = prev.map(entity => 
           entity.SchemaName === entitySchemaName 
-            ? { ...entity, Attributes: [...entity.Attributes, attribute] }
+            ? { 
+                ...entity, 
+                Attributes: attributeExists ? entity.Attributes : [...entity.Attributes, attribute],
+                manuallyAddedAttributes: [
+                  ...(entity.manuallyAddedAttributes || []),
+                  ...(entity.manuallyAddedAttributes?.includes(attribute.SchemaName) ? [] : [attribute.SchemaName])
+                ]
+              }
             : entity
-        )
-      );
-
-      console.log(`Added attribute ${attribute.DisplayName} to entity ${entitySchemaName}`);
+        );
+        return updated;
+      });
     }
+    
+    // Reset the flag
+    isAddingAttributeRef.current = false;
   }, []);
 
   const initializePaper = useCallback((container: HTMLElement, options: any = {}) => {

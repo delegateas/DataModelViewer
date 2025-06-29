@@ -95,7 +95,7 @@ export const AddAttributeModal: React.FC<AddAttributeModalProps> = ({
             <Sheet open={isOpen} onOpenChange={onClose}>
                 <SheetContent side="right" className="w-[500px] sm:w-[540px]">
                     <SheetHeader>
-                        <SheetTitle>Add Existing Attribute</SheetTitle>
+                        <SheetTitle>Add Existing Attribute ({availableAttributes.length})</SheetTitle>
                         <SheetDescription>
                             {entityName ? `Select an attribute from "${entityName}" to add to the diagram.` : 'Select an attribute to add to the diagram.'}
                         </SheetDescription>

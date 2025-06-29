@@ -8,7 +8,7 @@ interface IEntityAttribute {
 export const EntityAttribute = ({ attribute, isKey, isAddButton = false }: IEntityAttribute & { isAddButton?: boolean }): string => {
     if (isAddButton) {
         return `
-            <button class="w-full rounded-sm my-[4px] p-[4px] bg-blue-100 flex items-center h-[28px] justify-center hover:bg-blue-200 transition-colors duration-300 text-blue-400" data-add-attribute="true">
+            <button class="w-full rounded-sm my-[4px] p-[4px] bg-gray-100 flex items-center h-[28px] justify-center hover:bg-gray-200 transition-colors duration-300 text-gray-600" data-add-attribute="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-plus-icon lucide-square-plus"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
                 <p class="text-sm ml-1">Add attribute</p>
             </button>

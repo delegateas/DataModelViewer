@@ -115,10 +115,6 @@ const DiagramContent: React.FC = () => {
         const entityHeights = currentEntities.map(entity => calculateEntityHeight(entity));
         const maxEntityHeight = Math.max(...entityHeights, layoutOptions.entityHeight);
         
-        console.log('Entity heights:', entityHeights);
-        console.log('Max entity height:', maxEntityHeight);
-        console.log('Container dimensions:', { width: actualContainerWidth, height: actualContainerHeight });
-        
         // Use the maximum height for layout calculation to ensure proper spacing
         const adjustedLayoutOptions = {
             ...updatedLayoutOptions,
@@ -126,8 +122,6 @@ const DiagramContent: React.FC = () => {
         };
         
         const layout = calculateGridLayout(currentEntities, adjustedLayoutOptions);
-        
-        console.log('Layout result:', { columns: layout.columns, rows: layout.rows, positions: layout.positions.length });
 
         // Store entity elements and port maps by SchemaName for easy lookup
         const entityMap = new Map();
@@ -260,7 +254,6 @@ const DiagramContent: React.FC = () => {
 
     useEffect(() => {
         if (!selectedKey || !graph) return;
-        console.log(graph.getLinks())
         // const links = graph.getLinks().filter(link => link.target().id === selectedKey);
     }, [selectedKey, graph]);
 
@@ -309,7 +302,7 @@ const DiagramContent: React.FC = () => {
                             selectedGroup={selectedGroup}
                             onGroupSelect={selectGroup}
                         />
-                        
+
                         <Separator />
                         
                         {/* Diagram Controls */}

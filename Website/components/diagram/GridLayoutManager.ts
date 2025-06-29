@@ -64,16 +64,6 @@ export const calculateGridLayout = (
   // Calculate aspect ratio of available space
   const aspectRatio = availableWidth / availableHeight;
   
-  console.log('Layout calculation:', {
-    availableWidth,
-    availableHeight,
-    aspectRatio,
-    entityWidth,
-    entityHeight,
-    padding,
-    entityCount: entities.length
-  });
-  
   // Determine optimal number of columns based on aspect ratio and entity count
   let columns: number;
   if (aspectRatio > 1.5) {
@@ -93,12 +83,6 @@ export const calculateGridLayout = (
   
   // Ensure we have at least 1 column
   columns = Math.max(1, columns);
-  
-  console.log('Column calculation:', {
-    initialColumns: columns,
-    maxColumnsByWidth,
-    finalColumns: columns
-  });
   
   // Calculate rows needed
   const rows = Math.ceil(entities.length / columns);
