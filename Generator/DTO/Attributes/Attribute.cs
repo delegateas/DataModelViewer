@@ -20,7 +20,6 @@ public abstract class Attribute
     {
         IsPrimaryId = metadata.IsPrimaryId ?? false;
         IsCustomAttribute = metadata.IsCustomAttribute ?? false;
-        IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, languagecode);
         DisplayName = metadata.DisplayName.UserLocalizedLabel?.Label ?? string.Empty;
         SchemaName = metadata.SchemaName;
         Description = metadata.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty;

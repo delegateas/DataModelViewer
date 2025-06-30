@@ -20,46 +20,55 @@ public static class MetadataExtensions
             .Replace("\"", @"”")
             .Replace("\n", " ");
 
-    public static bool StandardFieldHasChanged(this AttributeMetadata attribute)
+    public static bool StandardFieldHasChanged(this AttributeMetadata attribute, string entityDisplayName)
     {
-        if (attribute.IsCustomAttribute) return false;
+        if (attribute.IsCustomAttribute ?? false) return false;
 
         var languagecode = attribute.DisplayName.UserLocalizedLabel?.LanguageCode;
 
-        var fields = GetDefaultFields(languagecode);
+        var fields = GetDefaultFields(entityDisplayName, languagecode);
         return fields.StandardDescriptionHasChanged(attribute.LogicalName, attribute.Description.UserLocalizedLabel?.Label ?? string.Empty)
             || fields.StandardDisplayNameHasChanged(attribute.LogicalName, attribute.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
     }
 
     private static bool StandardDisplayNameHasChanged(this IEnumerable<(string LogicalName, string DisplayName, string Description)> fields, string logicalName, string displayName)
     {
-        return fields
+        return !fields
             .Where(f => f.LogicalName == logicalName)
-            .Any(f => displayName.Equals(f.DisplayName, StringComparison.OrdinalIgnoreCase));
+            .Any(f => displayName.Equals(f.DisplayName));
     }
 
     private static bool StandardDescriptionHasChanged(this IEnumerable<(string LogicalName, string DisplayName, string Description)> fields, string logicalName, string description)
     {
-        return fields
+        return !fields
             .Where(f => f.LogicalName == logicalName)
-            .Any(f => description.Equals(f.Description, StringComparison.OrdinalIgnoreCase));
+            .Any(f => description.Equals(f.Description));
     }
 
-    private static IEnumerable<(string LogicalName, string DisplayName, string Description)> GetDefaultFields(int? languageCode)
+    private static IEnumerable<(string LogicalName, string DisplayName, string Description)> GetDefaultFields(string entityDisplayName, int? languageCode)
     {
         switch (languageCode)
         {
             case 1030:
-                return DanishDefaultFields;
+                return DanishDefaultFields.Concat(new[] {
+                    ("statuscode", "Statusårsag", $"Årsag til statussen for {entityDisplayName}"),
+                    ("statecode", "Status", $"Status for {entityDisplayName}"),
+                });
             case 1033:
-                return EnglishDefaultFields;
+                return EnglishDefaultFields.Concat(new[] {
+                    ("statuscode", "Status Reason", $"Reason for the status of the {entityDisplayName}"),
+                    ("statecode", "Status Reason", $"Status of the {entityDisplayName}"),
+                });
             default:
-                return EnglishDefaultFields;
+                return EnglishDefaultFields.Concat(new[] {
+                    ("statuscode", "Status Reason", $"Reason for the status of the {entityDisplayName}"),
+                    ("statecode", "Status Reason", $"Status of the {entityDisplayName}"),
+                }); ;
         }
     }
 
     // This list is incomplete as same field may have different names and description.
-    private static List<(string LogicalName, string DisplayName, string Description)> EnglishDefaultFields => new()
+    private static List<(string LogicalName, string DisplayName, string Description)> EnglishDefaultFields = new()
     {
         ( "activityadditionalparams", "Activity Additional Parameters", "Additional information provided by the external application as JSON. For internal use only." ),
         ( "activityid", "Activity", "Unique identifier of the activity." ),
@@ -143,7 +152,7 @@ public static class MetadataExtensions
     };
 
     // This list is incomplete as same field may have different names and description.
-    private static List<(string LogicalName, string DisplayName, string Description)> DanishDefaultFields => new()
+    private static List<(string LogicalName, string DisplayName, string Description)> DanishDefaultFields = new()
     {
         ( "activityadditionalparams", "Flere parametre for aktivitet", "Yderligere oplysninger leveret af det eksterne program som JSON. Kun til intern brug." ),
         ( "activityid", "Aktivitet", "Entydigt id for aktiviteten." ),
@@ -156,8 +165,11 @@ public static class MetadataExtensions
         ( "allparties", "Alle parter i aktiviteter", "Alle aktivitetsparter, der er knyttet til denne aktivitet." ),
         ( "community", "Social kanal", "Viser, hvor kontakt om den sociale aktivitet stammer fra, f.eks. fra Twitter eller Facebook. Dette felt er skrivebeskyttet." ),
         ( "createdby", "Oprettet af", "Entydigt id for den bruger, der oprettede aktiviteten." ),
-        ( "createdon", "Dato for oprettelse", "Dato og klokkeslæt for oprettelse af aktiviteten." ),
+        ( "createdby", "Oprettet af", "Entydigt id for den bruger, der oprettede posten." ),
+        ( "createdon", "Dato for oprettelse", "Dato og klokkeslæt for oprettelse af posten." ),
+        ( "createdon", "Oprettet", "Dato og klokkeslæt for oprettelse af aktiviteten." ),
         ( "createdonbehalfby", "Oprettet af (stedfortræder)", "Entydigt id for den stedfortrædende bruger, der oprettede aktivitetspointeren." ),
+        ( "createdonbehalfby", "Oprettet af (stedfortræder)", "Entydigt id for den stedfortræderbruger, der oprettede posten." ),
         ( "deliverylastattemptedon", "Dato for seneste leveringsforsøg", "Dato og klokkeslæt for det seneste forsøg på levering af aktiviteten." ),
         ( "deliveryprioritycode", "Leveringsprioritet", "Prioritet for levering af aktiviteten til mailserveren." ),
         ( "description", "Beskrivelse", "Beskrivelse af aktiviteten." ),
@@ -165,6 +177,7 @@ public static class MetadataExtensions
         ( "exchangeitemid", "Id for Exchange-element", "Meddelelses-id'et for aktivitet, der returneres fra Exchange Server." ),
         ( "exchangerate", "Valutakurs", "Valutakurs for den valuta, der er tilknyttet aktivitetspointeren, i forhold til grundvalutaen." ),
         ( "exchangeweblink", "Exchange WebLink", "Viser weblinket for aktivitet af typen mail." ),
+        ( "importsequencenumber", "Importsekvensnummer", "Sekvensnummer for den import, der oprettede denne post." ),
         ( "instancetypecode", "Tilbagevendende forekomsttype", "Forekomsttype for en tilbagevendende serie." ),
         ( "isbilled", "Er faktureret", "Angiver, om aktiviteten blev faktureret som en del af løsning af en sag." ),
         ( "ismapiprivate", "Er privat", "Kun til intern brug." ),
@@ -173,13 +186,21 @@ public static class MetadataExtensions
         ( "lastonholdtime", "Seneste tid for I venteposition", "Indeholder dato- og klokkeslætsstemplet for den seneste tid for I venteposition." ),
         ( "leftvoicemail", "Har lagt talebesked", "Har lagt talebeskeden" ),
         ( "modifiedby", "Ændret af", "Entydigt id for den bruger, der sidst ændrede aktiviteten." ),
+        ( "modifiedby", "Ændret af", "Entydigt id for den bruger, der ændrede posten." ),
         ( "modifiedon", "Sidst opdateret", "Dato og klokkeslæt for den seneste ændring af aktiviteten." ),
+        ( "modifiedon", "Ændret", "Dato og klokkeslæt for ændring af posten." ),
         ( "modifiedonbehalfby", "Ændret af (stedfortræder)", "Entydigt id for den stedfortrædende bruger, der senest ændrede aktivitetspointeren." ),
+        ( "modifiedonbehalfby", "Ændret af (stedfortræder)", "Entydigt id for den stedfortræderbruger, der ændrede posten." ),
         ( "onholdtime", "Tid for I venteposition (minutter)", "Viser, hvor længe posten var i venteposition i minutter." ),
+        ( "overriddencreatedon", "Posten blev oprettet den", "Dato og klokkeslæt for overførsel af posten." ),
         ( "ownerid", "Ejer", "Entydigt id for den bruger eller det team, der ejer aktiviteten." ),
+        ( "ownerid", "Ejer", "Ejer-id" ),
         ( "owningbusinessunit", "Ejende afdeling", "Entydigt id for den afdeling, der ejer aktiviteten." ),
+        ( "owningbusinessunit", "Ejende afdeling", "Entydigt id for den afdeling, der ejer posten" ),
         ( "owningteam", "Ejende team", "Entydigt id for det team, der ejer aktiviteten." ),
+        ( "owningteam", "Ejende team", "Entydigt id for det team, der ejer posten." ),
         ( "owninguser", "Ejende bruger", "Entydigt id for den bruger, der ejer aktiviteten." ),
+        ( "owninguser", "Ejende bruger", "Entydigt id for den bruger, der ejer posten." ),
         ( "postponeactivityprocessinguntil", "Udskyd aktivitetsbehandlingen indtil", "Kun til intern brug." ),
         ( "prioritycode", "Prioritet", "Aktivitetens prioritet." ),
         ( "processid", "Proces", "Entydigt id for processen." ),
@@ -198,9 +219,12 @@ public static class MetadataExtensions
         ( "statuscode", "Statusårsag", "Årsag til aktivitetens status." ),
         ( "subject", "Emne", "Det emne, der er tilknyttet aktiviteten." ),
         ( "timezoneruleversionnumber", "Versionsnummeret for tidszonereglen", "Kun til intern brug." ),
+        ( "timezoneruleversionnumber", "Versionsnummer for tidszoneregel", "Kun til intern brug." ),
         ( "transactioncurrencyid", "Valuta", "Entydigt id for den valuta, der er tilknyttet aktivitetspointeren." ),
         ( "traversedpath", "(Udfaset) Gennemløbet sti", "Kun til intern brug." ),
         ( "utcconversiontimezonecode", "Tidszonekode til UTC-konvertering", "Den tidszonekode, der var i brug ved oprettelse af posten." ),
+        ( "utcconversiontimezonecode", "Tidszonekode for UTC-konvertering", "Den tidszonekode, der var i brug ved oprettelse af posten." ),
+        ( "versionnumber", "Versionsnummer", "Versionsnummer" ),
         ( "versionnumber", "Versionsnummer", "Versionsnummer for aktiviteten." )
     };
 }

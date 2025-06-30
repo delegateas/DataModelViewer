@@ -6,7 +6,6 @@ internal class BooleanAttribute : Attribute
 {
     public string TrueLabel { get; }
     public string FalseLabel { get; }
-
     public bool? DefaultValue { get; }
 
     public BooleanAttribute(BooleanAttributeMetadata metadata)
