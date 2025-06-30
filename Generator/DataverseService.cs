@@ -518,8 +518,6 @@ namespace Generator
             if (configuration["DataverseClientId"] != null && configuration["DataverseClientSecret"] != null)
                 return new ClientSecretCredential(configuration["TenantId"], configuration["DataverseClientId"], configuration["DataverseClientSecret"]);
 
-            return new InteractiveBrowserCredential();
-
             return new DefaultAzureCredential();  // in azure this will be managed identity, locally this depends... se midway of this post for the how local identity is chosen: https://dreamingincrm.com/2021/11/16/connecting-to-dataverse-from-function-app-using-managed-identity/
         }
 
