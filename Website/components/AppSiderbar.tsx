@@ -1,33 +1,24 @@
 'use client';
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Button } from "./ui/button"
-import { deleteSession } from "@/lib/session";
-import NavItems from "./NavItems";
+import { useIsMobile } from "@/hooks/use-mobile";
+import SidebarNavRail from "./SidebarNavRail";
 
-export function AppSidebar({
-  selected,
-  onSelect,
-}: {
-  selected: string | null
-  onSelect: (entity: string) => void
-}) {  
+interface IAppSidebarProps {
+  children: React.ReactNode
+}
+
+export const AppSidebar = ({ children }: IAppSidebarProps) => { 
+  const isMobile = useIsMobile();
+
   return (
-    <Sidebar>
-      <SidebarHeader className="flex flex-row">
-        <Button className="flex-1" onClick={() => deleteSession()}>Sign Out</Button>
-        <SidebarTrigger />
-      </SidebarHeader>
-      <SidebarContent>
-        <NavItems selected={selected} onSelect={onSelect} />
-      </SidebarContent>
-      <SidebarFooter />
-    </Sidebar>
+    <div className="flex flex-col h-screen w-64 border-r border-gray-300 sticky top-0">
+      <div className="w-full h-16 border-b border-gray-300 p-2">
+        { isMobile ? <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} /> : <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-full" draggable={false} />}
+      </div>
+      <div className="flex flex-grow">
+        <SidebarNavRail />
+        {children}
+      </div>
+    </div>
   )
 }
