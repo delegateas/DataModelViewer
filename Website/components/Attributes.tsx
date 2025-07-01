@@ -4,7 +4,7 @@ import { EntityType, AttributeType } from "@/lib/Types"
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "./ui/table"
 import { Button } from "./ui/button"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Search, X, PencilOff, Pencil } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Search, X, PencilOff, Pencil, EyeOff, Eye } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Input } from "./ui/input"
 import { AttributeDetails } from "./entity/AttributeDetails"
@@ -62,7 +62,7 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
             )
         }
 
-        if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute);
+        if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute || attr.IsStandardFieldModified);
 
         if (!sortColumn || !sortDirection) return filteredAttributes
 
@@ -151,7 +151,7 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
                 title="Control customfields"
             >
                 {
-                    hideStandardFields ? <PencilOff className="w-4 h-4" /> : <Pencil className="w-4 h-4" />
+                    hideStandardFields ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />
                 }
             </Button>
             {(searchQuery || typeFilter !== "all") && (

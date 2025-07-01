@@ -136,7 +136,12 @@ namespace Generator
         {
             var attributes =
                 relevantAttributes
-                .Select(metadata => GetAttribute(metadata, entity, logicalToSchema, logger))
+                .Select(metadata =>
+                {
+                    var attr = GetAttribute(metadata, entity, logicalToSchema, logger);
+                    attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
+                    return attr;
+                })
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 
