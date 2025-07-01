@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, ReactNode, useContext, useReducer } from "react";
+import { createContext, ReactNode, useContext, useEffect, useReducer } from "react";
 
 export interface SidebarState {
     element: React.ReactNode;
@@ -32,7 +32,7 @@ const SidebarContext = createContext<SidebarState>(initialState);
 const SidebarDispatcher = createContext<React.Dispatch<SidebarAction>>(() => { });
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
     const [sidebarState, dispatch] = useReducer(sidebarReducer, initialState);
-
+    
     return (
         <SidebarContext.Provider value={sidebarState}>
             <SidebarDispatcher.Provider value={dispatch}>

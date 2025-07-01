@@ -1,8 +1,12 @@
 import { LookupAttributeType } from "@/lib/Types"
 import { Button } from "../ui/button"
 import { FileSearch, FileX2 } from "lucide-react"
+import { useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 
-export default function LookupAttribute({ attribute, onSelect }: { attribute: LookupAttributeType, onSelect: (entity: string) => void }) {
+export default function LookupAttribute({ attribute }: { attribute: LookupAttributeType }) {
+
+    const dispatch = useDatamodelViewDispatch();
+
     return <>
         <p className="font-bold">Lookup</p>
         <div className="flex flex-wrap gap-1 mt-1">
@@ -13,7 +17,7 @@ export default function LookupAttribute({ attribute, onSelect }: { attribute: Lo
                         variant="outline"
                         size="sm"
                         className="h-6 px-2 text-xs flex items-center gap-1 hover:bg-blue-50 hover:border-blue-300"
-                        onClick={() => onSelect(target.Name)}
+                        onClick={() => dispatch({ type: "SET_SELECTED", payload: target.Name })}
                     >
                         <FileSearch className="w-3 h-3" />
                         {target.Name}

@@ -6,20 +6,20 @@ import { EntityType } from "@/lib/Types"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
 import { EntityHeader } from "./entity/EntityHeader"
 import { SecurityRoles } from "./entity/SecurityRoles"
-import Relationships from "./Relationships"
-import Attributes from "./Attributes"
 import Keys from "./Keys"
 import { KeyRound, Tags, Unplug } from "lucide-react"
+import { useDatamodelView } from "@/contexts/DatamodelViewContext"
+import { Attributes } from "./Attributes"
+import { Relationships } from "./Relationships"
 
-function Section({
-    entity,
-    selected,
-    onSelect
-}: {
-    entity: EntityType,
-    selected: string | null,
-    onSelect: (entity: string) => void
-}) {
+interface ISectionProps {
+    entity: EntityType
+}
+
+export const Section = ({ entity }: ISectionProps) => {
+
+    const { selected } = useDatamodelView();
+
     const isSelected = selected?.toLowerCase() === entity.SchemaName.toLocaleLowerCase()
     const [contentRef, shouldScrollTo] = useScrollTo<HTMLDivElement>()
 
@@ -61,10 +61,10 @@ function Section({
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="attributes" className="m-0 p-0">
-                            <Attributes entity={entity} onSelect={onSelect} />
+                            <Attributes entity={entity} />
                         </TabsContent>
                         <TabsContent value="relationships" className="m-0 p-0">
-                            <Relationships entity={entity} onSelect={onSelect} />
+                            <Relationships entity={entity} />
                         </TabsContent>
                         <TabsContent value="keys" className="m-0 p-0">
                             <Keys entity={entity} />
@@ -75,5 +75,3 @@ function Section({
         </div>
     )
 }
-
-export default Section

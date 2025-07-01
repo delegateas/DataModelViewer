@@ -1,16 +1,16 @@
-import Group from "../components/Group"
 import { Groups } from "../generated/Data"
+import { Group } from "./Group"
 
-function List({ selected, onSelect }: { selected: string | null, onSelect: (entity: string) => void }) {
+interface IListProps {
+
+}
+
+export const List = ({ }: IListProps) => {
     return <>
         {Groups.map((group) =>
             <Group
                 key={group.Name}
-                group={group}
-                selected={selected}
-                onSelect={onSelect} />
+                group={group} />
         )}
     </>
 }
-
-export default List
