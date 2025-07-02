@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect } from "react"
-import { useScrollTo } from "@/hooks/useScrollTo"
-import { EntityType } from "@/lib/Types"
+import { EntityType, GroupType } from "@/lib/Types"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
 import { EntityHeader } from "./entity/EntityHeader"
 import { SecurityRoles } from "./entity/SecurityRoles"
@@ -13,24 +12,14 @@ import { Attributes } from "./Attributes"
 import { Relationships } from "./Relationships"
 
 interface ISectionProps {
-    entity: EntityType
+    entity: EntityType;
+    group: GroupType;
 }
 
-export const Section = ({ entity }: ISectionProps) => {
-
-    const { selected } = useDatamodelView();
-
-    const isSelected = selected?.toLowerCase() === entity.SchemaName.toLocaleLowerCase()
-    const [contentRef, shouldScrollTo] = useScrollTo<HTMLDivElement>()
-
-    useEffect(() => {
-        if (isSelected) {
-            shouldScrollTo(true)
-        }
-    }, [isSelected])
+export const Section = ({ entity, group }: ISectionProps) => {
 
     return (
-        <div ref={contentRef} className="mb-10">
+        <div id={entity.SchemaName} data-group={group.Name} className="mb-10">
             <div className="bg-white rounded-lg border border-gray-300 shadow-md">
                 <div className="flex flex-col xl:flex-row min-w-0 p-6">
                     <EntityHeader entity={entity} />

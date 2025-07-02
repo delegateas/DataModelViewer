@@ -8,7 +8,7 @@ import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Input } from "./ui/input"
-import { useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
+import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
@@ -24,6 +24,7 @@ export const Relationships = ({ entity }: IRelationshipsProps) => {
     const [searchQuery, setSearchQuery] = useState("")
 
     const dispatch = useDatamodelViewDispatch();
+    const { scrollIntoView } = useDatamodelView();
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -245,7 +246,10 @@ export const Relationships = ({ entity }: IRelationshipsProps) => {
                                         key={relationship.TableSchema}
                                         variant="ghost"
                                         className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline break-words"
-                                        onClick={() => dispatch({ type: "SET_SELECTED", payload: relationship.TableSchema })}>
+                                        onClick={(e) => {
+                                            dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema })
+                                            scrollIntoView(e.target);
+                                        }}>
                                         {relationship.TableSchema}
                                     </Button>
                                 </TableCell>
