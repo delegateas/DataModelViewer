@@ -21,7 +21,7 @@ interface INavItemProps {
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const isTouch = useTouch();
     const dispatch = useSidebarDispatch();
-    const { currentSection, currentGroup, scrollIntoView } = useDatamodelView();
+    const { currentSection, currentGroup } = useDatamodelView();
     const dataModelDispatch = useDatamodelViewDispatch();
     
     const setOpen = (state: boolean) => {
@@ -56,15 +56,13 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                 "focus-visible:ring-2 focus-visible:ring-sidebar-ring outline-none"
                             )}
                             data-state={isExpanded ? 'open' : 'closed'}
-                            onClick={(e) => {
-                                dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: group.Name });
-                                scrollIntoView(e.target);
-                                if (isTouch) { setOpen(false); }
-                            }}
                         >
-                            <a className="flex-1 font-semibold text-sm text-left truncate" href={`?selected=${group.Name}`}><span>{group.Name}</span></a>
+                            <a className="flex-1 font-semibold text-sm text-left truncate" href={`#${group.Name}`}><span>{group.Name}</span></a>
                             <p className="ml-auto font-semibold text-xs opacity-70">{group.Entities.length}</p>
-                            <ChevronDown className={cn("mr-1 w-4 h-4 transition-transform", isExpanded ? "rotate-180" : "")}/>
+                            <ChevronDown className={cn("mr-1 w-4 h-4 transition-transform", isExpanded ? "rotate-180" : "")} onClick={() => {
+                                dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: group.Name });
+                                if (isTouch) { setOpen(false); }
+                            }}/>
                         </CollapsibleTrigger>
                     </Slot>
                     <CollapsibleContent>
@@ -72,22 +70,18 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                             {group.Entities.map(entity => {
                                 const isCurrentSection = currentSection?.toLowerCase() === entity.SchemaName.toLowerCase()
                                 return (
-                                    <div
+                                    <a
                                         className={cn(
                                             "flex items-center gap-2 rounded-full px-3 py-1 cursor-pointer transition-colors text-xs font-medium",
                                             "hover:bg-blue-50 hover:text-blue-900 text-sidebar-foreground/60",
                                             isCurrentSection ? "bg-blue-100 text-blue-900" : ""
                                         )}
                                         key={entity.SchemaName}
-                                        onClick={(e) => {
-                                            dataModelDispatch({ type: "SET_CURRENT_SECTION", payload: entity.SchemaName });
-                                            scrollIntoView(e.target);
-                                            if (isTouch) { setOpen(false); }
-                                        }}
+                                        href={`#${entity.SchemaName}`}
                                     >
                                         {entity.IconBase64 ? <img className="h-4 w-4" src={`data:image/svg+xml;base64,${entity.IconBase64}`} alt="icon" /> : <Puzzle className="w-4 h-4" />}
                                         <span className="truncate">{entity.DisplayName}</span>
-                                    </div>
+                                    </a>
                                 )
                             })}
                         </div>

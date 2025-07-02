@@ -12,16 +12,14 @@ export default function LookupAttribute({ attribute }: { attribute: LookupAttrib
         <div className="flex flex-wrap gap-1 mt-1">
             {attribute.Targets
                 .map(target => target.IsInSolution ? 
-                    <Button
+                    <a
                         key={target.Name}
-                        variant="outline"
-                        size="sm"
-                        className="h-6 px-2 text-xs flex items-center gap-1 hover:bg-blue-50 hover:border-blue-300"
-                        onClick={() => dispatch({ type: "SET_SELECTED", payload: target.Name })}
+                        className="h-6 px-2 text-xs flex items-center gap-1 hover:bg-blue-50 hover:border-blue-300 border border-gray-300 rounded-md bg-white shadow-sm"
+                        href={`#${target.Name}`}
                     >
                         <FileSearch className="w-3 h-3" />
                         {target.Name}
-                    </Button> : 
+                    </a> : 
                     <div 
                         key={target.Name} 
                         className="h-6 px-2 text-xs flex items-center gap-1 bg-gray-100 text-gray-600 rounded border"

@@ -22,7 +22,7 @@ export const List = ({ }: IListProps) => {
         let ticking = false;
         let lastSection: string | null = null;
         const handleScroll = () => {
-            if (!ticking && !isScrolling) {
+            if (!ticking) {
                 window.requestAnimationFrame(() => {
                     let currentSection: string | null = null;
                     let currentGroup: string | null = null;
@@ -38,6 +38,7 @@ export const List = ({ }: IListProps) => {
                                 currentSection = id;
                                 currentGroup = el.getAttribute('data-group')
                             }
+                            if (distance > minDistance) break;
                         }
                     }
                     if (currentSection && currentSection !== lastSection) {
@@ -51,7 +52,7 @@ export const List = ({ }: IListProps) => {
             }
         };
         window.addEventListener('scroll', handleScroll, { passive: true });
-        // Initial check
+
         handleScroll();
         return () => {
             window.removeEventListener('scroll', handleScroll);
