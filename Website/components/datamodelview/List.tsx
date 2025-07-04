@@ -196,18 +196,17 @@ export const List = ({}: IListProps) => {
                         }}
                     >
                         {item.type === 'group' ? (
-                            <div
-                                style={{
-                                    padding: '8px 16px',
-                                    fontWeight: 'bold',
-                                    background: '#f7f7f7',
-                                    borderBottom: '1px solid #ddd',
-                                }}
-                            >
-                                {item.group.Name}
+                            <div className="flex items-center py-6 my-4">
+                                <div className="flex-1 h-0.5 bg-gray-200" />
+                                <div className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap">
+                                    {item.group.Name}
+                                </div>
+                                <div className="flex-1 h-0.5 bg-gray-200" />
                             </div>
                         ) : (
-                            <Section entity={item.entity} group={item.group} />
+                            <div className="text-sm">
+                                <Section entity={item.entity} group={item.group} />
+                            </div>
                         )}
                     </div>
                 );
