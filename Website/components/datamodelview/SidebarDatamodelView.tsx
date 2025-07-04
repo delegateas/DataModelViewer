@@ -1,6 +1,6 @@
 import { GroupType } from "@/lib/Types";
-import { Groups } from "../generated/Data"
-import { useTouch } from './ui/hybridtooltop';
+import { Groups } from "../../generated/Data"
+import { useTouch } from '../ui/hybridtooltop';
 import { useSidebarDispatch } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
@@ -21,12 +21,25 @@ interface INavItemProps {
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const isTouch = useTouch();
     const dispatch = useSidebarDispatch();
-    const { currentSection, currentGroup } = useDatamodelView();
+    const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
     const dataModelDispatch = useDatamodelViewDispatch();
     
     const setOpen = (state: boolean) => {
         dispatch({ type: "SET_OPEN", payload: state })
     }
+
+    const handleGroupClick = (groupName: string) => {
+        dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
+        if (isTouch) { setOpen(false); }
+    };
+
+    const handleSectionClick = (sectionId: string) => {
+        if (scrollToSection) {
+            scrollToSection(sectionId);
+        }
+        if (isTouch) { setOpen(false); }
+    };
+
     const NavItem = ({ group }: INavItemProps) => {
         const isCurrentGroup = currentGroup?.toLowerCase() === group.Name.toLowerCase();
 
@@ -57,12 +70,9 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                             )}
                             data-state={isExpanded ? 'open' : 'closed'}
                         >
-                            <a className="flex-1 font-semibold text-sm text-left truncate" href={`#${group.Name}`}><span>{group.Name}</span></a>
+                            <span className="flex-1 font-semibold text-sm text-left truncate">{group.Name}</span>
                             <p className="ml-auto font-semibold text-xs opacity-70">{group.Entities.length}</p>
-                            <ChevronDown className={cn("mr-1 w-4 h-4 transition-transform", isExpanded ? "rotate-180" : "")} onClick={() => {
-                                dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: group.Name });
-                                if (isTouch) { setOpen(false); }
-                            }}/>
+                            <ChevronDown className={cn("mr-1 w-4 h-4 transition-transform", isExpanded ? "rotate-180" : "")} onClick={() => handleGroupClick(group.Name)}/>
                         </CollapsibleTrigger>
                     </Slot>
                     <CollapsibleContent>
@@ -70,18 +80,18 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                             {group.Entities.map(entity => {
                                 const isCurrentSection = currentSection?.toLowerCase() === entity.SchemaName.toLowerCase()
                                 return (
-                                    <a
+                                    <button
                                         className={cn(
                                             "flex items-center gap-2 rounded-full px-3 py-1 cursor-pointer transition-colors text-xs font-medium",
                                             "hover:bg-blue-50 hover:text-blue-900 text-sidebar-foreground/60",
                                             isCurrentSection ? "bg-blue-100 text-blue-900" : ""
                                         )}
                                         key={entity.SchemaName}
-                                        href={`#${entity.SchemaName}`}
+                                        onClick={() => handleSectionClick(entity.SchemaName)}
                                     >
                                         {entity.IconBase64 ? <img className="h-4 w-4" src={`data:image/svg+xml;base64,${entity.IconBase64}`} alt="icon" /> : <Puzzle className="w-4 h-4" />}
                                         <span className="truncate">{entity.DisplayName}</span>
-                                    </a>
+                                    </button>
                                 )
                             })}
                         </div>

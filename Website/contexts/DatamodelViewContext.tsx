@@ -1,22 +1,25 @@
 "use client"
 
-import { DatamodelView } from "@/components/DatamodelView";
+import { DatamodelView } from "@/components/datamodelview/DatamodelView";
 import { useSearchParams } from "next/navigation";
 import { createContext, ReactNode, useContext, useEffect, useReducer } from "react";
 
 export interface DatamodelViewState {
     currentGroup: string | null;
     currentSection: string | null;
+    scrollToSection?: (sectionId: string) => void;
 }
 
 const initialState: DatamodelViewState = {
     currentGroup: null,
     currentSection: null,
+    scrollToSection: undefined,
 }
 
 type DatamodelViewAction = 
     | { type: 'SET_CURRENT_GROUP', payload: string | null }
     | { type: 'SET_CURRENT_SECTION', payload: string | null }
+    | { type: 'SET_SCROLL_TO_SECTION', payload: (sectionId: string) => void }
 
 
 const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAction): DatamodelViewState => {
@@ -25,6 +28,8 @@ const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAc
             return { ...state, currentGroup: action.payload }
         case 'SET_CURRENT_SECTION':
             return { ...state, currentSection: action.payload }
+        case 'SET_SCROLL_TO_SECTION':
+            return { ...state, scrollToSection: action.payload }
         default:
             return state;
     }

@@ -1,4 +1,4 @@
-import { DatamodelView } from "@/components/DatamodelView";
+import { DatamodelView } from "@/components/datamodelview/DatamodelView";
 import { Loading } from "@/components/ui/loading";
 import { Suspense } from "react";
 
