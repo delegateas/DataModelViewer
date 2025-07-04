@@ -103,8 +103,8 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
 
     return (
         <div className="flex flex-col">
-            <h2 className="my-1 p-2 font-semibold">Data viewer</h2>
-            <div className='h-full gap-1 flex flex-col max-w-48'> 
+            <h2 className="my-1 p-2 font-semibold border-b w-full text-center text-gray-700">Data viewer</h2>
+            <div className='h-full gap-1 flex flex-col max-w-48 overflow-y-auto overflow-x-hidden'> 
                 {
                     Groups.map((group) => 
                         <NavItem key={group.Name} group={group} />

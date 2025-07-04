@@ -1,19 +1,16 @@
 'use client'
 
-import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { AppSidebar } from "../AppSiderbar";
 import { TooltipProvider } from "../ui/tooltip";
 import { TouchProvider } from "../ui/hybridtooltop";
 import { useSidebar, useSidebarDispatch } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { DatamodelViewProvider } from "@/contexts/DatamodelViewContext";
 import { List } from "./List";
 
 export function DatamodelView() {
-    const { isOpen, element } = useSidebar();
-    const isMobile = useIsMobile();
+    const { element } = useSidebar();
     const dispatch = useSidebarDispatch();
 
     useEffect(() => {

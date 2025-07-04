@@ -33,7 +33,7 @@ export default function SidebarNavRail() {
 
   return (
     <nav
-      className="flex flex-col items-center justify-between h-full min-w-14 bg-sidebar border-r border-sidebar-border py-2"
+      className="flex flex-col items-center justify-between h-full min-w-14 bg-white border-r border-sidebar-border py-2"
       aria-label="Main navigation"
     >
       {/* Nav Items */}
