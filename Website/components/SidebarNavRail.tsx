@@ -18,13 +18,6 @@ const navItems = [
     active: false,
     disabled: true,
   },
-  {
-    label: "About",
-    icon: <Info />,
-    href: "/about",
-    active: false,
-    disabled: false,
-  },
 ];
 
 export default function SidebarNavRail() {
@@ -54,8 +47,18 @@ export default function SidebarNavRail() {
           </Button>
         ))}
       </div>
-      {/* Sign Out */}
       <div className="flex flex-col items-center mb-2">
+        {/* About */}
+        <Button
+          variant={pathname === "/about" ? "secondary" : "ghost"}
+          size="icon"
+          aria-label={"About"}
+          className={`mb-1 ${pathname === "/about" ? "bg-blue-100 text-blue-900" : ""}`}
+          onClick={() => { router.push("/about"); }}
+        >
+          <Info />
+        </Button>
+        {/* Sign Out */}
         <form action="/api/auth/logout" method="post">
           <Button
             type="submit"
