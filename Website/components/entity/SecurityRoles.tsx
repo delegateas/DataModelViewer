@@ -6,7 +6,7 @@ import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../ui
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (
-        <div className="flex flex-col gap-2 w-full overflow-x-auto">
+        <div className="flex flex-col gap-2 w-full">
             {roles.map(role => (
                 <SecurityRoleRow key={role.Name} role={role} />
             ))}
@@ -17,8 +17,8 @@ export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
 function SecurityRoleRow({ role }: { role: SecurityRole }) {
     return (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 rounded-lg p-4 border border-gray-100 w-full min-w-[320px]">
-            <p className="font-bold text-base text-wrap truncate max-w-full sm:max-w-[180px] md:max-w-[240px]">{role.Name}</p>
-            <div className="flex flex-wrap sm:flex-nowrap gap-2 align-bottom overflow-x-auto">
+            <p className="font-bold text-base text-wrap max-w-full sm:max-w-[180px] md:max-w-[240px]">{role.Name}</p>
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 align-bottom">
                 <PrivilegeIcon name="Create" depth={role.Create} />
                 <PrivilegeIcon name="Read" depth={role.Read} />
                 <PrivilegeIcon name="Write" depth={role.Write} />
