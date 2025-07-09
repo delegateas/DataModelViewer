@@ -1,0 +1,36 @@
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    if: github.event.head_commit.message != 'chore(release):'* # skip standard-version auto-commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: ⚙️ Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+          cache-dependency-path: Website/package-lock.json
+          
+      - name: 📦 Install dependencies
+        run: npm ci
+        working-directory: Website
+
+      - name: ⭐ Create new release
+        run: npm run release
+        working-directory: Website
+
+      - name: 🏷️ Push new tag
+        run: git push --follow-tags origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
