@@ -24,7 +24,7 @@ export const Relationships = ({ entity }: IRelationshipsProps) => {
     const [searchQuery, setSearchQuery] = useState("")
 
     const dispatch = useDatamodelViewDispatch();
-    const { scrollIntoView } = useDatamodelView();
+    const { scrollToSection } = useDatamodelView();
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -246,9 +246,9 @@ export const Relationships = ({ entity }: IRelationshipsProps) => {
                                         key={relationship.TableSchema}
                                         variant="ghost"
                                         className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline break-words"
-                                        onClick={(e) => {
+                                        onClick={() => {
                                             dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema })
-                                            scrollIntoView(e.target);
+                                            scrollToSection(relationship.TableSchema);
                                         }}>
                                         {relationship.TableSchema}
                                     </Button>
