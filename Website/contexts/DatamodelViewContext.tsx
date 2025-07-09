@@ -2,18 +2,18 @@
 
 import { DatamodelView } from "@/components/datamodelview/DatamodelView";
 import { useSearchParams } from "next/navigation";
-import { createContext, ReactNode, useContext, useEffect, useReducer } from "react";
+import { createContext, ReactNode, useContext, useEffect, useReducer, useRef } from "react";
 
 export interface DatamodelViewState {
     currentGroup: string | null;
     currentSection: string | null;
-    scrollToSection?: (sectionId: string) => void;
+    scrollToSection: (sectionId: string) => void;
 }
 
 const initialState: DatamodelViewState = {
     currentGroup: null,
     currentSection: null,
-    scrollToSection: undefined,
+    scrollToSection: () => { console.error("scrollToSection not initialized yet!"); },
 }
 
 type DatamodelViewAction = 
@@ -35,13 +35,14 @@ const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAc
     }
 }
 
-const DatamodelViewContext = createContext<any>(initialState);
+const DatamodelViewContext = createContext<DatamodelViewState>(initialState);
 const DatamodelViewDispatcher = createContext<React.Dispatch<DatamodelViewAction>>(() => { });
 export const DatamodelViewProvider = ({ children }: { children: ReactNode }) => {
     const [DatamodelViewState, dispatch] = useReducer(datamodelViewReducer, initialState);
 
-    const searchParams = useSearchParams()
-    const entityParam = searchParams.get('section')
+    const searchParams = useSearchParams();
+    const entityParam = searchParams.get('section');
+
     useEffect(() => {
         dispatch({ type: "SET_CURRENT_GROUP", payload: entityParam });
     }, [entityParam])

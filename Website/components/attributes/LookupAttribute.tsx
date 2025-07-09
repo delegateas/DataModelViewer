@@ -1,25 +1,25 @@
 import { LookupAttributeType } from "@/lib/Types"
 import { Button } from "../ui/button"
 import { FileSearch, FileX2 } from "lucide-react"
-import { useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
+import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 
 export default function LookupAttribute({ attribute }: { attribute: LookupAttributeType }) {
 
-    const dispatch = useDatamodelViewDispatch();
+    const { scrollToSection } = useDatamodelView();
 
     return <>
         <p className="font-bold">Lookup</p>
         <div className="flex flex-wrap gap-1 mt-1">
             {attribute.Targets
                 .map(target => target.IsInSolution ? 
-                    <a
+                    <button
                         key={target.Name}
                         className="h-6 px-2 text-xs flex items-center gap-1 hover:bg-blue-50 hover:border-blue-300 border border-gray-300 rounded-md bg-white shadow-sm"
-                        href={`#${target.Name}`}
+                        onClick={() => scrollToSection(target.Name)}
                     >
                         <FileSearch className="w-3 h-3" />
                         {target.Name}
-                    </a> : 
+                    </button> : 
                     <div 
                         key={target.Name} 
                         className="h-6 px-2 text-xs flex items-center gap-1 bg-gray-100 text-gray-600 rounded border"
