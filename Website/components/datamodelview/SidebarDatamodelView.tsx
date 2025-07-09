@@ -30,7 +30,6 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
 
     const handleGroupClick = (groupName: string) => {
         dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
-        if (isTouch) { setOpen(false); }
     };
 
     const handleSectionClick = (sectionId: string) => {

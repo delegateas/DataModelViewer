@@ -8,7 +8,6 @@ import { TooltipProvider } from '@radix-ui/react-tooltip'
 interface IAboutViewProps {}
 
 export const AboutView = ({}: IAboutViewProps) => {
-  const { element } = useSidebar()
   const dispatch = useSidebarDispatch()
   const [version, setVersion] = useState<string | null>(null)
 
@@ -21,7 +20,7 @@ export const AboutView = ({}: IAboutViewProps) => {
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar children={element} />
+      <AppSidebar />
 
       <div className="flex-1 bg-stone-50 overflow-auto">
         <TooltipProvider delayDuration={0}>
