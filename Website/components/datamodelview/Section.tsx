@@ -1,13 +1,11 @@
 'use client'
 
-import { useEffect } from "react"
 import { EntityType, GroupType } from "@/lib/Types"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs"
 import { EntityHeader } from "../entity/EntityHeader"
 import { SecurityRoles } from "../entity/SecurityRoles"
 import Keys from "./Keys"
 import { KeyRound, Tags, Unplug } from "lucide-react"
-import { useDatamodelView } from "@/contexts/DatamodelViewContext"
 import { Attributes } from "./Attributes"
 import { Relationships } from "./Relationships"
 import React from "react"
@@ -66,3 +64,5 @@ export const Section = React.memo(({ entity, group }: ISectionProps) =>
         )
     }
 );
+
+Section.displayName = "Section";

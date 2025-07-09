@@ -1,7 +1,6 @@
 import { LookupAttributeType } from "@/lib/Types"
-import { Button } from "../ui/button"
 import { FileSearch, FileX2 } from "lucide-react"
-import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
+import { useDatamodelView } from "@/contexts/DatamodelViewContext"
 
 export default function LookupAttribute({ attribute }: { attribute: LookupAttributeType }) {
 

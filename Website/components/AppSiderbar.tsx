@@ -1,7 +1,7 @@
 'use client'
 
 import { useSidebar, useSidebarDispatch } from '@/contexts/SidebarContext'
-import { SidebarClose, Menu, SidebarOpen } from 'lucide-react'
+import { SidebarClose, SidebarOpen } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import SidebarNavRail from './SidebarNavRail'
 import clsx from 'clsx'
@@ -41,7 +41,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
                 isOpen ? 'translate-x-0' : '-translate-x-full',
                 'flex flex-col'
               ]
-            : 'relative flex flex-col'
+            : 'flex flex-col sticky top-0'
         )}
       >
         {/* Header */}

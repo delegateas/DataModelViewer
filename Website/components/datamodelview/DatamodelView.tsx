@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { AppSidebar } from "../AppSiderbar";
 import { TooltipProvider } from "../ui/tooltip";
-import { TouchProvider } from "../ui/hybridtooltop";
-import { useSidebar, useSidebarDispatch } from "@/contexts/SidebarContext";
+import { useSidebarDispatch } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { DatamodelViewProvider } from "@/contexts/DatamodelViewContext";
 import { List } from "./List";

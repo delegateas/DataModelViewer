@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { AppSidebar } from '../AppSiderbar'
-import { useSidebar, useSidebarDispatch } from '@/contexts/SidebarContext'
+import { useSidebarDispatch } from '@/contexts/SidebarContext'
 import { TooltipProvider } from '@radix-ui/react-tooltip'
 
 interface IAboutViewProps {}

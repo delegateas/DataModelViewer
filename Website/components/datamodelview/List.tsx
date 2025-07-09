@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { Groups } from "../../generated/Data";
-import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
+import { useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import React from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Section } from "./Section";
 import { Loader2 } from "lucide-react";
 
-interface IListProps {}
+interface IListProps { }
 
-export const List = ({}: IListProps) => {
+export const List = ({ }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
     const [isScrollingToSection, setIsScrollingToSection] = useState(false);
 
