@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from "react";
-import { AppSidebar } from "../AppSiderbar";
+import { AppSidebar } from "../AppSidebar";
 import { TooltipProvider } from "../ui/tooltip";
 import { useSidebarDispatch } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";

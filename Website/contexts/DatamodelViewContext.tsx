@@ -38,7 +38,7 @@ const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAc
 const DatamodelViewContext = createContext<DatamodelViewState>(initialState);
 const DatamodelViewDispatcher = createContext<React.Dispatch<DatamodelViewAction>>(() => { });
 export const DatamodelViewProvider = ({ children }: { children: ReactNode }) => {
-    const [DatamodelViewState, dispatch] = useReducer(datamodelViewReducer, initialState);
+    const [datamodelViewState, dispatch] = useReducer(datamodelViewReducer, initialState);
 
     const searchParams = useSearchParams();
     const entityParam = searchParams.get('section');
@@ -48,7 +48,7 @@ export const DatamodelViewProvider = ({ children }: { children: ReactNode }) => 
     }, [entityParam])
 
     return (
-        <DatamodelViewContext.Provider value={{ ...DatamodelViewState }}>
+        <DatamodelViewContext.Provider value={{ ...datamodelViewState }}>
             <DatamodelViewDispatcher.Provider value={dispatch}>
                 {children}
             </DatamodelViewDispatcher.Provider>

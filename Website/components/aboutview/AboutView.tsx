@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { AppSidebar } from '../AppSiderbar'
+import { AppSidebar } from '../AppSidebar'
 import { useSidebarDispatch } from '@/contexts/SidebarContext'
 import { TooltipProvider } from '@radix-ui/react-tooltip'
 
