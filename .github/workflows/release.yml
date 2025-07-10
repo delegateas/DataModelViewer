@@ -76,6 +76,7 @@ jobs:
             --config-file=release-please-config.json \
             --manifest-file=.release-please-manifest.json \
             --release-as=$NEXT_VERSION \
+            --skip-labeling \
             --token=${{ secrets.GITHUB_TOKEN }}
             
           echo "releases_created=true" >> $GITHUB_OUTPUT
