@@ -1,22 +1,30 @@
 'use client'
 
 import { EntityType } from "@/lib/Types"
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "./ui/table"
-import { Button } from "./ui/button"
-import { CascadeConfiguration } from "./entity/CascadeConfiguration"
+import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../ui/table"
+import { Button } from "../ui/button"
+import { CascadeConfiguration } from "../entity/CascadeConfiguration"
 import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Input } from "./ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { Input } from "../ui/input"
+import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
 
-function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (entity: string) => void }) {
+interface IRelationshipsProps {
+    entity: EntityType
+}
+
+export const Relationships = ({ entity }: IRelationshipsProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
+
+    const dispatch = useDatamodelViewDispatch();
+    const { scrollToSection } = useDatamodelView();
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -238,7 +246,10 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
                                         key={relationship.TableSchema}
                                         variant="ghost"
                                         className="p-0 text-base text-blue-600 underline dark:text-blue-500 hover:no-underline break-words"
-                                        onClick={() => onSelect(relationship.TableSchema)}>
+                                        onClick={() => {
+                                            dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema })
+                                            scrollToSection(relationship.TableSchema);
+                                        }}>
                                         {relationship.TableSchema}
                                     </Button>
                                 </TableCell>
@@ -254,5 +265,3 @@ function Relationships({ entity, onSelect }: { entity: EntityType, onSelect: (en
         </div>
     </>
 }
-
-export default Relationships;
