@@ -2,10 +2,6 @@
 name: Release
 
 on:
-  pull_request:
-    branches:
-      - main
-    types: [closed]
   workflow_dispatch:
     inputs:
       release_type:
@@ -28,20 +24,11 @@ jobs:
     # Only run on merged PRs or manual dispatch
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true)
     outputs:
-      releases_created: ${{ steps.release_auto.outputs.releases_created || steps.manual_release.outputs.releases_created }}
-      tag_name: ${{ steps.release_auto.outputs.tag_name }}
+      releases_created: ${{ steps.manual_release.outputs.releases_created }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: 🚀 Create Release PR or Release (Automatic)
-        if: github.event_name == 'pull_request'
-        id: release_auto
-        uses: googleapis/release-please-action@v4
-        with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
 
       - name: 🔧 Setup Node.js (Manual Release)
         if: github.event_name == 'workflow_dispatch'
