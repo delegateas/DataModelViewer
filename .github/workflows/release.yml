@@ -28,8 +28,8 @@ jobs:
     # Only run on merged PRs or manual dispatch
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true)
     outputs:
-      releases_created: ${{ steps.release.outputs.releases_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
+      releases_created: ${{ steps.release_auto.outputs.releases_created || steps.manual_release.outputs.releases_created }}
+      tag_name: ${{ steps.release_auto.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,7 +37,7 @@ jobs:
 
       - name: 🚀 Create Release PR or Release (Automatic)
         if: github.event_name == 'pull_request'
-        id: release
+        id: release_auto
         uses: googleapis/release-please-action@v4
         with:
           config-file: release-please-config.json
@@ -49,20 +49,28 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 🚀 Create Manual Release
+      - name: 🚀 Create Manual Release PR
         if: github.event_name == 'workflow_dispatch'
         id: manual_release
         run: |
           npm install -g release-please
+          
+          # Get current version from manifest
+          CURRENT_VERSION=$(cat .release-please-manifest.json | jq -r '.Website')
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Create release PR with specific version bump
           release-please release-pr \
+            --repo-url="https://github.com/${{ github.repository }}" \
             --config-file=release-please-config.json \
             --manifest-file=.release-please-manifest.json \
-            --release-as=${{ github.event.inputs.release_type }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            --release-as=${{ github.event.inputs.release_type }} \
+            --token=${{ secrets.GITHUB_TOKEN }}
+            
+          echo "releases_created=true" >> $GITHUB_OUTPUT
 
-      - name: Set outputs for manual release
+      - name: 📝 Manual Release Summary
         if: github.event_name == 'workflow_dispatch'
         run: |
-          echo "releases_created=true" >> $GITHUB_OUTPUT
-          echo "Manual release PR created with type: ${{ github.event.inputs.release_type }}"
+          echo "✅ Manual release PR created with type: ${{ github.event.inputs.release_type }}"
+          echo "🔍 Check the Pull Requests tab for the release PR to review and merge."
