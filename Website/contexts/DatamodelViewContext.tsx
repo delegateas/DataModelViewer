@@ -13,7 +13,7 @@ export interface DatamodelViewState {
 const initialState: DatamodelViewState = {
     currentGroup: null,
     currentSection: null,
-    scrollToSection: () => { console.error("scrollToSection not initialized yet!"); },
+    scrollToSection: () => { throw new Error("scrollToSection not initialized yet!"); },
 }
 
 type DatamodelViewAction = 
