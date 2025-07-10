@@ -2,9 +2,26 @@
 name: Release
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -13,39 +30,36 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true)
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - name: 🚀 Create Release PR or Release
-        id: release
+      - name: 🚀 Create Release PR or Release (Auto)
+        if: github.event_name == 'pull_request'
+        id: release_auto
         uses: google-github-actions/release-please-action@v4
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  # Optional: Deploy or publish after release is created
-  publish:
-    needs: release-please
-    runs-on: ubuntu-latest
-    if: ${{ needs.release-please.outputs.releases_created }}
-    steps:
-      - uses: actions/checkout@v4
-        
-      - name: ⚙️ Setup Node.js 22.x
-        uses: actions/setup-node@v4
+      - name: 🚀 Create Release PR or Release (Manual)
+        if: github.event_name == 'workflow_dispatch'
+        id: release_manual
+        uses: google-github-actions/release-please-action@v4
         with:
-          node-version: 22.x
-          cache: 'npm'
-          cache-dependency-path: Website/package-lock.json
-          
-      - name: 📦 Install dependencies
-        run: npm ci
-        working-directory: Website
-        
-      - name: 🏗️ Build
-        run: npm run build
-        working-directory: Website
-        
-      # Add any additional deployment steps here
-      # For example: deploy to production, publish to npm, etc.
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          release-type: ${{ github.event.inputs.release_type }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+
+      - name: Set outputs
+        id: release
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "releases_created=${{ steps.release_manual.outputs.releases_created }}" >> $GITHUB_OUTPUT
+            echo "tag_name=${{ steps.release_manual.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "releases_created=${{ steps.release_auto.outputs.releases_created }}" >> $GITHUB_OUTPUT
+            echo "tag_name=${{ steps.release_auto.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          fi
