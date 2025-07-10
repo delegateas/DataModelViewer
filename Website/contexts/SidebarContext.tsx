@@ -29,7 +29,9 @@ const sidebarReducer = (state: SidebarState, action: SidebarAction): SidebarStat
 }
 
 const SidebarContext = createContext<SidebarState>(initialState);
-const SidebarDispatcher = createContext<React.Dispatch<SidebarAction>>(() => { });
+const SidebarDispatcher = createContext<React.Dispatch<SidebarAction>>(() => {
+    throw new Error("SidebarDispatcher must be used within a SidebarProvider");
+});
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
     const [sidebarState, dispatch] = useReducer(sidebarReducer, initialState);
     
