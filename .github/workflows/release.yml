@@ -17,11 +17,6 @@ on:
           - patch
           - minor
           - major
-      prerelease:
-        description: 'Mark as prerelease'
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: write
@@ -30,36 +25,44 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    # Only run on merged PRs or manual dispatch
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true)
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - name: 🚀 Create Release PR or Release (Auto)
-        if: github.event_name == 'pull_request'
-        id: release_auto
-        uses: google-github-actions/release-please-action@v4
+      - uses: actions/checkout@v4
         with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-          
-      - name: 🚀 Create Release PR or Release (Manual)
-        if: github.event_name == 'workflow_dispatch'
-        id: release_manual
-        uses: google-github-actions/release-please-action@v4
-        with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-          release-type: ${{ github.event.inputs.release_type }}
-          prerelease: ${{ github.event.inputs.prerelease }}
+          fetch-depth: 0
 
-      - name: Set outputs
+      - name: 🚀 Create Release PR or Release (Automatic)
+        if: github.event_name == 'pull_request'
         id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: 🔧 Setup Node.js (Manual Release)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🚀 Create Manual Release
+        if: github.event_name == 'workflow_dispatch'
+        id: manual_release
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "releases_created=${{ steps.release_manual.outputs.releases_created }}" >> $GITHUB_OUTPUT
-            echo "tag_name=${{ steps.release_manual.outputs.tag_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "releases_created=${{ steps.release_auto.outputs.releases_created }}" >> $GITHUB_OUTPUT
-            echo "tag_name=${{ steps.release_auto.outputs.tag_name }}" >> $GITHUB_OUTPUT
-          fi
+          npm install -g release-please
+          release-please release-pr \
+            --config-file=release-please-config.json \
+            --manifest-file=.release-please-manifest.json \
+            --release-as=${{ github.event.inputs.release_type }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set outputs for manual release
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "releases_created=true" >> $GITHUB_OUTPUT
+          echo "Manual release PR created with type: ${{ github.event.inputs.release_type }}"
