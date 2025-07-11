@@ -1,0 +1,75 @@
+# .github/workflows/release.yml
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    # Only run on merged PRs or manual dispatch
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true)
+    outputs:
+      releases_created: ${{ steps.manual_release.outputs.releases_created }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔧 Setup Node.js (Manual Release)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🚀 Create Manual Release PR
+        if: github.event_name == 'workflow_dispatch'
+        id: manual_release
+        run: |
+          npm install -g release-please
+          npm install semver
+          
+          # Get current version from manifest
+          CURRENT_VERSION=$(cat .release-please-manifest.json | jq -r '.Website')
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Calculate next version based on release type using Node.js
+          NEXT_VERSION=$(node -e "
+            const semver = require('semver');
+            const current = '$CURRENT_VERSION';
+            const type = '${{ github.event.inputs.release_type }}';
+            console.log(semver.inc(current, type));
+          ")
+          
+          echo "Next version will be: $NEXT_VERSION"
+          
+          # Create release PR with specific version
+          release-please release-pr \
+            --repo-url="https://github.com/${{ github.repository }}" \
+            --config-file=release-please-config.json \
+            --manifest-file=.release-please-manifest.json \
+            --release-as=$NEXT_VERSION \
+            --skip-labeling \
+            --token=${{ secrets.GITHUB_TOKEN }}
+            
+          echo "releases_created=true" >> $GITHUB_OUTPUT
+
+      - name: 📝 Manual Release Summary
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "✅ Manual release PR created with type: ${{ github.event.inputs.release_type }}"
+          echo "🔍 Check the Pull Requests tab for the release PR to review and merge."

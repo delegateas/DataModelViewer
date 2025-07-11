@@ -1,28 +1,32 @@
 'use client'
 
 import { EntityType, AttributeType } from "@/lib/Types"
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "./ui/table"
-import { Button } from "./ui/button"
+import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../ui/table"
+import { Button } from "../ui/button"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Search, X, PencilOff, Pencil } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Input } from "./ui/input"
-import { AttributeDetails } from "./entity/AttributeDetails"
-import BooleanAttribute from "./attributes/BooleanAttribute"
-import ChoiceAttribute from "./attributes/ChoiceAttribute"
-import DateTimeAttribute from "./attributes/DateTimeAttribute"
-import DecimalAttribute from "./attributes/DecimalAttribute"
-import FileAttribute from "./attributes/FileAttribute"
-import GenericAttribute from "./attributes/GenericAttribute"
-import IntegerAttribute from "./attributes/IntegerAttribute"
-import LookupAttribute from "./attributes/LookupAttribute"
-import StatusAttribute from "./attributes/StatusAttribute"
-import StringAttribute from "./attributes/StringAttribute"
+import { ArrowUpDown, ArrowUp, ArrowDown, Search, X, EyeOff, Eye } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./../ui/select"
+import { Input } from "./../ui/input"
+import { AttributeDetails } from "./../entity/AttributeDetails"
+import BooleanAttribute from "./../attributes/BooleanAttribute"
+import ChoiceAttribute from "./../attributes/ChoiceAttribute"
+import DateTimeAttribute from "./../attributes/DateTimeAttribute"
+import DecimalAttribute from "./../attributes/DecimalAttribute"
+import FileAttribute from "./../attributes/FileAttribute"
+import GenericAttribute from "./../attributes/GenericAttribute"
+import IntegerAttribute from "./../attributes/IntegerAttribute"
+import LookupAttribute from "./../attributes/LookupAttribute"
+import StatusAttribute from "./../attributes/StatusAttribute"
+import StringAttribute from "./../attributes/StringAttribute"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
 
-function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entity: string) => void }) {
+interface IAttributeProps {
+    entity: EntityType
+}
+
+export const Attributes = ({ entity }: IAttributeProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("displayName")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -62,7 +66,7 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
             )
         }
 
-        if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute);
+        if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute || attr.IsStandardFieldModified);
 
         if (!sortColumn || !sortDirection) return filteredAttributes
 
@@ -151,7 +155,7 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
                 title="Control customfields"
             >
                 {
-                    hideStandardFields ? <PencilOff className="w-4 h-4" /> : <Pencil className="w-4 h-4" />
+                    hideStandardFields ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />
                 }
             </Button>
             {(searchQuery || typeFilter !== "all") && (
@@ -250,7 +254,7 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
                             >
                                 <TableCell className="break-words font-medium py-3">{attribute.DisplayName}</TableCell>
                                 <TableCell className="break-words text-gray-600 py-3">{attribute.SchemaName}</TableCell>
-                                <TableCell className="break-words py-3">{getAttributeComponent(entity, attribute, onSelect)}</TableCell>
+                                <TableCell className="break-words py-3">{getAttributeComponent(entity, attribute)}</TableCell>
                                 <TableCell className="py-3"><AttributeDetails attribute={attribute} /></TableCell>
                                 <TableCell className="break-words text-gray-600 py-3">{attribute.Description}</TableCell>
                             </TableRow>
@@ -262,7 +266,7 @@ function Attributes({ entity, onSelect }: { entity: EntityType, onSelect: (entit
     </>
 }
 
-function getAttributeComponent(entity: EntityType, attribute: AttributeType, onSelect: (entity: string) => void) {
+function getAttributeComponent(entity: EntityType, attribute: AttributeType) {
     const key = `${attribute.SchemaName}-${entity.SchemaName}`;
 
     switch (attribute.AttributeType) {
@@ -275,7 +279,7 @@ function getAttributeComponent(entity: EntityType, attribute: AttributeType, onS
         case 'IntegerAttribute':
             return <IntegerAttribute key={key} attribute={attribute} />;
         case 'LookupAttribute':
-            return <LookupAttribute key={key} attribute={attribute} onSelect={onSelect} />;
+            return <LookupAttribute key={key} attribute={attribute} />;
         case 'DecimalAttribute':
             return <DecimalAttribute key={key} attribute={attribute} />;
         case 'StatusAttribute':
@@ -290,5 +294,3 @@ function getAttributeComponent(entity: EntityType, attribute: AttributeType, onS
             return null;
     }
 }
-
-export default Attributes 

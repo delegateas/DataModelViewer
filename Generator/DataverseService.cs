@@ -135,7 +135,12 @@ namespace Generator
         {
             var attributes =
                 relevantAttributes
-                .Select(metadata => GetAttribute(metadata, entity, logicalToSchema, logger))
+                .Select(metadata =>
+                {
+                    var attr = GetAttribute(metadata, entity, logicalToSchema, logger);
+                    attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
+                    return attr;
+                })
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 
@@ -516,8 +521,6 @@ namespace Generator
 
             if (configuration["DataverseClientId"] != null && configuration["DataverseClientSecret"] != null)
                 return new ClientSecretCredential(configuration["TenantId"], configuration["DataverseClientId"], configuration["DataverseClientSecret"]);
-
-            return new InteractiveBrowserCredential();
 
             return new DefaultAzureCredential();  // in azure this will be managed identity, locally this depends... se midway of this post for the how local identity is chosen: https://dreamingincrm.com/2021/11/16/connecting-to-dataverse-from-function-app-using-managed-identity/
         }

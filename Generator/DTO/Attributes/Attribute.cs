@@ -4,6 +4,7 @@ namespace Generator.DTO.Attributes;
 
 public abstract class Attribute
 {
+    public bool IsStandardFieldModified { get; set; }
     public bool IsCustomAttribute { get; set; }
     public bool IsPrimaryId { get; set; }
     public string DisplayName { get; }
