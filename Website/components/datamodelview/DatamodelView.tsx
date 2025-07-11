@@ -7,6 +7,7 @@ import { useSidebarDispatch } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { DatamodelViewProvider } from "@/contexts/DatamodelViewContext";
 import { List } from "./List";
+import { DataModelDiagram } from "./DataModelDiagram";
 
 export function DatamodelView() {
     const dispatch = useSidebarDispatch();
@@ -24,6 +25,7 @@ export function DatamodelView() {
                 <div className='flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50'>
                     <div className="">
                         <TooltipProvider delayDuration={0}>
+                            <DataModelDiagram />
                             <List />
                         </TooltipProvider>
                     </div>
