@@ -83,14 +83,14 @@ function Keys({ entity }: { entity: EntityType }) {
 
     return (
         <>
-            <div className="flex items-center gap-2 p-4 border-b border-gray-100">
+            <div className="flex items-center gap-2 p-2 border-b border-gray-100 md:p-4 md:gap-4">
                 <div className="relative flex-1">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                    <Search className="absolute left-1.5 top-2 h-3 w-3 text-gray-500 md:left-2 md:top-2.5 md:h-4 md:w-4" />
                     <Input
                         placeholder="Search keys..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8"
+                        className="pl-6 h-8 text-xs md:pl-8 md:h-10 md:text-sm"
                     />
                 </div>
                 {searchQuery && (
@@ -98,10 +98,10 @@ function Keys({ entity }: { entity: EntityType }) {
                         variant="ghost"
                         size="icon"
                         onClick={() => setSearchQuery("")}
-                        className="h-10 w-10 text-gray-500 hover:text-gray-700"
+                        className="h-8 w-8 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
                         title="Clear search"
                     >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                 )}
             </div>
@@ -128,7 +128,7 @@ function Keys({ entity }: { entity: EntityType }) {
                         <TableHeader>
                             <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
                                 <TableHead 
-                                    className="w-[25%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                    className="w-[25%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                     onClick={() => handleSort('name')}
                                 >
                                     <div className="flex items-center">
@@ -137,7 +137,7 @@ function Keys({ entity }: { entity: EntityType }) {
                                     </div>
                                 </TableHead>
                                 <TableHead 
-                                    className="w-[25%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                    className="w-[25%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                     onClick={() => handleSort('logicalName')}
                                 >
                                     <div className="flex items-center">
@@ -146,7 +146,7 @@ function Keys({ entity }: { entity: EntityType }) {
                                     </div>
                                 </TableHead>
                                 <TableHead 
-                                    className="w-[50%] text-black font-bold py-3 cursor-pointer hover:bg-gray-200"
+                                    className="w-[50%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                     onClick={() => handleSort('attributes')}
                                 >
                                     <div className="flex items-center">
@@ -164,14 +164,14 @@ function Keys({ entity }: { entity: EntityType }) {
                                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                     }`}
                                 >
-                                    <TableCell className="break-words font-medium py-3">{key.Name}</TableCell>
-                                    <TableCell className="break-words text-gray-600 py-3">{key.LogicalName}</TableCell>
-                                    <TableCell className="break-words py-3">
+                                    <TableCell className="break-words font-medium py-2 text-xs md:py-3 md:text-sm">{key.Name}</TableCell>
+                                    <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">{key.LogicalName}</TableCell>
+                                    <TableCell className="break-words py-2 md:py-3">
                                         <div className="flex flex-wrap gap-1">
                                             {key.KeyAttributes.map((attr, i) => (
                                                 <span 
                                                     key={i}
-                                                    className="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-blue-50 text-blue-700"
+                                                    className="inline-flex items-center px-1.5 py-0.5 text-xs rounded-md font-medium bg-blue-50 text-blue-700 md:px-2 md:py-1 md:text-sm"
                                                 >
                                                     {attr}
                                                 </span>
