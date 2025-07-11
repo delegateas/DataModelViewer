@@ -1,4 +1,4 @@
-import { GroupType } from "@/lib/Types";
+import { EntityType, GroupType } from "@/lib/Types";
 import { Groups } from "../../generated/Data"
 import { useTouch } from '../ui/hybridtooltop';
 import { useSidebarDispatch } from '@/contexts/SidebarContext';
@@ -57,7 +57,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
         setExpandedGroups(new Set());
     };
 
-    const isEntityMatch = (entity: any) => {
+    const isEntityMatch = (entity: EntityType) => {
         if (!searchTerm.trim()) return false;
         return entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase());
