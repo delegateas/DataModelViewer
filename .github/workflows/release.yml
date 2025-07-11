@@ -14,10 +14,6 @@ on:
           - minor
           - major
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -36,12 +32,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 🚀 Create Manual Release PR
+      - name: 🚀 Create Manual Release Commit
         if: github.event_name == 'workflow_dispatch'
         id: manual_release
         run: |
           npm install -g release-please
           npm install semver
+          
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           # Get current version from manifest
           CURRENT_VERSION=$(cat .release-please-manifest.json | jq -r '.Website')
@@ -57,19 +57,46 @@ jobs:
           
           echo "Next version will be: $NEXT_VERSION"
           
-          # Create release PR with specific version
-          release-please release-pr \
-            --repo-url="https://github.com/${{ github.repository }}" \
-            --config-file=release-please-config.json \
-            --manifest-file=.release-please-manifest.json \
-            --release-as=$NEXT_VERSION \
-            --skip-labeling \
-            --token=${{ secrets.GITHUB_TOKEN }}
-            
+          # Update version in package.json
+          cd Website
+          npm version $NEXT_VERSION --no-git-tag-version
+          cd ..
+          
+          # Update manifest file
+          jq --arg version "$NEXT_VERSION" '.Website = $version' .release-please-manifest.json > temp.json && mv temp.json .release-please-manifest.json
+          
+          # Generate changelog entry
+          echo "## [$NEXT_VERSION] - $(date +'%Y-%m-%d')" > temp_changelog.md
+          echo "" >> temp_changelog.md
+          echo "### Changed" >> temp_changelog.md
+          echo "- Manual ${{ github.event.inputs.release_type }} release" >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          # Prepend to existing changelog if it exists
+          if [ -f "Website/CHANGELOG.md" ]; then
+            cat temp_changelog.md Website/CHANGELOG.md > temp_full_changelog.md
+            mv temp_full_changelog.md Website/CHANGELOG.md
+          else
+            mv temp_changelog.md Website/CHANGELOG.md
+          fi
+          
+          # Commit and push changes
+          git add .
+          git commit -m "chore(release): release $NEXT_VERSION
+
+          Release type: ${{ github.event.inputs.release_type }}
+          Previous version: $CURRENT_VERSION
+          New version: $NEXT_VERSION"
+          
+          git push origin HEAD
+          
           echo "releases_created=true" >> $GITHUB_OUTPUT
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
       - name: 📝 Manual Release Summary
         if: github.event_name == 'workflow_dispatch'
         run: |
-          echo "✅ Manual release PR created with type: ${{ github.event.inputs.release_type }}"
-          echo "🔍 Check the Pull Requests tab for the release PR to review and merge."
+          echo "✅ Manual release commit created with type: ${{ github.event.inputs.release_type }}"
+          echo "🏷️ New version: ${{ steps.manual_release.outputs.version }}"
+          echo "📝 Changes have been committed and pushed to the current branch."
+          echo "🔗 View the commit: https://github.com/${{ github.repository }}/commit/$(git rev-parse HEAD)"
