@@ -1,3 +1,8 @@
+## [1.1.5] - 2025-07-11
+
+### Changed
+- Manual patch release
+
 # Changelog
 
 ## [1.1.4](https://github.com/delegateas/DataModelViewer/compare/website-v1.1.3...website-v1.1.4) (2025-07-10)
