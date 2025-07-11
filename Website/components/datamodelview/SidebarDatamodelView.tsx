@@ -171,6 +171,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     <Input
                         type="text"
                         placeholder="Search entities..."
+                        aria-label="Search entities"
                         value={searchTerm}
                         onChange={(e) => handleSearch(e.target.value)}
                         className="pl-8 pr-8 h-8 text-xs"
