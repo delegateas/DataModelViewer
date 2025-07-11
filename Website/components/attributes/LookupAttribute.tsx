@@ -6,9 +6,9 @@ export default function LookupAttribute({ attribute }: { attribute: LookupAttrib
 
     const { scrollToSection } = useDatamodelView();
 
-    return <>
+    return <div className="flex flex-wrap items-center gap-2">
         <p className="font-bold">Lookup</p>
-        <div className="flex flex-wrap gap-1 mt-1">
+        <div className="flex flex-wrap gap-1">
             {attribute.Targets
                 .map(target => target.IsInSolution ? 
                     <button
@@ -27,5 +27,5 @@ export default function LookupAttribute({ attribute }: { attribute: LookupAttrib
                         {target.Name}
                     </div>)}
         </div>
-    </>
+    </div>
 }
