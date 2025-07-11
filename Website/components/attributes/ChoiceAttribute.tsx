@@ -1,6 +1,6 @@
 import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
-import { CheckCircle, Circle } from "lucide-react"
+import { CheckCircle, Circle, Square, CheckSquare } from "lucide-react"
 
 export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttributeType }) {
     return (
@@ -20,10 +20,20 @@ export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttrib
                         <div className="flex items-center justify-between py-1">
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center gap-1">
-                                    {option.Value === attribute.DefaultValue ? (
-                                        <CheckCircle className="w-3 h-3 text-green-600" />
+                                    {attribute.Type === "Multi" ? (
+                                        // For multi-select, show checkboxes
+                                        option.Value === attribute.DefaultValue ? (
+                                            <CheckSquare className="w-3 h-3 text-green-600" />
+                                        ) : (
+                                            <Square className="w-3 h-3 text-gray-400" />
+                                        )
                                     ) : (
-                                        <Circle className="w-3 h-3 text-gray-400" />
+                                        // For single-select, show radio buttons
+                                        option.Value === attribute.DefaultValue ? (
+                                            <CheckCircle className="w-3 h-3 text-green-600" />
+                                        ) : (
+                                            <Circle className="w-3 h-3 text-gray-400" />
+                                        )
                                     )}
                                     <span className="text-sm">{option.Name}</span>
                                 </div>
