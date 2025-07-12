@@ -10,14 +10,14 @@ import {
     Layers,
     Search
 } from 'lucide-react';
-import { useDiagramContext } from '@/contexts/DiagramViewContext';
+import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
 
 export const DiagramControls: React.FC = () => {
   const { 
     zoom, 
     resetView, 
     fitToScreen 
-  } = useDiagramContext();
+  } = useDiagramViewContext();
 
   return (
     <div className="space-y-4">
@@ -81,7 +81,7 @@ export const DiagramControls: React.FC = () => {
 };
 
 export const DiagramZoomDisplay: React.FC = () => {
-  const { zoom } = useDiagramContext();
+  const { zoom } = useDiagramViewContext();
 
   return (
     <div className="text-xs text-muted-foreground">
@@ -91,7 +91,7 @@ export const DiagramZoomDisplay: React.FC = () => {
 };
 
 export const DiagramZoomControls: React.FC = () => {
-  const { zoomIn, zoomOut } = useDiagramContext();
+  const { zoomIn, zoomOut } = useDiagramViewContext();
 
   return (
     <div className="flex flex-col space-y-2">

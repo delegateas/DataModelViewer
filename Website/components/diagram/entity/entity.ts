@@ -103,7 +103,7 @@ export class EntityElement extends dia.Element {
             groups: {
                 left: {
                     position: {
-                        name: 'left'
+                        name: 'left',
                     },
                     attrs: {
                         circle: {
@@ -117,7 +117,7 @@ export class EntityElement extends dia.Element {
                 },
                 right: {
                     position: {
-                        name: 'right'
+                        name: 'right',
                     },
                     attrs: {
                         circle: {

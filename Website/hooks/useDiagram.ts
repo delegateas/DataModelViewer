@@ -257,7 +257,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
 
     // Re-add background dots when paper size changes (e.g., on resize)
     paper.on('resize', () => createBackgroundDots(graphRef.current!, paper));
-
+    
     // Setup event listeners
     paper.on('blank:pointerdown', () => {
       updatePanningDisplay(true);

@@ -29,7 +29,7 @@ const routerPadding = 16;
 const routerTries = 5000;
 const routerDirections = 90;
 
-const DiagramContent: React.FC = () => {
+const DiagramContent = () => {
     const { 
         graph, 
         paper, 
@@ -184,23 +184,23 @@ const DiagramContent: React.FC = () => {
                             connector: { name: 'rounded' },
                             attrs: {
                                 line: {
-                                    stroke: '#6366f1',
+                                    stroke: '#42a5f5',
                                     strokeWidth: 2,
                                     sourceMarker: {
                                         type: 'ellipse',
-                                        cx: 0,
+                                        cx: -6,
                                         cy: 0,
                                         rx: 4,
                                         ry: 4,
                                         fill: '#fff',
-                                        stroke: '#6366f1',
-                                        strokeWidth: 2
+                                        stroke: '#42a5f5',
+                                        strokeWidth: 2,
                                     },
                                     targetMarker: {
                                         type: 'path',
                                         d: 'M 10 -5 L 0 0 L 10 5 Z',
-                                        fill: '#6366f1',
-                                        stroke: '#6366f1'
+                                        fill: '#42a5f5',
+                                        stroke: '#42a5f5'
                                     }
                                 }
                             }
@@ -340,7 +340,6 @@ const DiagramContent: React.FC = () => {
             />
         </>
     )
-    
 };
 
 export default function DiagramView({ }: IDiagramView) {
@@ -355,11 +354,7 @@ export default function DiagramView({ }: IDiagramView) {
             <div className="flex">
                 <AppSidebar />
                 <div className='flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50'>
-                    <div className="">
-                        <TooltipProvider delayDuration={0}>
-                            <DiagramContent />
-                        </TooltipProvider>
-                    </div>
+                    <DiagramContent />
                 </div>
             </div>
         </DiagramViewProvider>

@@ -8,6 +8,7 @@ interface DiagramCanvasProps {
 export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+
   const { 
     isPanning, 
     initializePaper, 
@@ -16,7 +17,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
 
   useEffect(() => {
     if (canvasRef.current) {
-      const paper = initializePaper(canvasRef.current, {
+      initializePaper(canvasRef.current, {
         background: {
           color: 'transparent' // Make paper background transparent to show CSS dots
         }
@@ -41,7 +42,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
   }, [initializePaper, destroyPaper]);
 
   return (
-    <div className="flex-1 relative overflow-hidden bg-amber-50">
+    <div className="flex-1 relative overflow-hidden bg-stone-50">
       <div 
         ref={canvasRef} 
         className={`w-full h-full ${isPanning ? 'cursor-grabbing' : 'cursor-default'}`}
