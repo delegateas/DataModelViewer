@@ -1,5 +1,5 @@
+import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
 import React, { useRef, useEffect, useState } from 'react';
-import { useDiagramContext } from '@/contexts/DiagramContext';
 
 interface DiagramCanvasProps {
   children?: React.ReactNode;
@@ -12,7 +12,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
     isPanning, 
     initializePaper, 
     destroyPaper 
-  } = useDiagramContext();
+  } = useDiagramViewContext();
 
   useEffect(() => {
     if (canvasRef.current) {

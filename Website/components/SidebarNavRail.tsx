@@ -14,9 +14,9 @@ const navItems = [
   {
     label: "Diagram Viewer",
     icon: <PencilRuler />,
-    href: "#",
+    href: "/diagram",
     active: false,
-    disabled: true,
+    disabled: false,
   },
 ];
 

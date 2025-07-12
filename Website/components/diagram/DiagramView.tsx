@@ -2,20 +2,12 @@
 
 import React, { useEffect, useState } from 'react'
 import { dia, shapes, util } from '@joint/core'
-import { Groups } from "../generated/Data"
+import { Groups } from "../../generated/Data"
 import { EntityElement } from '@/components/diagram/entity/entity';
 import debounce from 'lodash/debounce';
-import { 
-    SidebarProvider, 
-    Sidebar, 
-    SidebarHeader, 
-    SidebarContent, 
-    SidebarFooter 
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { PanelLeft, ZoomIn, ZoomOut } from 'lucide-react';
-import { DiagramProvider, useDiagramContext } from '@/contexts/DiagramContext';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { GroupSelector } from '@/components/diagram/GroupSelector';
 import { DiagramResetButton } from '@/components/diagram/DiagramResetButton';
@@ -24,6 +16,11 @@ import { AddAttributeModal } from '@/components/diagram/AddAttributeModal';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
 import { createBackgroundDots } from '@/components/diagram/BackgroundDots';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
+import { AppSidebar } from '../AppSidebar';
+import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
+import { SidebarDiagramView } from './SidebarDiagramView';
+import { useSidebarDispatch } from '@/contexts/SidebarContext';
 
 interface IDiagramView {}
 
@@ -46,7 +43,7 @@ const DiagramContent: React.FC = () => {
         resetView,
         fitToScreen,
         addAttributeToEntity
-    } = useDiagramContext();
+    } = useDiagramViewContext();
     
     const [selectedKey, setSelectedKey] = useState<string>();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -288,97 +285,48 @@ const DiagramContent: React.FC = () => {
         EntityElement.getVisibleItemsAndPorts(selectedEntity).visibleItems : [];
 
     return (
-        <SidebarProvider>
-            <div className="flex h-screen w-full">
-                {/* Left Sidebar */}
-                <Sidebar>
-                    <SidebarHeader className="border-b border-border p-4">
-                        <h2 className="text-lg font-semibold">Diagram Tools</h2>
-                    </SidebarHeader>
-                    <SidebarContent className="p-4 space-y-6">
-                        {/* Group Selection */}
-                        <GroupSelector
-                            groups={Groups}
-                            selectedGroup={selectedGroup}
-                            onGroupSelect={selectGroup}
-                        />
-
-                        <Separator />
-                        
-                        {/* Diagram Controls */}
-                        <div className="space-y-3">
-                            <h3 className="text-sm font-medium">Controls</h3>
-                            <div className="flex space-x-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={zoomOut}
-                                    disabled={zoom <= 0.1}
-                                >
-                                    <ZoomOut className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={zoomIn}
-                                    disabled={zoom >= 3}
-                                >
-                                    <ZoomIn className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <DiagramResetButton onReset={resetView} />
-                        </div>
-                    </SidebarContent>
-                    <SidebarFooter className="border-t border-border p-4">
-                        <div className="text-xs text-muted-foreground">
-                            Zoom: {Math.round(zoom * 100)}%
-                        </div>
-                    </SidebarFooter>
-                </Sidebar>
-
-                {/* Main Content */}
-                <div className="flex flex-col flex-1">
-                    {/* Top Toolbar */}
-                    <div className="border-b border-border bg-background p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <h1 className="text-xl font-bold">Data Model Diagram</h1>
-                                <Separator orientation="vertical" className="h-6" />
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm text-muted-foreground">Group:</span>
-                                    <span className="text-sm font-medium">
-                                        {selectedGroup?.Name || 'None'}
-                                    </span>
-                                </div>
-                                <Separator orientation="vertical" className="h-6" />
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-sm text-muted-foreground">Entities:</span>
-                                    <span className="text-sm font-medium">
-                                        {currentEntities.length}
-                                    </span>
-                                </div>
-                            </div>
+        <>
+            <div className="flex flex-col flex-1">
+                {/* Top Toolbar */}
+                <div className="border-b border-border bg-background p-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            <h1 className="text-xl font-bold">Data Model Diagram</h1>
+                            <Separator orientation="vertical" className="h-6" />
                             <div className="flex items-center space-x-2">
-                                <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                >
-                                    <PanelLeft className="h-4 w-4" />
-                                </Button>
+                                <span className="text-sm text-muted-foreground">Group:</span>
+                                <span className="text-sm font-medium">
+                                    {selectedGroup?.Name || 'None'}
+                                </span>
                             </div>
+                            <Separator orientation="vertical" className="h-6" />
+                            <div className="flex items-center space-x-2">
+                                <span className="text-sm text-muted-foreground">Entities:</span>
+                                <span className="text-sm font-medium">
+                                    {currentEntities.length}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            >
+                                <PanelLeft className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
-
-                    {/* Diagram Area */}
-                    <DiagramCanvas>
-                        {/* Zoom and Coordinate Indicator */}
-                        <ZoomCoordinateIndicator 
-                            zoom={zoom}
-                            mousePosition={mousePosition}
-                        />
-                    </DiagramCanvas>
                 </div>
+
+                {/* Diagram Area */}
+                <DiagramCanvas>
+                    {/* Zoom and Coordinate Indicator */}
+                    <ZoomCoordinateIndicator 
+                        zoom={zoom}
+                        mousePosition={mousePosition}
+                    />
+                </DiagramCanvas>
             </div>
 
             {/* Add Attribute Modal */}
@@ -390,14 +338,30 @@ const DiagramContent: React.FC = () => {
                 availableAttributes={availableAttributes}
                 visibleAttributes={visibleAttributes}
             />
-        </SidebarProvider>
-    );
+        </>
+    )
+    
 };
 
 export default function DiagramView({ }: IDiagramView) {
+    const dispatch = useSidebarDispatch();
+
+    useEffect(() => {
+        dispatch({ type: "SET_ELEMENT", payload: <SidebarDiagramView /> })
+    }, [])
+
     return (
-        <DiagramProvider>
-            <DiagramContent />
-        </DiagramProvider>
+        <DiagramViewProvider>
+            <div className="flex">
+                <AppSidebar />
+                <div className='flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50'>
+                    <div className="">
+                        <TooltipProvider delayDuration={0}>
+                            <DiagramContent />
+                        </TooltipProvider>
+                    </div>
+                </div>
+            </div>
+        </DiagramViewProvider>
     );
 }

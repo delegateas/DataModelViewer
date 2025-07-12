@@ -10,7 +10,7 @@ import {
     Layers,
     Search
 } from 'lucide-react';
-import { useDiagramContext } from '@/contexts/DiagramContext';
+import { useDiagramContext } from '@/contexts/DiagramViewContext';
 
 export const DiagramControls: React.FC = () => {
   const { 
