@@ -4,9 +4,10 @@ import { EntityAttribute } from './EntityAttribute';
 interface IEntityBody {
     entity: EntityType;
     visibleItems: AttributeType[];
+    selectedKey?: string;
 }
 
-export function EntityBody({ entity, visibleItems }: IEntityBody): string {
+export function EntityBody({ entity, visibleItems, selectedKey }: IEntityBody): string {
             
     const icon = entity.IconBase64 != null
         ? `data:image/svg+xml;base64,${entity.IconBase64}`
@@ -27,7 +28,11 @@ export function EntityBody({ entity, visibleItems }: IEntityBody): string {
             </div>
             <!-- ATTRIBUTES -->
             <div class="w-full flex flex-col">
-                ${visibleItems.map((attribute, i) => (EntityAttribute({ attribute, isKey: i == 0 }))).join('')}
+                ${visibleItems.map((attribute, i) => (EntityAttribute({ 
+                    attribute, 
+                    isKey: i == 0, 
+                    isSelected: selectedKey === attribute.SchemaName 
+                }))).join('')}
                 ${EntityAttribute({ attribute: { DisplayName: '', SchemaName: '', AttributeType: 'GenericAttribute' } as any, isKey: false, isAddButton: true })}
             </div>
         </div>

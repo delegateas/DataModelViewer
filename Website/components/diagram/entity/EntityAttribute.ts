@@ -3,9 +3,10 @@ import { AttributeType } from "@/lib/Types";
 interface IEntityAttribute {
     attribute: AttributeType;
     isKey: boolean;
+    isSelected?: boolean;
 }
 
-export const EntityAttribute = ({ attribute, isKey, isAddButton = false }: IEntityAttribute & { isAddButton?: boolean }): string => {
+export const EntityAttribute = ({ attribute, isKey, isSelected = false, isAddButton = false }: IEntityAttribute & { isAddButton?: boolean }): string => {
     if (isAddButton) {
         return `
             <button class="w-full rounded-sm my-[4px] p-[4px] bg-gray-100 flex items-center h-[28px] justify-center hover:bg-gray-200 transition-colors duration-300 text-gray-600" data-add-attribute="true">
@@ -32,11 +33,15 @@ export const EntityAttribute = ({ attribute, isKey, isAddButton = false }: IEnti
         icon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`
     }
     
+    const buttonClasses = `w-full rounded-sm my-[4px] p-[4px] flex items-center h-[28px] ${isKey ? 'transition-colors duration-300 hover:bg-blue-200 cursor-pointer' : ''}`;
+    const bgClass = isSelected ? 'bg-red-200 border-2 border-red-400' : 'bg-gray-100';
+    
     return `
         <button
-            class="w-full rounded-sm my-[4px] p-[4px] bg-gray-100 flex items-center h-[28px] ${isKey ? 'transition-colors duration-300 hover:bg-blue-200' : ''}"
+            class="${buttonClasses} ${bgClass}"
             data-schema-name="${attribute.SchemaName}"
             data-is-key="${isKey}"
+            title="${isKey ? 'Click to highlight incoming relationships' : ''}"
         >
             ${icon}<p class="text-xs ml-1">${attribute.DisplayName}</p>
         </button>

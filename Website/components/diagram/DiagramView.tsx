@@ -58,7 +58,7 @@ const DiagramContent = () => {
     }, [Groups, selectedGroup, selectGroup]);
 
     useEffect(() => {
-        document.addEventListener('click', (e) => {
+        const handleDocumentClick = (e: MouseEvent) => {
             const target = (e.target as HTMLElement).closest('button[data-schema-name]') as HTMLElement;
             const addButton = (e.target as HTMLElement).closest('button[data-add-attribute]') as HTMLElement;
             
@@ -73,15 +73,24 @@ const DiagramContent = () => {
                 return;
             }
             
-            if (!target) return;
+            if (target) {
+                const schemaName = target.dataset.schemaName!;
+                const isKey = target.dataset.isKey === 'true';
 
-            const schemaName = target.dataset.schemaName!;
-            const isKey = target.dataset.isKey === 'true';
-
-            if (isKey) {
-                setSelectedKey(schemaName);
+                if (isKey) {
+                    setSelectedKey(schemaName);
+                }
+            } else {
+                // Clicked outside of any key attribute, clear selection
+                setSelectedKey(undefined);
             }
-        });
+        };
+
+        document.addEventListener('click', handleDocumentClick);
+        
+        return () => {
+            document.removeEventListener('click', handleDocumentClick);
+        };
     }, []);
 
     useEffect(() => {
@@ -129,17 +138,26 @@ const DiagramContent = () => {
             const { visibleItems, portMap } = EntityElement.getVisibleItemsAndPorts(entity);
             const entityElement = new EntityElement({
                 position,
-                data: { entity, setSelectedKey }
+                data: { entity, setSelectedKey, selectedKey }
             });
             entityElement.addTo(graph);
             entityMap.set(entity.SchemaName, { element: entityElement, portMap });
         });
         
         util.nextFrame(() => {
-            const allElements = graph.getElements();
-            // Filter out background dots from obstacles - only use actual entity elements
-            const entityElements = allElements.filter(el => el.get('type') !== 'background.dots');
-            const obstacles = entityElements.map(el => el.getBBox().inflate(routerPadding));
+            // Get all entity elements (exclude background dots and links)
+            const entityElements = graph.getElements().filter(el => 
+                el.get('type') !== 'background.dots' && 
+                el.get('type') !== 'standard.Link'
+            );
+            
+            // Create obstacles from entity bounding boxes with padding
+            const obstacles = entityElements.map(el => {
+                const bbox = el.getBBox();
+                return bbox.inflate(routerPadding); // This returns a Rect, not an object with bbox()
+            });
+
+            console.log('Created obstacles:', obstacles.length, 'for entities:', entityElements.length);
 
             // Create relationships
             for (const entity of currentEntities) {
@@ -172,11 +190,15 @@ const DiagramContent = () => {
                                 args: {
                                     startDirections: ['left', 'right'],
                                     endDirections: ['left', 'right'],
-                                    step: paper.options.gridSize,
+                                    step: paper.options.gridSize || 8,
                                     padding: routerPadding,
                                     maximumLoops: routerTries,
-                                    isPointObstacle: (p: dia.Point) => {
-                                        return obstacles.some(obs => obs.bbox().containsPoint(p))
+                                    // Fixed obstacle detection function
+                                    isPointObstacle: (point: dia.Point) => {
+                                        return obstacles.some(obstacle => {
+                                            // obstacle is already a Rect from inflate(), so we can use containsPoint directly
+                                            return obstacle.containsPoint(point);
+                                        });
                                     },
                                     maxAllowedDirectionChange: routerDirections
                                 }
@@ -204,7 +226,6 @@ const DiagramContent = () => {
                                     }
                                 }
                             }
-                            // No labels
                         });
 
                         link.addTo(graph);
@@ -213,25 +234,37 @@ const DiagramContent = () => {
             }
         });
 
+        // Fixed rerouting function
         const reroute = debounce(() => {
-            const elements = graph.getElements().filter(el => el.get('type') !== 'standard.Link');
-            // Filter out background dots from obstacles - only use actual entity elements
-            const entityElements = elements.filter(el => el.get('type') !== 'background.dots');
+            console.log('Rerouting links...');
+            
+            // Get all entity elements (exclude background dots and links)
+            const entityElements = graph.getElements().filter(el => 
+                el.get('type') !== 'background.dots' && 
+                el.get('type') !== 'standard.Link'
+            );
+            
+            // Create fresh obstacles for rerouting
             const obstacles = entityElements.map(el => {
                 const bbox = el.getBBox();
-                const inflated = bbox.inflate(routerPadding);
-                return inflated;
+                return bbox.inflate(routerPadding);
             });
 
+            console.log('Rerouting with obstacles:', obstacles.length);
+
+            // Update all links with new routing
             graph.getLinks().forEach(link => {
                 link.router(routerType, {
                     startDirections: ['left', 'right'],
                     endDirections: ['left', 'right'],
-                    step: paper.options.gridSize,
+                    step: paper.options.gridSize || 8,
                     padding: routerPadding,
                     maximumLoops: routerTries,
-                    isPointObstacle: (p: dia.Point) => {
-                        return obstacles.some(obs => obs.bbox().containsPoint(p))
+                    // Fixed obstacle detection for rerouting
+                    isPointObstacle: (point: dia.Point) => {
+                        return obstacles.some(obstacle => {
+                            return obstacle.containsPoint(point);
+                        });
                     },
                     maxAllowedDirectionChange: routerDirections
                 });
@@ -251,7 +284,64 @@ const DiagramContent = () => {
 
     useEffect(() => {
         if (!selectedKey || !graph) return;
-        // const links = graph.getLinks().filter(link => link.target().id === selectedKey);
+        
+        // Reset all links to default styling
+        graph.getLinks().forEach(link => {
+            link.attr('line/stroke', '#42a5f5');
+            link.attr('line/strokeWidth', 2);
+        });
+        
+        // Find the entity that contains the selected key
+        const entityWithKey = currentEntities.find(entity => 
+            entity.Attributes.some(attr => 
+                attr.SchemaName === selectedKey && attr.IsPrimaryId
+            )
+        );
+        
+        if (entityWithKey) {
+            // Find all links that target this entity's key port
+            const targetEntityId = graph.getElements().find(el => 
+                el.get('type') === 'delegate.entity' && 
+                el.get('data')?.entity?.SchemaName === entityWithKey.SchemaName
+            )?.id;
+            
+            if (targetEntityId) {
+                const targetPort = `port-${selectedKey.toLowerCase()}`;
+                
+                // Highlight links that target this specific key port
+                const linksToHighlight = graph.getLinks().filter(link => {
+                    const target = link.target();
+                    return target.id === targetEntityId && target.port === targetPort;
+                });
+                
+                // Apply highlighting to the found links
+                linksToHighlight.forEach(link => {
+                    link.attr('line/stroke', '#ff6b6b'); // Red color for highlighted links
+                    link.attr('line/strokeWidth', 4); // Thicker stroke for highlighted links
+                });
+                
+                console.log(`Highlighted ${linksToHighlight.length} links targeting key: ${selectedKey}`);
+            }
+        }
+    }, [selectedKey, graph, currentEntities]);
+
+    // Update entity elements when selectedKey changes
+    useEffect(() => {
+        if (!graph || !selectedKey) return;
+        
+        // Update all entity elements with the new selectedKey
+        graph.getElements().forEach(el => {
+            if (el.get('type') === 'delegate.entity') {
+                const currentData = el.get('data');
+                el.set('data', { ...currentData, selectedKey });
+                
+                // Trigger re-render of the entity
+                const entityElement = el as EntityElement;
+                if (entityElement.updateAttributes) {
+                    entityElement.updateAttributes(currentData.entity);
+                }
+            }
+        });
     }, [selectedKey, graph]);
 
     useEffect(() => {

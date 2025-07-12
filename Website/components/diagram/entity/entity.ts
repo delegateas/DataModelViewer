@@ -46,7 +46,8 @@ export class EntityElement extends dia.Element {
 
     updateAttributes(entity: EntityType) {
         const { visibleItems, portMap } = EntityElement.getVisibleItemsAndPorts(entity);
-        const html = EntityBody({ entity, visibleItems });
+        const selectedKey = (this.get('data') as any)?.selectedKey;
+        const html = EntityBody({ entity, visibleItems, selectedKey });
 
         // Markup
         const baseMarkup = [
