@@ -45,8 +45,8 @@ export const calculateGridLayout = (
   entities: EntityType[],
   options: GridLayoutOptions
 ): GridLayoutResult => {
-  const { containerWidth, containerHeight, entityWidth, entityHeight, padding, margin } = options;
-  
+  const { containerWidth, entityWidth, padding, margin } = options;
+
   if (entities.length === 0) {
     return {
       positions: [],
@@ -57,65 +57,41 @@ export const calculateGridLayout = (
     };
   }
 
-  // Calculate available space
-  const availableWidth = containerWidth - (margin * 2);
-  const availableHeight = containerHeight - (margin * 2);
+  // Determine how many columns can fit
+  const maxColumns = Math.max(1, Math.floor((containerWidth - margin * 2 + padding) / (entityWidth + padding)));
+  const columns = Math.min(maxColumns, entities.length);
 
-  // Calculate aspect ratio of available space
-  const aspectRatio = availableWidth / availableHeight;
-  
-  // Determine optimal number of columns based on aspect ratio and entity count
-  let columns: number;
-  if (aspectRatio > 1.5) {
-    // Wide screen - prefer more columns
-    columns = Math.ceil(Math.sqrt(entities.length * aspectRatio));
-  } else if (aspectRatio < 0.8) {
-    // Tall screen - prefer fewer columns
-    columns = Math.ceil(Math.sqrt(entities.length / aspectRatio));
-  } else {
-    // Square-ish screen - balanced approach
-    columns = Math.ceil(Math.sqrt(entities.length));
-  }
-  
-  // Ensure we don't exceed available width
-  const maxColumnsByWidth = Math.floor(availableWidth / (entityWidth + padding));
-  columns = Math.min(columns, maxColumnsByWidth);
-  
-  // Ensure we have at least 1 column
-  columns = Math.max(1, columns);
-  
-  // Calculate rows needed
-  const rows = Math.ceil(entities.length / columns);
-
-  // Calculate grid dimensions
-  const gridWidth = columns * entityWidth + (columns - 1) * padding;
-  const gridHeight = rows * entityHeight + (rows - 1) * padding;
-
-  // Calculate starting position to center the grid
-  const startX = margin + (availableWidth - gridWidth) / 2;
-  const startY = margin + (availableHeight - gridHeight) / 2;
-
-  // Calculate positions for each entity
+  // Initialize arrays to track column heights
+  const columnHeights: number[] = Array(columns).fill(0);
   const positions: GridPosition[] = [];
-  
+
   for (let i = 0; i < entities.length; i++) {
-    const row = Math.floor(i / columns);
-    const col = i % columns;
-    
-    const x = startX + col * (entityWidth + padding);
-    const y = startY + row * (entityHeight + padding);
-    
+    const entity = entities[i];
+    const height = calculateEntityHeight(entity);
+
+    // Assign to the column with the least cumulative height
+    const colIndex = columnHeights.indexOf(Math.min(...columnHeights));
+    const x = margin + colIndex * (entityWidth + padding);
+    const y = margin + columnHeights[colIndex];
+
     positions.push({ x, y });
+
+    // Add height + padding to the selected column
+    columnHeights[colIndex] += height + padding;
   }
+
+  const gridWidth = columns * entityWidth + (columns - 1) * padding;
+  const gridHeight = Math.max(...columnHeights) - padding; // remove trailing padding
 
   return {
     positions,
     gridWidth,
     gridHeight,
     columns,
-    rows
+    rows: Math.ceil(entities.length / columns) // estimated rows
   };
 };
+
 
 /**
  * Estimates entity dimensions based on content
