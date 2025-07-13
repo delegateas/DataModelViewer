@@ -368,6 +368,7 @@ const DiagramContent = () => {
             link.attr('line/strokeWidth', 2);
             link.attr('line/targetMarker/stroke', '#42a5f5');
             link.attr('line/targetMarker/fill', '#42a5f5');
+            link.attr('line/sourceMarker/stroke', '#42a5f5');
         });
         
         // Find the entity that contains the selected key
@@ -412,6 +413,9 @@ const DiagramContent = () => {
                 linksToHighlight.forEach(link => {
                     link.attr('line/stroke', '#ff6b6b'); // Red color for highlighted links
                     link.attr('line/strokeWidth', 4); // Thicker stroke for highlighted links
+                    link.attr('line/targetMarker/stroke', '#ff6b6b');
+                    link.attr('line/targetMarker/fill', '#ff6b6b');
+                    link.attr('line/sourceMarker/stroke', '#ff6b6b');
                 });
                 
                 console.log(`Highlighted ${linksToHighlight.length} links targeting key: ${selectedKey}`);

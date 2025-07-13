@@ -38,12 +38,13 @@ export const EntityAttribute = ({ attribute, isKey, isSelected = false, isAddBut
     
     return `
         <button
-            class="${buttonClasses} ${bgClass}"
+            class="${buttonClasses} ${bgClass} justify-between"
             data-schema-name="${attribute.SchemaName}"
             data-is-key="${isKey}"
             title="${isKey ? 'Click to highlight incoming relationships' : ''}"
         >
-            ${icon}<p class="text-xs ml-1">${attribute.DisplayName}</p>
+            <span class="items-center flex">${icon}<p class="text-xs ml-1">${attribute.DisplayName}</p></span>
+            <p class="text-xs text-gray-600 ml-1 font-mono">${attribute.SchemaName}</p>
         </button>
     `;
 };
