@@ -42,7 +42,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
   }, [initializePaper, destroyPaper]);
 
   return (
-    <div className="flex-1 relative overflow-hidden bg-stone-50">
+    <div className="flex-1 relative overflow-hidden">
       <div 
         ref={canvasRef} 
         className={`w-full h-full ${isPanning ? 'cursor-grabbing' : 'cursor-default'}`}

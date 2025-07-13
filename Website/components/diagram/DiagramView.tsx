@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { dia, shapes, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
 import { EntityElement } from '@/components/diagram/entity/entity';
+import { SimpleEntityElement } from '@/components/diagram/entity/SimpleEntityElement';
 import debounce from 'lodash/debounce';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -15,7 +16,6 @@ import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndi
 import { AddAttributeModal } from '@/components/diagram/AddAttributeModal';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
-import { createBackgroundDots } from '@/components/diagram/BackgroundDots';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { AppSidebar } from '../AppSidebar';
 import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
@@ -42,7 +42,8 @@ const DiagramContent = () => {
         zoomOut,
         resetView,
         fitToScreen,
-        addAttributeToEntity
+        addAttributeToEntity,
+        diagramType
     } = useDiagramViewContext();
     
     const [selectedKey, setSelectedKey] = useState<string>();
@@ -99,9 +100,6 @@ const DiagramContent = () => {
         // Clear existing elements
         graph.clear();
 
-        // Recreate background dots after clearing
-        createBackgroundDots(graph, paper);
-
         // Calculate grid layout
         const layoutOptions = getDefaultLayoutOptions();
         
@@ -135,13 +133,25 @@ const DiagramContent = () => {
         // Create entities in grid layout
         currentEntities.forEach((entity, index) => {
             const position = layout.positions[index] || { x: 50, y: 50 };
-            const { visibleItems, portMap } = EntityElement.getVisibleItemsAndPorts(entity);
-            const entityElement = new EntityElement({
-                position,
-                data: { entity, setSelectedKey, selectedKey }
-            });
-            entityElement.addTo(graph);
-            entityMap.set(entity.SchemaName, { element: entityElement, portMap });
+            
+            if (diagramType === 'simple') {
+                // Create simple entity (no attributes, no ports)
+                const entityElement = new SimpleEntityElement({
+                    position,
+                    data: { entity }
+                });
+                entityElement.addTo(graph);
+                entityMap.set(entity.SchemaName, { element: entityElement, portMap: {} });
+            } else {
+                // Create detailed entity with attributes and ports
+                const { visibleItems, portMap } = EntityElement.getVisibleItemsAndPorts(entity);
+                const entityElement = new EntityElement({
+                    position,
+                    data: { entity, setSelectedKey, selectedKey }
+                });
+                entityElement.addTo(graph);
+                entityMap.set(entity.SchemaName, { element: entityElement, portMap });
+            }
         });
         
         util.nextFrame(() => {
@@ -166,20 +176,86 @@ const DiagramContent = () => {
                 const { portMap } = entityInfo;
                 const { visibleItems } = EntityElement.getVisibleItemsAndPorts(entity);
 
-                for (let i = 1; i < visibleItems.length; i++) {
-                    const attr = visibleItems[i];
-                    if (attr.AttributeType !== "LookupAttribute") continue;
+                if (diagramType === 'simple') {
+                    // For simple diagram, create links between entity centers
+                    for (const entity of currentEntities) {
+                        const entityInfo = entityMap.get(entity.SchemaName);
+                        if (!entityInfo) continue;
+                        
+                        // Find all lookup attributes and create links
+                        for (const attr of entity.Attributes) {
+                            if (attr.AttributeType !== "LookupAttribute") continue;
+                            
+                            for (const target of attr.Targets) {
+                                const targetInfo = entityMap.get(target.Name);
+                                if (!targetInfo) continue;
 
-                    for (const target of attr.Targets) {
-                        const targetInfo = entityMap.get(target.Name);
-                        if (!targetInfo) continue;
+                                const sourceId = entityInfo.element.id;
+                                const targetId = targetInfo.element.id;
 
-                        const sourcePort = portMap[attr.SchemaName.toLowerCase()];
-                        const targetPort = targetInfo.portMap[`${target.Name.toLowerCase()}id`];
-                        const sourceId = entityInfo.element.id;
-                        const targetId = targetInfo.element.id;
+                                // Create link connecting entity centers
+                                const link = new shapes.standard.Link({
+                                    source: { id: sourceId },
+                                    target: { id: targetId },
+                                    router: {
+                                        name: routerType,
+                                        args: {
+                                            startDirections: ['left', 'right', 'top', 'bottom'],
+                                            endDirections: ['left', 'right', 'top', 'bottom'],
+                                            step: paper.options.gridSize,
+                                            padding: routerPadding,
+                                            maximumLoops: routerTries,
+                                            isPointObstacle: (p: dia.Point) => {
+                                                return obstacles.some(obs => obs.containsPoint(p))
+                                            },
+                                            maxAllowedDirectionChange: routerDirections
+                                        }
+                                    },
+                                    connector: { name: 'rounded' },
+                                    attrs: {
+                                        line: {
+                                            stroke: '#42a5f5',
+                                            strokeWidth: 2,
+                                            sourceMarker: {
+                                                type: 'ellipse',
+                                                cx: -6,
+                                                cy: 0,
+                                                rx: 4,
+                                                ry: 4,
+                                                fill: '#fff',
+                                                stroke: '#42a5f5',
+                                                strokeWidth: 2,
+                                            },
+                                            targetMarker: {
+                                                type: 'path',
+                                                d: 'M 10 -5 L 0 0 L 10 5 Z',
+                                                fill: '#42a5f5',
+                                                stroke: '#42a5f5'
+                                            }
+                                        }
+                                    }
+                                });
 
-                        if (!sourcePort || !targetPort) continue;
+                                link.addTo(graph);
+                            }
+                        }
+                    }
+                } else {
+                    // For detailed diagram, use ports
+                    for (let i = 1; i < visibleItems.length; i++) {
+                        const attr = visibleItems[i];
+                        if (attr.AttributeType !== "LookupAttribute") continue;
+
+                        for (const target of attr.Targets) {
+                            const targetInfo = entityMap.get(target.Name);
+                            if (!targetInfo) continue;
+
+                            const sourcePort = portMap[attr.SchemaName.toLowerCase()];
+                            const targetPort = targetInfo.portMap[`${target.Name.toLowerCase()}id`];
+                            const sourceId = entityInfo.element.id;
+                            const targetId = targetInfo.element.id;
+
+                            if (!sourcePort || !targetPort) continue;
 
                         // Use a filled arrow for 'many' side, and a small circle for 'one' side
                         const link = new shapes.standard.Link({
@@ -232,7 +308,8 @@ const DiagramContent = () => {
                     }
                 }
             }
-        });
+        }
+    });
 
         // Fixed rerouting function
         const reroute = debounce(() => {
@@ -280,7 +357,7 @@ const DiagramContent = () => {
         return () => {
             graph.off('change:position change:size change:attrs.line', reroute);
         };
-    }, [graph, paper, selectedGroup, currentEntities]);
+    }, [graph, paper, selectedGroup, currentEntities, diagramType]);
 
     useEffect(() => {
         if (!selectedKey || !graph) return;
@@ -289,6 +366,8 @@ const DiagramContent = () => {
         graph.getLinks().forEach(link => {
             link.attr('line/stroke', '#42a5f5');
             link.attr('line/strokeWidth', 2);
+            link.attr('line/targetMarker/stroke', '#42a5f5');
+            link.attr('line/targetMarker/fill', '#42a5f5');
         });
         
         // Find the entity that contains the selected key
@@ -299,16 +378,31 @@ const DiagramContent = () => {
         );
         
         if (entityWithKey) {
-            // Find all links that target this entity's key port
-            const targetEntityId = graph.getElements().find(el => 
-                el.get('type') === 'delegate.entity' && 
-                el.get('data')?.entity?.SchemaName === entityWithKey.SchemaName
-            )?.id;
-            
-            if (targetEntityId) {
+                    // Find all links that target this entity's key port
+        const targetEntityId = graph.getElements().find(el => 
+            (el.get('type') === 'delegate.entity' || el.get('type') === 'delegate.simple-entity') && 
+            el.get('data')?.entity?.SchemaName === entityWithKey.SchemaName
+        )?.id;
+        
+        if (targetEntityId) {
+            if (diagramType === 'simple') {
+                // For simple diagram, highlight all links to this entity
+                const linksToHighlight = graph.getLinks().filter(link => {
+                    const target = link.target();
+                    return target.id === targetEntityId;
+                });
+                
+                // Apply highlighting to the found links
+                linksToHighlight.forEach(link => {
+                    link.attr('line/stroke', '#ff6b6b'); // Red color for highlighted links
+                    link.attr('line/strokeWidth', 4); // Thicker stroke for highlighted links
+                });
+                
+                console.log(`Highlighted ${linksToHighlight.length} links targeting entity: ${entityWithKey.SchemaName}`);
+            } else {
+                // For detailed diagram, highlight links to specific key port
                 const targetPort = `port-${selectedKey.toLowerCase()}`;
                 
-                // Highlight links that target this specific key port
                 const linksToHighlight = graph.getLinks().filter(link => {
                     const target = link.target();
                     return target.id === targetEntityId && target.port === targetPort;
@@ -323,6 +417,7 @@ const DiagramContent = () => {
                 console.log(`Highlighted ${linksToHighlight.length} links targeting key: ${selectedKey}`);
             }
         }
+    }
     }, [selectedKey, graph, currentEntities]);
 
     // Update entity elements when selectedKey changes
@@ -340,6 +435,9 @@ const DiagramContent = () => {
                 if (entityElement.updateAttributes) {
                     entityElement.updateAttributes(currentData.entity);
                 }
+            } else if (el.get('type') === 'delegate.simple-entity') {
+                // Simple entities don't need key highlighting updates
+                // They don't have attributes to highlight
             }
         });
     }, [selectedKey, graph]);
@@ -410,13 +508,19 @@ const DiagramContent = () => {
                 </div>
 
                 {/* Diagram Area */}
-                <DiagramCanvas>
-                    {/* Zoom and Coordinate Indicator */}
-                    <ZoomCoordinateIndicator 
-                        zoom={zoom}
-                        mousePosition={mousePosition}
-                    />
-                </DiagramCanvas>
+                
+                <div className='flex-1 flex flex-col bg-slate-50' style={{
+                    backgroundSize: `${zoom * 10}%`,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                }}>
+                    <DiagramCanvas>
+                        {/* Zoom and Coordinate Indicator */}
+                        <ZoomCoordinateIndicator 
+                            zoom={zoom}
+                            mousePosition={mousePosition}
+                        />
+                    </DiagramCanvas>
+                </div>
             </div>
 
             {/* Add Attribute Modal */}
@@ -443,9 +547,7 @@ export default function DiagramView({ }: IDiagramView) {
         <DiagramViewProvider>
             <div className="flex">
                 <AppSidebar />
-                <div className='flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50'>
-                    <DiagramContent />
-                </div>
+                <DiagramContent />
             </div>
         </DiagramViewProvider>
     );

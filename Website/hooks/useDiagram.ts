@@ -1,8 +1,9 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { dia } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
-import { createBackgroundDots } from '@/components/diagram/BackgroundDots';
 import { EntityElement } from '@/components/diagram/entity/entity';
+
+export type DiagramType = 'detailed' | 'simple';
 
 export interface DiagramState {
   zoom: number;
@@ -14,6 +15,7 @@ export interface DiagramState {
   currentEntities: EntityType[];
   mousePosition: { x: number; y: number } | null;
   panPosition: { x: number; y: number };
+  diagramType: DiagramType;
 }
 
 export interface DiagramActions {
@@ -31,6 +33,7 @@ export interface DiagramActions {
   updateMousePosition: (position: { x: number; y: number } | null) => void;
   updatePanPosition: (position: { x: number; y: number }) => void;
   addAttributeToEntity: (entitySchemaName: string, attribute: AttributeType) => void;
+  updateDiagramType: (type: DiagramType) => void;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -48,6 +51,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   const [currentEntities, setCurrentEntities] = useState<EntityType[]>([]);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [diagramType, setDiagramType] = useState<DiagramType>('detailed');
 
   // Update state when refs change (for UI updates)
   const updateZoomDisplay = useCallback((newZoom: number) => {
@@ -230,6 +234,10 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     isAddingAttributeRef.current = false;
   }, []);
 
+  const updateDiagramType = useCallback((type: DiagramType) => {
+    setDiagramType(type);
+  }, []);
+
   const initializePaper = useCallback((container: HTMLElement, options: any = {}) => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
@@ -251,12 +259,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     });
 
     paperRef.current = paper;
-
-    // Add dotted background that scales with zoom
-    createBackgroundDots(graphRef.current!, paper);
-
-    // Re-add background dots when paper size changes (e.g., on resize)
-    paper.on('resize', () => createBackgroundDots(graphRef.current!, paper));
     
     // Setup event listeners
     paper.on('blank:pointerdown', () => {
@@ -373,6 +375,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     currentEntities,
     mousePosition,
     panPosition,
+    diagramType,
     
     // Actions
     zoomIn,
@@ -389,5 +392,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     updateMousePosition,
     updatePanPosition,
     addAttributeToEntity,
+    updateDiagramType,
   };
 }; 
