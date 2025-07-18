@@ -120,7 +120,7 @@ function Keys({ entity }: { entity: EntityType }) {
                                 </Button>
                             </div>
                         ) : (
-                            <p>No keys available for this entity</p>
+                            <p>No keys available for this table</p>
                         )}
                     </div>
                 ) : (

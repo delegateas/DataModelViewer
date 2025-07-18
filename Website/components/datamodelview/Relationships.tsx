@@ -177,7 +177,7 @@ export const Relationships = ({ entity }: IRelationshipsProps) => {
                             </Button>
                         </div>
                     ) : (
-                        <p>No relationships available for this entity</p>
+                        <p>No relationships available for this table</p>
                     )}
                 </div>
             ) : (

@@ -198,7 +198,7 @@ export const Attributes = ({ entity }: IAttributeProps) => {
                             </Button>
                         </div>
                     ) : (
-                        <p>No attributes available for this entity</p>
+                        <p>No attributes available for this table</p>
                     )}
                 </div>
             ) : (
