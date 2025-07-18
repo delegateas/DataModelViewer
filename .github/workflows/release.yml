@@ -1,4 +1,3 @@
-# .github/workflows/release.yml
 name: Release
 
 on:
@@ -17,7 +16,6 @@ on:
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    # Only run on merged PRs or manual dispatch
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true)
     outputs:
       releases_created: ${{ steps.manual_release.outputs.releases_created }}
@@ -38,58 +36,65 @@ jobs:
         run: |
           npm install -g release-please
           npm install semver
-          
-          # Configure git
+
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Get current version from manifest
+
           CURRENT_VERSION=$(cat .release-please-manifest.json | jq -r '.Website')
           echo "Current version: $CURRENT_VERSION"
-          
-          # Calculate next version based on release type using Node.js
+
           NEXT_VERSION=$(node -e "
             const semver = require('semver');
             const current = '$CURRENT_VERSION';
             const type = '${{ github.event.inputs.release_type }}';
             console.log(semver.inc(current, type));
           ")
-          
+
           echo "Next version will be: $NEXT_VERSION"
-          
-          # Update version in package.json
+
           cd Website
           npm version $NEXT_VERSION --no-git-tag-version
           cd ..
-          
-          # Update manifest file
+
           jq --arg version "$NEXT_VERSION" '.Website = $version' .release-please-manifest.json > temp.json && mv temp.json .release-please-manifest.json
-          
-          # Generate changelog entry
+
           echo "## [$NEXT_VERSION] - $(date +'%Y-%m-%d')" > temp_changelog.md
           echo "" >> temp_changelog.md
           echo "### Changed" >> temp_changelog.md
-          echo "- Manual ${{ github.event.inputs.release_type }} release" >> temp_changelog.md
+
+          LAST_TAG="website-v$CURRENT_VERSION"
+          git fetch --tags
+          if git rev-parse "$LAST_TAG" >/dev/null 2>&1; then
+            echo "- Changes since $CURRENT_VERSION:" >> temp_changelog.md
+            COMMITS=$(git log "$LAST_TAG"..HEAD --pretty=format:"- %s")
+            if [ -n "$COMMITS" ]; then
+              echo "$COMMITS" >> temp_changelog.md
+            else
+              echo "- No new commits since last version" >> temp_changelog.md
+            fi
+          else
+            echo "- Manual ${{ github.event.inputs.release_type }} release" >> temp_changelog.md
+            echo "- (No previous tag $LAST_TAG found to compare commits)" >> temp_changelog.md
+          fi
           echo "" >> temp_changelog.md
-          
-          # Prepend to existing changelog if it exists
+
           if [ -f "Website/CHANGELOG.md" ]; then
             cat temp_changelog.md Website/CHANGELOG.md > temp_full_changelog.md
             mv temp_full_changelog.md Website/CHANGELOG.md
           else
             mv temp_changelog.md Website/CHANGELOG.md
           fi
-          
-          # Commit and push changes
+
           git add .
           git commit -m "chore(release): release $NEXT_VERSION
 
           Release type: ${{ github.event.inputs.release_type }}
           Previous version: $CURRENT_VERSION
           New version: $NEXT_VERSION"
-          
-          git push origin HEAD
-          
+
+          git tag -a "website-v$NEXT_VERSION" -m "Release $NEXT_VERSION"
+          git push origin HEAD --tags
+
           echo "releases_created=true" >> $GITHUB_OUTPUT
           echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
