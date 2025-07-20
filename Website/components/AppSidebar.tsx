@@ -38,6 +38,15 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
         </button>
       )}
 
+      {/* Overlay for mobile sidebar */}
+      {isMobile && isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-30"
+          onClick={toggleSidebar}
+          aria-label="Close sidebar overlay"
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={clsx(
