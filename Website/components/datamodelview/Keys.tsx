@@ -6,11 +6,17 @@ import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
+import React from "react"
 
 type SortColumn = 'name' | 'logicalName' | 'attributes' | null
 type SortDirection = 'asc' | 'desc' | null
 
-function Keys({ entity }: { entity: EntityType }) {
+interface IKeysProps {
+    entity: EntityType;
+    onVisibleCountChange?: (count: number) => void;
+}
+
+function Keys({ entity, onVisibleCountChange }: IKeysProps) {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [searchQuery, setSearchQuery] = useState("")
@@ -74,6 +80,14 @@ function Keys({ entity }: { entity: EntityType }) {
         })
     }
 
+    const sortedKeys = getSortedKeys();
+
+    React.useEffect(() => {
+        if (onVisibleCountChange) {
+            onVisibleCountChange(sortedKeys.length);
+        }
+    }, [onVisibleCountChange, sortedKeys.length]);
+
     const SortIcon = ({ column }: { column: SortColumn }) => {
         if (sortColumn !== column) return <ArrowUpDown className="ml-2 h-4 w-4" />
         if (sortDirection === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />
@@ -106,7 +120,7 @@ function Keys({ entity }: { entity: EntityType }) {
                 )}
             </div>
             <div className="overflow-x-auto">
-                {getSortedKeys().length === 0 ? (
+                {sortedKeys.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         {searchQuery ? (
                             <div className="flex flex-col items-center gap-2">
@@ -157,7 +171,7 @@ function Keys({ entity }: { entity: EntityType }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {getSortedKeys().map((key, index) => (
+                            {sortedKeys.map((key, index) => (
                                 <TableRow 
                                     key={key.LogicalName}
                                     className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${

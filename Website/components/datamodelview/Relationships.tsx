@@ -9,15 +9,17 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Input } from "../ui/input"
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
+import React from "react"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
 
 interface IRelationshipsProps {
-    entity: EntityType
+    entity: EntityType;
+    onVisibleCountChange?: (count: number) => void;
 }
 
-export const Relationships = ({ entity }: IRelationshipsProps) => {
+export const Relationships = ({ entity, onVisibleCountChange }: IRelationshipsProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -113,6 +115,14 @@ export const Relationships = ({ entity }: IRelationshipsProps) => {
         { value: "many-to-many", label: "Many-to-Many" },
         { value: "one-to-many", label: "One-to-Many" }
     ]
+
+    const sortedRelationships = getSortedRelationships();
+
+    React.useEffect(() => {
+        if (onVisibleCountChange) {
+            onVisibleCountChange(sortedRelationships.length);
+        }
+    }, [onVisibleCountChange, sortedRelationships.length]);
 
     return <>
         <div className="p-2 gap-2 border-b flex md:p-4 md:gap-4">
@@ -233,7 +243,7 @@ export const Relationships = ({ entity }: IRelationshipsProps) => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {getSortedRelationships().map((relationship, index) =>
+                        {sortedRelationships.map((relationship, index) =>
                             <TableRow 
                                 key={relationship.RelationshipSchema}
                                 className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${

@@ -18,15 +18,17 @@ import IntegerAttribute from "./../attributes/IntegerAttribute"
 import LookupAttribute from "./../attributes/LookupAttribute"
 import StatusAttribute from "./../attributes/StatusAttribute"
 import StringAttribute from "./../attributes/StringAttribute"
+import React from "react"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
 
 interface IAttributeProps {
     entity: EntityType
+    onVisibleCountChange?: (count: number) => void
 }
 
-export const Attributes = ({ entity }: IAttributeProps) => {
+export const Attributes = ({ entity, onVisibleCountChange }: IAttributeProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("displayName")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -103,6 +105,15 @@ export const Attributes = ({ entity }: IAttributeProps) => {
         })
     }
 
+    const sortedAttributes = getSortedAttributes();
+
+    // Notify parent of visible count
+    React.useEffect(() => {
+        if (onVisibleCountChange) {
+            onVisibleCountChange(sortedAttributes.length);
+        }
+    }, [onVisibleCountChange, sortedAttributes.length]);
+
     const SortIcon = ({ column }: { column: SortColumn }) => {
         if (sortColumn !== column) return <ArrowUpDown className="ml-2 h-4 w-4" />
         if (sortDirection === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />
@@ -174,7 +185,7 @@ export const Attributes = ({ entity }: IAttributeProps) => {
             )}
         </div>
         <div className="overflow-x-auto">
-            {getSortedAttributes().length === 0 ? (
+            {sortedAttributes.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                     {searchQuery || typeFilter !== "all" ? (
                         <div className="flex flex-col items-center gap-2">
@@ -245,7 +256,7 @@ export const Attributes = ({ entity }: IAttributeProps) => {
                         </TableRow>
                     </TableHeader>
                     <TableBody className="striped">
-                        {getSortedAttributes().map((attribute, index) => (
+                        {sortedAttributes.map((attribute, index) => (
                             <TableRow 
                                 key={attribute.SchemaName} 
                                 className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
