@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
 import { Slot } from "@radix-ui/react-slot";
 import { ChevronDown, Puzzle, Search, X } from "lucide-react";
+import { Link as LinkIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
@@ -123,7 +124,22 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                         >
                             <span className="flex-1 font-medium text-sm text-left truncate">{group.Name}</span>
                             <p className="ml-auto font-semibold text-xs opacity-70">{group.Entities.length}</p>
-                            <ChevronDown className={cn("mr-1 w-4 h-4 transition-transform", isExpanded ? "rotate-180" : "")} onClick={() => handleGroupClick(group.Name)}/>
+                            <button
+                                className={cn(
+                                    "p-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400",
+                                    currentSection?.toLowerCase() === (group.Entities[0]?.SchemaName?.toLowerCase())
+                                        ? "bg-blue-100 text-blue-900"
+                                        : "hover:bg-gray-200 text-gray-400 hover:text-blue-700"
+                                )}
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName);
+                                }}
+                                aria-label={`Link to first entity in ${group.Name}`}
+                                tabIndex={0}
+                            >
+                                <LinkIcon className="w-4 h-4" />
+                            </button>
                         </CollapsibleTrigger>
                     </Slot>
                     <CollapsibleContent>
