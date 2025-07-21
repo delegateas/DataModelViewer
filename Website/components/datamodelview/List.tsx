@@ -112,8 +112,6 @@ export const List = ({ }: IListProps) => {
 
                     const virtualItems = rowVirtualizer.getVirtualItems();
                     const scrollOffset = scrollElement.scrollTop;
-                    const containerHeight = scrollElement.clientHeight;
-                    const target = containerHeight / 3;
 
                     let best: { id: string; group: string; distance: number } | null = null;
 
@@ -122,7 +120,7 @@ export const List = ({ }: IListProps) => {
                         if (item.type !== "entity") continue;
 
                         const itemTop = v.start;
-                        const distance = Math.abs(itemTop - scrollOffset - target);
+                        const distance = Math.abs(itemTop - scrollOffset);
 
                         if (!best || distance < best.distance) {
                             best = {
@@ -131,6 +129,8 @@ export const List = ({ }: IListProps) => {
                                 distance,
                             };
                         }
+
+                        if (distance > best.distance) break;
                     }
 
                     if (best && best.id !== lastSectionRef.current) {
