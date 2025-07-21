@@ -16,6 +16,16 @@ export const List = ({ }: IListProps) => {
     const lastSectionRef = useRef<string | null>(null);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
 
+    // Map of SchemaName to element
+    const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+    const getSectionRefCallback = (schemaName: string) => (el: HTMLDivElement | null) => {
+        sectionRefs.current[schemaName] = el;
+    };
+    const remeasureSection = (schemaName: string) => {
+        const el = sectionRefs.current[schemaName];
+        if (el) rowVirtualizer.measureElement(el);
+    };
+
     const flatItems = useMemo(() => {
         const items: Array<
             | { type: 'group'; group: (typeof Groups)[number] }
@@ -181,12 +191,19 @@ export const List = ({ }: IListProps) => {
             >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {
                 const item = flatItems[virtualItem.index];
+                const sectionRef = item.type === 'entity' ? getSectionRefCallback(item.entity.SchemaName) : undefined;
 
                 return (
                     <div
                         key={virtualItem.key}
                         data-index={virtualItem.index}
-                        ref={rowVirtualizer.measureElement}
+                        ref={item.type === 'entity'
+                            ? el => {
+                                sectionRef && sectionRef(el);
+                                if (el) rowVirtualizer.measureElement(el);
+                              }
+                            : rowVirtualizer.measureElement
+                        }
                         style={{
                             position: 'absolute',
                             top: 0,
@@ -205,7 +222,11 @@ export const List = ({ }: IListProps) => {
                             </div>
                         ) : (
                             <div className="text-sm">
-                                <Section entity={item.entity} group={item.group} />
+                                <Section
+                                    entity={item.entity}
+                                    group={item.group}
+                                    onContentChange={() => remeasureSection(item.entity.SchemaName)}
+                                />
                             </div>
                         )}
                     </div>

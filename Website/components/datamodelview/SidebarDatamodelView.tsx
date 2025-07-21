@@ -5,7 +5,7 @@ import { useSidebarDispatch } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
 import { Slot } from "@radix-ui/react-slot";
-import { ChevronDown, Puzzle, Search, X } from "lucide-react";
+import { ChevronDown, ExternalLink, Puzzle, Search, X } from "lucide-react";
 import { Link as LinkIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
@@ -124,7 +124,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                         >
                             <span className="flex-1 font-medium text-sm text-left truncate">{group.Name}</span>
                             <p className="ml-auto font-semibold text-xs opacity-70">{group.Entities.length}</p>
-                            <button
+                            <a
                                 className={cn(
                                     "p-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400",
                                     currentSection?.toLowerCase() === (group.Entities[0]?.SchemaName?.toLowerCase())
@@ -138,8 +138,8 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                 aria-label={`Link to first entity in ${group.Name}`}
                                 tabIndex={0}
                             >
-                                <LinkIcon className="w-4 h-4" />
-                            </button>
+                                <ExternalLink className="w-4 h-4" />
+                            </a>
                         </CollapsibleTrigger>
                     </Slot>
                     <CollapsibleContent>

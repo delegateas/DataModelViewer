@@ -13,13 +13,20 @@ import React from "react"
 interface ISectionProps {
     entity: EntityType;
     group: GroupType;
+    onContentChange?: () => void;
 }
 
-export const Section = React.memo(({ entity, group }: ISectionProps) => 
+export const Section = React.memo(({ entity, group, onContentChange }: ISectionProps) => 
     {
+        const [tab, setTab] = React.useState("attributes");
         const [visibleAttributeCount, setVisibleAttributeCount] = React.useState(entity.Attributes.length);
         const [visibleRelationshipCount, setVisibleRelationshipCount] = React.useState(entity.Relationships.length);
         const [visibleKeyCount, setVisibleKeyCount] = React.useState(entity.Keys.length);
+
+        React.useEffect(() => {
+            onContentChange && onContentChange();
+        }, [tab, visibleAttributeCount, visibleRelationshipCount, visibleKeyCount, onContentChange]);
+
         return (
             <div id={entity.SchemaName} data-group={group.Name} className="mb-10">
                 <div className="bg-white rounded-lg border border-gray-300 shadow-md">
@@ -32,7 +39,7 @@ export const Section = React.memo(({ entity, group }: ISectionProps) =>
                         )}
                     </div>
 
-                    <Tabs defaultValue="attributes">
+                    <Tabs defaultValue="attributes" value={tab} onValueChange={setTab}>
                         <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
                             <TabsList className="bg-transparent p-0 flex overflow-x-auto no-scrollbar gap-1 sm:gap-2">
                                 <TabsTrigger value="attributes" className="flex items-center min-w-[120px] sm:min-w-[140px] px-2 sm:px-4 py-2 text-xs sm:text-sm truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
