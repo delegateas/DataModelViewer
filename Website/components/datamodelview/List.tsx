@@ -1,16 +1,32 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from "react";
-import { Groups } from "../../generated/Data";
-import { useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
+import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import React from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Section } from "./Section";
-import { Loader2 } from "lucide-react";
+import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 
-interface IListProps { }
+interface IListProps {
+    filteredItems?: Array<
+        | { type: 'group'; group: any }
+        | { type: 'entity'; group: any; entity: any }
+    >;
+    search?: string;
+}
 
-export const List = ({ }: IListProps) => {
+// Helper to highlight search matches
+export function highlightMatch(text: string, search: string) {
+    if (!search || search.length < 3) return text;
+    const idx = text.toLowerCase().indexOf(search.toLowerCase());
+    if (idx === -1) return text;
+    return <>{text.slice(0, idx)}<mark className="bg-yellow-200 text-black px-0.5 rounded">{text.slice(idx, idx + search.length)}</mark>{text.slice(idx + search.length)}</>;
+}
+
+export const List = ({ filteredItems, search = "" }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
+    const datamodelView = useDatamodelView();
     const [isScrollingToSection, setIsScrollingToSection] = useState(false);
+
+    const groups = useDatamodelData();
 
     const parentRef = useRef<HTMLDivElement | null>(null);
     const lastSectionRef = useRef<string | null>(null);
@@ -26,25 +42,47 @@ export const List = ({ }: IListProps) => {
         if (el) rowVirtualizer.measureElement(el);
     };
 
+    // Compute filtered items based on search
     const flatItems = useMemo(() => {
+        if (filteredItems && filteredItems.length > 0) return filteredItems;
+        const lowerSearch = search.trim().toLowerCase();
         const items: Array<
-            | { type: 'group'; group: (typeof Groups)[number] }
-            | { type: 'entity'; group: (typeof Groups)[number]; entity: (typeof Groups)[number]['Entities'][number] }
+            | { type: 'group'; group: any }
+            | { type: 'entity'; group: any; entity: any }
         > = [];
-        for (const group of Groups) {
-        items.push({ type: 'group', group });
-        for (const entity of group.Entities) {
-            items.push({ type: 'entity', group, entity });
-        }
+        for (const group of groups) {
+            // Filter entities in this group
+            const filteredEntities = group.Entities.filter((entity: any) => {
+                if (!lowerSearch) return true;
+                // Match entity schema or display name
+                const entityMatch = entity.SchemaName.toLowerCase().includes(lowerSearch) ||
+                    (entity.DisplayName && entity.DisplayName.toLowerCase().includes(lowerSearch));
+                // Match any attribute schema or display name
+                const attrMatch = entity.Attributes.some((attr: any) =>
+                    attr.SchemaName.toLowerCase().includes(lowerSearch) ||
+                    (attr.DisplayName && attr.DisplayName.toLowerCase().includes(lowerSearch))
+                );
+                return entityMatch || attrMatch;
+            });
+            if (filteredEntities.length > 0) {
+                items.push({ type: 'group', group });
+                for (const entity of filteredEntities) {
+                    items.push({ type: 'entity', group, entity });
+                }
+            }
         }
         return items;
-    }, []);
+    }, [filteredItems, search, groups]);
 
     const rowVirtualizer = useVirtualizer({
         count: flatItems.length,
         getScrollElement: () => parentRef.current,
         overscan: 20,
-        estimateSize: () => 300,
+        estimateSize: (index) => {
+            const item = flatItems[index];
+            if (item.type === 'group') return 92;
+            return 300;
+        },
     });
 
     const scrollToSection = useCallback((sectionId: string) => {
@@ -172,16 +210,23 @@ export const List = ({ }: IListProps) => {
         };
     }, [dispatch, scrollToSection]);
 
+    useEffect(() => {
+        // When the current section is in view, set loading to false
+        if (datamodelView.currentSection) {
+            // Check if the current section is rendered in the virtualizer
+            const isInView = rowVirtualizer.getVirtualItems().some(vi => {
+                const item = flatItems[vi.index];
+                return item.type === 'entity' && item.entity.SchemaName === datamodelView.currentSection;
+            });
+            if (isInView) {
+                console.log("List: setting loading false");
+                dispatch({ type: 'SET_LOADING', payload: false });
+            }
+        }
+    }, [datamodelView.currentSection, flatItems, rowVirtualizer, dispatch]);
+
     return (
         <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }} className="p-6 relative">
-            {isScrollingToSection && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span className="text-sm font-medium">Loading section...</span>
-                    </div>
-                </div>
-            )}
             <div
                 style={{
                     height: `${rowVirtualizer.getTotalSize()}px`,
@@ -226,6 +271,7 @@ export const List = ({ }: IListProps) => {
                                     entity={item.entity}
                                     group={item.group}
                                     onContentChange={() => remeasureSection(item.entity.SchemaName)}
+                                    search={search}
                                 />
                             </div>
                         )}

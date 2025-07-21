@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "../ui/input"
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 import React from "react"
+import { highlightMatch } from "../datamodelview/List";
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
@@ -19,7 +20,7 @@ interface IRelationshipsProps {
     onVisibleCountChange?: (count: number) => void;
 }
 
-export const Relationships = ({ entity, onVisibleCountChange }: IRelationshipsProps) => {
+export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRelationshipsProps & { search?: string }) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -250,7 +251,9 @@ export const Relationships = ({ entity, onVisibleCountChange }: IRelationshipsPr
                                     index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                 }`}
                             >
-                                <TableCell className="break-words py-2 text-xs md:py-3 md:text-sm">{relationship.Name}</TableCell>
+                                <TableCell className="break-words py-2 text-xs md:py-3 md:text-sm">
+                                    {highlightMatch(relationship.Name, search)}
+                                </TableCell>
                                 <TableCell className="py-2 md:py-3">
                                     <Button
                                         key={relationship.TableSchema}
@@ -260,7 +263,7 @@ export const Relationships = ({ entity, onVisibleCountChange }: IRelationshipsPr
                                             dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema })
                                             scrollToSection(relationship.TableSchema);
                                         }}>
-                                        {relationship.TableSchema}
+                                        {highlightMatch(relationship.TableSchema, search)}
                                     </Button>
                                 </TableCell>
                                 <TableCell className="break-words py-2 text-xs md:py-3 md:text-sm">{relationship.LookupDisplayName}</TableCell>

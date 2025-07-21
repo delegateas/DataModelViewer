@@ -14,9 +14,10 @@ interface ISectionProps {
     entity: EntityType;
     group: GroupType;
     onContentChange?: () => void;
+    search?: string;
 }
 
-export const Section = React.memo(({ entity, group, onContentChange }: ISectionProps) => 
+export const Section = React.memo(({ entity, group, onContentChange, search }: ISectionProps) => 
     {
         const [tab, setTab] = React.useState("attributes");
         const [visibleAttributeCount, setVisibleAttributeCount] = React.useState(entity.Attributes.length);
@@ -59,13 +60,13 @@ export const Section = React.memo(({ entity, group, onContentChange }: ISectionP
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="attributes" className="m-0 p-0">
-                                <Attributes entity={entity} onVisibleCountChange={setVisibleAttributeCount} />
+                                <Attributes entity={entity} onVisibleCountChange={setVisibleAttributeCount} search={search} />
                             </TabsContent>
                             <TabsContent value="relationships" className="m-0 p-0">
-                                <Relationships entity={entity} onVisibleCountChange={setVisibleRelationshipCount} />
+                                <Relationships entity={entity} onVisibleCountChange={setVisibleRelationshipCount} search={search} />
                             </TabsContent>
                             <TabsContent value="keys" className="m-0 p-0">
-                                <Keys entity={entity} onVisibleCountChange={setVisibleKeyCount} />
+                                <Keys entity={entity} onVisibleCountChange={setVisibleKeyCount} search={search} />
                             </TabsContent>
                         </div>
                     </Tabs>

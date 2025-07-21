@@ -1,5 +1,4 @@
 import { EntityType, GroupType } from "@/lib/Types";
-import { Groups } from "../../generated/Data"
 import { useTouch } from '../ui/hybridtooltop';
 import { useSidebarDispatch } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
@@ -10,6 +9,7 @@ import { Link as LinkIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
+import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 
 interface ISidebarDatamodelViewProps { 
 
@@ -25,6 +25,8 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const dispatch = useSidebarDispatch();
     const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
     const dataModelDispatch = useDatamodelViewDispatch();
+
+    const groups = useDatamodelData();
     
     const [searchTerm, setSearchTerm] = useState("");
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -38,7 +40,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
         setSearchTerm(term);
         if (term.trim()) {
             const newExpandedGroups = new Set<string>();
-            Groups.forEach(group => {
+            groups.forEach(group => {
                 const hasMatchingEntity = group.Entities.some(entity => 
                     entity.SchemaName.toLowerCase().includes(term.toLowerCase()) ||
                     entity.DisplayName.toLowerCase().includes(term.toLowerCase())
@@ -80,6 +82,8 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     };
 
     const handleSectionClick = (sectionId: string) => {
+        console.log("Loading true for section click");
+        dataModelDispatch({ type: 'SET_LOADING', payload: true });
         if (scrollToSection) {
             scrollToSection(sectionId);
         }
@@ -205,7 +209,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
             
             <div className='h-full gap-1 flex flex-col max-w-48 overflow-y-auto overflow-x-hidden'> 
                 {
-                    Groups.map((group) => 
+                    groups.map((group) => 
                         <NavItem key={group.Name} group={group} />
                     )
                 }

@@ -7,6 +7,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import React from "react"
+import { highlightMatch } from "../datamodelview/List";
 
 type SortColumn = 'name' | 'logicalName' | 'attributes' | null
 type SortDirection = 'asc' | 'desc' | null
@@ -16,7 +17,7 @@ interface IKeysProps {
     onVisibleCountChange?: (count: number) => void;
 }
 
-function Keys({ entity, onVisibleCountChange }: IKeysProps) {
+function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { search?: string }) {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [searchQuery, setSearchQuery] = useState("")
@@ -178,8 +179,12 @@ function Keys({ entity, onVisibleCountChange }: IKeysProps) {
                                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                     }`}
                                 >
-                                    <TableCell className="break-words font-medium py-2 text-xs md:py-3 md:text-sm">{key.Name}</TableCell>
-                                    <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">{key.LogicalName}</TableCell>
+                                    <TableCell className="break-words font-medium py-2 text-xs md:py-3 md:text-sm">
+                                        {highlightMatch(key.Name, search)}
+                                    </TableCell>
+                                    <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
+                                        {highlightMatch(key.LogicalName, search)}
+                                    </TableCell>
                                     <TableCell className="break-words py-2 md:py-3">
                                         <div className="flex flex-wrap gap-1">
                                             {key.KeyAttributes.map((attr, i) => (
@@ -187,7 +192,7 @@ function Keys({ entity, onVisibleCountChange }: IKeysProps) {
                                                     key={i}
                                                     className="inline-flex items-center px-1.5 py-0.5 text-xs rounded-md font-medium bg-blue-50 text-blue-700 md:px-2 md:py-1 md:text-sm"
                                                 >
-                                                    {attr}
+                                                    {highlightMatch(attr, search)}
                                                 </span>
                                             ))}
                                         </div>
