@@ -26,7 +26,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
     const dataModelDispatch = useDatamodelViewDispatch();
 
-    const groups = useDatamodelData();
+    const { groups } = useDatamodelData();
     
     const [searchTerm, setSearchTerm] = useState("");
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());

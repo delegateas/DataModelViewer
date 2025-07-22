@@ -6,11 +6,6 @@ import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 
 interface IListProps {
-    filteredItems?: Array<
-        | { type: 'group'; group: any }
-        | { type: 'entity'; group: any; entity: any }
-    >;
-    search?: string;
 }
 
 // Helper to highlight search matches
@@ -21,12 +16,12 @@ export function highlightMatch(text: string, search: string) {
     return <>{text.slice(0, idx)}<mark className="bg-yellow-200 text-black px-0.5 rounded">{text.slice(idx, idx + search.length)}</mark>{text.slice(idx + search.length)}</>;
 }
 
-export const List = ({ filteredItems, search = "" }: IListProps) => {
+export const List = ({ }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
     const datamodelView = useDatamodelView();
     const [isScrollingToSection, setIsScrollingToSection] = useState(false);
 
-    const groups = useDatamodelData();
+    const { groups, filtered, search } = useDatamodelData();
 
     const parentRef = useRef<HTMLDivElement | null>(null);
     const lastSectionRef = useRef<string | null>(null);
@@ -44,7 +39,7 @@ export const List = ({ filteredItems, search = "" }: IListProps) => {
 
     // Compute filtered items based on search
     const flatItems = useMemo(() => {
-        if (filteredItems && filteredItems.length > 0) return filteredItems;
+        if (filtered && filtered.length > 0) return filtered;
         const lowerSearch = search.trim().toLowerCase();
         const items: Array<
             | { type: 'group'; group: any }
@@ -72,7 +67,7 @@ export const List = ({ filteredItems, search = "" }: IListProps) => {
             }
         }
         return items;
-    }, [filteredItems, search, groups]);
+    }, [filtered, search, groups]);
 
     const rowVirtualizer = useVirtualizer({
         count: flatItems.length,

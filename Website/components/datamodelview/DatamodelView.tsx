@@ -8,46 +8,28 @@ import { DatamodelViewProvider, useDatamodelView, useDatamodelViewDispatch } fro
 import { List } from "./List";
 import React, { useState, useEffect, useRef } from "react";
 import type { Dispatch, SetStateAction, RefObject } from "react";
-import { DatamodelDataProvider, useDatamodelData } from "@/contexts/DatamodelDataContext";
+import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/DatamodelDataContext";
 
 export function DatamodelView() {
     const dispatch = useSidebarDispatch();
-    const [search, setSearch] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [filtered, setFiltered] = useState<any[]>([]); // will be passed to List
-    const workerRef = useRef<Worker | null>(null);
 
     useEffect(() => {
-        dispatch({ type: "SET_ELEMENT", payload: <SidebarDatamodelView /> })
+        dispatch({ type: "SET_ELEMENT", payload: <SidebarDatamodelView /> });
     }, []);
 
     return (
         <DatamodelViewProvider>
-            <DatamodelViewContent
-                search={search}
-                setSearch={setSearch}
-                debouncedSearch={debouncedSearch}
-                setDebouncedSearch={setDebouncedSearch}
-                filtered={filtered}
-                setFiltered={setFiltered}
-                workerRef={workerRef}
-            />
+            <DatamodelViewContent />
         </DatamodelViewProvider>
     );
 }
 
-function DatamodelViewContent({ search, setSearch, debouncedSearch, setDebouncedSearch, filtered, setFiltered, workerRef }: {
-    search: string;
-    setSearch: Dispatch<SetStateAction<string>>;
-    debouncedSearch: string;
-    setDebouncedSearch: Dispatch<SetStateAction<string>>;
-    filtered: any[];
-    setFiltered: Dispatch<SetStateAction<any[]>>;
-    workerRef: { current: Worker | null };
-}) {
+function DatamodelViewContent() {
     const { loading } = useDatamodelView();
     const datamodelDispatch = useDatamodelViewDispatch();
-    const groups = useDatamodelData();
+    const { groups, search, filtered } = useDatamodelData();
+    const datamodelDataDispatch = useDatamodelDataDispatch();
+    const workerRef = useRef<Worker | null>(null);
 
     useEffect(() => {
         if (!workerRef.current && groups) {
@@ -59,24 +41,24 @@ function DatamodelViewContent({ search, setSearch, debouncedSearch, setDebounced
         if (!worker) return;
 
         const handleMessage = (e: MessageEvent) => {
-            setFiltered(e.data);
-            datamodelDispatch({ type: 'SET_LOADING', payload: false });
+            datamodelDataDispatch({ type: "SET_FILTERED", payload: e.data });
+            datamodelDispatch({ type: "SET_LOADING", payload: false });
         };
 
         worker.addEventListener("message", handleMessage);
         return () => worker.removeEventListener("message", handleMessage);
-    }, [datamodelDispatch, setFiltered, workerRef]);
+    }, [datamodelDispatch, datamodelDataDispatch, groups, workerRef]);
 
     useEffect(() => {
-        datamodelDispatch({ type: 'SET_LOADING', payload: true });
+        datamodelDispatch({ type: "SET_LOADING", payload: true });
         const handler = setTimeout(() => {
             if (workerRef.current && groups) {
                 workerRef.current.postMessage(search.length >= 3 ? search : "");
             }
-            setDebouncedSearch(search.length >= 3 ? search : "");
+            datamodelDataDispatch({ type: "SET_SEARCH", payload: search.length >= 3 ? search : "" });
         }, 200);
         return () => clearTimeout(handler);
-    }, [search, datamodelDispatch, setDebouncedSearch, workerRef]);
+    }, [search, datamodelDispatch, datamodelDataDispatch, groups, workerRef]);
 
     if (!groups) {
         return (
@@ -100,7 +82,7 @@ function DatamodelViewContent({ search, setSearch, debouncedSearch, setDebounced
     return (
         <div className="flex">
             <AppSidebar />
-            <div className='flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50'>
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50">
                 <div className="relative">
                     {/* LOADING BAR */}
                     {loading && (
@@ -126,15 +108,15 @@ function DatamodelViewContent({ search, setSearch, debouncedSearch, setDebounced
                             type="text"
                             value={search}
                             onChange={e => {
-                                setSearch(e.target.value);
-                                datamodelDispatch({ type: 'SET_LOADING', payload: true });
+                                datamodelDataDispatch({ type: "SET_SEARCH", payload: e.target.value });
+                                datamodelDispatch({ type: "SET_LOADING", payload: true });
                             }}
                             placeholder="Search attributes or entities..."
                             className="w-full px-4 py-2 rounded-lg border border-gray-300 shadow focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                         />
                     </div>
                     <TooltipProvider delayDuration={0}>
-                        <List filteredItems={filtered} search={debouncedSearch} />
+                        <List />
                     </TooltipProvider>
                 </div>
             </div>
