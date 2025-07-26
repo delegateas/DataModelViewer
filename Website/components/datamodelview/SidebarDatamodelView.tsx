@@ -1,14 +1,14 @@
 import { EntityType, GroupType } from "@/lib/Types";
-import { Groups } from "../../generated/Data"
 import { useTouch } from '../ui/hybridtooltop';
 import { useSidebarDispatch } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
 import { Slot } from "@radix-ui/react-slot";
-import { ChevronDown, Puzzle, Search, X } from "lucide-react";
+import { ExternalLink, Puzzle, Search, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
+import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 
 interface ISidebarDatamodelViewProps { 
 
@@ -24,6 +24,8 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const dispatch = useSidebarDispatch();
     const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
     const dataModelDispatch = useDatamodelViewDispatch();
+
+    const { groups } = useDatamodelData();
     
     const [searchTerm, setSearchTerm] = useState("");
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -37,7 +39,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
         setSearchTerm(term);
         if (term.trim()) {
             const newExpandedGroups = new Set<string>();
-            Groups.forEach(group => {
+            groups.forEach(group => {
                 const hasMatchingEntity = group.Entities.some(entity => 
                     entity.SchemaName.toLowerCase().includes(term.toLowerCase()) ||
                     entity.DisplayName.toLowerCase().includes(term.toLowerCase())
@@ -79,6 +81,8 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     };
 
     const handleSectionClick = (sectionId: string) => {
+        console.log("Loading true for section click");
+        dataModelDispatch({ type: 'SET_LOADING', payload: true });
         if (scrollToSection) {
             scrollToSection(sectionId);
         }
@@ -123,7 +127,25 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                         >
                             <span className="flex-1 font-medium text-sm text-left truncate">{group.Name}</span>
                             <p className="ml-auto font-semibold text-xs opacity-70">{group.Entities.length}</p>
-                            <ChevronDown className={cn("mr-1 w-4 h-4 transition-transform", isExpanded ? "rotate-180" : "")} onClick={() => handleGroupClick(group.Name)}/>
+                            <a
+                                className={cn(
+                                    "p-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400",
+                                    currentSection?.toLowerCase() === (group.Entities[0]?.SchemaName?.toLowerCase())
+                                        ? "bg-blue-100 text-blue-900"
+                                        : "hover:bg-gray-200 text-gray-400 hover:text-blue-700"
+                                )}
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName);
+                                }}
+                                aria-label={`Link to first entity in ${group.Name}`}
+                                tabIndex={0}
+                            >
+                                <ExternalLink className="w-4 h-4" onClick={e => {
+                                    e.stopPropagation();
+                                    if (group.Entities.length > 0) handleGroupClick(group.Name);
+                                }} />
+                            </a>
                         </CollapsibleTrigger>
                     </Slot>
                     <CollapsibleContent>
@@ -170,8 +192,8 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                         type="text"
-                        placeholder="Search entities..."
-                        aria-label="Search entities"
+                        placeholder="Search tables..."
+                        aria-label="Search tables"
                         value={searchTerm}
                         onChange={(e) => handleSearch(e.target.value)}
                         className="pl-8 pr-8 h-8 text-xs"
@@ -189,7 +211,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
             
             <div className='h-full gap-1 flex flex-col max-w-48 overflow-y-auto overflow-x-hidden'> 
                 {
-                    Groups.map((group) => 
+                    groups.map((group) => 
                         <NavItem key={group.Name} group={group} />
                     )
                 }

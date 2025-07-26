@@ -5,6 +5,7 @@ import { SidebarClose, SidebarOpen } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import SidebarNavRail from './SidebarNavRail'
 import clsx from 'clsx'
+import { useState } from 'react';
 
 interface IAppSidebarProps {}
 
@@ -12,9 +13,14 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
   const { element, isOpen } = useSidebar()
   const dispatch = useSidebarDispatch()
   const isMobile = useIsMobile()
+  const [showElement, setShowElement] = useState(true)
 
   const toggleSidebar = () => {
     dispatch({ type: 'SET_OPEN', payload: !isOpen })
+  }
+
+  const toggleElement = () => {
+    setShowElement(v => !v)
   }
 
   return (
@@ -32,31 +38,66 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
         </button>
       )}
 
+      {/* Overlay for mobile sidebar */}
+      {isMobile && isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-30"
+          onClick={toggleSidebar}
+          aria-label="Close sidebar overlay"
+        />
+      )}
+
       {/* Sidebar */}
       <div
-        className={clsx('h-screen w-64 bg-sidebar border-r border-sidebar-border z-40 transition-transform duration-300',
+        className={clsx(
+          'h-screen bg-sidebar border-r border-sidebar-border z-40',
+          'transition-all duration-300',
           isMobile
             ? [
                 'fixed top-0 left-0',
                 isOpen ? 'translate-x-0' : '-translate-x-full',
-                'flex flex-col'
+                'flex flex-col',
+                'w-64'
               ]
-            : 'flex flex-col sticky top-0'
+            : [
+                'flex flex-col sticky top-0'
+              ]
         )}
+        style={
+          isMobile
+            ? undefined
+            : { width: showElement ? '16rem' : '3.5rem', transitionProperty: 'width' }
+        }
       >
         {/* Header */}
-        <div className="w-full h-16 border-b border-sidebar-border p-2 flex justify-center items-center bg-white">
+        <div className="w-full h-16 border-b border-sidebar-border p-2 flex justify-center items-center bg-white relative">
           {isMobile ? (
             <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} />
           ) : (
-            <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-full" draggable={false} />
+            showElement ? (
+              <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-full" draggable={false} />
+            ) : (
+              <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} />
+            )
           )}
         </div>
+
+        {/* Vertically centered sidebar toggle button (desktop only) */}
+        {!isMobile && (
+          <button
+            onClick={toggleElement}
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-12 bg-gray-50 border border-gray-300 shadow rounded-sm flex items-center justify-center z-50 hover:bg-blue-50"
+            style={{ marginRight: '-12px' }}
+            aria-label={showElement ? 'Hide Details' : 'Show Details'}
+          >
+            {showElement ? <SidebarClose size={10} /> : <SidebarOpen size={10} />}
+          </button>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto relative flex">
           <SidebarNavRail />
-          {element}
+          {(isMobile || showElement) && element}
         </div>
       </div>
     </>

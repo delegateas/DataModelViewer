@@ -6,11 +6,18 @@ import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
+import React from "react"
+import { highlightMatch } from "../datamodelview/List";
 
 type SortColumn = 'name' | 'logicalName' | 'attributes' | null
 type SortDirection = 'asc' | 'desc' | null
 
-function Keys({ entity }: { entity: EntityType }) {
+interface IKeysProps {
+    entity: EntityType;
+    onVisibleCountChange?: (count: number) => void;
+}
+
+function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { search?: string }) {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [searchQuery, setSearchQuery] = useState("")
@@ -74,6 +81,14 @@ function Keys({ entity }: { entity: EntityType }) {
         })
     }
 
+    const sortedKeys = getSortedKeys();
+
+    React.useEffect(() => {
+        if (onVisibleCountChange) {
+            onVisibleCountChange(sortedKeys.length);
+        }
+    }, [onVisibleCountChange, sortedKeys.length]);
+
     const SortIcon = ({ column }: { column: SortColumn }) => {
         if (sortColumn !== column) return <ArrowUpDown className="ml-2 h-4 w-4" />
         if (sortDirection === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />
@@ -106,7 +121,7 @@ function Keys({ entity }: { entity: EntityType }) {
                 )}
             </div>
             <div className="overflow-x-auto">
-                {getSortedKeys().length === 0 ? (
+                {sortedKeys.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         {searchQuery ? (
                             <div className="flex flex-col items-center gap-2">
@@ -120,7 +135,7 @@ function Keys({ entity }: { entity: EntityType }) {
                                 </Button>
                             </div>
                         ) : (
-                            <p>No keys available for this entity</p>
+                            <p>No keys available for this table</p>
                         )}
                     </div>
                 ) : (
@@ -157,15 +172,19 @@ function Keys({ entity }: { entity: EntityType }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {getSortedKeys().map((key, index) => (
+                            {sortedKeys.map((key, index) => (
                                 <TableRow 
                                     key={key.LogicalName}
                                     className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
                                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                     }`}
                                 >
-                                    <TableCell className="break-words font-medium py-2 text-xs md:py-3 md:text-sm">{key.Name}</TableCell>
-                                    <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">{key.LogicalName}</TableCell>
+                                    <TableCell className="break-words font-medium py-2 text-xs md:py-3 md:text-sm">
+                                        {highlightMatch(key.Name, search)}
+                                    </TableCell>
+                                    <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
+                                        {highlightMatch(key.LogicalName, search)}
+                                    </TableCell>
                                     <TableCell className="break-words py-2 md:py-3">
                                         <div className="flex flex-wrap gap-1">
                                             {key.KeyAttributes.map((attr, i) => (
@@ -173,7 +192,7 @@ function Keys({ entity }: { entity: EntityType }) {
                                                     key={i}
                                                     className="inline-flex items-center px-1.5 py-0.5 text-xs rounded-md font-medium bg-blue-50 text-blue-700 md:px-2 md:py-1 md:text-sm"
                                                 >
-                                                    {attr}
+                                                    {highlightMatch(attr, search)}
                                                 </span>
                                             ))}
                                         </div>
