@@ -1,5 +1,6 @@
-## [1.1.5] - 2025-07-11
+## [1.2.0] - 2025-07-26
 
 ### Changed
-- Manual patch release
+- Manual minor release
+- (No previous tag website-v1.1.5 found to compare commits)
 
