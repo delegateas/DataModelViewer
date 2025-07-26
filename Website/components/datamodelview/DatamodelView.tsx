@@ -94,8 +94,12 @@ function DatamodelViewContent() {
     }, [currentSearchIndex, filtered, datamodelDispatch, scrollToSection]);
 
     useEffect(() => {
-        if (!workerRef.current && groups) {
+        if (!workerRef.current) {
             workerRef.current = new Worker(new URL("./searchWorker.js", import.meta.url));
+        }
+
+        // Initialize or re-initialize worker with groups when groups change
+        if (workerRef.current && groups && groups.length > 0) {
             workerRef.current.postMessage({ type: "init", groups });
         }
 
