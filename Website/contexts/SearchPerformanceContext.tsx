@@ -14,27 +14,38 @@ export const SearchPerformanceProvider = ({ children }: { children: ReactNode })
   const immediateUpdatesRef = useRef<Set<() => void>>(new Set());
   const backgroundUpdatesRef = useRef<Set<() => void>>(new Set());
 
-  const scheduleImmediateUpdate = useCallback((callback: () => void) => {
-    // Use MessageChannel for immediate, non-blocking updates
+  const immediateUpdateMap = useRef<Map<number, MessageChannel>>(new Map());
+  const scheduleImmediateUpdate = useCallback((callback: () => void): number => {
+    const id = Date.now() + Math.random(); // Generate a unique id
     const channel = new MessageChannel();
     channel.port2.onmessage = () => {
       callback();
+      immediateUpdateMap.current.delete(id); // Clean up after execution
     };
+    immediateUpdateMap.current.set(id, channel);
     channel.port1.postMessage(null);
+    return id;
   }, []);
 
-  const scheduleBackgroundUpdate = useCallback((callback: () => void) => {
-    // Use requestIdleCallback for background updates when browser is idle
+  const scheduleBackgroundUpdate = useCallback((callback: () => void): number => {
     if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(callback, { timeout: 1000 });
+      const id = (window as any).requestIdleCallback(callback, { timeout: 1000 });
+      return id;
     } else {
-      // Fallback for browsers without requestIdleCallback
-      setTimeout(callback, 0);
+      const id = setTimeout(callback, 0);
+      return id as unknown as number; // Ensure consistent type
     }
   }, []);
 
   const cancelScheduledUpdate = useCallback((id: number) => {
-    if ('cancelIdleCallback' in window) {
+    if (immediateUpdateMap.current.has(id)) {
+      const channel = immediateUpdateMap.current.get(id);
+      if (channel) {
+        channel.port1.close();
+        channel.port2.close();
+      }
+      immediateUpdateMap.current.delete(id);
+    } else if ('cancelIdleCallback' in window) {
       (window as any).cancelIdleCallback(id);
     } else {
       clearTimeout(id);
