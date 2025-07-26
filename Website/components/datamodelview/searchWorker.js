@@ -1,7 +1,7 @@
 let groups = null;
 const CHUNK_SIZE = 20; // Process results in chunks
 
-self.onmessage = function(e) {
+self.onmessage = async function(e) {
   if (e.data && e.data.type === 'init') {
     groups = e.data.groups;
     return;
