@@ -25,6 +25,7 @@ internal class WebsiteBuilder
         var sb = new StringBuilder();
         sb.AppendLine("import { GroupType } from \"@/lib/Types\";");
         sb.AppendLine("");
+        sb.AppendLine($"export const LastSynched: Date = new Date('{DateTimeOffset.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}')");
         sb.AppendLine("export let Groups: GroupType[] = [");
         var groups = records.GroupBy(x => x.Group).OrderBy(x => x.Key);
         foreach (var group in groups)
