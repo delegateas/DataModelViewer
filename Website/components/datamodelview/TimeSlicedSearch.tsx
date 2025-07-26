@@ -3,11 +3,15 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Input } from '../ui/input';
-import { Search } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;
   onLoadingChange: (loading: boolean) => void;
+  onNavigateNext?: () => void;
+  onNavigatePrevious?: () => void;
+  currentIndex?: number;
+  totalResults?: number;
   placeholder?: string;
   className?: string;
 }
@@ -15,8 +19,12 @@ interface TimeSlicedSearchProps {
 // Time-sliced input that maintains 60fps regardless of background work
 export const TimeSlicedSearch = ({ 
   onSearch, 
-  onLoadingChange, 
-  placeholder = "Search attributes or tables...",
+  onLoadingChange,
+  onNavigateNext,
+  onNavigatePrevious,
+  currentIndex = 0,
+  totalResults = 0,
+  placeholder = "Search attributes...",
   className = "w-full px-4 py-2 rounded-lg border border-gray-300 shadow focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
 }: TimeSlicedSearchProps) => {
   const [localValue, setLocalValue] = useState('');
@@ -75,6 +83,33 @@ export const TimeSlicedSearch = ({
 
   }, [isTyping, onLoadingChange, scheduleSearch]);
 
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onNavigateNext?.();
+      // Optional: Add haptic feedback on mobile
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    } else if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      onNavigatePrevious?.();
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    } else if (e.key === 'ArrowDown' && e.ctrlKey) {
+      e.preventDefault();
+      onNavigateNext?.();
+    } else if (e.key === 'ArrowUp' && e.ctrlKey) {
+      e.preventDefault();
+      onNavigatePrevious?.();
+    }
+  }, [onNavigateNext, onNavigatePrevious]);
+
+  const hasResults = totalResults > 0;
+  const showNavigation = hasResults && localValue.length >= 3;
+
   // Cleanup
   useEffect(() => {
     return () => {
@@ -119,21 +154,69 @@ export const TimeSlicedSearch = ({
   }, []);
 
   const searchInput = (
-    <div className="fixed top-4 right-8 z-50 w-80 flex items-center gap-2">
-        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input
+    <div className="fixed top-4 right-8 z-50 w-80">
+      {/* Search Input Container */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
             type="text"
-            placeholder="Search attributes in tables..."
+            placeholder={placeholder}
             aria-label="Search attributes in tables"
             value={localValue}
             onChange={handleChange}
-            className="pl-8 pr-8 h-8 text-xs"
+            onKeyDown={handleKeyDown}
+            className="pl-10 pr-8 h-9 text-sm"
             spellCheck={false}
             autoComplete="off"
-        />
-      {isTyping && (
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+            autoCapitalize="off"
+          />
+          {isTyping && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+        </div>
+        
+        {/* Navigation Buttons */}
+        {showNavigation && (
+          <div className="flex flex-col gap-0 bg-white rounded-lg border border-gray-300 shadow">
+            <button
+              onClick={onNavigatePrevious}
+              disabled={currentIndex <= 1}
+              className="p-1 rounded-t-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-b border-gray-200"
+              title="Previous result (Shift+Enter or Ctrl+↑)"
+            >
+              <ChevronUp className="w-3 h-3" />
+            </button>
+            
+            <button
+              onClick={onNavigateNext}
+              disabled={currentIndex >= totalResults}
+              className="p-1 rounded-b-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Next result (Enter or Ctrl+↓)"
+            >
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+      </div>
+      
+      {/* Results Counter */}
+      {showNavigation && (
+        <div className="mt-1 flex justify-between items-center text-xs text-gray-500">
+          <span className="bg-white/90 backdrop-blur-sm rounded px-2 py-1 shadow-sm border">
+            {totalResults > 0 ? (
+              `${currentIndex} of ${totalResults} sections`
+            ) : (
+              'No results'
+            )}
+          </span>
+          <div className="bg-white/90 backdrop-blur-sm rounded px-2 py-1 shadow-sm border">
+            <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Enter</kbd> next section •
+            <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs ml-1">Shift+Enter</kbd> prev section •
+            <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs ml-1">Ctrl+↑↓</kbd> navigate
+          </div>
         </div>
       )}
     </div>

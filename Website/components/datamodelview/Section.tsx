@@ -41,7 +41,7 @@ export const Section = React.memo(
 
         return (
             <div id={entity.SchemaName} data-group={group.Name} className="mb-10">
-                <div className="bg-white rounded-lg border border-gray-300 shadow-md">
+                <div className="bg-white rounded-lg border border-gray-300 shadow-md">{/* Removed conditional styling and indicator */}
                     <div className="flex flex-col xl:flex-row min-w-0 p-6">
                         <EntityHeader entity={entity} />
                         {entity.SecurityRoles.length > 0 && (
