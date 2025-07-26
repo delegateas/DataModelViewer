@@ -53,8 +53,13 @@ self.onmessage = function(e) {
     
     // Small delay between chunks to let the UI breathe
     if (!isLastChunk) {
-      // Use setTimeout to yield control back to browser
-      setTimeout(() => {}, 5);
+      // Use a proper yielding mechanism to let the UI breathe
+      await sleep(5);
     }
+  }
+
+  // Helper function to pause execution for a specified duration
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }; 
