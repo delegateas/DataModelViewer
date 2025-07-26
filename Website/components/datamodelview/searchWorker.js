@@ -1,17 +1,24 @@
 let groups = null;
+const CHUNK_SIZE = 20; // Process results in chunks
 
 self.onmessage = function(e) {
   if (e.data && e.data.type === 'init') {
     groups = e.data.groups;
     return;
   }
-  // e.data is the search string
+  
   const search = (e.data || '').trim().toLowerCase();
   if (!groups) {
-    self.postMessage([]);
+    self.postMessage({ type: 'results', data: [], complete: true });
     return;
   }
-  const items = [];
+
+  // First quickly send back a "started" message
+  self.postMessage({ type: 'started' });
+  
+  const allItems = [];
+  
+  // Find all matches
   for (const group of groups) {
     const filteredEntities = group.Entities.filter(entity => {
       if (!search) return true;
@@ -23,12 +30,31 @@ self.onmessage = function(e) {
       );
       return entityMatch || attrMatch;
     });
+    
     if (filteredEntities.length > 0) {
-      items.push({ type: 'group', group });
+      allItems.push({ type: 'group', group });
       for (const entity of filteredEntities) {
-        items.push({ type: 'entity', group, entity });
+        allItems.push({ type: 'entity', group, entity });
       }
     }
   }
-  self.postMessage(items);
+  
+  // Send results in chunks to prevent UI blocking
+  for (let i = 0; i < allItems.length; i += CHUNK_SIZE) {
+    const chunk = allItems.slice(i, i + CHUNK_SIZE);
+    const isLastChunk = i + CHUNK_SIZE >= allItems.length;
+    
+    self.postMessage({
+      type: 'results',
+      data: chunk,
+      complete: isLastChunk,
+      progress: Math.min(100, Math.round((i + CHUNK_SIZE) / allItems.length * 100))
+    });
+    
+    // Small delay between chunks to let the UI breathe
+    if (!isLastChunk) {
+      // Use setTimeout to yield control back to browser
+      setTimeout(() => {}, 5);
+    }
+  }
 }; 

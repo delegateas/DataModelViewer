@@ -26,6 +26,8 @@ const datamodelDataReducer = (state: DatamodelDataState, action: any): Datamodel
       return { ...state, search: action.payload };
     case "SET_FILTERED":
       return { ...state, filtered: action.payload };
+    case "APPEND_FILTERED":
+      return { ...state, filtered: [...state.filtered, ...action.payload] };
     default:
       return state;
   }

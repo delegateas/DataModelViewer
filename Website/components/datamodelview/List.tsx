@@ -4,6 +4,7 @@ import React from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
+import { throttle } from "@/lib/utils";
 
 interface IListProps {
 }
@@ -20,24 +21,23 @@ export const List = ({ }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
     const datamodelView = useDatamodelView();
     const [isScrollingToSection, setIsScrollingToSection] = useState(false);
-
     const { groups, filtered, search } = useDatamodelData();
-
     const parentRef = useRef<HTMLDivElement | null>(null);
+    const lastScrollHandleTime = useRef<number>(0);
     const lastSectionRef = useRef<string | null>(null);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-
-    // Map of SchemaName to element
     const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+    
     const getSectionRefCallback = (schemaName: string) => (el: HTMLDivElement | null) => {
         sectionRefs.current[schemaName] = el;
     };
+    
     const remeasureSection = (schemaName: string) => {
         const el = sectionRefs.current[schemaName];
         if (el) rowVirtualizer.measureElement(el);
     };
 
-    // Compute filtered items based on search
+    // Only recalculate items when filtered or search changes
     const flatItems = useMemo(() => {
         if (filtered && filtered.length > 0) return filtered;
         const lowerSearch = search.trim().toLowerCase();
@@ -72,11 +72,11 @@ export const List = ({ }: IListProps) => {
     const rowVirtualizer = useVirtualizer({
         count: flatItems.length,
         getScrollElement: () => parentRef.current,
-        overscan: 20,
+        overscan: 5, // Reduce overscan to improve performance
         estimateSize: (index) => {
             const item = flatItems[index];
-            if (item.type === 'group') return 92;
-            return 300;
+            if (!item) return 100;
+            return item.type === 'group' ? 92 : 300;
         },
     });
 
@@ -134,66 +134,54 @@ export const List = ({ }: IListProps) => {
         });
     }, [flatItems]);
 
+    // Throttled scroll handler to reduce calculations
+    const handleScroll = useCallback(() => {
+        const now = Date.now();
+        if (now - lastScrollHandleTime.current < 100) return; // Only process every 100ms
+        lastScrollHandleTime.current = now;
+        
+        const scrollElement = parentRef.current;
+        if (!scrollElement || isScrollingToSection) return;
+        
+        const scrollOffset = scrollElement.scrollTop;
+        const virtualItems = rowVirtualizer.getVirtualItems();
+        
+        // Find the first visible item
+        const firstVisibleItem = virtualItems.find(v => {
+            return v.start <= scrollOffset && v.end >= scrollOffset;
+        });
+        
+        if (firstVisibleItem) {
+            const item = flatItems[firstVisibleItem.index];
+            if (item?.type === 'entity') {
+                if (item.entity.SchemaName !== datamodelView.currentSection) {
+                    dispatch({ type: "SET_CURRENT_GROUP", payload: item.group.Name });
+                    dispatch({ type: "SET_CURRENT_SECTION", payload: item.entity.SchemaName });
+                }
+            }
+        }
+    }, [dispatch, flatItems, rowVirtualizer, datamodelView.currentSection, isScrollingToSection]);
+
+    // Throttled scroll event listener
     useEffect(() => {
         const scrollElement = parentRef.current;
         if (!scrollElement) return;
-    
-        let ticking = false;
-        let lastScrollTop = 0;
-    
-        const handleScroll = () => {
-            if (!ticking) {
-                ticking = true;
         
-                window.requestAnimationFrame(() => {
-                    const currentScrollTop = scrollElement.scrollTop;
-                    if (Math.abs(currentScrollTop - lastScrollTop) < 10) {
-                        ticking = false;
-                        return;
-                    }
-                    lastScrollTop = currentScrollTop;
-
-                    const virtualItems = rowVirtualizer.getVirtualItems();
-                    const scrollOffset = scrollElement.scrollTop;
-
-                    let best: { id: string; group: string; distance: number } | null = null;
-
-                    for (const v of virtualItems) {
-                        const item = flatItems[v.index];
-                        if (item.type !== "entity") continue;
-
-                        const itemTop = v.start;
-                        const distance = Math.abs(itemTop - scrollOffset);
-
-                        if (!best || distance < best.distance) {
-                            best = {
-                                id: item.entity.SchemaName,
-                                group: item.group.Name,
-                                distance,
-                            };
-                        }
-
-                        if (distance > best.distance) break;
-                    }
-
-                    if (best && best.id !== lastSectionRef.current) {
-                        lastSectionRef.current = best.id;
-                        dispatch({ type: "SET_CURRENT_GROUP", payload: best.group });
-                        dispatch({ type: "SET_CURRENT_SECTION", payload: best.id });
-                    }
-            
-                    ticking = false;
-                });
-            }
+        let scrollTimeout: number;
+        const throttledScrollHandler = () => {
+            if (scrollTimeout) return;
+            scrollTimeout = window.setTimeout(() => {
+                handleScroll();
+                scrollTimeout = 0;
+            }, 100);
         };
-    
-        scrollElement.addEventListener("scroll", handleScroll, { passive: true });
-        handleScroll();
-    
+        
+        scrollElement.addEventListener("scroll", throttledScrollHandler, { passive: true });
         return () => {
-          scrollElement.removeEventListener("scroll", handleScroll);
+            scrollElement.removeEventListener("scroll", throttledScrollHandler);
+            clearTimeout(scrollTimeout);
         };
-      }, [dispatch, flatItems, rowVirtualizer]);
+    }, [handleScroll]);
 
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
@@ -222,11 +210,31 @@ export const List = ({ }: IListProps) => {
 
     return (
         <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }} className="p-6 relative">
+            {/* Add skeleton loading state */}
+            {flatItems.length === 0 && datamodelView.loading && (
+                <div className="space-y-8">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="bg-white rounded-lg border border-gray-300 shadow-md animate-pulse">
+                            <div className="h-32 p-6 flex flex-col">
+                                <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                            <div className="p-4 border-t">
+                                <div className="h-4 bg-gray-200 rounded w-full mb-3"></div>
+                                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+            
+            {/* Virtualized list */}
             <div
                 style={{
                     height: `${rowVirtualizer.getTotalSize()}px`,
                     width: '100%',
                     position: 'relative',
+                    visibility: flatItems.length === 0 && datamodelView.loading ? 'hidden' : 'visible'
                 }}
             >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {

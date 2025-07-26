@@ -17,16 +17,27 @@ interface ISectionProps {
     search?: string;
 }
 
-export const Section = React.memo(({ entity, group, onContentChange, search }: ISectionProps) => 
-    {
+export const Section = React.memo(
+    ({ entity, group, onContentChange, search }: ISectionProps) => {
+        // Use useRef to track previous props for comparison
+        const prevSearch = React.useRef(search);
+        
         const [tab, setTab] = React.useState("attributes");
-        const [visibleAttributeCount, setVisibleAttributeCount] = React.useState(entity.Attributes.length);
-        const [visibleRelationshipCount, setVisibleRelationshipCount] = React.useState(entity.Relationships.length);
-        const [visibleKeyCount, setVisibleKeyCount] = React.useState(entity.Keys.length);
+        
+        // Only compute these counts when needed
+        const visibleAttributeCount = React.useMemo(() => entity.Attributes.length, [entity.Attributes]);
+        const visibleRelationshipCount = React.useMemo(() => entity.Relationships.length, [entity.Relationships]);
+        const visibleKeyCount = React.useMemo(() => entity.Keys.length, [entity.Keys]);
 
+        // Only call onContentChange when something actually changes
         React.useEffect(() => {
-            onContentChange && onContentChange();
-        }, [tab, visibleAttributeCount, visibleRelationshipCount, visibleKeyCount, onContentChange]);
+            if (onContentChange && 
+                (prevSearch.current !== search || 
+                 tab !== "attributes")) {
+                prevSearch.current = search;
+                onContentChange();
+            }
+        }, [tab, search, onContentChange]);
 
         return (
             <div id={entity.SchemaName} data-group={group.Name} className="mb-10">
@@ -60,19 +71,26 @@ export const Section = React.memo(({ entity, group, onContentChange, search }: I
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="attributes" className="m-0 p-0">
-                                <Attributes entity={entity} onVisibleCountChange={setVisibleAttributeCount} search={search} />
+                                <Attributes entity={entity} search={search} />
                             </TabsContent>
                             <TabsContent value="relationships" className="m-0 p-0">
-                                <Relationships entity={entity} onVisibleCountChange={setVisibleRelationshipCount} search={search} />
+                                <Relationships entity={entity} search={search} />
                             </TabsContent>
                             <TabsContent value="keys" className="m-0 p-0">
-                                <Keys entity={entity} onVisibleCountChange={setVisibleKeyCount} search={search} />
+                                <Keys entity={entity} search={search} />
                             </TabsContent>
                         </div>
                     </Tabs>
                 </div>
             </div>
         )
+    },
+    // Custom comparison function to prevent unnecessary re-renders
+    (prevProps, nextProps) => {
+        // Only re-render if entity, search or group changes
+        return prevProps.entity.SchemaName === nextProps.entity.SchemaName && 
+               prevProps.search === nextProps.search && 
+               prevProps.group.Name === nextProps.group.Name;
     }
 );
 
