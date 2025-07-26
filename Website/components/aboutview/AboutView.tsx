@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { AppSidebar } from '../AppSidebar'
 import { useSidebarDispatch } from '@/contexts/SidebarContext'
 import { TooltipProvider } from '@radix-ui/react-tooltip'
+import { LastSynched } from '@/generated/Data'
 
 interface IAboutViewProps {}
 
@@ -86,6 +87,11 @@ export const AboutView = ({}: IAboutViewProps) => {
             {/* Version */}
             <div className="text-center text-sm text-gray-500 mt-8">
               Version {version ?? '...'}
+            </div>
+
+            {/* Data Sync */}
+            <div className="text-center text-sm text-gray-500 mt-8">
+              Last Synched - {LastSynched ? LastSynched.toLocaleString(undefined, { timeZoneName: 'short' }) : '...'}
             </div>
           </div>
         </TooltipProvider>
