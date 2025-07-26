@@ -5,22 +5,20 @@ import { SidebarClose, SidebarOpen } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import SidebarNavRail from './SidebarNavRail'
 import clsx from 'clsx'
-import { useState } from 'react';
 
 interface IAppSidebarProps {}
 
 export const AppSidebar = ({}: IAppSidebarProps) => {
-  const { element, isOpen } = useSidebar()
+  const { element, isOpen, showElement } = useSidebar()
   const dispatch = useSidebarDispatch()
   const isMobile = useIsMobile()
-  const [showElement, setShowElement] = useState(true)
 
   const toggleSidebar = () => {
     dispatch({ type: 'SET_OPEN', payload: !isOpen })
   }
 
   const toggleElement = () => {
-    setShowElement(v => !v)
+    dispatch({ type: 'SET_SHOW_ELEMENT', payload: !showElement })
   }
 
   return (

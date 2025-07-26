@@ -5,16 +5,19 @@ import { createContext, ReactNode, useContext, useEffect, useReducer } from "rea
 export interface SidebarState {
     element: React.ReactNode;
     isOpen: boolean;
+    showElement: boolean;
 }
 
 const initialState: SidebarState = {
     element: null,
-    isOpen: false
+    isOpen: false,
+    showElement: true
 }
 
 type SidebarAction = 
     | { type: 'SET_ELEMENT', payload: React.ReactNode }
     | { type: 'SET_OPEN', payload: boolean }
+    | { type: 'SET_SHOW_ELEMENT', payload: boolean }
 
 
 const sidebarReducer = (state: SidebarState, action: SidebarAction): SidebarState => {
@@ -23,6 +26,8 @@ const sidebarReducer = (state: SidebarState, action: SidebarAction): SidebarStat
             return { ...state, element: action.payload }
         case 'SET_OPEN':
             return { ...state, isOpen: action.payload }
+        case 'SET_SHOW_ELEMENT':
+            return { ...state, showElement: action.payload }
         default:
             return state;
     }
