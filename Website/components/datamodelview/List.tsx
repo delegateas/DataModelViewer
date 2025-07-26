@@ -4,7 +4,7 @@ import React from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
-import { throttle } from "@/lib/utils";
+import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 
 interface IListProps {
 }
@@ -24,7 +24,6 @@ export const List = ({ }: IListProps) => {
     const { groups, filtered, search } = useDatamodelData();
     const parentRef = useRef<HTMLDivElement | null>(null);
     const lastScrollHandleTime = useRef<number>(0);
-    const lastSectionRef = useRef<string | null>(null);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
     const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
     
@@ -42,18 +41,19 @@ export const List = ({ }: IListProps) => {
         if (filtered && filtered.length > 0) return filtered;
         const lowerSearch = search.trim().toLowerCase();
         const items: Array<
-            | { type: 'group'; group: any }
-            | { type: 'entity'; group: any; entity: any }
+            | { type: 'group'; group: GroupType }
+            | { type: 'entity'; group: GroupType; entity: EntityType }
         > = [];
         for (const group of groups) {
             // Filter entities in this group
-            const filteredEntities = group.Entities.filter((entity: any) => {
+            const filteredEntities = group.Entities.filter((entity: EntityType) => {
+                const typedEntity = entity;
                 if (!lowerSearch) return true;
                 // Match entity schema or display name
-                const entityMatch = entity.SchemaName.toLowerCase().includes(lowerSearch) ||
-                    (entity.DisplayName && entity.DisplayName.toLowerCase().includes(lowerSearch));
+                const entityMatch = typedEntity.SchemaName.toLowerCase().includes(lowerSearch) ||
+                    (typedEntity.DisplayName && typedEntity.DisplayName.toLowerCase().includes(lowerSearch));
                 // Match any attribute schema or display name
-                const attrMatch = entity.Attributes.some((attr: any) =>
+                const attrMatch = typedEntity.Attributes.some((attr: AttributeType) =>
                     attr.SchemaName.toLowerCase().includes(lowerSearch) ||
                     (attr.DisplayName && attr.DisplayName.toLowerCase().includes(lowerSearch))
                 );
@@ -247,7 +247,7 @@ export const List = ({ }: IListProps) => {
                         data-index={virtualItem.index}
                         ref={item.type === 'entity'
                             ? el => {
-                                sectionRef && sectionRef(el);
+                                if (sectionRef) sectionRef(el);
                                 if (el) rowVirtualizer.measureElement(el);
                               }
                             : rowVirtualizer.measureElement

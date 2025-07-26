@@ -4,8 +4,7 @@ import { useSidebarDispatch } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
 import { Slot } from "@radix-ui/react-slot";
-import { ChevronDown, ExternalLink, Puzzle, Search, X } from "lucide-react";
-import { Link as LinkIcon } from "lucide-react";
+import { ExternalLink, Puzzle, Search, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
@@ -142,7 +141,10 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                 aria-label={`Link to first entity in ${group.Name}`}
                                 tabIndex={0}
                             >
-                                <ExternalLink className="w-4 h-4" />
+                                <ExternalLink className="w-4 h-4" onClick={e => {
+                                    e.stopPropagation();
+                                    if (group.Entities.length > 0) handleGroupClick(group.Name);
+                                }} />
                             </a>
                         </CollapsibleTrigger>
                     </Slot>

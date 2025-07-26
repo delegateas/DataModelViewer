@@ -7,12 +7,9 @@ import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { DatamodelViewProvider, useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { SearchPerformanceProvider } from "@/contexts/SearchPerformanceContext";
 import { List } from "./List";
-import { SearchBar } from "./SearchBar";
 import { TimeSlicedSearch } from "./TimeSlicedSearch";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import type { Dispatch, SetStateAction, RefObject } from "react";
 import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/DatamodelDataContext";
-import { debounce } from "@/lib/utils";
 
 export function DatamodelView() {
     const dispatch = useSidebarDispatch();
@@ -31,14 +28,12 @@ export function DatamodelView() {
 }
 
 function DatamodelViewContent() {
-    const { loading, scrollToSection } = useDatamodelView();
+    const { scrollToSection } = useDatamodelView();
     const datamodelDispatch = useDatamodelViewDispatch();
-    const { groups, search, filtered } = useDatamodelData();
+    const { groups, filtered } = useDatamodelData();
     const datamodelDataDispatch = useDatamodelDataDispatch();
     const workerRef = useRef<Worker | null>(null);
-    const [searchProgress, setSearchProgress] = useState(0);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
-    const [searchResults, setSearchResults] = useState<any[]>([]);
 
     // Calculate total search results
     const totalResults = filtered.length > 0 ? filtered.filter(item => item.type === 'entity').length : 0;
@@ -111,20 +106,20 @@ function DatamodelViewContent() {
             
             if (message.type === 'started') {
                 datamodelDispatch({ type: "SET_LOADING", payload: true });
-                setSearchProgress(0);
+                // setSearchProgress(0);
                 setCurrentSearchIndex(0);
                 // Start with empty results to show loading state
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
             } 
             else if (message.type === 'results') {
-                setSearchProgress(message.progress || 0);
+                // setSearchProgress(message.progress || 0);
                 
                 // For chunked results, append to existing
                 if (message.complete) {
                     datamodelDataDispatch({ type: "SET_FILTERED", payload: message.data });
                     datamodelDispatch({ type: "SET_LOADING", payload: false });
                     // Set to first result if we have any and auto-navigate to it
-                    const entityResults = message.data.filter((item: any) => item.type === 'entity');
+                    const entityResults = message.data.filter((item: { type: string }) => item.type === 'entity');
                     if (entityResults.length > 0) {
                         setCurrentSearchIndex(1);
                         const firstEntity = entityResults[0];
@@ -144,7 +139,7 @@ function DatamodelViewContent() {
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: message });
                 datamodelDispatch({ type: "SET_LOADING", payload: false });
                 // Set to first result if we have any and auto-navigate to it
-                const entityResults = message.filter((item: any) => item.type === 'entity');
+                const entityResults = message.filter((item: { type: string }) => item.type === 'entity');
                 if (entityResults.length > 0) {
                     setCurrentSearchIndex(1);
                     const firstEntity = entityResults[0];
@@ -186,8 +181,8 @@ function DatamodelViewContent() {
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50">
                 <div className="relative">
-                    {/* LOADING BAR */}
-                    {loading && (
+                    {/* LOADING BAR - currently deprecated */}
+                    {/* {loading && (
                         <div className="absolute top-0 left-0 w-full h-1.5 z-50 overflow-hidden">
                             <div className="absolute left-0 top-0 h-full w-full bg-blue-100 opacity-40" />
                             <div 
@@ -195,7 +190,7 @@ function DatamodelViewContent() {
                                 style={{ width: `${searchProgress}%`, transition: 'width 200ms ease-out' }}
                             />
                         </div>
-                    )}
+                    )} */}
                     <TimeSlicedSearch 
                         onSearch={handleSearch} 
                         onLoadingChange={handleLoadingChange}

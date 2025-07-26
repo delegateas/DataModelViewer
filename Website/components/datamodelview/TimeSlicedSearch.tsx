@@ -13,7 +13,6 @@ interface TimeSlicedSearchProps {
   currentIndex?: number;
   totalResults?: number;
   placeholder?: string;
-  className?: string;
 }
 
 // Time-sliced input that maintains 60fps regardless of background work
@@ -25,7 +24,6 @@ export const TimeSlicedSearch = ({
   currentIndex = 0,
   totalResults = 0,
   placeholder = "Search attributes...",
-  className = "w-full px-4 py-2 rounded-lg border border-gray-300 shadow focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
 }: TimeSlicedSearchProps) => {
   const [localValue, setLocalValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -88,7 +86,6 @@ export const TimeSlicedSearch = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onNavigateNext?.();
-      // Optional: Add haptic feedback on mobile
       if ('vibrate' in navigator) {
         navigator.vibrate(50);
       }

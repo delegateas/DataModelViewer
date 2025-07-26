@@ -1,10 +1,8 @@
-import { useIsMobile } from "@/hooks/use-mobile";
 import { StatusAttributeType, StatusOption } from "@/lib/Types";
 import { formatNumberSeperator } from "@/lib/utils";
-import { CheckCircle, Circle } from "lucide-react";
+import { Circle } from "lucide-react";
 
 export default function StatusAttribute({ attribute }: { attribute: StatusAttributeType }) {
-    const isMobile = useIsMobile();
     const groupedOptions = attribute.Options.reduce((acc, option) => {
         if (!acc[option.State]) {
             acc[option.State] = [];
