@@ -2,6 +2,8 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { Input } from '../ui/input';
+import { Search } from 'lucide-react';
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;
@@ -118,21 +120,17 @@ export const TimeSlicedSearch = ({
 
   const searchInput = (
     <div className="fixed top-4 right-8 z-50 w-80 flex items-center gap-2">
-      <input
-        type="text"
-        value={localValue}
-        onChange={handleChange}
-        placeholder={placeholder}
-        className={className}
-        style={{
-          borderColor: isTyping ? '#3b82f6' : undefined,
-          boxShadow: isTyping ? '0 0 0 2px rgba(59, 130, 246, 0.1)' : undefined,
-          transition: 'border-color 150ms ease, box-shadow 150ms ease'
-        }}
-        // Optimize for performance
-        spellCheck={false}
-        autoComplete="off"
-      />
+        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+            type="text"
+            placeholder="Search attributes in tables..."
+            aria-label="Search attributes in tables"
+            value={localValue}
+            onChange={handleChange}
+            className="pl-8 pr-8 h-8 text-xs"
+            spellCheck={false}
+            autoComplete="off"
+        />
       {isTyping && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>

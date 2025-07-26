@@ -124,7 +124,6 @@ function DatamodelViewContent() {
                             />
                         </div>
                     )}
-                    {/* HIGH-PERFORMANCE TIME-SLICED SEARCH BAR */}
                     <TimeSlicedSearch 
                         onSearch={handleSearch} 
                         onLoadingChange={handleLoadingChange}
