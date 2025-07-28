@@ -58,25 +58,91 @@ jobs:
 
           jq --arg version "$NEXT_VERSION" '.Website = $version' .release-please-manifest.json > temp.json && mv temp.json .release-please-manifest.json
 
-          echo "## [$NEXT_VERSION] - $(date +'%Y-%m-%d')" > temp_changelog.md
-          echo "" >> temp_changelog.md
-          echo "### Changed" >> temp_changelog.md
+          # Generate enhanced changelog
+          cat > generate_changelog.js << 'EOF'
+          const { execSync } = require('child_process');
+
+          function generateChangelog(lastTag, nextVersion, repo) {
+            let commits = [];
+            try {
+              const output = execSync(`git log ${lastTag}..HEAD --pretty=format:"%h|%s"`).toString();
+              commits = output.split('\n').filter(line => line.trim()).map(line => {
+                const [hash, message] = line.split('|');
+                return { hash, message };
+              });
+            } catch (error) {
+              console.log('No commits found or error getting commits');
+              return `## [${nextVersion}] - ${new Date().toISOString().split('T')[0]}\n\n### Changed\n- Manual release\n\n`;
+            }
+
+            const categories = {
+              'Features': [],
+              'Bug Fixes': [],
+              'Performance Improvements': [],
+              'UI/UX Improvements': [],
+              'Code Refactoring': [],
+              'Other Changes': []
+            };
+
+            commits.forEach(commit => {
+              const { hash, message } = commit;
+              const link = `([${hash}](https://github.com/${repo}/commit/${hash}))`;
+              let cleanMessage = message;
+              
+              // Clean up common prefixes
+              cleanMessage = cleanMessage.replace(/^(feat|feature):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^(fix|bugfix):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^(perf|performance):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^(style|ui|ux):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^(refactor|refact):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^chore:\s*/i, '');
+              
+              // Categorize commits
+              if (message.match(/^feat|feature|add|implement|new/i) || message.includes('PBI')) {
+                categories['Features'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/^fix|bug|resolve|correct/i)) {
+                categories['Bug Fixes'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/perf|performance|optim|speed|fast/i)) {
+                categories['Performance Improvements'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/ui|ux|style|design|visual|appearance/i)) {
+                categories['UI/UX Improvements'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/refactor|restructure|reorganize|clean/i)) {
+                categories['Code Refactoring'].push(`* ${cleanMessage} ${link}`);
+              } else if (!message.match(/^merge|^chore\(release\)/i)) {
+                categories['Other Changes'].push(`* ${cleanMessage} ${link}`);
+              }
+            });
+
+            let changelog = `## [${nextVersion}] - ${new Date().toISOString().split('T')[0]}\n\n`;
+            
+            Object.entries(categories).forEach(([category, items]) => {
+              if (items.length > 0) {
+                changelog += `### ${category}\n\n`;
+                items.forEach(item => {
+                  changelog += `${item}\n`;
+                });
+                changelog += '\n';
+              }
+            });
+
+            // If no categorized items, add a simple changed section
+            if (Object.values(categories).every(cat => cat.length === 0)) {
+              changelog += `### Changed\n\n* Manual ${nextVersion.includes('major') ? 'major' : nextVersion.includes('minor') ? 'minor' : 'patch'} release\n\n`;
+            }
+
+            return changelog;
+          }
+
+          const lastTag = process.argv[2];
+          const nextVersion = process.argv[3];
+          const repo = process.argv[4];
+          console.log(generateChangelog(lastTag, nextVersion, repo));
+          EOF
 
           LAST_TAG="website-v$CURRENT_VERSION"
           git fetch --tags
-          if git rev-parse "$LAST_TAG" >/dev/null 2>&1; then
-            echo "- Changes since $CURRENT_VERSION:" >> temp_changelog.md
-            COMMITS=$(git log "$LAST_TAG"..HEAD --pretty=format:"- %s")
-            if [ -n "$COMMITS" ]; then
-              echo "$COMMITS" >> temp_changelog.md
-            else
-              echo "- No new commits since last version" >> temp_changelog.md
-            fi
-          else
-            echo "- Manual ${{ github.event.inputs.release_type }} release" >> temp_changelog.md
-            echo "- (No previous tag $LAST_TAG found to compare commits)" >> temp_changelog.md
-          fi
-          echo "" >> temp_changelog.md
+          
+          node generate_changelog.js "$LAST_TAG" "$NEXT_VERSION" "${{ github.repository }}" > temp_changelog.md
 
           if [ -f "Website/CHANGELOG.md" ]; then
             cat temp_changelog.md Website/CHANGELOG.md > temp_full_changelog.md
