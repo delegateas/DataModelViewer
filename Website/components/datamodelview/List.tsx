@@ -202,7 +202,6 @@ export const List = ({ }: IListProps) => {
                 return item.type === 'entity' && item.entity.SchemaName === datamodelView.currentSection;
             });
             if (isInView) {
-                console.log("List: setting loading false");
                 dispatch({ type: 'SET_LOADING', payload: false });
             }
         }
