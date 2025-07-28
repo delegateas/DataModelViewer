@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Input } from '../ui/input';
-import { Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -88,6 +88,22 @@ export const TimeSlicedSearch = ({
 
   }, [isTyping, onLoadingChange, scheduleSearch]);
 
+  // Handle clear button
+  const handleClear = useCallback(() => {
+    setLocalValue('');
+    onSearch(''); // Clear search immediately
+    setIsTyping(false);
+    onLoadingChange(false);
+    
+    // Clear any pending timeouts
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+  }, [onSearch, onLoadingChange]);
+
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -170,16 +186,26 @@ export const TimeSlicedSearch = ({
             value={localValue}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            className="pl-10 pr-8 h-9 text-sm"
+            className="pl-10 pr-10 h-9 text-sm"
             spellCheck={false}
             autoComplete="off"
             autoCapitalize="off"
           />
-          {isTyping && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+          {/* Clear button or loading indicator */}
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex justify-center items-center">
+            {isTyping ? (
               <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
+            ) : localValue ? (
+              <button
+                onClick={handleClear}
+                className="w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Clear search"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
         
         {/* Navigation Buttons */}
