@@ -24,8 +24,6 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const dispatch = useSidebarDispatch();
     const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
 
-    console.log(currentSection, currentGroup);
-
     const dataModelDispatch = useDatamodelViewDispatch();
 
     const { groups } = useDatamodelData();
