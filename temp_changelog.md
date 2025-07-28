@@ -1,15 +1,11 @@
-## [1.2.2] - 2025-07-28
+## [1.2.3] - 2025-07-28
 
 ### Features
 
-* PBI 119268 - password field marked password, and UI reimplementation ([f8c8259](https://github.com/delegateas/DataModelViewer/commit/f8c8259))
+* tiny padding added to scroll, to ensure correct section is found in the list ([9fd4e94](https://github.com/delegateas/DataModelViewer/commit/9fd4e94))
 
-### Code Refactoring
+### UI/UX Improvements
 
-* restructureing release pipeline ([63f5b60](https://github.com/delegateas/DataModelViewer/commit/63f5b60))
-
-### Other Changes
-
-* changed gradient ([25fa000](https://github.com/delegateas/DataModelViewer/commit/25fa000))
+* ui adjustments to section and group selection ([759966e](https://github.com/delegateas/DataModelViewer/commit/759966e))
 
 
