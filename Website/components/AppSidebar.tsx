@@ -29,8 +29,8 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
       {isMobile && (
         <button onClick={toggleSidebar}
           className={clsx(
-            'fixed top-4 z-50 transition-all bg-white border border-gray-300 shadow rounded-full p-2',
-            isOpen ? 'left-52' : 'left-4'
+            'fixed top-4 z-[60] transition-all bg-white border border-gray-300 shadow rounded-full p-2',
+            isOpen ? 'left-[272px]' : 'left-4'
           )}
           aria-label={isOpen ? 'Close Sidebar' : 'Open Sidebar'}
         >
@@ -41,7 +41,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
       {/* Overlay for mobile sidebar */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-30"
+          className="fixed inset-0 bg-black bg-opacity-30 z-[35]"
           onClick={toggleSidebar}
           aria-label="Close sidebar overlay"
         />
@@ -50,7 +50,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
       {/* Sidebar */}
       <div
         className={clsx(
-          'h-screen bg-sidebar border-r border-sidebar-border z-40',
+          'h-screen bg-sidebar border-r border-sidebar-border z-[50]',
           'transition-all duration-300',
           isMobile
             ? [
@@ -109,7 +109,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
         {!isMobile && (
           <button
             onClick={toggleElement}
-            className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-12 bg-gray-50 border border-gray-300 shadow rounded-sm flex items-center justify-center z-50 hover:bg-blue-50"
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-12 bg-gray-50 border border-gray-300 shadow rounded-sm flex items-center justify-center z-[60] hover:bg-blue-50"
             style={{ marginRight: '-12px' }}
             aria-label={showElement ? 'Hide Details' : 'Show Details'}
           >

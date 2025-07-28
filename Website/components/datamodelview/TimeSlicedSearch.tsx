@@ -4,6 +4,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Input } from '../ui/input';
 import { Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;
@@ -28,10 +30,15 @@ export const TimeSlicedSearch = ({
   const [localValue, setLocalValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  const { isOpen } = useSidebar();
+  const isMobile = useIsMobile();
   
   const searchTimeoutRef = useRef<number>();
   const typingTimeoutRef = useRef<number>();
   const frameRef = useRef<number>();
+
+  // Hide search on mobile when sidebar is open
+  const shouldHideSearch = isMobile && isOpen;
 
   // Time-sliced debouncing using requestAnimationFrame
   const scheduleSearch = useCallback((value: string) => {
@@ -151,7 +158,7 @@ export const TimeSlicedSearch = ({
   }, []);
 
   const searchInput = (
-    <div className="fixed top-4 right-8 z-50 w-80">
+    <div className={`fixed top-4 right-8 z-50 w-[280px] transition-opacity duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       {/* Search Input Container */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
