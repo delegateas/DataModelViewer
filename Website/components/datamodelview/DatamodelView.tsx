@@ -41,7 +41,12 @@ function DatamodelViewContent() {
     // Isolated search handlers - these don't depend on component state
     const handleSearch = useCallback((searchValue: string) => {
         if (workerRef.current && groups) {
-            workerRef.current.postMessage(searchValue.length >= 3 ? searchValue : "");
+            if (searchValue.length >= 3) {
+                workerRef.current.postMessage(searchValue);
+            } else {
+                // Clear search - reset to show all groups
+                datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
+            }
         }
         datamodelDataDispatch({ type: "SET_SEARCH", payload: searchValue.length >= 3 ? searchValue : "" });
         setCurrentSearchIndex(searchValue.length >= 3 ? 1 : 0); // Reset to first result when searching, 0 when cleared
