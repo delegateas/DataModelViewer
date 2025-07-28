@@ -5,6 +5,8 @@ import { SidebarClose, SidebarOpen } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import SidebarNavRail from './SidebarNavRail'
 import clsx from 'clsx'
+import { Logo } from '@/generated/Data'
+import { Separator } from './ui/separator'
 
 interface IAppSidebarProps {}
 
@@ -70,12 +72,35 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
         {/* Header */}
         <div className="w-full h-16 border-b border-sidebar-border p-2 flex justify-center items-center bg-white relative">
           {isMobile ? (
-            <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} />
+            <>
+              {Logo ? (
+                <div className='flex items-center align-center'>
+                  <img src={Logo} alt="Logo" className="h-10 w-10" draggable={false} />
+                  <Separator orientation="vertical" className="mx-2 h-6" />
+                  <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
+                </div>
+              ) : (
+                <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
+              )}
+            </>
           ) : (
             showElement ? (
-              <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-full" draggable={false} />
+              <div className='flex items-center justify-center h-full'>
+                {Logo ? (
+                  <div className='flex items-center align-center'>
+                    <img src={Logo} alt="Logo" className="h-10 w-10" draggable={false} />
+                    <Separator orientation="vertical" className="mx-2 h-6" />
+                    <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
+                  </div>
+                ) : (
+                  <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
+                )}
+              </div>
             ) : (
-              <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} />
+              <div className="relative w-full h-full flex items-center justify-center">
+                <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} />
+                { Logo && <img src={Logo} className='absolute rounded-md shadow-sm border border-blue-500 -bottom-1 -right-1 h-6 w-6 p-1 bg-white' /> }
+              </div>
             )
           )}
         </div>
