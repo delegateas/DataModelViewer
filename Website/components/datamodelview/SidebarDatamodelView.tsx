@@ -23,6 +23,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const isTouch = useTouch();
     const dispatch = useSidebarDispatch();
     const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
+
     const dataModelDispatch = useDatamodelViewDispatch();
 
     const { groups } = useDatamodelData();
@@ -81,8 +82,8 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     };
 
     const handleSectionClick = (sectionId: string) => {
-        console.log("Loading true for section click");
         dataModelDispatch({ type: 'SET_LOADING', payload: true });
+        dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: sectionId });
         if (scrollToSection) {
             scrollToSection(sectionId);
         }
@@ -136,14 +137,16 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                 )}
                                 onClick={e => {
                                     e.stopPropagation();
+                                    handleGroupClick(group.Name);
                                     if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName);
                                 }}
                                 aria-label={`Link to first entity in ${group.Name}`}
                                 tabIndex={0}
                             >
                                 <ExternalLink className="w-4 h-4" onClick={e => {
-                                    e.stopPropagation();
-                                    if (group.Entities.length > 0) handleGroupClick(group.Name);
+                                    e.preventDefault();
+                                    handleGroupClick(group.Name);
+                                    if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName);
                                 }} />
                             </a>
                         </CollapsibleTrigger>
@@ -168,7 +171,10 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                             isMatch ? "ring-1 ring-yellow-300" : ""
                                         )}
                                         key={entity.SchemaName}
-                                        onClick={() => handleSectionClick(entity.SchemaName)}
+                                        onClick={() => {
+                                            handleGroupClick(group.Name)
+                                            handleSectionClick(entity.SchemaName)
+                                        }}
                                     >
                                         {entity.IconBase64 ? <img className="h-4 w-4" src={`data:image/svg+xml;base64,${entity.IconBase64}`} alt="icon" /> : <Puzzle className="w-4 h-4" />}
                                         <span className="truncate">

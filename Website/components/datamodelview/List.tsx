@@ -147,8 +147,9 @@ export const List = ({ }: IListProps) => {
         const virtualItems = rowVirtualizer.getVirtualItems();
         
         // Find the first visible item
+        const padding = 16;
         const firstVisibleItem = virtualItems.find(v => {
-            return v.start <= scrollOffset && v.end >= scrollOffset;
+            return v.start <= scrollOffset && (v.end - padding) >= scrollOffset;
         });
         
         if (firstVisibleItem) {
@@ -202,7 +203,6 @@ export const List = ({ }: IListProps) => {
                 return item.type === 'entity' && item.entity.SchemaName === datamodelView.currentSection;
             });
             if (isInView) {
-                console.log("List: setting loading false");
                 dispatch({ type: 'SET_LOADING', payload: false });
             }
         }
