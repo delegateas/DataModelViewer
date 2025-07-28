@@ -1,11 +1,45 @@
-# Data Model Viewer
-![image](https://github.com/user-attachments/assets/9d91e37c-7e46-4654-b31d-5bc3e5d632ea)
-Allows you to expose your Dataverse data model as a website.
-## Grouping
-Add a # xxx to your entity description in order to group that entity in group xxx.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/delegateas/DataModelViewer/main/Website/public/DMVLOGOHORZ.svg" alt="logo" width="240" />
+</p>
 
-# Settings to run locally
-## Generator
+<p align="center">
+  <a href="https://www.buymeacoffee.com/VishwaGauravIn" target="_blank">
+    <img alt="" src="https://skillicons.dev/icons?i=ts,html,css,react,tailwind,cs,nextjs" />
+  </a>
+</p>
+
+# 👋 Introductions
+
+<p className="text-gray-700 mb-4">
+  <strong>Data Model Viewer</strong> is your centralized tool for exploring and understanding your Dataverse metadata. Designed with clarity and efficiency in mind, it gives you a single, streamlined access point to view and navigate your data tables.
+</p>
+
+<img width="1917" height="920" alt="image" src="https://github.com/user-attachments/assets/6be34fb3-09a9-4aad-b250-8f150897efd2" />
+
+---
+
+# ⚙️ Features & Configuration
+[Grouping](#grouping)
+
+[Generator](#setup-generator)
+
+[Website](#setup-website)
+
+[Pipeline Setup](#settings-in-pipeline)
+
+## Grouping
+To create a group for a subset of tables, you must simply add a "#" at the start of your table description. See below:
+
+> [!NOTE]
+> Some tables do not have descriptions - e.g. Team.
+> For these tables use the Environment variable `TableGroups`.
+> Alternatively use only the env. variable.
+
+<img width="638" height="481" alt="image" src="https://github.com/user-attachments/assets/0b95e0a3-9710-464d-ac6c-205f14ddf0c2" />
+
+---
+
+## Setup Generator
 Add `Generator/appsettings.local.json` as a file and paste your environment and solutions. Remember that the solutions must have the same publisher prefix.
 
 ```
@@ -19,7 +53,7 @@ Remember to set the file to Copy If Newer
 
 Authentication is handled using `DefaultAzureCredential`. If you are using Visual Studio you can select a user that is used for all of these credentials. Go to Tools -> Options -> Search for Azure -> Account Selection. Login and select a user that has access to that Dataverse Environment.
  
-## Website
+## Setup Website
 Add `Website/.env` file to run this locally.
 
 ```
