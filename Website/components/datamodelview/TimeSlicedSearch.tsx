@@ -3,7 +3,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Input } from '../ui/input';
-import { Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;
@@ -28,10 +30,15 @@ export const TimeSlicedSearch = ({
   const [localValue, setLocalValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  const { isOpen } = useSidebar();
+  const isMobile = useIsMobile();
   
   const searchTimeoutRef = useRef<number>();
   const typingTimeoutRef = useRef<number>();
   const frameRef = useRef<number>();
+
+  // Hide search on mobile when sidebar is open
+  const shouldHideSearch = isMobile && isOpen;
 
   // Time-sliced debouncing using requestAnimationFrame
   const scheduleSearch = useCallback((value: string) => {
@@ -80,6 +87,22 @@ export const TimeSlicedSearch = ({
     }, 2000);
 
   }, [isTyping, onLoadingChange, scheduleSearch]);
+
+  // Handle clear button
+  const handleClear = useCallback(() => {
+    setLocalValue('');
+    onSearch(''); // Clear search immediately
+    setIsTyping(false);
+    onLoadingChange(false);
+    
+    // Clear any pending timeouts
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+  }, [onSearch, onLoadingChange]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -151,7 +174,7 @@ export const TimeSlicedSearch = ({
   }, []);
 
   const searchInput = (
-    <div className="fixed top-4 right-8 z-50 w-80">
+    <div className={`fixed top-4 right-8 z-50 w-[280px] transition-opacity duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       {/* Search Input Container */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
@@ -163,16 +186,26 @@ export const TimeSlicedSearch = ({
             value={localValue}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            className="pl-10 pr-8 h-9 text-sm"
+            className="pl-10 pr-10 h-9 text-sm"
             spellCheck={false}
             autoComplete="off"
             autoCapitalize="off"
           />
-          {isTyping && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+          {/* Clear button or loading indicator */}
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex justify-center items-center">
+            {isTyping ? (
               <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
+            ) : localValue ? (
+              <button
+                onClick={handleClear}
+                className="w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Clear search"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
         
         {/* Navigation Buttons */}

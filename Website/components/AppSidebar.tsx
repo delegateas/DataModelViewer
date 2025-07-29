@@ -5,6 +5,8 @@ import { SidebarClose, SidebarOpen } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import SidebarNavRail from './SidebarNavRail'
 import clsx from 'clsx'
+import { Logo } from '@/generated/Data'
+import { Separator } from './ui/separator'
 
 interface IAppSidebarProps {}
 
@@ -27,8 +29,8 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
       {isMobile && (
         <button onClick={toggleSidebar}
           className={clsx(
-            'fixed top-4 z-50 transition-all bg-white border border-gray-300 shadow rounded-full p-2',
-            isOpen ? 'left-52' : 'left-4'
+            'fixed top-4 z-[60] transition-all bg-white border border-gray-300 shadow rounded-full p-2',
+            isOpen ? 'left-[272px]' : 'left-4'
           )}
           aria-label={isOpen ? 'Close Sidebar' : 'Open Sidebar'}
         >
@@ -39,7 +41,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
       {/* Overlay for mobile sidebar */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-30"
+          className="fixed inset-0 bg-black bg-opacity-30 z-[35]"
           onClick={toggleSidebar}
           aria-label="Close sidebar overlay"
         />
@@ -48,7 +50,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
       {/* Sidebar */}
       <div
         className={clsx(
-          'h-screen bg-sidebar border-r border-sidebar-border z-40',
+          'h-screen bg-sidebar border-r border-sidebar-border z-[50]',
           'transition-all duration-300',
           isMobile
             ? [
@@ -70,12 +72,35 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
         {/* Header */}
         <div className="w-full h-16 border-b border-sidebar-border p-2 flex justify-center items-center bg-white relative">
           {isMobile ? (
-            <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} />
+            <>
+              {Logo ? (
+                <div className='flex items-center align-center'>
+                  <img src={Logo} alt="Logo" className="h-10 w-10" draggable={false} />
+                  <Separator orientation="vertical" className="mx-2 h-6" />
+                  <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
+                </div>
+              ) : (
+                <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
+              )}
+            </>
           ) : (
             showElement ? (
-              <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-full" draggable={false} />
+              <div className='flex items-center justify-center h-full'>
+                {Logo ? (
+                  <div className='flex items-center align-center'>
+                    <img src={Logo} alt="Logo" className="h-10 w-10" draggable={false} />
+                    <Separator orientation="vertical" className="mx-2 h-6" />
+                    <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
+                  </div>
+                ) : (
+                  <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
+                )}
+              </div>
             ) : (
-              <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} />
+              <div className="relative w-full h-full flex items-center justify-center">
+                <img src="/DMVLOGO.svg" alt="Logo" className="h-full" draggable={false} />
+                { Logo && <img src={Logo} className='absolute rounded-md shadow-sm border border-blue-500 -bottom-1 -right-1 h-6 w-6 p-1 bg-white' /> }
+              </div>
             )
           )}
         </div>
@@ -84,7 +109,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
         {!isMobile && (
           <button
             onClick={toggleElement}
-            className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-12 bg-gray-50 border border-gray-300 shadow rounded-sm flex items-center justify-center z-50 hover:bg-blue-50"
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-12 bg-gray-50 border border-gray-300 shadow rounded-sm flex items-center justify-center z-[60] hover:bg-blue-50"
             style={{ marginRight: '-12px' }}
             aria-label={showElement ? 'Hide Details' : 'Show Details'}
           >
