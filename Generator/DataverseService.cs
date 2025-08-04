@@ -61,7 +61,6 @@ namespace Generator
                 ).ToList());
 
             var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution, entitiesInSolutionMetadata.ToDictionary(x => x.LogicalName, x => x.Privileges));
-            var pluginStepAttributeMap = await GetPluginStepAttributes();
             var entityLogicalNamesInSolution = entitiesInSolutionMetadata.Select(e => e.LogicalName).ToHashSet();
 
             logger.LogInformation("There are {Count} entities in the solution.", entityLogicalNamesInSolution.Count);
@@ -81,6 +80,7 @@ namespace Generator
 
             var allEntityMetadata = entitiesInSolutionMetadata.Concat(referencedEntityMetadata).ToList();
             var entityIconMap = await GetEntityIconMap(allEntityMetadata);
+            var pluginStepAttributeMap = await GetPluginStepAttributes(allEntityMetadata);
 
             var records =
                 entitiesInSolutionMetadata
@@ -546,7 +546,7 @@ namespace Generator
             return $"{uri.Scheme}://{uri.Host}";
         }
 
-        private async Task<Dictionary<string, HashSet<string>>> GetPluginStepAttributes()
+        private async Task<Dictionary<string, HashSet<string>>> GetPluginStepAttributes(IEnumerable<EntityMetadata> allEntityMetadata)
         {
             logger.LogInformation("Retrieving plugin step attributes...");
             
@@ -554,6 +554,11 @@ namespace Generator
 
             try
             {
+                // Build type code to logical name mapping from entity metadata
+                var typeCodeToLogicalName = allEntityMetadata
+                    .Where(entity => entity.ObjectTypeCode.HasValue)
+                    .ToDictionary(entity => entity.ObjectTypeCode!.Value, entity => entity.LogicalName);
+
                 // Query sdkmessageprocessingstep table for steps with filtering attributes
                 var stepQuery = new QueryExpression("sdkmessageprocessingstep")
                 {
@@ -583,32 +588,6 @@ namespace Generator
 
                 var stepResults = await client.RetrieveMultipleAsync(stepQuery);
                 
-                // Build a simple type code to entity name mapping using known common entities
-                var typeCodeToLogicalName = new Dictionary<int, string>
-                {
-                    { 1, "account" },
-                    { 2, "contact" },
-                    { 3, "opportunity" },
-                    { 4, "lead" },
-                    { 5, "note" },
-                    { 6, "businessunit" },
-                    { 8, "systemuser" },
-                    { 9, "team" },
-                    { 10, "businessunitnewsarticle" },
-                    { 14, "incident" },
-                    { 112, "case" },
-                    { 4200, "campaignactivity" },
-                    { 4201, "list" },
-                    { 4202, "campaign" },
-                    { 4204, "fax" },
-                    { 4207, "letter" },
-                    { 4210, "phonecall" },
-                    { 4212, "task" },
-                    { 4214, "service" },
-                    { 4216, "contract" },
-                    { 4220, "workflow" }
-                };
-                
                 foreach (var step in stepResults.Entities)
                 {
                     var filteringAttributes = step.GetAttributeValue<string>("filteringattributes");
@@ -617,16 +596,9 @@ namespace Generator
                     if (string.IsNullOrEmpty(filteringAttributes) || !entityTypeCode.HasValue)
                         continue;
                     
-                    // Try to get entity logical name from our known mapping first
-                    string? logicalName = null;
-                    if (typeCodeToLogicalName.ContainsKey(entityTypeCode.Value))
+                    // Get entity logical name from metadata mapping
+                    if (!typeCodeToLogicalName.TryGetValue(entityTypeCode.Value, out var logicalName))
                     {
-                        logicalName = typeCodeToLogicalName[entityTypeCode.Value];
-                    }
-                    else
-                    {
-                        // For unknown type codes, we'll skip them for now
-                        // In a full implementation, you'd want to query the entity metadata
                         logger.LogDebug("Unknown entity type code: {TypeCode}", entityTypeCode.Value);
                         continue;
                     }
