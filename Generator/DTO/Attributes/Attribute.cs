@@ -7,6 +7,7 @@ public abstract class Attribute
     public bool IsStandardFieldModified { get; set; }
     public bool IsCustomAttribute { get; set; }
     public bool IsPrimaryId { get; set; }
+    public bool HasPluginStep { get; set; }
     public string DisplayName { get; }
     public string SchemaName { get; }
     public string Description { get; }
@@ -16,10 +17,11 @@ public abstract class Attribute
     public bool IsColumnSecured { get; }
     public CalculationMethods? CalculationMethod { get; }
 
-    protected Attribute(AttributeMetadata metadata)
+    protected Attribute(AttributeMetadata metadata, bool hasPluginStep = false)
     {
         IsPrimaryId = metadata.IsPrimaryId ?? false;
         IsCustomAttribute = metadata.IsCustomAttribute ?? false;
+        HasPluginStep = hasPluginStep;
         DisplayName = metadata.DisplayName.UserLocalizedLabel?.Label ?? string.Empty;
         SchemaName = metadata.SchemaName;
         Description = metadata.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty;

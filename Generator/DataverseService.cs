@@ -61,6 +61,7 @@ namespace Generator
                 ).ToList());
 
             var logicalNameToSecurityRoles = await GetSecurityRoles(rolesInSolution, entitiesInSolutionMetadata.ToDictionary(x => x.LogicalName, x => x.Privileges));
+            var pluginStepAttributeMap = await GetPluginStepAttributes();
             var entityLogicalNamesInSolution = entitiesInSolutionMetadata.Select(e => e.LogicalName).ToHashSet();
 
             logger.LogInformation("There are {Count} entities in the solution.", entityLogicalNamesInSolution.Count);
@@ -118,6 +119,7 @@ namespace Generator
                         securityRoles ?? [],
                         keys ?? [],
                         entityIconMap,
+                        pluginStepAttributeMap,
                         configuration);
                 });
         }
@@ -132,13 +134,16 @@ namespace Generator
             List<SecurityRole> securityRoles,
             List<Key> keys,
             Dictionary<string, string> entityIconMap,
+            Dictionary<string, HashSet<string>> pluginStepAttributeMap,
             IConfiguration configuration)
         {
             var attributes =
                 relevantAttributes
                 .Select(metadata =>
                 {
-                    var attr = GetAttribute(metadata, entity, logicalToSchema, logger);
+                    pluginStepAttributeMap.TryGetValue(entity.LogicalName, out var entityPluginAttributes);
+                    var hasPluginStep = entityPluginAttributes?.Contains(metadata.LogicalName) == true;
+                    var attr = GetAttribute(metadata, entity, logicalToSchema, hasPluginStep, logger);
                     attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
                     return attr;
                 })
@@ -212,9 +217,9 @@ namespace Generator
                     iconBase64);
         }
 
-        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, ExtendedEntityInformation> logicalToSchema, ILogger<DataverseService> logger)
+        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, ExtendedEntityInformation> logicalToSchema, bool hasPluginStep, ILogger<DataverseService> logger)
         {
-            return metadata switch
+            Attribute attr = metadata switch
             {
                 PicklistAttributeMetadata picklist => new ChoiceAttribute(picklist),
                 MultiSelectPicklistAttributeMetadata multiSelect => new ChoiceAttribute(multiSelect),
@@ -230,6 +235,8 @@ namespace Generator
                 FileAttributeMetadata fileAttribute => new FileAttribute(fileAttribute),
                 _ => new GenericAttribute(metadata)
             };
+            attr.HasPluginStep = hasPluginStep;
+            return attr;
         }
 
         private static (string? Group, string? Description) GetGroupAndDescription(EntityMetadata entity, IDictionary<string, string> tableGroups)
@@ -537,6 +544,112 @@ namespace Generator
         {
             var uri = new Uri(url);
             return $"{uri.Scheme}://{uri.Host}";
+        }
+
+        private async Task<Dictionary<string, HashSet<string>>> GetPluginStepAttributes()
+        {
+            logger.LogInformation("Retrieving plugin step attributes...");
+            
+            var pluginStepAttributeMap = new Dictionary<string, HashSet<string>>();
+
+            try
+            {
+                // Query sdkmessageprocessingstep table for steps with filtering attributes
+                var stepQuery = new QueryExpression("sdkmessageprocessingstep")
+                {
+                    ColumnSet = new ColumnSet("filteringattributes", "sdkmessagefilterid"),
+                    Criteria = new FilterExpression
+                    {
+                        Conditions =
+                        {
+                            new ConditionExpression("filteringattributes", ConditionOperator.NotNull),
+                            new ConditionExpression("filteringattributes", ConditionOperator.NotEqual, ""),
+                            new ConditionExpression("statecode", ConditionOperator.Equal, 0) // Only active steps
+                        }
+                    },
+                    LinkEntities =
+                    {
+                        new LinkEntity
+                        {
+                            LinkFromEntityName = "sdkmessageprocessingstep",
+                            LinkFromAttributeName = "sdkmessagefilterid",
+                            LinkToEntityName = "sdkmessagefilter",
+                            LinkToAttributeName = "sdkmessagefilterid",
+                            Columns = new ColumnSet("primaryobjecttypecode"),
+                            EntityAlias = "filter"
+                        }
+                    }
+                };
+
+                var stepResults = await client.RetrieveMultipleAsync(stepQuery);
+                
+                // Build a simple type code to entity name mapping using known common entities
+                var typeCodeToLogicalName = new Dictionary<int, string>
+                {
+                    { 1, "account" },
+                    { 2, "contact" },
+                    { 3, "opportunity" },
+                    { 4, "lead" },
+                    { 5, "note" },
+                    { 6, "businessunit" },
+                    { 8, "systemuser" },
+                    { 9, "team" },
+                    { 10, "businessunitnewsarticle" },
+                    { 14, "incident" },
+                    { 112, "case" },
+                    { 4200, "campaignactivity" },
+                    { 4201, "list" },
+                    { 4202, "campaign" },
+                    { 4204, "fax" },
+                    { 4207, "letter" },
+                    { 4210, "phonecall" },
+                    { 4212, "task" },
+                    { 4214, "service" },
+                    { 4216, "contract" },
+                    { 4220, "workflow" }
+                };
+                
+                foreach (var step in stepResults.Entities)
+                {
+                    var filteringAttributes = step.GetAttributeValue<string>("filteringattributes");
+                    var entityTypeCode = step.GetAttributeValue<AliasedValue>("filter.primaryobjecttypecode")?.Value as int?;
+                    
+                    if (string.IsNullOrEmpty(filteringAttributes) || !entityTypeCode.HasValue)
+                        continue;
+                    
+                    // Try to get entity logical name from our known mapping first
+                    string? logicalName = null;
+                    if (typeCodeToLogicalName.ContainsKey(entityTypeCode.Value))
+                    {
+                        logicalName = typeCodeToLogicalName[entityTypeCode.Value];
+                    }
+                    else
+                    {
+                        // For unknown type codes, we'll skip them for now
+                        // In a full implementation, you'd want to query the entity metadata
+                        logger.LogDebug("Unknown entity type code: {TypeCode}", entityTypeCode.Value);
+                        continue;
+                    }
+                    
+                    if (!pluginStepAttributeMap.ContainsKey(logicalName))
+                        pluginStepAttributeMap[logicalName] = new HashSet<string>();
+                    
+                    // Parse comma-separated attribute names
+                    var attributeNames = filteringAttributes.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var attributeName in attributeNames)
+                    {
+                        pluginStepAttributeMap[logicalName].Add(attributeName.Trim());
+                    }
+                }
+                
+                logger.LogInformation("Found {Count} entities with plugin step attributes.", pluginStepAttributeMap.Count);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Failed to retrieve plugin step attributes: {Message}", ex.Message);
+            }
+            
+            return pluginStepAttributeMap;
         }
 
         private static async Task<AccessToken> FetchAccessToken(TokenCredential credential, string scope, ILogger logger)

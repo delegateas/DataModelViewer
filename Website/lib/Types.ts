@@ -44,6 +44,7 @@ export type BaseAttribute = {
     IsPrimaryId: boolean;
     IsCustomAttribute: boolean;
     IsStandardFieldModified: boolean;
+    HasPluginStep: boolean;
     DisplayName: string,
     SchemaName: string,
     Description: string | null,
