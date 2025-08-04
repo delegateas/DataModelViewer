@@ -27,7 +27,7 @@ internal class WebsiteBuilder
         sb.AppendLine("");
         sb.AppendLine($"export const LastSynched: Date = new Date('{DateTimeOffset.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}');");
         var logoUrl = configuration.GetValue<string?>("Logo", defaultValue: null);
-        var jsValue = logoUrl != null ? $"\"{logoUrl}\"" : null;
+        var jsValue = logoUrl != null ? $"\"{logoUrl}\"" : "null";
         sb.AppendLine($"export const Logo: string | null = {jsValue};");
         sb.AppendLine("");
         sb.AppendLine("export let Groups: GroupType[] = [");
