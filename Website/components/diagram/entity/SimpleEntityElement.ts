@@ -24,12 +24,12 @@ export class SimpleEntityElement extends dia.Element {
                             fill: '#fff',
                             stroke: '#42a5f5',
                             strokeWidth: 2,
-                            visibility: 'hidden', // Make port invisible
+                            visibility: 'hidden',
                         },
                     },
                 },
                 left: {
-                    position: { name: 'left' },
+                    position: { name: 'left', args: { dx: 6 } }, 
                     attrs: {
                         circle: {
                             r: 6,
@@ -37,7 +37,7 @@ export class SimpleEntityElement extends dia.Element {
                             fill: '#fff',
                             stroke: '#42a5f5',
                             strokeWidth: 2,
-                            visibility: 'hidden', // Make port invisible
+                            visibility: 'hidden',
                         },
                     },
                 },
@@ -50,7 +50,7 @@ export class SimpleEntityElement extends dia.Element {
                             fill: '#fff',
                             stroke: '#42a5f5',
                             strokeWidth: 2,
-                            visibility: 'hidden', // Make port invisible
+                            visibility: 'hidden',
                         },
                     },
                 },
@@ -63,7 +63,7 @@ export class SimpleEntityElement extends dia.Element {
                             fill: '#fff',
                             stroke: '#42a5f5',
                             strokeWidth: 2,
-                            visibility: 'hidden', // Make port invisible
+                            visibility: 'hidden',
                         },
                     },
                 },

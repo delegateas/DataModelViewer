@@ -3,6 +3,8 @@ import { dia, routers } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
 import { EntityElement } from '@/components/diagram/entity/entity';
 import { AvoidRouter } from '@/components/diagram/avoid-router/avoidrouter';
+import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
+import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiagramRender';
 
 export type DiagramType = 'detailed' | 'simple';
 

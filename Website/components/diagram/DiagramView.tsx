@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { dia, shapes, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
 import { EntityElement } from '@/components/diagram/entity/entity';
@@ -18,10 +18,10 @@ import { AppSidebar } from '../AppSidebar';
 import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
 import { SidebarDiagramView } from './SidebarDiagramView';
 import { useSidebarDispatch } from '@/contexts/SidebarContext';
+import { SimpleDiagramRenderer } from './renderers/SimpleDiagramRender';
+import { DetailedDiagramRender } from './renderers/DetailedDiagramRender';
 
 interface IDiagramView {}
-
-const routerPadding = 16;
 
 const DiagramContent = () => {
     const { 
@@ -45,51 +45,41 @@ const DiagramContent = () => {
     const [isAddAttributeModalOpen, setIsAddAttributeModalOpen] = useState(false);
     const [selectedEntityForAttribute, setSelectedEntityForAttribute] = useState<string>();
 
-    // Auto-select first group on mount
+    const renderer = useMemo(() => {
+        if (!graph) return null;
+
+        const RendererClass = (() => {
+            switch (diagramType) {
+                case 'simple':
+                    return SimpleDiagramRenderer;
+                case 'detailed':
+                    return DetailedDiagramRender;
+                default:
+                    return SimpleDiagramRenderer; // fallback
+            }
+        })();
+
+        return new RendererClass(graph, {
+            setSelectedKey,
+            setSelectedEntityForAttribute,
+            setIsAddAttributeModalOpen
+        });
+    }, [diagramType, graph, setSelectedKey, setSelectedEntityForAttribute, setIsAddAttributeModalOpen]);
+
     useEffect(() => {
-        if (Groups.length > 0 && !selectedGroup) {
-            selectGroup(Groups[0]);
-        }
+        if (Groups.length > 0 && !selectedGroup) selectGroup(Groups[0]);
     }, [Groups, selectedGroup, selectGroup]);
 
     useEffect(() => {
-        const handleDocumentClick = (e: MouseEvent) => {
-            const target = (e.target as HTMLElement).closest('button[data-schema-name]') as HTMLElement;
-            const addButton = (e.target as HTMLElement).closest('button[data-add-attribute]') as HTMLElement;
-            
-            if (addButton) {
-                // Find the entity this add button belongs to
-                const entityElement = addButton.closest('[data-entity-schema]') as HTMLElement;
-                if (entityElement) {
-                    const entitySchema = entityElement.dataset.entitySchema;
-                    setSelectedEntityForAttribute(entitySchema);
-                    setIsAddAttributeModalOpen(true);
-                }
-                return;
-            }
-            
-            if (target) {
-                const schemaName = target.dataset.schemaName!;
-                const isKey = target.dataset.isKey === 'true';
-
-                if (isKey) {
-                    setSelectedKey(schemaName);
-                }
-            } else {
-                // Clicked outside of any key attribute, clear selection
-                setSelectedKey(undefined);
-            }
-        };
-
-        document.addEventListener('click', handleDocumentClick);
-        
+        if (!renderer) return;
+        document.addEventListener('click', renderer.onDocumentClick);
         return () => {
-            document.removeEventListener('click', handleDocumentClick);
+            document.removeEventListener('click', renderer.onDocumentClick);
         };
-    }, []);
+    }, [renderer]);
 
     useEffect(() => {
-        if (!graph || !paper || !selectedGroup) return;
+        if (!graph || !paper || !selectedGroup || !renderer) return;
 
         // Clear existing elements
         graph.clear();
@@ -123,156 +113,17 @@ const DiagramContent = () => {
 
         // Store entity elements and port maps by SchemaName for easy lookup
         const entityMap = new Map();
-
         // Create entities in grid layout
         currentEntities.forEach((entity, index) => {
             const position = layout.positions[index] || { x: 50, y: 50 };
-            
-            if (diagramType === 'simple') {
-                // Create simple entity (no attributes, no ports)
-                const entityElement = new SimpleEntityElement({
-                    position,
-                    data: { entity }
-                });
-                entityElement.addTo(graph);
-                
-                // Create port map with 4 directional ports for simple entities
-                const simplePortMap = {
-                    top: 'port-top',
-                    right: 'port-right',
-                    bottom: 'port-bottom',
-                    left: 'port-left'
-                };
-                
-                entityMap.set(entity.SchemaName, { element: entityElement, portMap: simplePortMap });
-            } else {
-                // Create detailed entity with attributes and ports
-                const { visibleItems, portMap } = EntityElement.getVisibleItemsAndPorts(entity);
-                const entityElement = new EntityElement({
-                    position,
-                    data: { entity, setSelectedKey, selectedKey }
-                });
-                entityElement.addTo(graph);
-                entityMap.set(entity.SchemaName, { element: entityElement, portMap });
-            }
+            const { element, portMap } = renderer.createEntity(entity, position);
+            entityMap.set(entity.SchemaName, { element, portMap });
         });
         
         util.nextFrame(() => {
-            // Get all entity elements (exclude background dots and links)
-            const entityElements = graph.getElements().filter(el => 
-                el.get('type') !== 'background.dots' && 
-                el.get('type') !== 'standard.Link'
-            );
-
-            // Create relationships
-            for (const entity of currentEntities) {
-                const entityInfo = entityMap.get(entity.SchemaName);
-                if (!entityInfo) continue;
-                const { portMap } = entityInfo;
-                const { visibleItems } = EntityElement.getVisibleItemsAndPorts(entity);
-
-                if (diagramType === 'simple') {
-                    // Find all lookup attributes and create links
-                    for (const attr of entity.Attributes) {
-                        if (attr.AttributeType !== "LookupAttribute") continue;
-                        
-                        for (const target of attr.Targets) {
-                            const targetInfo = entityMap.get(target.Name);
-                            if (!targetInfo) continue;
-
-                            const sourceId = entityInfo.element.id;
-                            const targetId = targetInfo.element.id;
-
-                            // Create link connecting entity centers
-                            const isSelfRef = sourceId === targetId;
-                            const link = new shapes.standard.Link({
-                                source: isSelfRef
-                                    ? { id: sourceId, port: portMap.right }
-                                    : { id: sourceId },
-                                target: isSelfRef
-                                    ? { id: targetId, port: portMap.left }
-                                    : { id: targetId },
-                                router: { name: 'avoid', args: {} },
-                                connector: { name: 'jumpover', args: { radius: 8 } },
-                                attrs: {
-                                    line: {
-                                        stroke: '#42a5f5',
-                                        strokeWidth: 2,
-                                        sourceMarker: {
-                                            type: 'ellipse',
-                                            cx: -6,
-                                            cy: 0,
-                                            rx: 4,
-                                            ry: 4,
-                                            fill: '#fff',
-                                            stroke: '#42a5f5',
-                                            strokeWidth: 2,
-                                        },
-                                        targetMarker: {
-                                            type: 'path',
-                                            d: 'M 10 -5 L 0 0 L 10 5 Z',
-                                            fill: '#42a5f5',
-                                            stroke: '#42a5f5'
-                                        }
-                                    }
-                                }
-                            });
-
-                            link.addTo(graph);
-                        }
-                    }
-                } else {
-                    // For detailed diagram, use ports
-                    for (let i = 1; i < visibleItems.length; i++) {
-                        const attr = visibleItems[i];
-                        if (attr.AttributeType !== "LookupAttribute") continue;
-
-                        for (const target of attr.Targets) {
-                            const targetInfo = entityMap.get(target.Name);
-                            if (!targetInfo) continue;
-
-                            const sourcePort = portMap[attr.SchemaName.toLowerCase()];
-                            const targetPort = targetInfo.portMap[`${target.Name.toLowerCase()}id`];
-                            const sourceId = entityInfo.element.id;
-                            const targetId = targetInfo.element.id;
-
-                            if (!sourcePort || !targetPort) continue;
-
-                            // Use a filled arrow for 'many' side, and a small circle for 'one' side
-                            const link = new shapes.standard.Link({
-                                source: { id: sourceId, port: sourcePort },
-                                target: { id: targetId, port: targetPort },
-                                router: { name: 'avoid', args: {} },
-                                connector: { name: 'jumpover', args: { radius: 8 } },
-                                attrs: {
-                                    line: {
-                                        stroke: '#42a5f5',
-                                        strokeWidth: 2,
-                                        sourceMarker: {
-                                            type: 'ellipse',
-                                            cx: -6,
-                                            cy: 0,
-                                            rx: 4,
-                                            ry: 4,
-                                            fill: '#fff',
-                                            stroke: '#42a5f5',
-                                            strokeWidth: 2,
-                                        },
-                                        targetMarker: {
-                                            type: 'path',
-                                            d: 'M 10 -5 L 0 0 L 10 5 Z',
-                                            fill: '#42a5f5',
-                                            stroke: '#42a5f5'
-                                        }
-                                    }
-                                }
-                            });
-
-                            link.addTo(graph);
-                        }
-                    }
-                }
-            }
+            currentEntities.forEach(entity => {
+                renderer.createLinks(entity, entityMap);
+            });
         });
 
         // Auto-fit to screen after a short delay to ensure all elements are rendered
@@ -282,9 +133,8 @@ const DiagramContent = () => {
     }, [graph, paper, selectedGroup, currentEntities, diagramType]);
 
     useEffect(() => {
-        if (!selectedKey || !graph) return;
+        if (!selectedKey || !graph || !renderer) return;
         
-        // Reset all links to default styling
         graph.getLinks().forEach(link => {
             link.attr('line/stroke', '#42a5f5');
             link.attr('line/strokeWidth', 2);
@@ -293,89 +143,21 @@ const DiagramContent = () => {
             link.attr('line/sourceMarker/stroke', '#42a5f5');
         });
         
-        // Find the entity that contains the selected key
-        const entityWithKey = currentEntities.find(entity => 
-            entity.Attributes.some(attr => 
-                attr.SchemaName === selectedKey && attr.IsPrimaryId
-            )
-        );
-        
-        if (entityWithKey) {
-            const targetEntityId = graph.getElements().find(el => 
-                (el.get('type') === 'delegate.entity' || el.get('type') === 'delegate.simple-entity') && 
-                el.get('data')?.entity?.SchemaName === entityWithKey.SchemaName
-            )?.id;
-            
-            if (targetEntityId) {
-                if (diagramType === 'simple') {
-                    // For simple diagram, highlight all links to this entity
-                    const linksToHighlight = graph.getLinks().filter(link => {
-                        const target = link.target();
-                        return target.id === targetEntityId;
-                    });
-                    
-                    // Apply highlighting to the found links
-                    linksToHighlight.forEach(link => {
-                        link.attr('line/stroke', '#ff6b6b'); // Red color for highlighted links
-                        link.attr('line/strokeWidth', 4); // Thicker stroke for highlighted links
-                    });
-                } else {
-                    // For detailed diagram, highlight links to specific key port
-                    const targetPort = `port-${selectedKey.toLowerCase()}`;
-                    
-                    const linksToHighlight = graph.getLinks().filter(link => {
-                        const target = link.target();
-                        return target.id === targetEntityId && target.port === targetPort;
-                    });
-                    
-                    // Apply highlighting to the found links
-                    linksToHighlight.forEach(link => {
-                        link.attr('line/stroke', '#ff6b6b'); // Red color for highlighted links
-                        link.attr('line/strokeWidth', 4); // Thicker stroke for highlighted links
-                        link.attr('line/targetMarker/stroke', '#ff6b6b');
-                        link.attr('line/targetMarker/fill', '#ff6b6b');
-                        link.attr('line/sourceMarker/stroke', '#ff6b6b');
-                    });
-                }
-            }
-        }
-    }, [selectedKey, graph, currentEntities]);
-
-    // Update entity elements when selectedKey changes
-    useEffect(() => {
-        if (!graph || !selectedKey) return;
-        
-        // Update all entity elements with the new selectedKey
-        graph.getElements().forEach(el => {
-            if (el.get('type') === 'delegate.entity') {
-                const currentData = el.get('data');
-                el.set('data', { ...currentData, selectedKey });
-                
-                // Trigger re-render of the entity
-                const entityElement = el as EntityElement;
-                if (entityElement.updateAttributes) {
-                    entityElement.updateAttributes(currentData.entity);
-                }
-            } else if (el.get('type') === 'delegate.simple-entity') {
-                // Simple entities don't need key highlighting updates
-                // They don't have attributes to highlight
-            }
-        });
-    }, [selectedKey, graph]);
+        renderer.highlightSelectedKey(graph, currentEntities, selectedKey);
+    }, [selectedKey, graph, currentEntities, renderer]);
 
     useEffect(() => {
-        if (!paper) return;
-        // Add link click handler
-        const onLinkClick = (linkView: any, evt: any) => {
-            evt.stopPropagation();
-            // Placeholder: show relationship info and hide option coming soon!
-            alert('Relationship info and hide option coming soon!');
-        };
-        paper.on('link:pointerclick', onLinkClick);
+        if (!graph || !selectedKey || !renderer) return;
+        renderer.updateEntityAttributes(graph, selectedKey);
+    }, [selectedKey, graph, renderer]);
+
+    useEffect(() => {
+        if (!paper || !renderer) return;
+        paper.on('link:pointerclick', renderer.onLinkClick);
         return () => {
-            paper.off('link:pointerclick', onLinkClick);
+            paper.off('link:pointerclick', renderer.onLinkClick);
         };
-    }, [paper]);
+    }, [paper, renderer]);
 
     const handleAddAttribute = (attribute: AttributeType) => {
         if (!selectedEntityForAttribute) return;
@@ -390,8 +172,9 @@ const DiagramContent = () => {
     
     // Get available and visible attributes for the selected entity
     const availableAttributes = selectedEntity?.Attributes || [];
-    const visibleAttributes = selectedEntity ? 
-        EntityElement.getVisibleItemsAndPorts(selectedEntity).visibleItems : [];
+    const visibleAttributes = selectedEntity && renderer
+        ? renderer.getVisibleAttributes(selectedEntity)
+        : [];
 
     return (
         <>
