@@ -1,7 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { dia } from '@joint/core';
+import { dia, routers } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
 import { EntityElement } from '@/components/diagram/entity/entity';
+import { AvoidRouter } from '@/components/diagram/avoid-router/avoidrouter';
 
 export type DiagramType = 'detailed' | 'simple';
 
@@ -238,11 +239,39 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setDiagramType(type);
   }, []);
 
-  const initializePaper = useCallback((container: HTMLElement, options: any = {}) => {
+  const initializePaper = useCallback(async (container: HTMLElement, options: any = {}) => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
       graphRef.current = new dia.Graph();
     }
+
+    await AvoidRouter.load();
+    const avoidRouter = new AvoidRouter(graphRef.current, {
+        shapeBufferDistance: 10,
+        idealNudgingDistance: 15,
+    });
+    avoidRouter.routeAll();
+    avoidRouter.addGraphListeners();
+    (routers as any).avoid = function(vertices: any, options: any, linkView: any) {
+        const graph = linkView.model.graph as dia.Graph;
+        const avoidRouterInstance = (graph as any).__avoidRouter__ as AvoidRouter;
+
+        if (!avoidRouterInstance) {
+            console.warn('AvoidRouter not initialized on graph.');
+            return null;
+        }
+
+        const link = linkView.model as dia.Link;
+
+        // This will update link using libavoid if possible
+        avoidRouterInstance.updateConnector(link);
+        const connRef = avoidRouterInstance.edgeRefs[link.id];
+        if (!connRef) return null;
+
+        const route = connRef.displayRoute();
+        return avoidRouterInstance.getVerticesFromAvoidRoute(route);
+    };
+    (graphRef.current as any).__avoidRouter__ = avoidRouter;
 
     // Create paper with light amber background
     const paper = new dia.Paper({

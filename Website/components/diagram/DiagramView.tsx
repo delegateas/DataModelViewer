@@ -24,10 +24,10 @@ import { useSidebarDispatch } from '@/contexts/SidebarContext';
 
 interface IDiagramView {}
 
-const routerType = "manhattan"
+// const routerType = "manhattan"
 const routerPadding = 16;
-const routerTries = 5000;
-const routerDirections = 90;
+// const routerTries = 5000;
+// const routerDirections = 90;
 
 const DiagramContent = () => {
     const { 
@@ -197,20 +197,7 @@ const DiagramContent = () => {
                                 const link = new shapes.standard.Link({
                                     source: { id: sourceId },
                                     target: { id: targetId },
-                                    router: {
-                                        name: routerType,
-                                        args: {
-                                            startDirections: ['left', 'right', 'top', 'bottom'],
-                                            endDirections: ['left', 'right', 'top', 'bottom'],
-                                            step: paper.options.gridSize,
-                                            padding: routerPadding,
-                                            maximumLoops: routerTries,
-                                            isPointObstacle: (p: dia.Point) => {
-                                                return obstacles.some(obs => obs.containsPoint(p))
-                                            },
-                                            maxAllowedDirectionChange: routerDirections
-                                        }
-                                    },
+                                    router: { name: 'avoid', args: {} },
                                     connector: { name: 'rounded' },
                                     attrs: {
                                         line: {
@@ -261,24 +248,7 @@ const DiagramContent = () => {
                         const link = new shapes.standard.Link({
                             source: { id: sourceId, port: sourcePort },
                             target: { id: targetId, port: targetPort },
-                            router: {
-                                name: routerType,
-                                args: {
-                                    startDirections: ['left', 'right'],
-                                    endDirections: ['left', 'right'],
-                                    step: paper.options.gridSize || 8,
-                                    padding: routerPadding,
-                                    maximumLoops: routerTries,
-                                    // Fixed obstacle detection function
-                                    isPointObstacle: (point: dia.Point) => {
-                                        return obstacles.some(obstacle => {
-                                            // obstacle is already a Rect from inflate(), so we can use containsPoint directly
-                                            return obstacle.containsPoint(point);
-                                        });
-                                    },
-                                    maxAllowedDirectionChange: routerDirections
-                                }
-                            },
+                            router: { name: 'avoid', args: {} },
                             connector: { name: 'rounded' },
                             attrs: {
                                 line: {
@@ -331,20 +301,7 @@ const DiagramContent = () => {
 
             // Update all links with new routing
             graph.getLinks().forEach(link => {
-                link.router(routerType, {
-                    startDirections: ['left', 'right'],
-                    endDirections: ['left', 'right'],
-                    step: paper.options.gridSize || 8,
-                    padding: routerPadding,
-                    maximumLoops: routerTries,
-                    // Fixed obstacle detection for rerouting
-                    isPointObstacle: (point: dia.Point) => {
-                        return obstacles.some(obstacle => {
-                            return obstacle.containsPoint(point);
-                        });
-                    },
-                    maxAllowedDirectionChange: routerDirections
-                });
+                link.router("avoid");
             });
         }, 100);
         graph.on('change:position change:size change:attrs.line', reroute);
