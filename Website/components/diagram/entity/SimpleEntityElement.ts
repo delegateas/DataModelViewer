@@ -11,6 +11,70 @@ export class SimpleEntityElement extends dia.Element {
         super.initialize(...args);
         const { entity } = this.get('data') as ISimpleEntityElement;
         if (entity) this.updateEntity(entity);
+
+        // Add 4 ports: top, left, right, bottom, and make them invisible
+        this.set('ports', {
+            groups: {
+                top: {
+                    position: { name: 'top' },
+                    attrs: {
+                        circle: {
+                            r: 6,
+                            magnet: true,
+                            fill: '#fff',
+                            stroke: '#42a5f5',
+                            strokeWidth: 2,
+                            visibility: 'hidden', // Make port invisible
+                        },
+                    },
+                },
+                left: {
+                    position: { name: 'left' },
+                    attrs: {
+                        circle: {
+                            r: 6,
+                            magnet: true,
+                            fill: '#fff',
+                            stroke: '#42a5f5',
+                            strokeWidth: 2,
+                            visibility: 'hidden', // Make port invisible
+                        },
+                    },
+                },
+                right: {
+                    position: { name: 'right' },
+                    attrs: {
+                        circle: {
+                            r: 6,
+                            magnet: true,
+                            fill: '#fff',
+                            stroke: '#42a5f5',
+                            strokeWidth: 2,
+                            visibility: 'hidden', // Make port invisible
+                        },
+                    },
+                },
+                bottom: {
+                    position: { name: 'bottom' },
+                    attrs: {
+                        circle: {
+                            r: 6,
+                            magnet: true,
+                            fill: '#fff',
+                            stroke: '#42a5f5',
+                            strokeWidth: 2,
+                            visibility: 'hidden', // Make port invisible
+                        },
+                    },
+                },
+            },
+            items: [
+                { id: 'port-top', group: 'top' },
+                { id: 'port-left', group: 'left' },
+                { id: 'port-right', group: 'right' },
+                { id: 'port-bottom', group: 'bottom' },
+            ],
+        });
     }
 
     updateEntity(entity: EntityType) {
@@ -48,16 +112,9 @@ export class SimpleEntityElement extends dia.Element {
     }
 
     private createSimpleEntityHTML(entity: EntityType): string {
-        const icon = entity.IconBase64 != null
-            ? `data:image/svg+xml;base64,${entity.IconBase64}`
-            : '/vercel.svg';
-
         return `
             <div class="w-full h-full flex items-center justify-center p-4" data-entity-schema="${entity.SchemaName}">
                 <div class="flex items-center space-x-3">
-                    <div class="bg-green-100 p-2 rounded-sm">
-                        <img src="${icon}" class="w-6 h-6" />
-                    </div>
                     <div class="text-center">
                         <h3 class="font-bold text-lg">${entity.DisplayName}</h3>
                         <p class="text-sm text-gray-600 font-mono">${entity.SchemaName}</p>
@@ -87,4 +144,4 @@ export class SimpleEntityElement extends dia.Element {
             markup: [] // dynamic in updateEntity
         };
     }
-} 
+}
