@@ -361,6 +361,8 @@ namespace Generator
 
         private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles(List<Guid> rolesInSolution, Dictionary<string, SecurityPrivilegeMetadata[]> priviledges)
         {
+            if (rolesInSolution.Count == 0) return [];
+
             var query = new QueryExpression("role")
             {
                 ColumnSet = new ColumnSet("name"),

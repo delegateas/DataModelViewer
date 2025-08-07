@@ -1,4 +1,3 @@
-# .github/workflows/release.yml
 name: Release
 
 on:
@@ -14,14 +13,9 @@ on:
           - minor
           - major
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    # Only run on merged PRs or manual dispatch
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true)
     outputs:
       releases_created: ${{ steps.manual_release.outputs.releases_created }}
@@ -36,40 +30,144 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 🚀 Create Manual Release PR
+      - name: 🚀 Create Manual Release Commit
         if: github.event_name == 'workflow_dispatch'
         id: manual_release
         run: |
           npm install -g release-please
           npm install semver
-          
-          # Get current version from manifest
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
           CURRENT_VERSION=$(cat .release-please-manifest.json | jq -r '.Website')
           echo "Current version: $CURRENT_VERSION"
-          
-          # Calculate next version based on release type using Node.js
+
           NEXT_VERSION=$(node -e "
             const semver = require('semver');
             const current = '$CURRENT_VERSION';
             const type = '${{ github.event.inputs.release_type }}';
             console.log(semver.inc(current, type));
           ")
-          
+
           echo "Next version will be: $NEXT_VERSION"
-          
-          # Create release PR with specific version
-          release-please release-pr \
-            --repo-url="https://github.com/${{ github.repository }}" \
-            --config-file=release-please-config.json \
-            --manifest-file=.release-please-manifest.json \
-            --release-as=$NEXT_VERSION \
-            --skip-labeling \
-            --token=${{ secrets.GITHUB_TOKEN }}
+
+          cd Website
+          npm version $NEXT_VERSION --no-git-tag-version
+          cd ..
+
+          jq --arg version "$NEXT_VERSION" '.Website = $version' .release-please-manifest.json > temp.json && mv temp.json .release-please-manifest.json
+
+          # Generate enhanced changelog
+          cat > generate_changelog.js << 'EOF'
+          const { execSync } = require('child_process');
+
+          function generateChangelog(lastTag, nextVersion, repo) {
+            let commits = [];
+            try {
+              const output = execSync(`git log ${lastTag}..HEAD --pretty=format:"%h|%s"`).toString();
+              commits = output.split('\n').filter(line => line.trim()).map(line => {
+                const [hash, message] = line.split('|');
+                return { hash, message };
+              });
+            } catch (error) {
+              console.log('No commits found or error getting commits');
+              return `## [${nextVersion}] - ${new Date().toISOString().split('T')[0]}\n\n### Changed\n- Manual release\n\n`;
+            }
+
+            const categories = {
+              'Features': [],
+              'Bug Fixes': [],
+              'Performance Improvements': [],
+              'UI/UX Improvements': [],
+              'Code Refactoring': [],
+              'Other Changes': []
+            };
+
+            commits.forEach(commit => {
+              const { hash, message } = commit;
+              const link = `([${hash}](https://github.com/${repo}/commit/${hash}))`;
+              let cleanMessage = message;
+              
+              // Clean up common prefixes
+              cleanMessage = cleanMessage.replace(/^(feat|feature):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^(fix|bugfix):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^(perf|performance):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^(style|ui|ux):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^(refactor|refact):\s*/i, '');
+              cleanMessage = cleanMessage.replace(/^chore:\s*/i, '');
+              
+              // Categorize commits
+              if (message.match(/^feat|feature|add|implement|new/i) || message.includes('PBI')) {
+                categories['Features'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/^fix|bug|resolve|correct/i)) {
+                categories['Bug Fixes'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/perf|performance|optim|speed|fast/i)) {
+                categories['Performance Improvements'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/ui|ux|style|design|visual|appearance/i)) {
+                categories['UI/UX Improvements'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/refactor|restructure|reorganize|clean/i)) {
+                categories['Code Refactoring'].push(`* ${cleanMessage} ${link}`);
+              } else if (!message.match(/^merge|^chore\(release\)/i)) {
+                categories['Other Changes'].push(`* ${cleanMessage} ${link}`);
+              }
+            });
+
+            let changelog = `## [${nextVersion}] - ${new Date().toISOString().split('T')[0]}\n\n`;
             
+            Object.entries(categories).forEach(([category, items]) => {
+              if (items.length > 0) {
+                changelog += `### ${category}\n\n`;
+                items.forEach(item => {
+                  changelog += `${item}\n`;
+                });
+                changelog += '\n';
+              }
+            });
+
+            // If no categorized items, add a simple changed section
+            if (Object.values(categories).every(cat => cat.length === 0)) {
+              changelog += `### Changed\n\n* Manual ${nextVersion.includes('major') ? 'major' : nextVersion.includes('minor') ? 'minor' : 'patch'} release\n\n`;
+            }
+
+            return changelog;
+          }
+
+          const lastTag = process.argv[2];
+          const nextVersion = process.argv[3];
+          const repo = process.argv[4];
+          console.log(generateChangelog(lastTag, nextVersion, repo));
+          EOF
+
+          LAST_TAG="website-v$CURRENT_VERSION"
+          git fetch --tags
+          
+          node generate_changelog.js "$LAST_TAG" "$NEXT_VERSION" "${{ github.repository }}" > temp_changelog.md
+
+          if [ -f "Website/CHANGELOG.md" ]; then
+            cat temp_changelog.md Website/CHANGELOG.md > temp_full_changelog.md
+            mv temp_full_changelog.md Website/CHANGELOG.md
+          else
+            mv temp_changelog.md Website/CHANGELOG.md
+          fi
+
+          git add .
+          git commit -m "chore(release): release $NEXT_VERSION
+
+          Release type: ${{ github.event.inputs.release_type }}
+          Previous version: $CURRENT_VERSION
+          New version: $NEXT_VERSION"
+
+          git tag -a "website-v$NEXT_VERSION" -m "Release $NEXT_VERSION"
+          git push origin HEAD --tags
+
           echo "releases_created=true" >> $GITHUB_OUTPUT
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
       - name: 📝 Manual Release Summary
         if: github.event_name == 'workflow_dispatch'
         run: |
-          echo "✅ Manual release PR created with type: ${{ github.event.inputs.release_type }}"
-          echo "🔍 Check the Pull Requests tab for the release PR to review and merge."
+          echo "✅ Manual release commit created with type: ${{ github.event.inputs.release_type }}"
+          echo "🏷️ New version: ${{ steps.manual_release.outputs.version }}"
+          echo "📝 Changes have been committed and pushed to the current branch."
+          echo "🔗 View the commit: https://github.com/${{ github.repository }}/commit/$(git rev-parse HEAD)"

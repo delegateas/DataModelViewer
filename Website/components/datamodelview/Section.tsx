@@ -13,13 +13,35 @@ import React from "react"
 interface ISectionProps {
     entity: EntityType;
     group: GroupType;
+    onContentChange?: () => void;
+    search?: string;
 }
 
-export const Section = React.memo(({ entity, group }: ISectionProps) => 
-    {
+export const Section = React.memo(
+    ({ entity, group, onContentChange, search }: ISectionProps) => {
+        // Use useRef to track previous props for comparison
+        const prevSearch = React.useRef(search);
+        
+        const [tab, setTab] = React.useState("attributes");
+        
+        // Only compute these counts when needed
+        const visibleAttributeCount = React.useMemo(() => entity.Attributes.length, [entity.Attributes]);
+        const visibleRelationshipCount = React.useMemo(() => entity.Relationships.length, [entity.Relationships]);
+        const visibleKeyCount = React.useMemo(() => entity.Keys.length, [entity.Keys]);
+
+        // Only call onContentChange when something actually changes
+        React.useEffect(() => {
+            if (onContentChange && 
+                (prevSearch.current !== search || 
+                 tab !== "attributes")) {
+                prevSearch.current = search;
+                onContentChange();
+            }
+        }, [tab, search, onContentChange]);
+
         return (
             <div id={entity.SchemaName} data-group={group.Name} className="mb-10">
-                <div className="bg-white rounded-lg border border-gray-300 shadow-md">
+                <div className="bg-white rounded-lg border border-gray-300 shadow-md">{/* Removed conditional styling and indicator */}
                     <div className="flex flex-col xl:flex-row min-w-0 p-6">
                         <EntityHeader entity={entity} />
                         {entity.SecurityRoles.length > 0 && (
@@ -29,39 +51,46 @@ export const Section = React.memo(({ entity, group }: ISectionProps) =>
                         )}
                     </div>
 
-                    <Tabs defaultValue="attributes">
+                    <Tabs defaultValue="attributes" value={tab} onValueChange={setTab}>
                         <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
                             <TabsList className="bg-transparent p-0 flex overflow-x-auto no-scrollbar gap-1 sm:gap-2">
                                 <TabsTrigger value="attributes" className="flex items-center min-w-[120px] sm:min-w-[140px] px-2 sm:px-4 py-2 text-xs sm:text-sm truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
                                     <Tags className="mr-2 h-4 w-4 shrink-0" />
-                                    <span className="truncate">Attributes [{entity.Attributes.length}]</span>
+                                    <span className="truncate">Attributes [{visibleAttributeCount}]</span>
                                 </TabsTrigger>
                                 {entity.Relationships.length ? 
                                     <TabsTrigger value="relationships" className="flex items-center min-w-[140px] sm:min-w-[160px] px-2 sm:px-4 py-2 text-xs sm:text-sm truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
                                         <Unplug className="mr-2 h-4 w-4 shrink-0" />
-                                        <span className="truncate">Relationships [{entity.Relationships.length}]</span>
+                                        <span className="truncate">Relationships [{visibleRelationshipCount}]</span>
                                     </TabsTrigger> 
                                     : <></> 
                                 }
                                 <TabsTrigger value="keys" className="flex items-center min-w-[100px] sm:min-w-[120px] px-2 sm:px-4 py-2 text-xs sm:text-sm truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
                                     <KeyRound className="mr-2 h-4 w-4 shrink-0" />
-                                    <span className="truncate">Keys [{entity.Keys.length}]</span>
+                                    <span className="truncate">Keys [{visibleKeyCount}]</span>
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="attributes" className="m-0 p-0">
-                                <Attributes entity={entity} />
+                                <Attributes entity={entity} search={search} />
                             </TabsContent>
                             <TabsContent value="relationships" className="m-0 p-0">
-                                <Relationships entity={entity} />
+                                <Relationships entity={entity} search={search} />
                             </TabsContent>
                             <TabsContent value="keys" className="m-0 p-0">
-                                <Keys entity={entity} />
+                                <Keys entity={entity} search={search} />
                             </TabsContent>
                         </div>
                     </Tabs>
                 </div>
             </div>
         )
+    },
+    // Custom comparison function to prevent unnecessary re-renders
+    (prevProps, nextProps) => {
+        // Only re-render if entity, search or group changes
+        return prevProps.entity.SchemaName === nextProps.entity.SchemaName && 
+               prevProps.search === nextProps.search && 
+               prevProps.group.Name === nextProps.group.Name;
     }
 );
 

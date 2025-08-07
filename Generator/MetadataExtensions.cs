@@ -58,11 +58,13 @@ public static class MetadataExtensions
                 return EnglishDefaultFields.Concat(new[] {
                     ("statuscode", "Status Reason", $"Reason for the status of the {entityDisplayName}"),
                     ("statecode", "Status Reason", $"Status of the {entityDisplayName}"),
+                    ("organizationid", "Organization", $"Unique identifier of the organization associated with the {entityDisplayName}."),
                 });
             default:
                 return EnglishDefaultFields.Concat(new[] {
                     ("statuscode", "Status Reason", $"Reason for the status of the {entityDisplayName}"),
                     ("statecode", "Status Reason", $"Status of the {entityDisplayName}"),
+                    ("organizationid", "Organization", $"Unique identifier of the organization associated with the {entityDisplayName}."),
                 }); ;
         }
     }
@@ -225,6 +227,7 @@ public static class MetadataExtensions
         ( "utcconversiontimezonecode", "Tidszonekode til UTC-konvertering", "Den tidszonekode, der var i brug ved oprettelse af posten." ),
         ( "utcconversiontimezonecode", "Tidszonekode for UTC-konvertering", "Den tidszonekode, der var i brug ved oprettelse af posten." ),
         ( "versionnumber", "Versionsnummer", "Versionsnummer" ),
-        ( "versionnumber", "Versionsnummer", "Versionsnummer for aktiviteten." )
+        ( "versionnumber", "Versionsnummer", "Versionsnummer for aktiviteten." ),
+        ( "organizationid", "Organisations-id", "Entydigt id for organisationen" ),
     };
 }

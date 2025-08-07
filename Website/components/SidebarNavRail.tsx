@@ -2,6 +2,7 @@ import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { LogOut, Info, Database, PencilRuler } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSidebarDispatch } from "@/contexts/SidebarContext";
 
 const navItems = [
   {
@@ -24,6 +25,8 @@ export default function SidebarNavRail() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const dispatch = useSidebarDispatch();
+
   return (
     <nav
       className="flex flex-col items-center justify-between h-full min-w-14 bg-white border-r border-sidebar-border py-2"
@@ -40,7 +43,7 @@ export default function SidebarNavRail() {
             disabled={item.disabled}
             className={`mb-1 ${pathname === item.href ? "bg-blue-100 text-blue-900" : ""}`}
             onClick={() => {
-              if (!item.disabled && item.href !== "#") router.push(item.href);
+              if (!item.disabled && item.href !== "#"){ dispatch({ type: 'SET_SHOW_ELEMENT', payload: true }); router.push(item.href); } 
             }}
           >
             {item.icon}
@@ -54,7 +57,7 @@ export default function SidebarNavRail() {
           size="icon"
           aria-label={"About"}
           className={`mb-1 ${pathname === "/about" ? "bg-blue-100 text-blue-900" : ""}`}
-          onClick={() => { router.push("/about"); }}
+          onClick={() => { dispatch({ type: 'SET_SHOW_ELEMENT', payload: false }); router.push("/about"); }}
         >
           <Info />
         </Button>

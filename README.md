@@ -1,11 +1,45 @@
-# Data Model Viewer
-![image](https://github.com/user-attachments/assets/9d91e37c-7e46-4654-b31d-5bc3e5d632ea)
-Allows you to expose your Dataverse data model as a website.
-## Grouping
-Add a # xxx to your entity description in order to group that entity in group xxx.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/delegateas/DataModelViewer/main/Website/public/DMVLOGOHORZ.svg" alt="logo" width="240" />
+</p>
 
-# Settings to run locally
-## Generator
+<p align="center">
+  <a href="https://www.buymeacoffee.com/VishwaGauravIn" target="_blank">
+    <img alt="" src="https://skillicons.dev/icons?i=ts,html,css,react,tailwind,cs,nextjs" />
+  </a>
+</p>
+
+# 👋 Introduction
+
+<p className="text-gray-700 mb-4">
+  <strong>Data Model Viewer</strong> is your centralized tool for exploring and understanding your Dataverse metadata. Designed with clarity and efficiency in mind, it gives you a single, streamlined access point to view and navigate your data tables.
+</p>
+
+<img width="1917" height="920" alt="image" src="https://github.com/user-attachments/assets/6be34fb3-09a9-4aad-b250-8f150897efd2" />
+
+---
+
+# ⚙️ Features & Configuration
+[Grouping](#grouping)
+
+[Generator](#setup-generator)
+
+[Website](#setup-website)
+
+[Pipeline Setup](#settings-in-pipeline)
+
+## Grouping
+To create a group for a subset of tables, you must simply add a "#" at the start of your table description. See below:
+
+> [!NOTE]
+> Some tables do not have descriptions - e.g. Team.
+> For these tables use the Environment variable `TableGroups`.
+> Alternatively use only the env. variable.
+
+<img width="638" height="481" alt="image" src="https://github.com/user-attachments/assets/0b95e0a3-9710-464d-ac6c-205f14ddf0c2" />
+
+---
+
+## Setup Generator
 Add `Generator/appsettings.local.json` as a file and paste your environment and solutions. Remember that the solutions must have the same publisher prefix.
 
 ```
@@ -19,7 +53,7 @@ Remember to set the file to Copy If Newer
 
 Authentication is handled using `DefaultAzureCredential`. If you are using Visual Studio you can select a user that is used for all of these credentials. Go to Tools -> Options -> Search for Azure -> Account Selection. Login and select a user that has access to that Dataverse Environment.
  
-## Website
+## Setup Website
 Add `Website/.env` file to run this locally.
 
 ```
@@ -51,7 +85,7 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * AzureLocation: Name of the location for the resource group in Azure (e.g. "westeurope" - not the display name which is "West Europe").
 * AzureResourceGroupName: Name of the Resource Group in Azure. If this matches an existing group in the location above that will be used for the DMV resources, if not a new resource group will be created.
 * DataverseUrl: URL for the Dataverse environment which the data model will be based on (e.g. "https://mySystem-dev.crm4.dynamics.com/".
-* DataverseSolutionNames: Comma-seperated list of solutions to based DMV on.
+* DataverseSolutionNames: Comma-seperated list of solutions to based DMV on. Use the logical names (not display names).
 * WebsiteName: Used for the url of the web app presenting the data model to the user. The full URL will be in the format "https://wa-{WebsiteName}.azurewebsites.net/" and must be globally unique. 
 * WebsitePassword: Password used by DMV users to login to the generated site.
 * WebsiteSessionSecret: Key to encrypt the session token with (You can set it to whatever you like, but recommended 32 random characters).
@@ -77,17 +111,17 @@ The `azure-pipelines-external.yml` file is a reusable Azure DevOps pipeline temp
    - `azure-pipelines-external.yml`
 
 2. **Set Up Variables and Service Connection**  
-   - Create a variable group (e.g., `DataModel`) in your Azure DevOps project with all required variables (see the "Setting in pipeline" section above for details).
+   - Create a variable group (e.g. called `DataModel`) in your Azure DevOps project with all required variables (see the "Setting in pipeline" section above for details).
    - Ensure you have an Azure Resource Manager service connection configured (the name should match the one set in the earlier configured variable `AzureServiceConnectionName`).
 
 3. **Configure the Pipeline**  
-   - Add a new pipeline in Azure DevOps using the `azure-pipelines-external.yml` file as the pipeline definition.
-   - Adjust the parameters in the YAML file as needed for your environment (e.g., variable group name, resource group, location).
+   - Add a new "Azure Repos Git" pipeline in Azure DevOps and choose the `azure-pipelines-external.yml` file from your repository as the "Existing Azure Pipelines YAML file" to base the pipeline on.
+   - Adjust the parameters in the YAML file as needed for your environment (usually only if you chose another name for the variable group than "Datamodel").
 
 4. **Pipeline Execution**  
    - The first time the pipeline is run you will see a "This pipeline needs permission to access a resource..." click "View" and give it permission to access the variable group you have created.
    - The pipeline will clone the public DataModelViewer repository, build the application, and deploy it using the shared templates.
-   - The pipeline is scheduled to run daily at 03:00 AM by default. You can adjust or remove the schedule as needed.
+   - The pipeline is scheduled to run daily at 03:00 AM by default. You can adjust or remove the schedule as needed. You can of course also run the pipeline ad-hoc if you wish.
 
 ## Notes
 

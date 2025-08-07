@@ -1,40 +1,83 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from "react";
-import { Groups } from "../../generated/Data";
-import { useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
+import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import React from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Section } from "./Section";
-import { Loader2 } from "lucide-react";
+import { useDatamodelData } from "@/contexts/DatamodelDataContext";
+import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 
-interface IListProps { }
+interface IListProps {
+}
+
+// Helper to highlight search matches
+export function highlightMatch(text: string, search: string) {
+    if (!search || search.length < 3) return text;
+    const idx = text.toLowerCase().indexOf(search.toLowerCase());
+    if (idx === -1) return text;
+    return <>{text.slice(0, idx)}<mark className="bg-yellow-200 text-black px-0.5 rounded">{text.slice(idx, idx + search.length)}</mark>{text.slice(idx + search.length)}</>;
+}
 
 export const List = ({ }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
+    const datamodelView = useDatamodelView();
     const [isScrollingToSection, setIsScrollingToSection] = useState(false);
-
+    const { groups, filtered, search } = useDatamodelData();
     const parentRef = useRef<HTMLDivElement | null>(null);
-    const lastSectionRef = useRef<string | null>(null);
+    const lastScrollHandleTime = useRef<number>(0);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+    const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+    
+    const getSectionRefCallback = (schemaName: string) => (el: HTMLDivElement | null) => {
+        sectionRefs.current[schemaName] = el;
+    };
+    
+    const remeasureSection = (schemaName: string) => {
+        const el = sectionRefs.current[schemaName];
+        if (el) rowVirtualizer.measureElement(el);
+    };
 
+    // Only recalculate items when filtered or search changes
     const flatItems = useMemo(() => {
+        if (filtered && filtered.length > 0) return filtered;
+        const lowerSearch = search.trim().toLowerCase();
         const items: Array<
-            | { type: 'group'; group: (typeof Groups)[number] }
-            | { type: 'entity'; group: (typeof Groups)[number]; entity: (typeof Groups)[number]['Entities'][number] }
+            | { type: 'group'; group: GroupType }
+            | { type: 'entity'; group: GroupType; entity: EntityType }
         > = [];
-        for (const group of Groups) {
-        items.push({ type: 'group', group });
-        for (const entity of group.Entities) {
-            items.push({ type: 'entity', group, entity });
-        }
+        for (const group of groups) {
+            // Filter entities in this group
+            const filteredEntities = group.Entities.filter((entity: EntityType) => {
+                const typedEntity = entity;
+                if (!lowerSearch) return true;
+                // Match entity schema or display name
+                const entityMatch = typedEntity.SchemaName.toLowerCase().includes(lowerSearch) ||
+                    (typedEntity.DisplayName && typedEntity.DisplayName.toLowerCase().includes(lowerSearch));
+                // Match any attribute schema or display name
+                const attrMatch = typedEntity.Attributes.some((attr: AttributeType) =>
+                    attr.SchemaName.toLowerCase().includes(lowerSearch) ||
+                    (attr.DisplayName && attr.DisplayName.toLowerCase().includes(lowerSearch))
+                );
+                return entityMatch || attrMatch;
+            });
+            if (filteredEntities.length > 0) {
+                items.push({ type: 'group', group });
+                for (const entity of filteredEntities) {
+                    items.push({ type: 'entity', group, entity });
+                }
+            }
         }
         return items;
-    }, []);
+    }, [filtered, search, groups]);
 
     const rowVirtualizer = useVirtualizer({
         count: flatItems.length,
         getScrollElement: () => parentRef.current,
-        overscan: 20,
-        estimateSize: () => 300,
+        overscan: 5, // Reduce overscan to improve performance
+        estimateSize: (index) => {
+            const item = flatItems[index];
+            if (!item) return 100;
+            return item.type === 'group' ? 92 : 300;
+        },
     });
 
     const scrollToSection = useCallback((sectionId: string) => {
@@ -91,66 +134,55 @@ export const List = ({ }: IListProps) => {
         });
     }, [flatItems]);
 
+    // Throttled scroll handler to reduce calculations
+    const handleScroll = useCallback(() => {
+        const now = Date.now();
+        if (now - lastScrollHandleTime.current < 100) return; // Only process every 100ms
+        lastScrollHandleTime.current = now;
+        
+        const scrollElement = parentRef.current;
+        if (!scrollElement || isScrollingToSection) return;
+        
+        const scrollOffset = scrollElement.scrollTop;
+        const virtualItems = rowVirtualizer.getVirtualItems();
+        
+        // Find the first visible item
+        const padding = 16;
+        const firstVisibleItem = virtualItems.find(v => {
+            return v.start <= scrollOffset && (v.end - padding) >= scrollOffset;
+        });
+        
+        if (firstVisibleItem) {
+            const item = flatItems[firstVisibleItem.index];
+            if (item?.type === 'entity') {
+                if (item.entity.SchemaName !== datamodelView.currentSection) {
+                    dispatch({ type: "SET_CURRENT_GROUP", payload: item.group.Name });
+                    dispatch({ type: "SET_CURRENT_SECTION", payload: item.entity.SchemaName });
+                }
+            }
+        }
+    }, [dispatch, flatItems, rowVirtualizer, datamodelView.currentSection, isScrollingToSection]);
+
+    // Throttled scroll event listener
     useEffect(() => {
         const scrollElement = parentRef.current;
         if (!scrollElement) return;
-    
-        let ticking = false;
-        let lastScrollTop = 0;
-    
-        const handleScroll = () => {
-            if (!ticking) {
-                ticking = true;
         
-                window.requestAnimationFrame(() => {
-                    const currentScrollTop = scrollElement.scrollTop;
-                    if (Math.abs(currentScrollTop - lastScrollTop) < 10) {
-                        ticking = false;
-                        return;
-                    }
-                    lastScrollTop = currentScrollTop;
-
-                    const virtualItems = rowVirtualizer.getVirtualItems();
-                    const scrollOffset = scrollElement.scrollTop;
-                    const containerHeight = scrollElement.clientHeight;
-                    const target = containerHeight / 3;
-
-                    let best: { id: string; group: string; distance: number } | null = null;
-
-                    for (const v of virtualItems) {
-                        const item = flatItems[v.index];
-                        if (item.type !== "entity") continue;
-
-                        const itemTop = v.start;
-                        const distance = Math.abs(itemTop - scrollOffset - target);
-
-                        if (!best || distance < best.distance) {
-                            best = {
-                                id: item.entity.SchemaName,
-                                group: item.group.Name,
-                                distance,
-                            };
-                        }
-                    }
-
-                    if (best && best.id !== lastSectionRef.current) {
-                        lastSectionRef.current = best.id;
-                        dispatch({ type: "SET_CURRENT_GROUP", payload: best.group });
-                        dispatch({ type: "SET_CURRENT_SECTION", payload: best.id });
-                    }
-            
-                    ticking = false;
-                });
-            }
+        let scrollTimeout: number;
+        const throttledScrollHandler = () => {
+            if (scrollTimeout) return;
+            scrollTimeout = window.setTimeout(() => {
+                handleScroll();
+                scrollTimeout = 0;
+            }, 100);
         };
-    
-        scrollElement.addEventListener("scroll", handleScroll, { passive: true });
-        handleScroll();
-    
+        
+        scrollElement.addEventListener("scroll", throttledScrollHandler, { passive: true });
         return () => {
-          scrollElement.removeEventListener("scroll", handleScroll);
+            scrollElement.removeEventListener("scroll", throttledScrollHandler);
+            clearTimeout(scrollTimeout);
         };
-      }, [dispatch, flatItems, rowVirtualizer]);
+    }, [handleScroll]);
 
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
@@ -162,31 +194,64 @@ export const List = ({ }: IListProps) => {
         };
     }, [dispatch, scrollToSection]);
 
+    useEffect(() => {
+        // When the current section is in view, set loading to false
+        if (datamodelView.currentSection) {
+            // Check if the current section is rendered in the virtualizer
+            const isInView = rowVirtualizer.getVirtualItems().some(vi => {
+                const item = flatItems[vi.index];
+                return item.type === 'entity' && item.entity.SchemaName === datamodelView.currentSection;
+            });
+            if (isInView) {
+                dispatch({ type: 'SET_LOADING', payload: false });
+            }
+        }
+    }, [datamodelView.currentSection, flatItems, rowVirtualizer, dispatch]);
+
     return (
         <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }} className="p-6 relative">
-            {isScrollingToSection && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span className="text-sm font-medium">Loading section...</span>
-                    </div>
+            {/* Add skeleton loading state */}
+            {flatItems.length === 0 && datamodelView.loading && (
+                <div className="space-y-8">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="bg-white rounded-lg border border-gray-300 shadow-md animate-pulse">
+                            <div className="h-32 p-6 flex flex-col">
+                                <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                            <div className="p-4 border-t">
+                                <div className="h-4 bg-gray-200 rounded w-full mb-3"></div>
+                                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
+            
+            {/* Virtualized list */}
             <div
                 style={{
                     height: `${rowVirtualizer.getTotalSize()}px`,
                     width: '100%',
                     position: 'relative',
+                    visibility: flatItems.length === 0 && datamodelView.loading ? 'hidden' : 'visible'
                 }}
             >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {
                 const item = flatItems[virtualItem.index];
+                const sectionRef = item.type === 'entity' ? getSectionRefCallback(item.entity.SchemaName) : undefined;
 
                 return (
                     <div
                         key={virtualItem.key}
                         data-index={virtualItem.index}
-                        ref={rowVirtualizer.measureElement}
+                        ref={item.type === 'entity'
+                            ? el => {
+                                if (sectionRef) sectionRef(el);
+                                if (el) rowVirtualizer.measureElement(el);
+                              }
+                            : rowVirtualizer.measureElement
+                        }
                         style={{
                             position: 'absolute',
                             top: 0,
@@ -205,7 +270,12 @@ export const List = ({ }: IListProps) => {
                             </div>
                         ) : (
                             <div className="text-sm">
-                                <Section entity={item.entity} group={item.group} />
+                                <Section
+                                    entity={item.entity}
+                                    group={item.group}
+                                    onContentChange={() => remeasureSection(item.entity.SchemaName)}
+                                    search={search}
+                                />
                             </div>
                         )}
                     </div>

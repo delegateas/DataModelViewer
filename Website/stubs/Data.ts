@@ -3,6 +3,9 @@
 
 import { GroupType } from "@/lib/Types";
 
+export const LastSynched: Date = new Date();
+export const Logo: string | null = null;
+
 export let Groups: GroupType[] = [
   {
     "Name":"Untitled",

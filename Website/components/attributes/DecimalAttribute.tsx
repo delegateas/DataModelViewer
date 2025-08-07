@@ -8,8 +8,8 @@ export default function MoneyAttribute({ attribute }: { attribute: DecimalAttrib
             : FormatDecimal
 
     return <>
-        <p><span className="font-bold">{attribute.Type}</span> ({formatNumber(attribute.MinValue)} to {formatNumber(attribute.MaxValue)})</p>
-        <p>Precision: {attribute.Precision}</p>
+        <p><span className="font-semibold text-xs md:font-bold md:text-sm">{attribute.Type}</span> <span className="text-xs md:text-sm">({formatNumber(attribute.MinValue)} to {formatNumber(attribute.MaxValue)})</span></p>
+        <p className="text-xs md:text-sm">Precision: {attribute.Precision}</p>
     </>
 }
 
