@@ -97,8 +97,8 @@ export class AvoidRouter {
     }
 
     updateShape(element: dia.Element): void {
-        // Skip squares - they shouldn't be obstacles for routing
-        if (element.get('type') === 'delegate.square') {
+        // Skip squares and text elements - they shouldn't be obstacles for routing
+        if (element.get('type') === 'delegate.square' || element.get('type') === 'delegate.text') {
             return;
         }
         
@@ -198,6 +198,11 @@ export class AvoidRouter {
     }
 
     deleteShape(element: dia.Element): void {
+        // Skip squares and text elements - they weren't added as obstacles
+        if (element.get('type') === 'delegate.square' || element.get('type') === 'delegate.text') {
+            return;
+        }
+        
         const shapeRef = this.shapeRefs[element.id];
         if (!shapeRef) return;
         this.avoidRouter.deleteShape(shapeRef);

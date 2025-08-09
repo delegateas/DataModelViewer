@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users, Save, Upload } from 'lucide-react';
 import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane } from '@/components/diagram/panes';
 import { DiagramType } from '@/hooks/useDiagram';
@@ -12,11 +12,22 @@ interface ISidebarDiagramViewProps {
 }
 
 export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
-    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, currentEntities, diagramType, updateDiagramType } = useDiagramViewContext();
+    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType } = useDiagramViewContext();
     const [isDataExpanded, setIsDataExpanded] = useState(true);
     const [isGeneralExpanded, setIsGeneralExpanded] = useState(false);
     const [isEntitySheetOpen, setIsEntitySheetOpen] = useState(false);
     const [isGroupSheetOpen, setIsGroupSheetOpen] = useState(false);
+
+    const handleLoadDiagram = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            loadDiagram(file).catch(error => {
+                alert('Failed to load diagram: ' + error.message);
+            });
+        }
+        // Reset input value to allow loading the same file again
+        event.target.value = '';
+    };
 
     return (
         <div className="flex flex-col h-full w-full">
@@ -24,9 +35,6 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="build" className="flex items-center gap-2 text-xs">
                         <Hammer className="min-w-4 h-4" />
-                    </TabsTrigger>
-                    <TabsTrigger value="layers" className="flex items-center gap-2 text-xs">
-                        <Layers className="min-w-4 h-4" />
                     </TabsTrigger>
                     <TabsTrigger value="settings" className="flex items-center gap-2 text-xs">
                         <Settings className="min-w-4 h-4" />
@@ -121,6 +129,41 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                     <Square className="w-4 h-4 mr-2" />
                                     Detailed View
                                 </Button>
+                            </div>
+                        </div>
+                        
+                        <div className="border-t pt-4">
+                            <div className="space-y-2">
+                                <h3 className="font-medium text-sm">Save & Load</h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Save your diagram or load an existing one
+                                </p>
+                                <div className="flex flex-col space-y-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full justify-start"
+                                        onClick={saveDiagram}
+                                    >
+                                        <Save className="w-4 h-4 mr-2" />
+                                        Save Diagram
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full justify-start relative overflow-hidden cursor-pointer"
+                                    >
+                                        <Upload className="w-4 h-4 mr-2 cursor-pointer" />
+                                        Load Diagram
+                                        <input
+                                            type="file"
+                                            accept=".json"
+                                            onChange={handleLoadDiagram}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            id="load-diagram"
+                                        />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                         

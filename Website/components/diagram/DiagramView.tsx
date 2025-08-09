@@ -113,13 +113,20 @@ const DiagramContent = () => {
     useEffect(() => {
         if (!graph || !paper || !selectedGroup || !renderer) return;
 
-        // Preserve squares before clearing - only clear entities and links
+        // Preserve squares and text elements before clearing - only clear entities and links
         const squares = graph.getElements().filter(element => element.get('type') === 'delegate.square');
+        const textElements = graph.getElements().filter(element => element.get('type') === 'delegate.text');
         const squareData = squares.map(square => ({
             element: square,
             data: square.get('data'),
             position: square.position(),
             size: square.size()
+        }));
+        const textData = textElements.map(textElement => ({
+            element: textElement,
+            data: textElement.get('data'),
+            position: textElement.position(),
+            size: textElement.size()
         }));
         
         // Clear existing elements
@@ -132,6 +139,15 @@ const DiagramContent = () => {
             element.resize(size.width, size.height);
             element.set('data', data);
             element.toBack(); // Keep squares at the back
+        });
+
+        // Re-add preserved text elements with their data
+        textData.forEach(({ element, data, position, size }) => {
+            element.addTo(graph);
+            element.position(position.x, position.y);
+            element.resize(size.width, size.height);
+            element.set('data', data);
+            element.toFront(); // Keep text elements at the front
         });
 
         // Calculate grid layout

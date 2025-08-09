@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { dia, routers } from '@joint/core';
+import { dia, routers, shapes } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
 import { SquareElement } from '@/components/diagram/entity/SquareElement';
 import { SquareElementView } from '@/components/diagram/entity/SquareElementView';
@@ -47,6 +47,8 @@ export interface DiagramActions {
   removeEntityFromDiagram: (entitySchemaName: string) => void;
   addSquareToDiagram: () => void;
   addTextToDiagram: () => void;
+  saveDiagram: () => void;
+  loadDiagram: (file: File) => Promise<void>;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -501,6 +503,144 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     return textElement;
   }, []);
 
+  const saveDiagram = useCallback(() => {
+    if (!graphRef.current) {
+      console.warn('No graph available to save');
+      return;
+    }
+
+    // Use JointJS built-in JSON export
+    const graphJSON = graphRef.current.toJSON();
+    
+    // Create diagram data structure with additional metadata
+    const diagramData = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      diagramType,
+      currentEntities,
+      graph: graphJSON,
+      viewState: {
+        panPosition,
+        zoom
+      }
+    };
+
+    // Create blob and download
+    const jsonString = JSON.stringify(diagramData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `diagram-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [graphRef, diagramType, currentEntities, panPosition, zoom]);
+
+  const loadDiagram = useCallback(async (file: File): Promise<void> => {
+    try {
+      const text = await file.text();
+      const diagramData = JSON.parse(text);
+      
+      console.log('Parsed diagram data:', diagramData);
+      
+      if (!graphRef.current || !paperRef.current) {
+        console.warn('Graph or paper not available for loading');
+        return;
+      }
+
+      // Clear current diagram
+      graphRef.current.clear();
+      
+      // Use JointJS built-in JSON import
+      if (diagramData.graph) {
+        console.log('Loading graph data:', diagramData.graph);
+        
+        // Manual recreation approach since cellNamespace isn't working
+        const cells = diagramData.graph.cells || [];
+        
+        cells.forEach((cellData: any) => {
+          let cell;
+          
+          if (cellData.type === 'delegate.square') {
+            console.log('Creating SquareElement:', cellData);
+            cell = new SquareElement({
+              id: cellData.id,
+              position: cellData.position,
+              size: cellData.size,
+              attrs: cellData.attrs,
+              data: cellData.data
+            });
+          } else if (cellData.type === 'delegate.text') {
+            console.log('Creating TextElement:', cellData);
+            cell = new TextElement({
+              id: cellData.id,
+              position: cellData.position,
+              size: cellData.size,
+              attrs: cellData.attrs,
+              data: cellData.data
+            });
+          } else {
+            console.log('Creating standard element:', cellData.type);
+            // Use fromJSON for standard elements
+            try {
+              cell = dia.Cell.fromJSON(cellData);
+            } catch (error) {
+              console.warn('Failed to create cell:', cellData.type, error);
+              return;
+            }
+          }
+          
+          if (cell) {
+            graphRef.current!.addCell(cell);
+          }
+        });
+        
+        console.log('Graph loaded successfully');
+      } else {
+        console.warn('No graph data found in diagram file');
+      }
+      
+      // Restore diagram type
+      if (diagramData.diagramType) {
+        console.log('Restoring diagram type:', diagramData.diagramType);
+        setDiagramType(diagramData.diagramType);
+      }
+      
+      // Restore entities
+      if (diagramData.currentEntities) {
+        console.log('Restoring entities:', diagramData.currentEntities.length);
+        setCurrentEntities(diagramData.currentEntities);
+      }
+      
+      // Restore view settings
+      if (diagramData.viewState) {
+        const { panPosition: savedPanPosition, zoom: savedZoom } = diagramData.viewState;
+        
+        if (savedZoom && paperRef.current) {
+          console.log('Restoring zoom:', savedZoom);
+          paperRef.current.scale(savedZoom, savedZoom);
+          updateZoomDisplay(savedZoom);
+        }
+        
+        if (savedPanPosition && paperRef.current) {
+          console.log('Restoring pan position:', savedPanPosition);
+          paperRef.current.translate(savedPanPosition.x, savedPanPosition.y);
+          setPanPosition(savedPanPosition);
+        }
+      }
+      
+      console.log('Diagram loaded successfully');
+    } catch (error) {
+      console.error('Failed to load diagram:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      throw new Error('Failed to load diagram file. Please check the file format.');
+    }
+  }, [graphRef, paperRef, updateZoomDisplay]);
+
   const initializePaper = useCallback(async (container: HTMLElement, options: any = {}) => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
@@ -708,5 +848,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     removeEntityFromDiagram,
     addSquareToDiagram,
     addTextToDiagram,
+    saveDiagram,
+    loadDiagram,
   };
 }; 
