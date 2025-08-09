@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users, Save, Upload, Smartphone } from 'lucide-react';
-import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
+import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane } from '@/components/diagram/panes';
 import { DiagramType } from '@/hooks/useDiagram';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,12 +13,26 @@ interface ISidebarDiagramViewProps {
 }
 
 export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
-    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType } = useDiagramViewContext();
+    const diagramContext = useDiagramViewContextSafe();
     const isMobile = useIsMobile();
     const [isDataExpanded, setIsDataExpanded] = useState(true);
     const [isGeneralExpanded, setIsGeneralExpanded] = useState(false);
     const [isEntitySheetOpen, setIsEntitySheetOpen] = useState(false);
     const [isGroupSheetOpen, setIsGroupSheetOpen] = useState(false);
+
+    // If not in diagram context, show a message or return null
+    if (!diagramContext) {
+        return (
+            <div className="flex flex-col h-full w-full p-4">
+                <div className="text-center text-muted-foreground">
+                    <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Diagram tools are only available on the diagram page.</p>
+                </div>
+            </div>
+        );
+    }
+
+    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType } = diagramContext;
 
     const handleLoadDiagram = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];

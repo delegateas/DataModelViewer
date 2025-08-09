@@ -25,4 +25,9 @@ export const useDiagramViewContext = (): DiagramViewContextType => {
     throw new Error('useDiagramViewContext must be used within a DiagramViewProvider');
   }
   return context;
+};
+
+export const useDiagramViewContextSafe = (): DiagramViewContextType | null => {
+  const context = useContext(DiagramViewContext);
+  return context;
 }; 
