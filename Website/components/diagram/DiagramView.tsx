@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { dia, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
 import { SquareElement } from '@/components/diagram/elements/SquareElement';
@@ -12,7 +12,7 @@ import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndi
 import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
 import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
 import { TextPropertiesPane } from '@/components/diagram/panes/TextPropertiesPane';
-import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
+import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
 import { AppSidebar } from '../AppSidebar';
 import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
@@ -42,6 +42,9 @@ const DiagramContent = () => {
     const [selectedKey, setSelectedKey] = useState<string>();
     const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Persistent tracking of entity positions across renders
+    const entityPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
 
     // Wrapper for setSelectedKey to pass to renderer
     const handleSetSelectedKey = useCallback((key: string | undefined) => {
@@ -130,9 +133,14 @@ const DiagramContent = () => {
             return;
         }
 
-        // Preserve squares and text elements before clearing - only clear entities and links
+        // Preserve squares, text elements, and existing entity positions before clearing
         const squares = graph.getElements().filter(element => element.get('type') === 'delegate.square');
         const textElements = graph.getElements().filter(element => element.get('type') === 'delegate.text');
+        const existingEntities = graph.getElements().filter(element => {
+            const entityData = element.get('data');
+            return entityData?.entity; // This is an entity element
+        });
+        
         const squareData = squares.map(square => ({
             element: square,
             data: square.get('data'),
@@ -145,6 +153,28 @@ const DiagramContent = () => {
             position: textElement.position(),
             size: textElement.size()
         }));
+        
+        // Update persistent position tracking with current positions
+        console.log('🔍 Before update - entityPositionsRef has:', Array.from(entityPositionsRef.current.keys()));
+        existingEntities.forEach(element => {
+            const entityData = element.get('data');
+            if (entityData?.entity?.SchemaName) {
+                const position = element.position();
+                entityPositionsRef.current.set(entityData.entity.SchemaName, position);
+                console.log(`📍 Updated position for ${entityData.entity.SchemaName}:`, position);
+            }
+        });
+        
+        // Clean up position tracking for entities that are no longer in currentEntities
+        const currentEntityNames = new Set(currentEntities.map(e => e.SchemaName));
+        console.log('📋 Current entities:', Array.from(currentEntityNames));
+        for (const [schemaName] of entityPositionsRef.current) {
+            if (!currentEntityNames.has(schemaName)) {
+                console.log(`🗑️ Removing position tracking for deleted entity: ${schemaName}`);
+                entityPositionsRef.current.delete(schemaName);
+            }
+        }
+        console.log('🔍 After cleanup - entityPositionsRef has:', Array.from(entityPositionsRef.current.keys()));
         
         // Clear existing elements
         graph.clear();
@@ -183,27 +213,76 @@ const DiagramContent = () => {
             diagramType: diagramType
         };
         
-        // Calculate actual heights for each entity based on diagram type
-        const entityHeights = currentEntities.map(entity => calculateEntityHeight(entity, diagramType));
-        const maxEntityHeight = Math.max(...entityHeights, layoutOptions.entityHeight);
+        // Separate new entities from existing ones using persistent position tracking
+        const newEntities = currentEntities.filter(entity => 
+            !entityPositionsRef.current.has(entity.SchemaName)
+        );
+        const existingEntitiesWithPositions = currentEntities.filter(entity => 
+            entityPositionsRef.current.has(entity.SchemaName)
+        );
         
-        // Use the maximum height for layout calculation to ensure proper spacing
-        const adjustedLayoutOptions = {
-            ...updatedLayoutOptions,
-            entityHeight: maxEntityHeight,
-            diagramType: diagramType
-        };
-        
-        const layout = calculateGridLayout(currentEntities, adjustedLayoutOptions);
+        console.log('🆕 New entities (no tracked position):', newEntities.map(e => e.SchemaName));
+        console.log('📌 Existing entities (have tracked position):', existingEntitiesWithPositions.map(e => e.SchemaName));
 
         // Store entity elements and port maps by SchemaName for easy lookup
         const entityMap = new Map();
-        // Create entities in grid layout
-        currentEntities.forEach((entity, index) => {
-            const position = layout.positions[index] || { x: 50, y: 50 };
+        const placedEntityPositions: { x: number; y: number; width: number; height: number }[] = [];
+        
+        // First, create existing entities with their preserved positions
+        console.log('🔧 Creating existing entities with preserved positions...');
+        existingEntitiesWithPositions.forEach((entity) => {
+            const position = entityPositionsRef.current.get(entity.SchemaName);
+            if (!position) return; // Skip if position is undefined
+            
+            console.log(`📍 Placing existing entity ${entity.SchemaName} at:`, position);
             const { element, portMap } = renderer.createEntity(entity, position);
             entityMap.set(entity.SchemaName, { element, portMap });
+            
+            // Track this position for collision avoidance
+            const dimensions = estimateEntityDimensions(entity, diagramType);
+            placedEntityPositions.push({
+                x: position.x,
+                y: position.y,
+                width: dimensions.width,
+                height: dimensions.height
+            });
         });
+        
+        console.log('🚧 Collision avoidance positions:', placedEntityPositions);
+        
+        // Then, create new entities with grid layout that avoids already placed entities
+        if (newEntities.length > 0) {
+            console.log('🆕 Creating new entities with grid layout...');
+            // Calculate actual heights for new entities based on diagram type
+            const entityHeights = newEntities.map(entity => calculateEntityHeight(entity, diagramType));
+            const maxEntityHeight = Math.max(...entityHeights, layoutOptions.entityHeight);
+            
+            const adjustedLayoutOptions = {
+                ...updatedLayoutOptions,
+                entityHeight: maxEntityHeight,
+                diagramType: diagramType
+            };
+            
+            console.log('📊 Grid layout options:', adjustedLayoutOptions);
+            console.log('🚧 Avoiding existing positions:', placedEntityPositions);
+            
+            const layout = calculateGridLayout(newEntities, adjustedLayoutOptions, placedEntityPositions);
+            console.log('📐 Calculated grid positions:', layout.positions);
+            
+            // Create new entities with grid layout positions
+            newEntities.forEach((entity, index) => {
+                const position = layout.positions[index] || { x: 50, y: 50 };
+                console.log(`🆕 Placing new entity ${entity.SchemaName} at:`, position);
+                const { element, portMap } = renderer.createEntity(entity, position);
+                entityMap.set(entity.SchemaName, { element, portMap });
+                
+                // Update persistent position tracking for newly placed entities
+                entityPositionsRef.current.set(entity.SchemaName, position);
+                console.log(`💾 Saved position for ${entity.SchemaName}:`, position);
+            });
+        } else {
+            console.log('✅ No new entities to place with grid layout');
+        }
         
         util.nextFrame(() => {
             currentEntities.forEach(entity => {

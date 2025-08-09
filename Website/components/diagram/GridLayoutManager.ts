@@ -49,10 +49,12 @@ export const calculateEntityHeight = (entity: EntityType, diagramType: DiagramTy
 
 /**
  * Calculates optimal grid layout for entities based on screen aspect ratio
+ * Optionally avoids existing entity positions
  */
 export const calculateGridLayout = (
   entities: EntityType[],
-  options: GridLayoutOptions
+  options: GridLayoutOptions,
+  existingPositions?: { x: number; y: number; width: number; height: number }[]
 ): GridLayoutResult => {
   const { containerWidth, entityWidth, padding, margin } = options;
 
@@ -66,38 +68,101 @@ export const calculateGridLayout = (
     };
   }
 
+  // If we have existing positions, we need to find the best starting position for new entities
+  let startColumn = 0;
+  let startRow = 0;
+  
+  console.log('🔍 GridLayout: existingPositions received:', existingPositions);
+  
+  if (existingPositions && existingPositions.length > 0) {
+    // Find the rightmost and bottommost positions
+    const maxX = Math.max(...existingPositions.map(pos => pos.x + pos.width));
+    const maxY = Math.max(...existingPositions.map(pos => pos.y + pos.height));
+    
+    console.log('📏 GridLayout: maxX:', maxX, 'maxY:', maxY);
+    
+    // Start new entities to the right of existing ones, or on the next row
+    startColumn = Math.floor((maxX + padding - margin) / (entityWidth + padding));
+    if (startColumn * (entityWidth + padding) + margin + entityWidth > containerWidth) {
+      // Move to next row if we can't fit horizontally
+      startColumn = 0;
+      startRow = Math.floor((maxY + padding - margin) / 200); // Approximate row height
+    }
+    
+    console.log('📍 GridLayout: calculated startColumn:', startColumn, 'startRow:', startRow);
+  } else {
+    console.log('📍 GridLayout: no existing positions, starting from origin');
+  }
+
   // Determine how many columns can fit
   const maxColumns = Math.max(1, Math.floor((containerWidth - margin * 2 + padding) / (entityWidth + padding)));
-  const columns = Math.min(maxColumns, entities.length);
-
-  // Initialize arrays to track column heights
-  const columnHeights: number[] = Array(columns).fill(0);
+  
+  // For collision avoidance, we'll place entities sequentially from the calculated starting position
   const positions: GridPosition[] = [];
+  let currentColumn = startColumn;
+  let currentRow = startRow;
+
+  console.log('📐 GridLayout: maxColumns:', maxColumns, 'starting at column:', currentColumn, 'row:', currentRow);
 
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
     const height = calculateEntityHeight(entity, options.diagramType);
-
-    // Assign to the column with the least cumulative height
-    const colIndex = columnHeights.indexOf(Math.min(...columnHeights));
-    const x = margin + colIndex * (entityWidth + padding);
-    const y = margin + columnHeights[colIndex];
-
-    positions.push({ x, y });
-
-    // Add height + padding to the selected column
-    columnHeights[colIndex] += height + padding;
+    
+    // Find next available position that doesn't collide
+    let foundValidPosition = false;
+    let attempts = 0;
+    const maxAttempts = maxColumns * 10; // Prevent infinite loop
+    
+    while (!foundValidPosition && attempts < maxAttempts) {
+      // If we exceed the max columns, move to next row
+      if (currentColumn >= maxColumns) {
+        currentColumn = 0;
+        currentRow++;
+      }
+      
+      const x = margin + currentColumn * (entityWidth + padding);
+      const y = margin + currentRow * (height + padding);
+      
+      // Check if this position is occupied by existing entities
+      const isOccupied = existingPositions && existingPositions.length > 0 ? existingPositions.some(pos => 
+        Math.abs(pos.x - x) < entityWidth + padding/2 && 
+        Math.abs(pos.y - y) < height + padding/2
+      ) : false;
+      
+      if (!isOccupied) {
+        console.log(`📍 GridLayout: placing ${entity.SchemaName} at column ${currentColumn}, row ${currentRow} (${x}, ${y})`);
+        positions.push({ x, y });
+        foundValidPosition = true;
+      } else {
+        console.log(`🚫 GridLayout: position (${x}, ${y}) occupied by existing entity, trying next...`);
+      }
+      
+      // Move to next position
+      currentColumn++;
+      attempts++;
+    }
+    
+    if (!foundValidPosition) {
+      console.warn(`⚠️ GridLayout: Could not find valid position for ${entity.SchemaName}, using fallback`);
+      // Fallback: place at calculated position anyway (should not happen with enough attempts)
+      const x = margin + currentColumn * (entityWidth + padding);
+      const y = margin + currentRow * (height + padding);
+      positions.push({ x, y });
+      currentColumn++;
+    }
   }
+  
+  console.log('✅ GridLayout: final positions:', positions);
 
-  const gridWidth = columns * entityWidth + (columns - 1) * padding;
-  const gridHeight = Math.max(...columnHeights) - padding; // remove trailing padding
+  const gridWidth = Math.min(entities.length, maxColumns) * entityWidth + (Math.min(entities.length, maxColumns) - 1) * padding;
+  const gridHeight = (currentRow + 1) * (calculateEntityHeight(entities[0] || { Attributes: [] } as any, options.diagramType) + padding) - padding;
 
   return {
     positions,
     gridWidth,
     gridHeight,
-    columns,
-    rows: Math.ceil(entities.length / columns) // estimated rows
+    columns: Math.min(entities.length, maxColumns),
+    rows: currentRow + 1
   };
 };
 
