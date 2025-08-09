@@ -104,7 +104,7 @@ export class SimpleDiagramRenderer extends DiagramRenderer {
         });
     }
 
-    updateEntityAttributes(graph: dia.Graph, selectedKey: string): void {
+    updateEntityAttributes(graph: dia.Graph, selectedKey: string | undefined): void {
         // Simple entities don't display key attributes, so nothing to do
     }
 

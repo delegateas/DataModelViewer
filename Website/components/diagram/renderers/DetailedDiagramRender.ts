@@ -151,7 +151,7 @@ export class DetailedDiagramRender extends DiagramRenderer {
         }
     }
 
-    updateEntityAttributes(graph: dia.Graph, selectedKey: string): void {
+    updateEntityAttributes(graph: dia.Graph, selectedKey: string | undefined): void {
         graph.getElements().forEach(el => {
             if (el.get('type') === 'delegate.entity') {
                 const currentData = el.get('data');

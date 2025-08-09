@@ -191,7 +191,7 @@ const DiagramContent = () => {
     }, [selectedKey, graph, currentEntities, renderer]);
 
     useEffect(() => {
-        if (!graph || !selectedKey || !renderer) return;
+        if (!graph || !renderer) return;
         renderer.updateEntityAttributes(graph, selectedKey);
     }, [selectedKey, graph, renderer]);
 

@@ -35,7 +35,7 @@ export abstract class DiagramRenderer {
         selectedKey: string
     ): void;
 
-  abstract updateEntityAttributes(graph: dia.Graph, selectedKey: string): void;
+  abstract updateEntityAttributes(graph: dia.Graph, selectedKey: string | undefined): void;
 
   abstract onLinkClick(linkView: dia.LinkView, evt: dia.Event): void;
 
