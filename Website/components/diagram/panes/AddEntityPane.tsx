@@ -3,17 +3,22 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, ChevronDown, ChevronRight, Settings } from 'lucide-react';
 import { Groups } from '@/generated/Data';
-import { EntityType, GroupType } from '@/lib/Types';
+import { EntityType, GroupType, AttributeType } from '@/lib/Types';
 
 export interface AddEntityPaneProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
-    onAddEntity: (entity: EntityType) => void;
+    onAddEntity: (entity: EntityType, selectedAttributes?: string[]) => void;
     currentEntities: EntityType[];
 }
+
+type AttributeSelectionMode = 'minimal' | 'custom-lookups' | 'all-lookups' | 'custom';
 
 export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
     isOpen,
@@ -22,6 +27,10 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
     currentEntities
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [attributeMode, setAttributeMode] = useState<AttributeSelectionMode>('custom-lookups');
+    const [selectedEntity, setSelectedEntity] = useState<EntityType | null>(null);
+    const [customSelectedAttributes, setCustomSelectedAttributes] = useState<string[]>([]);
+    const [isAttributeSettingsExpanded, setIsAttributeSettingsExpanded] = useState(false);
 
     // Filter groups and entities based on search term
     const filteredData = useMemo(() => {
@@ -44,8 +53,54 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
     }, [searchTerm]);
 
     const handleAddEntity = (entity: EntityType) => {
-        onAddEntity(entity);
+        let selectedAttributes: string[] = [];
+        
+        // Determine which attributes to include based on mode
+        switch (attributeMode) {
+            case 'minimal':
+                // Only primary key (handled by default in useDiagram)
+                selectedAttributes = [];
+                break;
+            case 'custom-lookups':
+                selectedAttributes = entity.Attributes
+                    .filter(attr => attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute)
+                    .map(attr => attr.SchemaName);
+                break;
+            case 'all-lookups':
+                selectedAttributes = entity.Attributes
+                    .filter(attr => attr.AttributeType === "LookupAttribute")
+                    .map(attr => attr.SchemaName);
+                break;
+            case 'custom':
+                selectedAttributes = customSelectedAttributes;
+                break;
+        }
+        
+        onAddEntity(entity, selectedAttributes);
         onOpenChange(false);
+        setSelectedEntity(null);
+        setCustomSelectedAttributes([]);
+    };
+
+    const handleEntityClick = (entity: EntityType) => {
+        if (attributeMode === 'custom') {
+            setSelectedEntity(entity);
+            // Initialize with current default (custom lookups)
+            const defaultSelected = entity.Attributes
+                .filter(attr => attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute)
+                .map(attr => attr.SchemaName);
+            setCustomSelectedAttributes(defaultSelected);
+        } else {
+            handleAddEntity(entity);
+        }
+    };
+
+    const handleCustomAttributeToggle = (attributeSchemaName: string, checked: boolean) => {
+        if (checked) {
+            setCustomSelectedAttributes(prev => [...prev, attributeSchemaName]);
+        } else {
+            setCustomSelectedAttributes(prev => prev.filter(name => name !== attributeSchemaName));
+        }
     };
 
     return (
@@ -55,6 +110,70 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                     <SheetTitle>Add Entity to Diagram</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-4">
+                    {/* Attribute Selection Options */}
+                    <Collapsible open={isAttributeSettingsExpanded} onOpenChange={setIsAttributeSettingsExpanded}>
+                        <CollapsibleTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between">
+                                <span className="flex items-center">
+                                    <Settings className="w-4 h-4 mr-2" />
+                                    Attribute Selection
+                                </span>
+                                {isAttributeSettingsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-3 space-y-3 p-3 border rounded-lg bg-muted/10">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium">Default attributes to include:</Label>
+                                <div className="space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            id="minimal"
+                                            name="attributeMode"
+                                            checked={attributeMode === 'minimal'}
+                                            onChange={() => setAttributeMode('minimal')}
+                                            className="w-4 h-4"
+                                        />
+                                        <Label htmlFor="minimal" className="text-sm">Minimal (Primary key only)</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            id="custom-lookups"
+                                            name="attributeMode"
+                                            checked={attributeMode === 'custom-lookups'}
+                                            onChange={() => setAttributeMode('custom-lookups')}
+                                            className="w-4 h-4"
+                                        />
+                                        <Label htmlFor="custom-lookups" className="text-sm">Custom lookup attributes</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            id="all-lookups"
+                                            name="attributeMode"
+                                            checked={attributeMode === 'all-lookups'}
+                                            onChange={() => setAttributeMode('all-lookups')}
+                                            className="w-4 h-4"
+                                        />
+                                        <Label htmlFor="all-lookups" className="text-sm">All lookup attributes</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            id="custom"
+                                            name="attributeMode"
+                                            checked={attributeMode === 'custom'}
+                                            onChange={() => setAttributeMode('custom')}
+                                            className="w-4 h-4"
+                                        />
+                                        <Label htmlFor="custom" className="text-sm">Pick specific attributes</Label>
+                                    </div>
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+
                     {/* Search Input */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -67,55 +186,129 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                     </div>
 
                     {/* Groups and Entities List */}
-                    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-                        {filteredData.map((group: GroupType) => (
-                            <div key={group.Name} className="space-y-2">
-                                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                                    {group.Name}
-                                </h3>
-                                <div className="space-y-1">
-                                    {group.Entities.map((entity: EntityType) => {
-                                        const isAlreadyInDiagram = currentEntities.some(e => e.SchemaName === entity.SchemaName);
-                                        return (
-                                            <Button
-                                                key={entity.SchemaName}
-                                                variant="ghost"
-                                                className={`w-full justify-start text-left h-auto py-3 px-3 ${isAlreadyInDiagram ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                onClick={() => {
-                                                    if (!isAlreadyInDiagram) {
-                                                        handleAddEntity(entity);
-                                                    }
-                                                }}
-                                                disabled={isAlreadyInDiagram}
-                                            >
-                                                <div className="flex flex-col items-start space-y-1">
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="font-medium">{entity.DisplayName}</span>
-                                                        {isAlreadyInDiagram && (
-                                                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                                                                In Diagram
+                    {!selectedEntity ? (
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                            {filteredData.map((group: GroupType) => (
+                                <div key={group.Name} className="space-y-2">
+                                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                                        {group.Name}
+                                    </h3>
+                                    <div className="space-y-1">
+                                        {group.Entities.map((entity: EntityType) => {
+                                            const isAlreadyInDiagram = currentEntities.some(e => e.SchemaName === entity.SchemaName);
+                                            return (
+                                                <Button
+                                                    key={entity.SchemaName}
+                                                    variant="ghost"
+                                                    className={`w-full justify-start text-left h-auto py-3 px-3 ${isAlreadyInDiagram ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    onClick={() => {
+                                                        if (!isAlreadyInDiagram) {
+                                                            handleEntityClick(entity);
+                                                        }
+                                                    }}
+                                                    disabled={isAlreadyInDiagram}
+                                                >
+                                                    <div className="flex flex-col items-start space-y-1">
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="font-medium">{entity.DisplayName}</span>
+                                                            {isAlreadyInDiagram && (
+                                                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                                                    In Diagram
+                                                                </span>
+                                                            )}
+                                                            {attributeMode === 'custom' && !isAlreadyInDiagram && (
+                                                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                                    Click to configure
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-xs text-muted-foreground">{entity.SchemaName}</span>
+                                                        {entity.Description && (
+                                                            <span className="text-xs text-muted-foreground line-clamp-2">
+                                                                {entity.Description}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <span className="text-xs text-muted-foreground">{entity.SchemaName}</span>
-                                                    {entity.Description && (
-                                                        <span className="text-xs text-muted-foreground line-clamp-2">
-                                                            {entity.Description}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                            {filteredData.length === 0 && (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    No entities found matching your search.
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        /* Custom Attribute Selection View */
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-medium">Configure {selectedEntity.DisplayName}</h3>
+                                    <p className="text-sm text-muted-foreground">Select attributes to include</p>
+                                </div>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => setSelectedEntity(null)}
+                                >
+                                    Back
+                                </Button>
+                            </div>
+
+                            <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                                {selectedEntity.Attributes.map((attribute: AttributeType) => {
+                                    const isChecked = customSelectedAttributes.includes(attribute.SchemaName);
+                                    const isPrimaryKey = attribute.IsPrimaryId;
+                                    
+                                    return (
+                                        <div 
+                                            key={attribute.SchemaName}
+                                            className={`flex items-center space-x-3 p-2 rounded border ${isPrimaryKey ? 'bg-muted/50 border-muted' : 'hover:bg-muted/30'}`}
+                                        >
+                                            <Checkbox
+                                                checked={isPrimaryKey || isChecked}
+                                                disabled={isPrimaryKey}
+                                                onCheckedChange={(checked: boolean) => 
+                                                    handleCustomAttributeToggle(attribute.SchemaName, checked)
+                                                }
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="font-medium text-sm">{attribute.DisplayName}</span>
+                                                    {isPrimaryKey && (
+                                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                            Primary Key
+                                                        </span>
+                                                    )}
+                                                    {attribute.AttributeType === "LookupAttribute" && (
+                                                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                                                            Lookup
                                                         </span>
                                                     )}
                                                 </div>
-                                            </Button>
-                                        );
-                                    })}
-                                </div>
+                                                <p className="text-xs text-muted-foreground">{attribute.SchemaName}</p>
+                                                {attribute.Description && (
+                                                    <p className="text-xs text-muted-foreground line-clamp-1">{attribute.Description}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        ))}
-                        {filteredData.length === 0 && (
-                            <div className="text-center py-8 text-muted-foreground">
-                                No entities found matching your search.
+
+                            <div className="flex space-x-2">
+                                <Button 
+                                    onClick={() => handleAddEntity(selectedEntity)}
+                                    className="flex-1"
+                                >
+                                    Add Entity with {customSelectedAttributes.length + 1} Attributes
+                                </Button>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </SheetContent>
         </Sheet>

@@ -15,25 +15,48 @@ export class EntityElement extends dia.Element {
     }
 
     static getVisibleItemsAndPorts(entity: EntityType) {
+        // Get the visible attributes list - if not set, use default logic
+        const visibleAttributeSchemaNames = (entity as any).visibleAttributeSchemaNames;
+        
+        if (visibleAttributeSchemaNames) {
+            // Use the explicit visible attributes list
+            const visibleItems = entity.Attributes.filter(attr => 
+                visibleAttributeSchemaNames.includes(attr.SchemaName)
+            );
+            
+            // Always ensure primary key is first if it exists
+            const primaryKeyAttribute = entity.Attributes.find(attr => attr.IsPrimaryId);
+            if (primaryKeyAttribute && !visibleItems.some(attr => attr.IsPrimaryId)) {
+                visibleItems.unshift(primaryKeyAttribute);
+            } else if (primaryKeyAttribute) {
+                // Move primary key to front if it exists
+                const filteredItems = visibleItems.filter(attr => !attr.IsPrimaryId);
+                visibleItems.splice(0, visibleItems.length, primaryKeyAttribute, ...filteredItems);
+            }
+            
+            // Map SchemaName to port name
+            const portMap: Record<string, string> = {};
+            for (const attr of visibleItems) {
+                portMap[attr.SchemaName.toLowerCase()] = `port-${attr.SchemaName.toLowerCase()}`;
+            }
+            return { visibleItems, portMap };
+        }
+        
+        // Fallback to default logic for entities without explicit visible list
         // Get the primary key attribute
         const primaryKeyAttribute = entity.Attributes.find(attr => attr.IsPrimaryId) ?? 
             { DisplayName: "Key", SchemaName: entity.SchemaName + "id" } as AttributeType;
         
         // Get custom lookup attributes (initially visible)
         const customLookupAttributes = entity.Attributes.filter(attr =>
-            attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute
+            attr.AttributeType === "LookupAttribute" && 
+            attr.IsCustomAttribute
         );
         
-        // Get manually added attributes (stored in entity metadata)
-        const manuallyAddedAttributes = entity.Attributes.filter(attr => 
-            (entity as any).manuallyAddedAttributes?.includes(attr.SchemaName)
-        );
-        
-        // Combine primary key, custom lookup attributes, and manually added attributes
+        // Combine primary key and custom lookup attributes
         const visibleItems = [
             primaryKeyAttribute, 
-            ...customLookupAttributes,
-            ...manuallyAddedAttributes
+            ...customLookupAttributes
         ];
 
         // Map SchemaName to port name

@@ -37,6 +37,7 @@ const DiagramContent = () => {
         resetView,
         fitToScreen,
         addAttributeToEntity,
+        removeAttributeFromEntity,
         diagramType,
         removeEntityFromDiagram
     } = useDiagramViewContext();
@@ -233,6 +234,11 @@ const DiagramContent = () => {
         addAttributeToEntity(selectedEntityForActions, attribute);
     };
 
+    const handleRemoveAttribute = (attribute: AttributeType) => {
+        if (!selectedEntityForActions) return;
+        removeAttributeFromEntity(selectedEntityForActions, attribute);
+    };
+
     const handleDeleteEntity = () => {
         if (selectedEntityForActions) {
             removeEntityFromDiagram(selectedEntityForActions);
@@ -290,6 +296,7 @@ const DiagramContent = () => {
                 selectedEntity={selectedEntityForActionsData || null}
                 onDeleteEntity={handleDeleteEntity}
                 onAddAttribute={handleAddAttribute}
+                onRemoveAttribute={handleRemoveAttribute}
                 availableAttributes={availableAttributes}
                 visibleAttributes={visibleAttributes}
             />

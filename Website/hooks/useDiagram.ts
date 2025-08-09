@@ -37,8 +37,9 @@ export interface DiagramActions {
   updateMousePosition: (position: { x: number; y: number } | null) => void;
   updatePanPosition: (position: { x: number; y: number }) => void;
   addAttributeToEntity: (entitySchemaName: string, attribute: AttributeType) => void;
+  removeAttributeFromEntity: (entitySchemaName: string, attribute: AttributeType) => void;
   updateDiagramType: (type: DiagramType) => void;
-  addEntityToDiagram: (entity: EntityType) => void;
+  addEntityToDiagram: (entity: EntityType, selectedAttributes?: string[]) => void;
   addGroupToDiagram: (group: GroupType) => void;
   removeEntityFromDiagram: (entitySchemaName: string) => void;
 }
@@ -146,7 +147,30 @@ export const useDiagram = (): DiagramState & DiagramActions => {
 
   const selectGroup = useCallback((group: GroupType) => {
     setSelectedGroup(group);
-    setCurrentEntities(group.Entities);
+    
+    // Initialize entities with default visible attributes
+    const entitiesWithVisibleAttributes = group.Entities.map(entity => {
+      // Get primary key
+      const primaryKey = entity.Attributes.find(attr => attr.IsPrimaryId);
+      
+      // Get custom lookup attributes (initially visible)
+      const customLookupAttributes = entity.Attributes.filter(attr =>
+        attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute
+      );
+      
+      // Create initial visible attributes list
+      const initialVisibleAttributes = [
+        ...(primaryKey ? [primaryKey.SchemaName] : []),
+        ...customLookupAttributes.map(attr => attr.SchemaName)
+      ];
+      
+      return {
+        ...entity,
+        visibleAttributeSchemaNames: initialVisibleAttributes
+      };
+    });
+    
+    setCurrentEntities(entitiesWithVisibleAttributes);
     clearSelection();
   }, [clearSelection]);
 
@@ -188,25 +212,24 @@ export const useDiagram = (): DiagramState & DiagramActions => {
         attr.SchemaName === attribute.SchemaName
       );
       
+      // Get current visible attributes list
+      const currentVisibleAttributes = (currentEntity.visibleAttributeSchemaNames || []);
+      
       let updatedEntity;
       if (attributeExists) {
-        // Attribute already exists, just mark it as manually added
+        // Attribute already exists, just add it to visible list if not already there
         updatedEntity = {
           ...currentEntity,
-          manuallyAddedAttributes: [
-            ...(currentEntity.manuallyAddedAttributes || []),
-            ...(currentEntity.manuallyAddedAttributes?.includes(attribute.SchemaName) ? [] : [attribute.SchemaName])
-          ]
+          visibleAttributeSchemaNames: currentVisibleAttributes.includes(attribute.SchemaName) 
+            ? currentVisibleAttributes 
+            : [...currentVisibleAttributes, attribute.SchemaName]
         };
       } else {
-        // Attribute doesn't exist, add it and mark as manually added
+        // Attribute doesn't exist, add it to entity and make it visible
         updatedEntity = {
           ...currentEntity,
           Attributes: [...currentEntity.Attributes, attribute],
-          manuallyAddedAttributes: [
-            ...(currentEntity.manuallyAddedAttributes || []),
-            attribute.SchemaName
-          ]
+          visibleAttributeSchemaNames: [...currentVisibleAttributes, attribute.SchemaName]
         };
       }
 
@@ -226,10 +249,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
             ? { 
                 ...entity, 
                 Attributes: attributeExists ? entity.Attributes : [...entity.Attributes, attribute],
-                manuallyAddedAttributes: [
-                  ...(entity.manuallyAddedAttributes || []),
-                  ...(entity.manuallyAddedAttributes?.includes(attribute.SchemaName) ? [] : [attribute.SchemaName])
-                ]
+                visibleAttributeSchemaNames: updatedEntity.visibleAttributeSchemaNames
               }
             : entity
         );
@@ -241,11 +261,61 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     isAddingAttributeRef.current = false;
   }, []);
 
+  const removeAttributeFromEntity = useCallback((entitySchemaName: string, attribute: AttributeType) => {
+    if (!graphRef.current) {
+      return;
+    }
+
+    // Find the entity element in the graph
+    const allElements = graphRef.current.getElements();
+    
+    const entityElement = allElements.find(el => 
+      el.get('type') === 'delegate.entity' && 
+      el.get('data')?.entity?.SchemaName === entitySchemaName
+    );
+
+    if (entityElement) {
+      // Update the entity's data to remove the attribute from visible list
+      const currentEntity = entityElement.get('data').entity;
+      
+      // Remove from visible attributes list
+      const updatedVisibleAttributes = (currentEntity.visibleAttributeSchemaNames || [])
+        .filter((attrName: string) => attrName !== attribute.SchemaName);
+      
+      const updatedEntity = {
+        ...currentEntity,
+        visibleAttributeSchemaNames: updatedVisibleAttributes
+      };
+
+      // Update the element's data
+      entityElement.set('data', { entity: updatedEntity });
+
+      // Trigger the updateAttributes method to re-render the entity
+      const entityElementTyped = entityElement as EntityElement;
+      if (entityElementTyped.updateAttributes) {
+        entityElementTyped.updateAttributes(updatedEntity);
+      }
+
+      // Update the currentEntities state to reflect the change
+      setCurrentEntities(prev => {
+        const updated = prev.map(entity => 
+          entity.SchemaName === entitySchemaName 
+            ? { 
+                ...entity, 
+                visibleAttributeSchemaNames: updatedVisibleAttributes
+              }
+            : entity
+        );
+        return updated;
+      });
+    }
+  }, []);
+
   const updateDiagramType = useCallback((type: DiagramType) => {
     setDiagramType(type);
   }, []);
 
-  const addEntityToDiagram = useCallback((entity: EntityType) => {
+  const addEntityToDiagram = useCallback((entity: EntityType, selectedAttributes?: string[]) => {
     if (!graphRef.current || !paperRef.current) {
       return;
     }
@@ -256,8 +326,31 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       return; // Entity already in diagram
     }
 
+    let initialVisibleAttributes: string[];
+    
+    if (selectedAttributes) {
+      // Use provided selected attributes
+      initialVisibleAttributes = selectedAttributes;
+    } else {
+      // Initialize entity with default visible attributes
+      const primaryKey = entity.Attributes.find(attr => attr.IsPrimaryId);
+      const customLookupAttributes = entity.Attributes.filter(attr =>
+        attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute
+      );
+      
+      initialVisibleAttributes = [
+        ...(primaryKey ? [primaryKey.SchemaName] : []),
+        ...customLookupAttributes.map(attr => attr.SchemaName)
+      ];
+    }
+    
+    const entityWithVisibleAttributes = {
+      ...entity,
+      visibleAttributeSchemaNames: initialVisibleAttributes
+    };
+
     // Update current entities
-    const updatedEntities = [...currentEntities, entity];
+    const updatedEntities = [...currentEntities, entityWithVisibleAttributes];
     setCurrentEntities(updatedEntities);
   }, [currentEntities, diagramType, fitToScreen]);
 
@@ -275,8 +368,26 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       return; // All entities from this group are already in diagram
     }
 
+    // Initialize new entities with default visible attributes
+    const entitiesWithVisibleAttributes = newEntities.map(entity => {
+      const primaryKey = entity.Attributes.find(attr => attr.IsPrimaryId);
+      const customLookupAttributes = entity.Attributes.filter(attr =>
+        attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute
+      );
+      
+      const initialVisibleAttributes = [
+        ...(primaryKey ? [primaryKey.SchemaName] : []),
+        ...customLookupAttributes.map(attr => attr.SchemaName)
+      ];
+      
+      return {
+        ...entity,
+        visibleAttributeSchemaNames: initialVisibleAttributes
+      };
+    });
+
     // Update current entities with new entities from the group
-    const updatedEntities = [...currentEntities, ...newEntities];
+    const updatedEntities = [...currentEntities, ...entitiesWithVisibleAttributes];
     setCurrentEntities(updatedEntities);
   }, [currentEntities]);
 
@@ -487,6 +598,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     updateMousePosition,
     updatePanPosition,
     addAttributeToEntity,
+    removeAttributeFromEntity,
     updateDiagramType,
     addEntityToDiagram,
     addGroupToDiagram,

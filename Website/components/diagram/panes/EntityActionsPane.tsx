@@ -30,6 +30,7 @@ export interface EntityActionsPaneProps {
     selectedEntity: EntityType | null;
     onDeleteEntity: () => void;
     onAddAttribute?: (attribute: AttributeType) => void;
+    onRemoveAttribute?: (attribute: AttributeType) => void;
     availableAttributes?: AttributeType[];
     visibleAttributes?: AttributeType[];
 }
@@ -70,11 +71,13 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
     selectedEntity,
     onDeleteEntity,
     onAddAttribute,
+    onRemoveAttribute,
     availableAttributes = [],
     visibleAttributes = []
 }) => {
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [isAttributesExpanded, setIsAttributesExpanded] = useState(false);
+    const [isRemoveAttributesExpanded, setIsRemoveAttributesExpanded] = useState(false);
 
     // Filter out attributes that are already visible in the diagram
     const visibleAttributeNames = visibleAttributes.map(attr => attr.SchemaName);
@@ -90,6 +93,17 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
             setIsAttributesExpanded(false);
         }
     };
+
+    const handleRemoveAttribute = (attribute: AttributeType) => {
+        if (onRemoveAttribute) {
+            onRemoveAttribute(attribute);
+        }
+    };
+
+    // Filter removable attributes (exclude primary key)
+    const removableAttributes = visibleAttributes.filter(attr => 
+        !attr.IsPrimaryId // Don't allow removing primary key - all other visible attributes can be removed
+    );
 
     return (
         <TooltipProvider>
@@ -182,6 +196,56 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
                                                             );
                                                         })
                                                     )}
+                                                </div>
+                                            </CollapsibleContent>
+                                        </Collapsible>
+                                    )}
+
+                                    {/* Remove Attribute Section */}
+                                    {onRemoveAttribute && removableAttributes.length > 0 && (
+                                        <Collapsible open={isRemoveAttributesExpanded} onOpenChange={setIsRemoveAttributesExpanded}>
+                                            <CollapsibleTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full justify-between"
+                                                >
+                                                    <span className="flex items-center">
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Remove Attribute
+                                                    </span>
+                                                    {isRemoveAttributesExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                                </Button>
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent className="mt-3 space-y-3">
+                                                {/* Removable Attributes */}
+                                                <div className="max-h-48 overflow-y-auto space-y-1">
+                                                    {removableAttributes.map((attribute) => {
+                                                        const AttributeIcon = getAttributeIcon(attribute.AttributeType);
+                                                        const typeLabel = getAttributeTypeLabel(attribute.AttributeType);
+                                                        
+                                                        return (
+                                                            <div
+                                                                key={attribute.SchemaName} 
+                                                                className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-destructive/10 transition-colors"
+                                                                onClick={() => handleRemoveAttribute(attribute)}
+                                                            >
+                                                                <AttributeIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="font-medium text-sm truncate">
+                                                                        {attribute.DisplayName}
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground truncate">
+                                                                        {typeLabel}
+                                                                    </div>
+                                                                </div>
+                                                                <Trash2 className="w-4 h-4 text-destructive flex-shrink-0" />
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    Note: Primary key cannot be removed.
                                                 </div>
                                             </CollapsibleContent>
                                         </Collapsible>
