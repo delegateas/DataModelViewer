@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { AttributeType } from '@/lib/Types';
 
-export interface AddAttributeModalProps {
+export interface AddAttributePaneProps {
     isOpen: boolean;
     onClose: () => void;
     onAddAttribute: (attribute: AttributeType) => void;
@@ -67,7 +67,7 @@ const getAttributeTypeLabel = (attributeType: string) => {
     }
 };
 
-export const AddAttributeModal: React.FC<AddAttributeModalProps> = ({
+export const AddAttributePane: React.FC<AddAttributePaneProps> = ({
     isOpen,
     onClose,
     onAddAttribute,
@@ -180,4 +180,4 @@ export const AddAttributeModal: React.FC<AddAttributeModalProps> = ({
             </Sheet>
         </TooltipProvider>
     );
-}; 
+};

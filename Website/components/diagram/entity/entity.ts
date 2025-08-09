@@ -59,12 +59,11 @@ export class EntityElement extends dia.Element {
 
         const itemHeight = 28;
         const itemYSpacing = 8;
-        const addButtonHeight = 32; // Space for add button
         const headerHeight = 80;
         const startY = headerHeight + itemYSpacing * 2;
 
         // Calculate height dynamically based on number of visible items
-        const height = startY + visibleItems.length * (itemHeight + itemYSpacing) + addButtonHeight + itemYSpacing;
+        const height = startY + visibleItems.length * (itemHeight + itemYSpacing) + itemYSpacing;
         
         const leftPorts: dia.Element.Port[] = [];
         const rightPorts: dia.Element.Port[] = [];

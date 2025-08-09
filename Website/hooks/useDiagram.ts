@@ -5,6 +5,7 @@ import { EntityElement } from '@/components/diagram/entity/entity';
 import { AvoidRouter } from '@/components/diagram/avoid-router/avoidrouter';
 import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
 import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiagramRender';
+import { DetailedDiagramRender } from '@/components/diagram/renderers/DetailedDiagramRender';
 
 export type DiagramType = 'detailed' | 'simple';
 
@@ -37,6 +38,8 @@ export interface DiagramActions {
   updatePanPosition: (position: { x: number; y: number }) => void;
   addAttributeToEntity: (entitySchemaName: string, attribute: AttributeType) => void;
   updateDiagramType: (type: DiagramType) => void;
+  addEntityToDiagram: (entity: EntityType) => void;
+  removeEntityFromDiagram: (entitySchemaName: string) => void;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -241,6 +244,47 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setDiagramType(type);
   }, []);
 
+  const addEntityToDiagram = useCallback((entity: EntityType) => {
+    if (!graphRef.current || !paperRef.current) {
+      return;
+    }
+
+    // Check if entity already exists in the diagram
+    const existingEntity = currentEntities.find(e => e.SchemaName === entity.SchemaName);
+    if (existingEntity) {
+      return; // Entity already in diagram
+    }
+
+    // Update current entities
+    const updatedEntities = [...currentEntities, entity];
+    setCurrentEntities(updatedEntities);
+  }, [currentEntities, diagramType, fitToScreen]);
+
+  const removeEntityFromDiagram = useCallback((entitySchemaName: string) => {
+    if (!graphRef.current) {
+      return;
+    }
+
+    // Remove the entity from currentEntities state
+    const updatedEntities = currentEntities.filter(entity => entity.SchemaName !== entitySchemaName);
+    setCurrentEntities(updatedEntities);
+
+    // Find and remove the entity element from the graph
+    const entityElement = graphRef.current.getElements().find(el => 
+      (el.get('type') === 'delegate.entity' || el.get('type') === 'delegate.simple-entity') && 
+      el.get('data')?.entity?.SchemaName === entitySchemaName
+    );
+
+    if (entityElement) {
+      // Remove all links connected to this entity
+      const connectedLinks = graphRef.current.getConnectedLinks(entityElement);
+      connectedLinks.forEach(link => link.remove());
+      
+      // Remove the entity element
+      entityElement.remove();
+    }
+  }, [currentEntities, fitToScreen]);
+
   const initializePaper = useCallback(async (container: HTMLElement, options: any = {}) => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
@@ -424,5 +468,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     updatePanPosition,
     addAttributeToEntity,
     updateDiagramType,
+    addEntityToDiagram,
+    removeEntityFromDiagram,
   };
 }; 

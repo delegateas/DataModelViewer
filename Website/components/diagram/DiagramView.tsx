@@ -8,10 +8,10 @@ import { SimpleEntityElement } from '@/components/diagram/entity/SimpleEntityEle
 import debounce from 'lodash/debounce';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { PanelLeft, ZoomIn, ZoomOut } from 'lucide-react';
+import { PanelLeft, ZoomIn, ZoomOut, Trash2 } from 'lucide-react';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
-import { AddAttributeModal } from '@/components/diagram/AddAttributeModal';
+import { AddEntityPane, EntityActionsPane } from '@/components/diagram/panes';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
 import { AppSidebar } from '../AppSidebar';
@@ -37,13 +37,13 @@ const DiagramContent = () => {
         resetView,
         fitToScreen,
         addAttributeToEntity,
-        diagramType
+        diagramType,
+        removeEntityFromDiagram
     } = useDiagramViewContext();
     
     const [selectedKey, setSelectedKey] = useState<string>();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [isAddAttributeModalOpen, setIsAddAttributeModalOpen] = useState(false);
-    const [selectedEntityForAttribute, setSelectedEntityForAttribute] = useState<string>();
+    const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
+    const [isEntityActionsSheetOpen, setIsEntityActionsSheetOpen] = useState(false);
 
     const renderer = useMemo(() => {
         if (!graph) return null;
@@ -60,11 +60,9 @@ const DiagramContent = () => {
         })();
 
         return new RendererClass(graph, {
-            setSelectedKey,
-            setSelectedEntityForAttribute,
-            setIsAddAttributeModalOpen
+            setSelectedKey
         });
-    }, [diagramType, graph, setSelectedKey, setSelectedEntityForAttribute, setIsAddAttributeModalOpen]);
+    }, [diagramType, graph, setSelectedKey]);
 
     useEffect(() => {
         if (Groups.length > 0 && !selectedGroup) selectGroup(Groups[0]);
@@ -153,21 +151,48 @@ const DiagramContent = () => {
 
     useEffect(() => {
         if (!paper || !renderer) return;
+        
+        // Handle link clicks
         paper.on('link:pointerclick', renderer.onLinkClick);
+        
+        // Handle entity clicks
+        const handleEntityClick = (elementView: any, evt: any) => {
+            evt.stopPropagation();
+            const element = elementView.model;
+            const entityData = element.get('data');
+            
+            if (entityData?.entity) {
+                setSelectedEntityForActions(entityData.entity.SchemaName);
+                setIsEntityActionsSheetOpen(true);
+            }
+        };
+        
+        paper.on('element:pointerclick', handleEntityClick);
+        
         return () => {
             paper.off('link:pointerclick', renderer.onLinkClick);
+            paper.off('element:pointerclick', handleEntityClick);
         };
     }, [paper, renderer]);
 
     const handleAddAttribute = (attribute: AttributeType) => {
-        if (!selectedEntityForAttribute) return;
-        addAttributeToEntity(selectedEntityForAttribute, attribute);
-        setIsAddAttributeModalOpen(false);
-        setSelectedEntityForAttribute(undefined);
+        if (!selectedEntityForActions) return;
+        addAttributeToEntity(selectedEntityForActions, attribute);
     };
 
+    const handleDeleteEntity = () => {
+        if (selectedEntityForActions) {
+            removeEntityFromDiagram(selectedEntityForActions);
+            setIsEntityActionsSheetOpen(false);
+            setSelectedEntityForActions(undefined);
+        }
+    };
+
+    // Find the selected entity for actions
+    const selectedEntityForActionsData = currentEntities.find(entity => entity.SchemaName === selectedEntityForActions);
+    
     // Find the entity display name for the modal
-    const selectedEntity = currentEntities.find(entity => entity.SchemaName === selectedEntityForAttribute);
+    const selectedEntity = currentEntities.find(entity => entity.SchemaName === selectedEntityForActions);
     const selectedEntityName = selectedEntity?.DisplayName;
     
     // Get available and visible attributes for the selected entity
@@ -185,28 +210,6 @@ const DiagramContent = () => {
                         <div className="flex items-center space-x-4">
                             <h1 className="text-xl font-bold">Data Model Diagram</h1>
                             <Separator orientation="vertical" className="h-6" />
-                            <div className="flex items-center space-x-2">
-                                <span className="text-sm text-muted-foreground">Group:</span>
-                                <span className="text-sm font-medium">
-                                    {selectedGroup?.Name || 'None'}
-                                </span>
-                            </div>
-                            <Separator orientation="vertical" className="h-6" />
-                            <div className="flex items-center space-x-2">
-                                <span className="text-sm text-muted-foreground">Entities:</span>
-                                <span className="text-sm font-medium">
-                                    {currentEntities.length}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            >
-                                <PanelLeft className="h-4 w-4" />
-                            </Button>
                         </div>
                     </div>
                 </div>
@@ -227,12 +230,13 @@ const DiagramContent = () => {
                 </div>
             </div>
 
-            {/* Add Attribute Modal */}
-            <AddAttributeModal
-                isOpen={isAddAttributeModalOpen}
-                onClose={() => setIsAddAttributeModalOpen(false)}
+            {/* Entity Actions Pane */}
+            <EntityActionsPane
+                isOpen={isEntityActionsSheetOpen}
+                onOpenChange={setIsEntityActionsSheetOpen}
+                selectedEntity={selectedEntityForActionsData || null}
+                onDeleteEntity={handleDeleteEntity}
                 onAddAttribute={handleAddAttribute}
-                entityName={selectedEntityName}
                 availableAttributes={availableAttributes}
                 visibleAttributes={visibleAttributes}
             />

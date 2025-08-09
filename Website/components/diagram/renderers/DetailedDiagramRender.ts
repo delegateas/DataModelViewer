@@ -9,19 +9,7 @@ export class DetailedDiagramRender extends DiagramRenderer {
     
     onDocumentClick(event: MouseEvent): void {
         const target = (event.target as HTMLElement).closest('button[data-schema-name]') as HTMLElement;
-        const addButton = (event.target as HTMLElement).closest('button[data-add-attribute]') as HTMLElement;
 
-        if (addButton) {
-            // Find the entity this add button belongs to
-            const entityElement = addButton.closest('[data-entity-schema]') as HTMLElement;
-            if (entityElement) {
-                const entitySchema = entityElement.dataset.entitySchema;
-                this.setSelectedEntityForAttribute?.(entitySchema!);
-                this.setIsAddAttributeModalOpen?.(true);
-            }
-            return;
-        }
-        
         if (target) {
             const schemaName = target.dataset.schemaName!;
             const isKey = target.dataset.isKey === 'true';

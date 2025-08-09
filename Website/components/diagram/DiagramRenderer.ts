@@ -6,21 +6,15 @@ export type IPortMap = Record<string, string>;
 export abstract class DiagramRenderer {
     protected graph: dia.Graph;
     protected setSelectedKey?: (key: string | undefined) => void;
-    protected setSelectedEntityForAttribute?: (schema: string) => void;
-    protected setIsAddAttributeModalOpen?: (open: boolean) => void;
 
     constructor(
         graph: dia.Graph | undefined | null,
         options?: {
         setSelectedKey?: (key: string | undefined) => void;
-        setSelectedEntityForAttribute?: (schema: string) => void;
-        setIsAddAttributeModalOpen?: (open: boolean) => void;
     }) { 
         if (!graph) throw new Error("Graph must be defined");
         this.graph = graph;
         this.setSelectedKey = options?.setSelectedKey;
-        this.setSelectedEntityForAttribute = options?.setSelectedEntityForAttribute;
-        this.setIsAddAttributeModalOpen = options?.setIsAddAttributeModalOpen;
     }
 
     abstract onDocumentClick(event: MouseEvent): void;

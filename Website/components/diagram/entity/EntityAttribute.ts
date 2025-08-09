@@ -6,16 +6,7 @@ interface IEntityAttribute {
     isSelected?: boolean;
 }
 
-export const EntityAttribute = ({ attribute, isKey, isSelected = false, isAddButton = false }: IEntityAttribute & { isAddButton?: boolean }): string => {
-    if (isAddButton) {
-        return `
-            <button class="w-full rounded-sm my-[4px] p-[4px] bg-gray-100 flex items-center h-[28px] justify-center hover:bg-gray-200 transition-colors duration-300 text-gray-600" data-add-attribute="true">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-plus-icon lucide-square-plus"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-                <p class="text-sm ml-1">Add attribute</p>
-            </button>
-        `;
-    }
-    
+export const EntityAttribute = ({ attribute, isKey, isSelected = false }: IEntityAttribute): string => {
     let icon = '';
     if (isKey) {
         icon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round-icon lucide-key-round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>`

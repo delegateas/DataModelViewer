@@ -33,7 +33,6 @@ export function EntityBody({ entity, visibleItems, selectedKey }: IEntityBody): 
                     isKey: i == 0, 
                     isSelected: selectedKey === attribute.SchemaName 
                 }))).join('')}
-                ${EntityAttribute({ attribute: { DisplayName: '', SchemaName: '', AttributeType: 'GenericAttribute' } as any, isKey: false, isAddButton: true })}
             </div>
         </div>
     `;
