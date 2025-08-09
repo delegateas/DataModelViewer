@@ -157,6 +157,15 @@ const DiagramContent = () => {
         
         // Handle entity clicks
         const handleEntityClick = (elementView: any, evt: any) => {
+            // Check if the click target is an attribute button
+            const target = evt.originalEvent?.target as HTMLElement;
+            const isAttributeButton = target?.closest('button[data-schema-name]');
+            
+            // If clicking on an attribute, let the renderer handle it and don't open the entity actions sheet
+            if (isAttributeButton) {
+                return;
+            }
+            
             evt.stopPropagation();
             const element = elementView.model;
             const entityData = element.get('data');
@@ -166,12 +175,56 @@ const DiagramContent = () => {
                 setIsEntityActionsSheetOpen(true);
             }
         };
+
+        // Handle entity hover for cursor indication
+        const handleEntityMouseEnter = (elementView: any) => {
+            const element = elementView.model;
+            const entityData = element.get('data');
+            
+            if (entityData?.entity) {
+                // Change cursor on the SVG element
+                elementView.el.style.cursor = 'pointer';
+                
+                // Find the foreignObject and its HTML content for the border effect
+                const foreignObject = elementView.el.querySelector('foreignObject');
+                const htmlContent = foreignObject?.querySelector('[data-entity-schema]');
+                
+                if (htmlContent && !htmlContent.hasAttribute('data-hover-active')) {
+                    htmlContent.setAttribute('data-hover-active', 'true');
+                    htmlContent.style.border = '1px solid #3b82f6';
+                    htmlContent.style.borderRadius = '10px';
+                }
+            }
+        };
+
+        const handleEntityMouseLeave = (elementView: any) => {
+            const element = elementView.model;
+            const entityData = element.get('data');
+            
+            if (entityData?.entity) {
+                // Remove hover styling
+                elementView.el.style.cursor = 'default';
+                
+                // Remove border from HTML content
+                const foreignObject = elementView.el.querySelector('foreignObject');
+                const htmlContent = foreignObject?.querySelector('[data-entity-schema]');
+                
+                if (htmlContent) {
+                    htmlContent.removeAttribute('data-hover-active');
+                    htmlContent.style.border = 'none';
+                }
+            }
+        };
         
         paper.on('element:pointerclick', handleEntityClick);
+        paper.on('element:mouseenter', handleEntityMouseEnter);
+        paper.on('element:mouseleave', handleEntityMouseLeave);
         
         return () => {
             paper.off('link:pointerclick', renderer.onLinkClick);
             paper.off('element:pointerclick', handleEntityClick);
+            paper.off('element:mouseenter', handleEntityMouseEnter);
+            paper.off('element:mouseleave', handleEntityMouseLeave);
         };
     }, [paper, renderer]);
 

@@ -63,7 +63,7 @@ export class EntityElement extends dia.Element {
         const startY = headerHeight + itemYSpacing * 2;
 
         // Calculate height dynamically based on number of visible items
-        const height = startY + visibleItems.length * (itemHeight + itemYSpacing) + itemYSpacing;
+        const height = startY + visibleItems.length * (itemHeight + itemYSpacing) + 2;
         
         const leftPorts: dia.Element.Port[] = [];
         const rightPorts: dia.Element.Port[] = [];
