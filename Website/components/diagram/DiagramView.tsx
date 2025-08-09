@@ -6,6 +6,7 @@ import { Groups } from "../../generated/Data"
 import { SquareElement } from '@/components/diagram/elements/SquareElement';
 import { TextElement } from '@/components/diagram/elements/TextElement';
 import { Separator } from '@/components/ui/separator';
+import { Loading } from '@/components/ui/loading';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
 import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
@@ -40,6 +41,12 @@ const DiagramContent = () => {
     
     const [selectedKey, setSelectedKey] = useState<string>();
     const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Debug logging for loading state changes
+    useEffect(() => {
+        console.log('Loading state changed to:', isLoading);
+    }, [isLoading]);
 
     // Wrapper for setSelectedKey to pass to renderer
     const handleSetSelectedKey = useCallback((key: string | undefined) => {
@@ -104,6 +111,17 @@ const DiagramContent = () => {
 
     useEffect(() => {
         if (!graph || !paper || !selectedGroup || !renderer) return;
+
+        // Set loading state when starting diagram creation
+        console.log('Starting diagram creation, setting loading to true');
+        setIsLoading(true);
+
+        // If there are no entities, set loading to false immediately
+        if (currentEntities.length === 0) {
+            console.log('No entities to render, setting loading to false');
+            setIsLoading(false);
+            return;
+        }
 
         // Preserve squares and text elements before clearing - only clear entities and links
         const squares = graph.getElements().filter(element => element.get('type') === 'delegate.square');
@@ -186,7 +204,10 @@ const DiagramContent = () => {
 
         // Auto-fit to screen after a short delay to ensure all elements are rendered
         setTimeout(() => {
+            console.log('Diagram creation complete, setting loading to false');
             fitToScreen();
+            // Set loading to false once diagram is complete
+            setIsLoading(false);
         }, 200);
     }, [graph, paper, selectedGroup, currentEntities, diagramType]);
 
@@ -623,8 +644,8 @@ const DiagramContent = () => {
                         rx: 4,
                         ry: 4,
                         ref: 'text',
-                        refX: -16,
-                        refY: -4,
+                        refX: -8,
+                        refY: 0,
                         refWidth: '100%',
                         refHeight: '100%',
                         refWidth2: 16,
@@ -664,22 +685,44 @@ const DiagramContent = () => {
     return (
         <>
             <div className="flex flex-col flex-1">
-                {/* Top Toolbar */}
-                <div className="border-b border-border bg-background p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            <h1 className="text-xl font-bold">Data Model Diagram</h1>
-                            <Separator orientation="vertical" className="h-6" />
+                {/* Beta Disclaimer Banner */}
+                <div className="bg-amber-50 border-b border-amber-200 px-4 py-2">
+                    <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 rounded-full bg-amber-500 flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">β</span>
                         </div>
+                        <p className="text-sm text-amber-800">
+                            <strong>Open Beta Feature:</strong> This ER Diagram feature is currently in beta. Some functionality may not work fully.
+                        </p>
                     </div>
                 </div>
-
-                {/* Diagram Area */}
                 
-                <div className='flex-1 flex flex-col bg-slate-50' style={{
+                {/* Diagram Area */}
+                <div className='flex-1 flex flex-col bg-slate-50 relative' style={{
                     backgroundSize: `${zoom * 10}%`,
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
                 }}>
+                    {isLoading && (
+                        <div className="absolute inset-0 bg-slate-50/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="flex gap-2">
+                                    {[...Array(3)].map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className="h-4 w-4 rounded-full bg-blue-500 animate-bounce"
+                                            style={{
+                                                animationDelay: `${i * 0.1}s`,
+                                                animationDuration: "0.8s"
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                                <p className="text-sm font-medium text-slate-600 animate-pulse">
+                                    Loading diagram...
+                                </p>
+                            </div>
+                        </div>
+                    )}
                     <DiagramCanvas>
                         {/* Zoom and Coordinate Indicator */}
                         <ZoomCoordinateIndicator 
