@@ -43,6 +43,9 @@ const DiagramContent = () => {
     
     // Persistent tracking of entity positions across renders
     const entityPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+    
+    // Track previous diagram type to detect changes
+    const previousDiagramTypeRef = useRef<string>(diagramType);
 
     // Wrapper for setSelectedKey to pass to renderer
     const handleSetSelectedKey = useCallback((key: string | undefined) => {
@@ -122,6 +125,15 @@ const DiagramContent = () => {
             return;
         }
 
+        // Check if diagram type has changed and clear all positions if so
+        let diagramTypeChanged = false;
+        if (previousDiagramTypeRef.current !== diagramType) {
+            console.log(`🔄 Diagram type changed from ${previousDiagramTypeRef.current} to ${diagramType}, clearing all entity positions`);
+            entityPositionsRef.current.clear();
+            previousDiagramTypeRef.current = diagramType;
+            diagramTypeChanged = true;
+        }
+
         // Set loading state when starting diagram creation
         setIsLoading(true);
 
@@ -153,15 +165,20 @@ const DiagramContent = () => {
         }));
         
         // Update persistent position tracking with current positions
-        console.log('🔍 Before update - entityPositionsRef has:', Array.from(entityPositionsRef.current.keys()));
-        existingEntities.forEach(element => {
-            const entityData = element.get('data');
-            if (entityData?.entity?.SchemaName) {
-                const position = element.position();
-                entityPositionsRef.current.set(entityData.entity.SchemaName, position);
-                console.log(`📍 Updated position for ${entityData.entity.SchemaName}:`, position);
-            }
-        });
+        // Skip this if diagram type changed to ensure all entities are treated as new
+        if (!diagramTypeChanged) {
+            console.log('🔍 Before update - entityPositionsRef has:', Array.from(entityPositionsRef.current.keys()));
+            existingEntities.forEach(element => {
+                const entityData = element.get('data');
+                if (entityData?.entity?.SchemaName) {
+                    const position = element.position();
+                    entityPositionsRef.current.set(entityData.entity.SchemaName, position);
+                    console.log(`📍 Updated position for ${entityData.entity.SchemaName}:`, position);
+                }
+            });
+        } else {
+            console.log('🔄 Skipping position update due to diagram type change');
+        }
         
         // Clean up position tracking for entities that are no longer in currentEntities
         const currentEntityNames = new Set(currentEntities.map(e => e.SchemaName));

@@ -77,17 +77,22 @@ export const calculateGridLayout = (
     const maxX = Math.max(...existingPositions.map(pos => pos.x + pos.width));
     const maxY = Math.max(...existingPositions.map(pos => pos.y + pos.height));
     
+    // Get sample entity dimensions for spacing calculations
+    const sampleDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] }, options.diagramType);
+    
     // Start new entities to the right of existing ones, or on the next row
-    startColumn = Math.floor((maxX + padding - margin) / (entityWidth + padding));
-    if (startColumn * (entityWidth + padding) + margin + entityWidth > containerWidth) {
+    startColumn = Math.floor((maxX + padding - margin) / (sampleDimensions.width + padding));
+    if (startColumn * (sampleDimensions.width + padding) + margin + sampleDimensions.width > containerWidth) {
       // Move to next row if we can't fit horizontally
       startColumn = 0;
-      startRow = Math.floor((maxY + padding - margin) / 200); // Approximate row height
+      startRow = Math.floor((maxY + padding - margin) / (sampleDimensions.height + padding));
     }
   }
 
-  // Determine how many columns can fit
-  const maxColumns = Math.max(1, Math.floor((containerWidth - margin * 2 + padding) / (entityWidth + padding)));
+  // Determine how many columns can fit based on actual entity dimensions
+  const sampleEntityDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] }, options.diagramType);
+  const actualEntityWidth = sampleEntityDimensions.width;
+  const maxColumns = Math.max(1, Math.floor((containerWidth - margin * 2 + padding) / (actualEntityWidth + padding)));
   
   // For collision avoidance, we'll place entities sequentially from the calculated starting position
   const positions: GridPosition[] = [];
@@ -96,7 +101,9 @@ export const calculateGridLayout = (
 
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
-    const height = calculateEntityHeight(entity, options.diagramType);
+    const entityDimensions = estimateEntityDimensions(entity, options.diagramType);
+    const height = entityDimensions.height;
+    const width = entityDimensions.width;
     
     // Find next available position that doesn't collide
     let foundValidPosition = false;
@@ -110,14 +117,23 @@ export const calculateGridLayout = (
         currentRow++;
       }
       
-      const x = margin + currentColumn * (entityWidth + padding);
+      const x = margin + currentColumn * (width + padding);
       const y = margin + currentRow * (height + padding);
       
       // Check if this position is occupied by existing entities
-      const isOccupied = existingPositions && existingPositions.length > 0 ? existingPositions.some(pos => 
-        Math.abs(pos.x - x) < entityWidth + padding/2 && 
-        Math.abs(pos.y - y) < height + padding/2
-      ) : false;
+      const isOccupied = existingPositions && existingPositions.length > 0 ? existingPositions.some(pos => {
+        const entityRight = x + width;
+        const entityBottom = y + height;
+        const existingRight = pos.x + pos.width;
+        const existingBottom = pos.y + pos.height;
+        
+        // Check for overlap with padding buffer
+        const buffer = padding / 4;
+        return !(entityRight + buffer < pos.x || 
+                x > existingRight + buffer || 
+                entityBottom + buffer < pos.y || 
+                y > existingBottom + buffer);
+      }) : false;
       
       if (!isOccupied) {
         positions.push({ x, y });
@@ -131,15 +147,16 @@ export const calculateGridLayout = (
     
     if (!foundValidPosition) {
       // Fallback: place at calculated position anyway (should not happen with enough attempts)
-      const x = margin + currentColumn * (entityWidth + padding);
+      const x = margin + currentColumn * (width + padding);
       const y = margin + currentRow * (height + padding);
       positions.push({ x, y });
       currentColumn++;
     }
   }
 
-  const gridWidth = Math.min(entities.length, maxColumns) * entityWidth + (Math.min(entities.length, maxColumns) - 1) * padding;
-  const gridHeight = (currentRow + 1) * (calculateEntityHeight(entities[0] || { Attributes: [] }, options.diagramType) + padding) - padding;
+  const sampleDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] }, options.diagramType);
+  const gridWidth = Math.min(entities.length, maxColumns) * sampleDimensions.width + (Math.min(entities.length, maxColumns) - 1) * padding;
+  const gridHeight = (currentRow + 1) * (sampleDimensions.height + padding) - padding;
 
   return {
     positions,
