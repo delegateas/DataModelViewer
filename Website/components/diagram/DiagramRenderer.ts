@@ -37,4 +37,91 @@ export abstract class DiagramRenderer {
   abstract onLinkClick(linkView: dia.LinkView, evt: dia.Event): void;
 
   abstract getVisibleAttributes(entity: EntityType): AttributeType[];
+
+  // Unified method to update an entity regardless of type
+  updateEntity(entitySchemaName: string, updatedEntity: EntityType): void {
+    // Find the entity element in the graph
+    const allElements = this.graph.getElements();
+    
+    const entityElement = allElements.find(el => 
+      (el.get('type') === 'delegate.entity' || el.get('type') === 'delegate.simple-entity') && 
+      el.get('data')?.entity?.SchemaName === entitySchemaName
+    );
+
+    if (entityElement) {
+      // Update the element's data
+      entityElement.set('data', { entity: updatedEntity });
+
+      // Call the appropriate update method based on entity type
+      if (entityElement.get('type') === 'delegate.entity') {
+        // For detailed entities, use updateAttributes
+        const entityElementTyped = entityElement as any;
+        if (entityElementTyped.updateAttributes) {
+          entityElementTyped.updateAttributes(updatedEntity);
+        }
+      } else if (entityElement.get('type') === 'delegate.simple-entity') {
+        // For simple entities, use updateEntity
+        const simpleEntityElementTyped = entityElement as any;
+        if (simpleEntityElementTyped.updateEntity) {
+          simpleEntityElementTyped.updateEntity(updatedEntity);
+        }
+      }
+
+      // Recreate links for this entity to reflect attribute changes
+      this.recreateEntityLinks(updatedEntity);
+    }
+  }
+
+  // Helper method to recreate links for a specific entity
+  private recreateEntityLinks(entity: EntityType): void {
+    // Remove existing links for this entity
+    const allElements = this.graph.getElements();
+    const entityElement = allElements.find(el => 
+      (el.get('type') === 'delegate.entity' || el.get('type') === 'delegate.simple-entity') && 
+      el.get('data')?.entity?.SchemaName === entity.SchemaName
+    );
+
+    if (entityElement) {
+      // Remove all links connected to this entity
+      const connectedLinks = this.graph.getConnectedLinks(entityElement);
+      connectedLinks.forEach(link => link.remove());
+    }
+
+    // Recreate the entity map for link creation
+    const entityMap = new Map<string, { element: dia.Element, portMap: IPortMap }>();
+    
+    allElements.forEach(el => {
+      if (el.get('type') === 'delegate.entity' || el.get('type') === 'delegate.simple-entity') {
+        const entityData = el.get('data')?.entity;
+        if (entityData) {
+          // Create appropriate port map based on entity type
+          let portMap: IPortMap;
+          if (el.get('type') === 'delegate.entity') {
+            // For detailed entities, get the actual port map
+            const EntityElement = require('@/components/diagram/entity/EntityElement').EntityElement;
+            const { portMap: detailedPortMap } = EntityElement.getVisibleItemsAndPorts(entityData);
+            portMap = detailedPortMap;
+          } else {
+            // For simple entities, use basic 4-directional ports
+            portMap = {
+              top: 'port-top',
+              right: 'port-right',
+              bottom: 'port-bottom',
+              left: 'port-left'
+            };
+          }
+          
+          entityMap.set(entityData.SchemaName, { element: el, portMap });
+        }
+      }
+    });
+
+    // Recreate links for all entities (this ensures all relationships are updated)
+    entityMap.forEach((entityInfo, schemaName) => {
+      const entityData = entityInfo.element.get('data')?.entity;
+      if (entityData) {
+        this.createLinks(entityData, entityMap);
+      }
+    });
+  }
 }

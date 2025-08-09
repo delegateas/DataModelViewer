@@ -126,7 +126,7 @@ export class SimpleEntityElement extends dia.Element {
 
     defaults() {
         return {
-            type: 'delegate.simple-entity',
+            type: 'delegate.entity',
             size: { width: 200, height: 80 },
             attrs: {
                 body: {

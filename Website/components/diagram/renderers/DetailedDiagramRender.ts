@@ -36,7 +36,7 @@ export class DetailedDiagramRender extends DiagramRenderer {
         if (!entityInfo) return;
 
         const { portMap } = entityInfo;
-        const { visibleItems } = EntityElement.getVisibleItemsAndPorts(entity);
+        const visibleItems = this.getVisibleAttributes(entity);
 
         for (let i = 1; i < visibleItems.length; i++) {
             const attr = visibleItems[i];

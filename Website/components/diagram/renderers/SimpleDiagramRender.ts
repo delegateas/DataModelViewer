@@ -32,7 +32,10 @@ export class SimpleDiagramRenderer extends DiagramRenderer {
         const entityInfo = entityMap.get(entity.SchemaName);
         if (!entityInfo) return;
 
-        for (const attr of entity.Attributes) {
+        // Get visible attributes for this entity
+        const visibleAttributes = this.getVisibleAttributes(entity);
+
+        for (const attr of visibleAttributes) {
         if (attr.AttributeType !== 'LookupAttribute') continue;
 
         for (const target of attr.Targets) {
@@ -86,7 +89,7 @@ export class SimpleDiagramRenderer extends DiagramRenderer {
         if (!entity) return;
 
         const entityId = graph.getElements().find(el =>
-            el.get('type') === 'delegate.simple-entity' &&
+            el.get('type') === 'delegate.entity' &&
             el.get('data')?.entity?.SchemaName === entity.SchemaName
         )?.id;
 
@@ -111,6 +114,13 @@ export class SimpleDiagramRenderer extends DiagramRenderer {
     }
 
     getVisibleAttributes(entity: EntityType): AttributeType[] {
-        return entity.Attributes;
+        // For simple entities, use the visibleAttributeSchemaNames to determine which attributes are "visible"
+        // If no visibleAttributeSchemaNames is set, only show primary key attributes by default
+        const visibleSchemaNames = entity.visibleAttributeSchemaNames || 
+            entity.Attributes.filter(attr => attr.IsPrimaryId).map(attr => attr.SchemaName);
+        
+        return entity.Attributes.filter(attr => 
+            visibleSchemaNames.includes(attr.SchemaName)
+        );
     }
 }

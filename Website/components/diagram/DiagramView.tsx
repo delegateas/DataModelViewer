@@ -491,13 +491,13 @@ const DiagramContent = () => {
     }, [paper, selectedSquare]);
 
     const handleAddAttribute = (attribute: AttributeType) => {
-        if (!selectedEntityForActions) return;
-        addAttributeToEntity(selectedEntityForActions, attribute);
+        if (!selectedEntityForActions || !renderer) return;
+        addAttributeToEntity(selectedEntityForActions, attribute, renderer);
     };
 
     const handleRemoveAttribute = (attribute: AttributeType) => {
-        if (!selectedEntityForActions) return;
-        removeAttributeFromEntity(selectedEntityForActions, attribute);
+        if (!selectedEntityForActions || !renderer) return;
+        removeAttributeFromEntity(selectedEntityForActions, attribute, renderer);
     };
 
     const handleDeleteEntity = () => {
@@ -523,7 +523,6 @@ const DiagramContent = () => {
     
     // Find the entity display name for the modal
     const selectedEntity = currentEntities.find(entity => entity.SchemaName === selectedEntityForActions);
-    const selectedEntityName = selectedEntity?.DisplayName;
     
     // Get available and visible attributes for the selected entity
     const availableAttributes = selectedEntity?.Attributes || [];

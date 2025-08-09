@@ -26,7 +26,7 @@ export type EntityType = {
     SecurityRoles: SecurityRole[],
     Keys: Key[],
     IconBase64: string | null,
-    manuallyAddedAttributes?: string[],
+    visibleAttributeSchemaNames?: string[],
 }
 
 export const enum RequiredLevel {

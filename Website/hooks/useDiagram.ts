@@ -1,7 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { dia, routers } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
-import { EntityElement } from '@/components/diagram/entity/EntityElement';
 import { SquareElement } from '@/components/diagram/entity/SquareElement';
 import { SquareElementView } from '@/components/diagram/entity/SquareElementView';
 import { PRESET_COLORS } from '@/components/diagram/panes/SquarePropertiesPane';
@@ -39,8 +38,8 @@ export interface DiagramActions {
   selectGroup: (group: GroupType) => void;
   updateMousePosition: (position: { x: number; y: number } | null) => void;
   updatePanPosition: (position: { x: number; y: number }) => void;
-  addAttributeToEntity: (entitySchemaName: string, attribute: AttributeType) => void;
-  removeAttributeFromEntity: (entitySchemaName: string, attribute: AttributeType) => void;
+  addAttributeToEntity: (entitySchemaName: string, attribute: AttributeType, renderer?: DiagramRenderer) => void;
+  removeAttributeFromEntity: (entitySchemaName: string, attribute: AttributeType, renderer?: DiagramRenderer) => void;
   updateDiagramType: (type: DiagramType) => void;
   addEntityToDiagram: (entity: EntityType, selectedAttributes?: string[]) => void;
   addGroupToDiagram: (group: GroupType) => void;
@@ -186,7 +185,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setPanPosition(position);
   }, []);
 
-  const addAttributeToEntity = useCallback((entitySchemaName: string, attribute: AttributeType) => {
+  const addAttributeToEntity = useCallback((entitySchemaName: string, attribute: AttributeType, renderer?: DiagramRenderer) => {
     // Prevent double additions
     if (isAddingAttributeRef.current) {
       return;
@@ -199,120 +198,84 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       return;
     }
 
-    // Find the entity element in the graph
-    const allElements = graphRef.current.getElements();
-    
-    const entityElement = allElements.find(el => 
-      el.get('type') === 'delegate.entity' && 
-      el.get('data')?.entity?.SchemaName === entitySchemaName
-    );
-
-    if (entityElement) {
-      // Update the entity's data to include the new attribute
-      const currentEntity = entityElement.get('data').entity;
-      
-      // Check if attribute already exists in the entity
-      const attributeExists = currentEntity.Attributes.some((attr: AttributeType) => 
-        attr.SchemaName === attribute.SchemaName
-      );
-      
-      // Get current visible attributes list
-      const currentVisibleAttributes = (currentEntity.visibleAttributeSchemaNames || []);
-      
-      let updatedEntity;
-      if (attributeExists) {
-        // Attribute already exists, just add it to visible list if not already there
-        updatedEntity = {
-          ...currentEntity,
-          visibleAttributeSchemaNames: currentVisibleAttributes.includes(attribute.SchemaName) 
-            ? currentVisibleAttributes 
-            : [...currentVisibleAttributes, attribute.SchemaName]
-        };
-      } else {
-        // Attribute doesn't exist, add it to entity and make it visible
-        updatedEntity = {
-          ...currentEntity,
-          Attributes: [...currentEntity.Attributes, attribute],
-          visibleAttributeSchemaNames: [...currentVisibleAttributes, attribute.SchemaName]
-        };
-      }
-
-      // Update the element's data
-      entityElement.set('data', { entity: updatedEntity });
-
-      // Trigger the updateAttributes method to re-render the entity
-      const entityElementTyped = entityElement as EntityElement;
-      if (entityElementTyped.updateAttributes) {
-        entityElementTyped.updateAttributes(updatedEntity);
-      }
-
-      // Update the currentEntities state to reflect the change
-      setCurrentEntities(prev => {
-        const updated = prev.map(entity => 
-          entity.SchemaName === entitySchemaName 
-            ? { 
-                ...entity, 
-                Attributes: attributeExists ? entity.Attributes : [...entity.Attributes, attribute],
-                visibleAttributeSchemaNames: updatedEntity.visibleAttributeSchemaNames
-              }
-            : entity
-        );
-        return updated;
+    // Update the currentEntities state first
+    setCurrentEntities(prev => {
+      const updated = prev.map(entity => {
+        if (entity.SchemaName === entitySchemaName) {
+          // Check if attribute already exists in the entity
+          const attributeExists = entity.Attributes.some((attr: AttributeType) => 
+            attr.SchemaName === attribute.SchemaName
+          );
+          
+          // Get current visible attributes list
+          const currentVisibleAttributes = (entity.visibleAttributeSchemaNames || []);
+          
+          if (attributeExists) {
+            // Attribute already exists, just add it to visible list if not already there
+            return {
+              ...entity,
+              visibleAttributeSchemaNames: currentVisibleAttributes.includes(attribute.SchemaName) 
+                ? currentVisibleAttributes 
+                : [...currentVisibleAttributes, attribute.SchemaName]
+            };
+          } else {
+            // Attribute doesn't exist, add it to entity and make it visible
+            return {
+              ...entity,
+              Attributes: [...entity.Attributes, attribute],
+              visibleAttributeSchemaNames: [...currentVisibleAttributes, attribute.SchemaName]
+            };
+          }
+        }
+        return entity;
       });
-    }
+      
+      // Update the diagram using the renderer's unified method
+      if (renderer) {
+        const updatedEntity = updated.find(e => e.SchemaName === entitySchemaName);
+        if (updatedEntity) {
+          renderer.updateEntity(entitySchemaName, updatedEntity);
+        }
+      }
+      
+      return updated;
+    });
     
     // Reset the flag
     isAddingAttributeRef.current = false;
   }, []);
 
-  const removeAttributeFromEntity = useCallback((entitySchemaName: string, attribute: AttributeType) => {
+  const removeAttributeFromEntity = useCallback((entitySchemaName: string, attribute: AttributeType, renderer?: DiagramRenderer) => {
     if (!graphRef.current) {
       return;
     }
 
-    // Find the entity element in the graph
-    const allElements = graphRef.current.getElements();
-    
-    const entityElement = allElements.find(el => 
-      el.get('type') === 'delegate.entity' && 
-      el.get('data')?.entity?.SchemaName === entitySchemaName
-    );
-
-    if (entityElement) {
-      // Update the entity's data to remove the attribute from visible list
-      const currentEntity = entityElement.get('data').entity;
-      
-      // Remove from visible attributes list
-      const updatedVisibleAttributes = (currentEntity.visibleAttributeSchemaNames || [])
-        .filter((attrName: string) => attrName !== attribute.SchemaName);
-      
-      const updatedEntity = {
-        ...currentEntity,
-        visibleAttributeSchemaNames: updatedVisibleAttributes
-      };
-
-      // Update the element's data
-      entityElement.set('data', { entity: updatedEntity });
-
-      // Trigger the updateAttributes method to re-render the entity
-      const entityElementTyped = entityElement as EntityElement;
-      if (entityElementTyped.updateAttributes) {
-        entityElementTyped.updateAttributes(updatedEntity);
-      }
-
-      // Update the currentEntities state to reflect the change
-      setCurrentEntities(prev => {
-        const updated = prev.map(entity => 
-          entity.SchemaName === entitySchemaName 
-            ? { 
-                ...entity, 
-                visibleAttributeSchemaNames: updatedVisibleAttributes
-              }
-            : entity
-        );
-        return updated;
+    // Update the currentEntities state first
+    setCurrentEntities(prev => {
+      const updated = prev.map(entity => {
+        if (entity.SchemaName === entitySchemaName) {
+          // Remove from visible attributes list
+          const updatedVisibleAttributes = (entity.visibleAttributeSchemaNames || [])
+            .filter((attrName: string) => attrName !== attribute.SchemaName);
+          
+          return {
+            ...entity,
+            visibleAttributeSchemaNames: updatedVisibleAttributes
+          };
+        }
+        return entity;
       });
-    }
+      
+      // Update the diagram using the renderer's unified method
+      if (renderer) {
+        const updatedEntity = updated.find(e => e.SchemaName === entitySchemaName);
+        if (updatedEntity) {
+          renderer.updateEntity(entitySchemaName, updatedEntity);
+        }
+      }
+      
+      return updated;
+    });
   }, []);
 
   const updateDiagramType = useCallback((type: DiagramType) => {
@@ -406,7 +369,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
 
     // Find and remove the entity element from the graph
     const entityElement = graphRef.current.getElements().find(el => 
-      (el.get('type') === 'delegate.entity' || el.get('type') === 'delegate.simple-entity') && 
+      el.get('type') === 'delegate.entity' && 
       el.get('data')?.entity?.SchemaName === entitySchemaName
     );
 
