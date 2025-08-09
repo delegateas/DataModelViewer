@@ -3,11 +3,12 @@ import { dia, routers } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
 import { SquareElement } from '@/components/diagram/entity/SquareElement';
 import { SquareElementView } from '@/components/diagram/entity/SquareElementView';
-import { PRESET_COLORS } from '@/components/diagram/panes/SquarePropertiesPane';
+import { TextElement } from '@/components/diagram/entity/TextElement';
 import { AvoidRouter } from '@/components/diagram/avoid-router/avoidrouter';
 import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
 import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiagramRender';
 import { DetailedDiagramRender } from '@/components/diagram/renderers/DetailedDiagramRender';
+import { PRESET_COLORS } from '@/components/diagram/shared/DiagramConstants';
 
 export type DiagramType = 'detailed' | 'simple';
 
@@ -45,6 +46,7 @@ export interface DiagramActions {
   addGroupToDiagram: (group: GroupType, selectedAttributes?: { [entitySchemaName: string]: string[] }) => void;
   removeEntityFromDiagram: (entitySchemaName: string) => void;
   addSquareToDiagram: () => void;
+  addTextToDiagram: () => void;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -436,6 +438,69 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     return squareElement;
   }, []);
 
+  const addTextToDiagram = useCallback(() => {
+    if (!graphRef.current || !paperRef.current) {
+      return;
+    }
+
+    // Get all existing elements to find the lowest Y position (bottom-most)
+    const allElements = graphRef.current.getElements();
+    let lowestY = 50; // Default starting position
+    
+    if (allElements.length > 0) {
+      // Find the bottom-most element and add margin
+      allElements.forEach(element => {
+        const bbox = element.getBBox();
+        const elementBottom = bbox.y + bbox.height;
+        if (elementBottom > lowestY) {
+          lowestY = elementBottom + 30; // Add 30px margin
+        }
+      });
+    }
+
+    // Create a new text element
+    const textElement = new TextElement({
+      position: { 
+        x: 100, // Fixed X position 
+        y: lowestY 
+      },
+      size: { width: 120, height: 25 },
+      attrs: {
+        body: {
+          fill: 'transparent',
+          stroke: 'none'
+        },
+        label: {
+          text: 'Sample Text',
+          fill: 'black',
+          fontSize: 14,
+          fontFamily: 'Inter',
+          textAnchor: 'start',
+          textVerticalAnchor: 'top',
+          x: 2,
+          y: 2
+        }
+      }
+    });
+
+    // Don't call updateTextElement in constructor to avoid positioning conflicts
+    textElement.set('data', {
+      text: 'Text Element',
+      fontSize: 14,
+      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      color: 'black',
+      backgroundColor: 'transparent',
+      padding: 8,
+      borderRadius: 4,
+      textAlign: 'left'
+    });
+
+    // Add the text to the graph
+    textElement.addTo(graphRef.current);
+
+    return textElement;
+  }, []);
+
   const initializePaper = useCallback(async (container: HTMLElement, options: any = {}) => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
@@ -642,5 +707,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     addGroupToDiagram,
     removeEntityFromDiagram,
     addSquareToDiagram,
+    addTextToDiagram,
   };
 }; 

@@ -3,9 +3,11 @@ export { AddGroupPane } from './AddGroupPane';
 export { EntityActionsPane } from './EntityActionsPane';
 export { SquarePropertiesPane } from './SquarePropertiesPane';
 export { LinkPropertiesPane } from './LinkPropertiesPane';
+export { TextPropertiesPane } from './TextPropertiesPane';
 
 export type { AddEntityPaneProps } from './AddEntityPane';
 export type { AddGroupPaneProps } from './AddGroupPane';
 export type { EntityActionsPaneProps } from './EntityActionsPane';
 export type { SquarePropertiesPaneProps } from './SquarePropertiesPane';
+export type { TextPropertiesPaneProps } from './TextPropertiesPane';
 export type { LinkPropertiesPaneProps, LinkProperties } from './LinkPropertiesPane';

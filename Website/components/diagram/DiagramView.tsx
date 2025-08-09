@@ -6,6 +6,7 @@ import { Groups } from "../../generated/Data"
 import { EntityElement } from '@/components/diagram/entity/EntityElement';
 import { SimpleEntityElement } from '@/components/diagram/entity/SimpleEntityElement';
 import { SquareElement } from '@/components/diagram/entity/SquareElement';
+import { TextElement } from '@/components/diagram/entity/TextElement';
 import debounce from 'lodash/debounce';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -14,6 +15,7 @@ import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
 import { AddEntityPane, EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
 import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
+import { TextPropertiesPane } from '@/components/diagram/panes/TextPropertiesPane';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
 import { AppSidebar } from '../AppSidebar';
@@ -60,6 +62,8 @@ const DiagramContent = () => {
     const [isEntityActionsSheetOpen, setIsEntityActionsSheetOpen] = useState(false);
     const [selectedSquare, setSelectedSquare] = useState<SquareElement | null>(null);
     const [isSquarePropertiesSheetOpen, setIsSquarePropertiesSheetOpen] = useState(false);
+    const [selectedText, setSelectedText] = useState<TextElement | null>(null);
+    const [isTextPropertiesSheetOpen, setIsTextPropertiesSheetOpen] = useState(false);
     const [selectedLink, setSelectedLink] = useState<dia.Link | null>(null);
     const [isLinkPropertiesSheetOpen, setIsLinkPropertiesSheetOpen] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
@@ -225,6 +229,15 @@ const DiagramContent = () => {
                 return;
             }
             
+            if (elementType === 'delegate.text') {
+                const textElement = element as TextElement;
+                
+                // Open properties panel for text elements
+                setSelectedText(textElement);
+                setIsTextPropertiesSheetOpen(true);
+                return;
+            }
+            
             // Handle entity clicks
             // Check if the click target is an attribute button
             const target = evt.originalEvent?.target as HTMLElement;
@@ -255,6 +268,14 @@ const DiagramContent = () => {
                 element.attr('body/filter', 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))');
                 
                 // Don't show resize handles on general hover - only on edge hover
+                return;
+            }
+            
+            if (elementType === 'delegate.text') {
+                // Handle text hover
+                elementView.el.style.cursor = 'pointer';
+                // Add a subtle glow effect for text elements
+                element.attr('body/filter', 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))');
                 return;
             }
             
@@ -292,6 +313,14 @@ const DiagramContent = () => {
                 if (selectedSquare?.id !== squareElement.id) {
                     squareElement.hideResizeHandles();
                 }
+                return;
+            }
+            
+            if (elementType === 'delegate.text') {
+                // Handle text hover leave
+                elementView.el.style.cursor = 'default';
+                // Remove glow effect
+                element.attr('body/filter', 'none');
                 return;
             }
             
@@ -542,6 +571,16 @@ const DiagramContent = () => {
         }
     };
 
+    const handleDeleteText = () => {
+        if (selectedText && graph) {
+            // Remove the text from the graph
+            selectedText.remove();
+            // Clear the selection
+            setSelectedText(null);
+            setIsTextPropertiesSheetOpen(false);
+        }
+    };
+
     const handleUpdateLink = (linkId: string | number, properties: LinkProperties) => {
         if (!graph) return;
         
@@ -648,6 +687,14 @@ const DiagramContent = () => {
                 onOpenChange={setIsSquarePropertiesSheetOpen}
                 selectedSquare={selectedSquare}
                 onDeleteSquare={handleDeleteSquare}
+            />
+
+            {/* Text Properties Pane */}
+            <TextPropertiesPane
+                isOpen={isTextPropertiesSheetOpen}
+                onOpenChange={setIsTextPropertiesSheetOpen}
+                selectedText={selectedText}
+                onDeleteText={handleDeleteText}
             />
 
             {/* Link Properties Pane */}
