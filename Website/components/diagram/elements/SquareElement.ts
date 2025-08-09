@@ -270,7 +270,7 @@ export class SquareElement extends dia.Element {
         }
         
         // Alternative approach: check the SVG element class or tag
-        const tagName = target.tagName.toLowerCase();
+        const tagName = target.tagName?.toLowerCase();
         if (tagName === 'rect') {
             // Check if this rect is one of our resize handles
             const parent = target.parentElement;

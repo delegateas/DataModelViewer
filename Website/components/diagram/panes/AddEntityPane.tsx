@@ -18,13 +18,6 @@ export interface AddEntityPaneProps {
     currentEntities: EntityType[];
 }
 
-export interface AddEntityPaneProps {
-    isOpen: boolean;
-    onOpenChange: (open: boolean) => void;
-    onAddEntity: (entity: EntityType, selectedAttributes?: string[]) => void;
-    currentEntities: EntityType[];
-}
-
 export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
     isOpen,
     onOpenChange,

@@ -1,5 +1,17 @@
 import { dia, shapes, util } from '@joint/core';
 
+// Helper function to measure text width
+function measureTextWidth(text: string, fontSize: number, fontFamily: string): number {
+    // Create a temporary canvas element to measure text
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return 8; // fallback value
+    
+    context.font = `${fontSize}px ${fontFamily}`;
+    const metrics = context.measureText(text);
+    return metrics.width / text.length; // return average character width
+}
+
 export interface TextElementData {
     text: string;
     fontSize: number;
@@ -104,8 +116,7 @@ export class TextElement extends shapes.standard.Rectangle {
     }
 
     private adjustSizeToText(data: TextElementData) {
-        // Calculate approximate text width (rough estimation)
-        const charWidth = data.fontSize * 0.6; // Approximate character width
+        const charWidth = measureTextWidth(data.text, data.fontSize, data.fontFamily);
         const textWidth = data.text.length * charWidth;
         const minWidth = Math.max(textWidth + (data.padding * 2), 100);
         const minHeight = Math.max(data.fontSize + (data.padding * 2), 30);
