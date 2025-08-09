@@ -56,7 +56,7 @@ export const calculateGridLayout = (
   options: GridLayoutOptions,
   existingPositions?: { x: number; y: number; width: number; height: number }[]
 ): GridLayoutResult => {
-  const { containerWidth, entityWidth, padding, margin } = options;
+  const { containerWidth, padding, margin } = options;
 
   if (entities.length === 0) {
     return {
