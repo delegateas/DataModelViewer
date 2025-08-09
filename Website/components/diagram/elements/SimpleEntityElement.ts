@@ -7,7 +7,7 @@ interface ISimpleEntityElement {
 
 export class SimpleEntityElement extends dia.Element {
 
-    initialize(...args: unknown[]) {
+    initialize(...args: Parameters<dia.Element['initialize']>) {
         super.initialize(...args);
         const { entity } = this.get('data') as ISimpleEntityElement;
         if (entity) this.updateEntity(entity);

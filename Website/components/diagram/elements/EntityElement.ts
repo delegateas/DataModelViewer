@@ -8,7 +8,7 @@ interface IEntityElement {
 
 export class EntityElement extends dia.Element {
 
-    initialize(...args: unknown[]) {
+    initialize(...args: Parameters<dia.Element['initialize']>) {
         super.initialize(...args);
         const { entity } = this.get('data') as IEntityElement;
         if (entity) this.updateAttributes(entity);

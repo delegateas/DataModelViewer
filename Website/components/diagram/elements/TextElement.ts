@@ -127,6 +127,6 @@ export class TextElement extends shapes.standard.Rectangle {
 
 // Register the custom element
 (shapes as Record<string, unknown>).delegate = {
-    ...(shapes as Record<string, unknown>).delegate,
+    ...((shapes as Record<string, unknown>).delegate || {}),
     text: TextElement
 };

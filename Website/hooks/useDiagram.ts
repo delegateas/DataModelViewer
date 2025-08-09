@@ -579,9 +579,11 @@ export const useDiagram = (): DiagramState & DiagramActions => {
               data: cellData.data
             });
           } else {
-            // Use fromJSON for standard elements
             try {
-              cell = dia.Cell.fromJSON(cellData);
+              // Create a temporary graph to deserialize the cell
+              const tempGraph = new dia.Graph();
+              tempGraph.fromJSON({ cells: [cellData] });
+              cell = tempGraph.getCells()[0];
             } catch (error) {
               console.warn('Failed to create cell:', cellData.type, error);
               return;

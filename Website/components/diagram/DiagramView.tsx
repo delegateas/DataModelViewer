@@ -296,7 +296,7 @@ const DiagramContent = () => {
                 
                 // Find the foreignObject and its HTML content for the border effect
                 const foreignObject = elementView.el.querySelector('foreignObject');
-                const htmlContent = foreignObject?.querySelector('[data-entity-schema]');
+                const htmlContent = foreignObject?.querySelector('[data-entity-schema]') as HTMLElement;
                 
                 if (htmlContent && !htmlContent.hasAttribute('data-hover-active')) {
                     htmlContent.setAttribute('data-hover-active', 'true');
@@ -341,7 +341,7 @@ const DiagramContent = () => {
                 
                 // Remove border from HTML content
                 const foreignObject = elementView.el.querySelector('foreignObject');
-                const htmlContent = foreignObject?.querySelector('[data-entity-schema]');
+                const htmlContent = foreignObject?.querySelector('[data-entity-schema]') as HTMLElement;
                 
                 if (htmlContent) {
                     htmlContent.removeAttribute('data-hover-active');
@@ -362,6 +362,10 @@ const DiagramContent = () => {
             if (elementType === 'delegate.square') {
                 const squareElement = element as SquareElement;
                 const bbox = element.getBBox();
+                
+                // Check if clientX and clientY are defined before using them
+                if (evt.clientX === undefined || evt.clientY === undefined) return;
+                
                 const paperLocalPoint = paper.clientToLocalPoint(evt.clientX, evt.clientY);
                 
                 const edgeThreshold = 15; // pixels from edge to show handles

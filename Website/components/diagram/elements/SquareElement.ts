@@ -13,7 +13,7 @@ export interface SquareElementData {
 
 export class SquareElement extends dia.Element {
     
-    initialize(...args: unknown[]) {
+    initialize(...args: Parameters<dia.Element['initialize']>) {
         super.initialize(...args);
         this.updateSquareAttrs();
     }
