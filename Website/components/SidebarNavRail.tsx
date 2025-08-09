@@ -1,6 +1,6 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LogOut, Info, Database, PencilRuler } from "lucide-react";
+import { LogOut, Info, Database, PencilRuler, PlugZap, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSidebarDispatch } from "@/contexts/SidebarContext";
 
@@ -11,6 +11,7 @@ const navItems = [
     href: "/",
     active: true,
     disabled: false,
+    new: false,
   },
   {
     label: "Diagram Viewer",
@@ -18,6 +19,15 @@ const navItems = [
     href: "/diagram",
     active: false,
     disabled: false,
+    new: true,
+  },
+  {
+    label: "Dependency Viewer",
+    icon: <PlugZap />,
+    href: "/dependency",
+    active: false,
+    disabled: true,
+    new: false,
   },
 ];
 
@@ -35,19 +45,25 @@ export default function SidebarNavRail() {
       {/* Nav Items */}
       <div className="flex flex-col gap-2 flex-1 items-center mt-4">
         {navItems.map((item) => (
-          <Button
-            key={item.label}
-            variant={pathname === item.href ? "secondary" : "ghost"}
-            size="icon"
-            aria-label={item.label}
-            disabled={item.disabled}
-            className={`mb-1 ${pathname === item.href ? "bg-blue-100 text-blue-900" : ""}`}
-            onClick={() => {
-              if (!item.disabled && item.href !== "#"){ dispatch({ type: 'SET_SHOW_ELEMENT', payload: true }); router.push(item.href); } 
-            }}
-          >
-            {item.icon}
-          </Button>
+          <div key={item.label} className="relative">
+            <Button
+              variant={pathname === item.href ? "secondary" : "ghost"}
+              size="icon"
+              aria-label={item.label}
+              disabled={item.disabled}
+              className={`mb-1 ${pathname === item.href ? "bg-blue-100 text-blue-900" : ""}`}
+              onClick={() => {
+                if (!item.disabled && item.href !== "#"){ dispatch({ type: 'SET_SHOW_ELEMENT', payload: true }); router.push(item.href); } 
+              }}
+            >
+              {item.icon}
+            </Button>
+            {item.new && (
+              <div className="absolute -top-1 -right-1">
+                <Sparkles className="w-4 h-4 text-blue-500 fill-blue-500" />
+              </div>
+            )}
+          </div>
         ))}
       </div>
       <div className="flex flex-col items-center mb-2">
