@@ -3,8 +3,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { dia, shapes, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
-import { EntityElement } from '@/components/diagram/entity/entity';
+import { EntityElement } from '@/components/diagram/entity/EntityElement';
 import { SimpleEntityElement } from '@/components/diagram/entity/SimpleEntityElement';
+import { SquareElement } from '@/components/diagram/entity/SquareElement';
 import debounce from 'lodash/debounce';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -12,6 +13,7 @@ import { PanelLeft, ZoomIn, ZoomOut, Trash2 } from 'lucide-react';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
 import { AddEntityPane, EntityActionsPane } from '@/components/diagram/panes';
+import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
 import { AppSidebar } from '../AppSidebar';
@@ -45,6 +47,16 @@ const DiagramContent = () => {
     const [selectedKey, setSelectedKey] = useState<string>();
     const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
     const [isEntityActionsSheetOpen, setIsEntityActionsSheetOpen] = useState(false);
+    const [selectedSquare, setSelectedSquare] = useState<SquareElement | null>(null);
+    const [isSquarePropertiesSheetOpen, setIsSquarePropertiesSheetOpen] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [resizeData, setResizeData] = useState<{
+        element: SquareElement;
+        handle: string;
+        startSize: { width: number; height: number };
+        startPosition: { x: number; y: number };
+        startPointer: { x: number; y: number };
+    } | null>(null);
 
     const renderer = useMemo(() => {
         if (!graph) return null;
@@ -80,8 +92,26 @@ const DiagramContent = () => {
     useEffect(() => {
         if (!graph || !paper || !selectedGroup || !renderer) return;
 
+        // Preserve squares before clearing - only clear entities and links
+        const squares = graph.getElements().filter(element => element.get('type') === 'delegate.square');
+        const squareData = squares.map(square => ({
+            element: square,
+            data: square.get('data'),
+            position: square.position(),
+            size: square.size()
+        }));
+        
         // Clear existing elements
         graph.clear();
+        
+        // Re-add preserved squares with their data
+        squareData.forEach(({ element, data, position, size }) => {
+            element.addTo(graph);
+            element.position(position.x, position.y);
+            element.resize(size.width, size.height);
+            element.set('data', data);
+            element.toBack(); // Keep squares at the back
+        });
 
         // Calculate grid layout
         const layoutOptions = getDefaultLayoutOptions();
@@ -157,7 +187,21 @@ const DiagramContent = () => {
         paper.on('link:pointerclick', renderer.onLinkClick);
         
         // Handle entity clicks
-        const handleEntityClick = (elementView: any, evt: any) => {
+        const handleElementClick = (elementView: any, evt: any) => {
+            evt.stopPropagation();
+            const element = elementView.model;
+            const elementType = element.get('type');
+            
+            if (elementType === 'delegate.square') {
+                const squareElement = element as SquareElement;
+                
+                // Only open properties panel for squares (resize handles are shown on hover)
+                setSelectedSquare(squareElement);
+                setIsSquarePropertiesSheetOpen(true);
+                return;
+            }
+            
+            // Handle entity clicks
             // Check if the click target is an attribute button
             const target = evt.originalEvent?.target as HTMLElement;
             const isAttributeButton = target?.closest('button[data-schema-name]');
@@ -167,8 +211,6 @@ const DiagramContent = () => {
                 return;
             }
             
-            evt.stopPropagation();
-            const element = elementView.model;
             const entityData = element.get('data');
             
             if (entityData?.entity) {
@@ -177,9 +219,22 @@ const DiagramContent = () => {
             }
         };
 
-        // Handle entity hover for cursor indication
-        const handleEntityMouseEnter = (elementView: any) => {
+        // Handle element hover for cursor indication
+        const handleElementMouseEnter = (elementView: any) => {
             const element = elementView.model;
+            const elementType = element.get('type');
+            
+            if (elementType === 'delegate.square') {
+                // Handle square hover
+                elementView.el.style.cursor = 'pointer';
+                // Add a subtle glow effect for squares
+                element.attr('body/filter', 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))');
+                
+                // Don't show resize handles on general hover - only on edge hover
+                return;
+            }
+            
+            // Handle entity hover
             const entityData = element.get('data');
             
             if (entityData?.entity) {
@@ -198,8 +253,25 @@ const DiagramContent = () => {
             }
         };
 
-        const handleEntityMouseLeave = (elementView: any) => {
+        const handleElementMouseLeave = (elementView: any) => {
             const element = elementView.model;
+            const elementType = element.get('type');
+            
+            if (elementType === 'delegate.square') {
+                // Handle square hover leave
+                elementView.el.style.cursor = 'default';
+                // Remove glow effect
+                element.attr('body/filter', 'none');
+                
+                // Hide resize handles when leaving square area (unless selected for properties)
+                const squareElement = element as SquareElement;
+                if (selectedSquare?.id !== squareElement.id) {
+                    squareElement.hideResizeHandles();
+                }
+                return;
+            }
+            
+            // Handle entity hover leave
             const entityData = element.get('data');
             
             if (entityData?.entity) {
@@ -217,17 +289,206 @@ const DiagramContent = () => {
             }
         };
         
-        paper.on('element:pointerclick', handleEntityClick);
-        paper.on('element:mouseenter', handleEntityMouseEnter);
-        paper.on('element:mouseleave', handleEntityMouseLeave);
+        paper.on('element:pointerclick', handleElementClick);
+        paper.on('element:mouseenter', handleElementMouseEnter);
+        paper.on('element:mouseleave', handleElementMouseLeave);
+        
+        // Handle mouse movement over squares to show resize handles only near edges
+        const handleSquareMouseMove = (cellView: any, evt: any) => {
+            const element = cellView.model;
+            const elementType = element.get('type');
+            
+            if (elementType === 'delegate.square') {
+                const squareElement = element as SquareElement;
+                const bbox = element.getBBox();
+                const paperLocalPoint = paper.clientToLocalPoint(evt.clientX, evt.clientY);
+                
+                const edgeThreshold = 15; // pixels from edge to show handles
+                const isNearEdge = (
+                    // Near left or right edge
+                    (paperLocalPoint.x <= bbox.x + edgeThreshold || 
+                     paperLocalPoint.x >= bbox.x + bbox.width - edgeThreshold) ||
+                    // Near top or bottom edge  
+                    (paperLocalPoint.y <= bbox.y + edgeThreshold ||
+                     paperLocalPoint.y >= bbox.y + bbox.height - edgeThreshold)
+                );
+                
+                if (isNearEdge) {
+                    squareElement.showResizeHandles();
+                    cellView.el.style.cursor = 'move';
+                } else {
+                    // Only hide if not selected for properties (check current state)
+                    const currentSelectedSquare = selectedSquare;
+                    if (currentSelectedSquare?.id !== squareElement.id) {
+                        squareElement.hideResizeHandles();
+                    }
+                    cellView.el.style.cursor = 'move';
+                }
+            }
+        };
+        
+        paper.on('cell:mousemove', handleSquareMouseMove);
+        
+        // Handle pointer down for resize handles - capture before other events
+        paper.on('cell:pointerdown', (cellView: any, evt: any) => {
+            const element = cellView.model;
+            const elementType = element.get('type');
+            
+            if (elementType === 'delegate.square') {
+                const target = evt.target as HTMLElement;
+                
+                // More reliable selector detection for resize handles
+                let selector = target.getAttribute('joint-selector');
+                
+                if (!selector) {
+                    // Try to find parent with selector
+                    let parent = target.parentElement;
+                    let depth = 0;
+                    while (parent && !selector && depth < 5) {
+                        selector = parent.getAttribute('joint-selector');
+                        parent = parent.parentElement;
+                        depth++;
+                    }
+                }
+                
+                if (selector && selector.startsWith('resize-')) {
+                    evt.stopPropagation();
+                    evt.preventDefault();
+                    
+                    const squareElement = element as SquareElement;
+                    const bbox = element.getBBox();
+                    
+                    const resizeInfo = {
+                        element: squareElement,
+                        handle: selector,
+                        startSize: { width: bbox.width, height: bbox.height },
+                        startPosition: { x: bbox.x, y: bbox.y },
+                        startPointer: { x: evt.clientX, y: evt.clientY }
+                    };
+                    
+                    setResizeData(resizeInfo);
+                    setIsResizing(true);
+                }
+            }
+        });
         
         return () => {
             paper.off('link:pointerclick', renderer.onLinkClick);
-            paper.off('element:pointerclick', handleEntityClick);
-            paper.off('element:mouseenter', handleEntityMouseEnter);
-            paper.off('element:mouseleave', handleEntityMouseLeave);
+            paper.off('element:pointerclick', handleElementClick);
+            paper.off('element:mouseenter', handleElementMouseEnter);
+            paper.off('element:mouseleave', handleElementMouseLeave);
+            paper.off('cell:mousemove', handleSquareMouseMove);
+            paper.off('cell:pointerdown');
         };
-    }, [paper, renderer]);
+    }, [paper, renderer, selectedSquare]);
+
+    // Handle resize operations
+    useEffect(() => {
+        if (!isResizing || !resizeData || !paper) return;
+
+        let animationId: number;
+
+        const handleMouseMove = (evt: MouseEvent) => {
+            if (!resizeData) return;
+
+            // Cancel previous animation frame to prevent stacking
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            // Use requestAnimationFrame for smooth updates
+            animationId = requestAnimationFrame(() => {
+                const { element, handle, startSize, startPosition, startPointer } = resizeData;
+                const deltaX = evt.clientX - startPointer.x;
+                const deltaY = evt.clientY - startPointer.y;
+
+                let newSize = { width: startSize.width, height: startSize.height };
+                let newPosition = { x: startPosition.x, y: startPosition.y };
+
+                // Calculate new size and position based on resize handle
+                switch (handle) {
+                    case 'resize-se': // Southeast
+                        newSize.width = Math.max(50, startSize.width + deltaX);
+                        newSize.height = Math.max(30, startSize.height + deltaY);
+                        break;
+                    case 'resize-sw': // Southwest
+                        newSize.width = Math.max(50, startSize.width - deltaX);
+                        newSize.height = Math.max(30, startSize.height + deltaY);
+                        newPosition.x = startPosition.x + deltaX;
+                        break;
+                    case 'resize-ne': // Northeast
+                        newSize.width = Math.max(50, startSize.width + deltaX);
+                        newSize.height = Math.max(30, startSize.height - deltaY);
+                        newPosition.y = startPosition.y + deltaY;
+                        break;
+                    case 'resize-nw': // Northwest
+                        newSize.width = Math.max(50, startSize.width - deltaX);
+                        newSize.height = Math.max(30, startSize.height - deltaY);
+                        newPosition.x = startPosition.x + deltaX;
+                        newPosition.y = startPosition.y + deltaY;
+                        break;
+                    case 'resize-e': // East
+                        newSize.width = Math.max(50, startSize.width + deltaX);
+                        break;
+                    case 'resize-w': // West
+                        newSize.width = Math.max(50, startSize.width - deltaX);
+                        newPosition.x = startPosition.x + deltaX;
+                        break;
+                    case 'resize-s': // South
+                        newSize.height = Math.max(30, startSize.height + deltaY);
+                        break;
+                    case 'resize-n': // North
+                        newSize.height = Math.max(30, startSize.height - deltaY);
+                        newPosition.y = startPosition.y + deltaY;
+                        break;
+                }
+
+                // Apply the new size and position in a single batch update
+                element.resize(newSize.width, newSize.height);
+                element.position(newPosition.x, newPosition.y);
+            });
+        };
+
+        const handleMouseUp = () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            setIsResizing(false);
+            setResizeData(null);
+        };
+
+        // Add global event listeners
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        // Cleanup
+        return () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing, resizeData, paper]);
+
+    // Handle clicking outside to deselect squares
+    useEffect(() => {
+        if (!paper) return;
+
+        const handleBlankClick = () => {
+            if (selectedSquare) {
+                selectedSquare.hideResizeHandles();
+                setSelectedSquare(null);
+                setIsSquarePropertiesSheetOpen(false);
+            }
+        };
+
+        paper.on('blank:pointerclick', handleBlankClick);
+
+        return () => {
+            paper.off('blank:pointerclick', handleBlankClick);
+        };
+    }, [paper, selectedSquare]);
 
     const handleAddAttribute = (attribute: AttributeType) => {
         if (!selectedEntityForActions) return;
@@ -244,6 +505,16 @@ const DiagramContent = () => {
             removeEntityFromDiagram(selectedEntityForActions);
             setIsEntityActionsSheetOpen(false);
             setSelectedEntityForActions(undefined);
+        }
+    };
+
+    const handleDeleteSquare = () => {
+        if (selectedSquare && graph) {
+            // Remove the square from the graph
+            selectedSquare.remove();
+            // Clear the selection
+            setSelectedSquare(null);
+            setIsSquarePropertiesSheetOpen(false);
         }
     };
 
@@ -299,6 +570,14 @@ const DiagramContent = () => {
                 onRemoveAttribute={handleRemoveAttribute}
                 availableAttributes={availableAttributes}
                 visibleAttributes={visibleAttributes}
+            />
+
+            {/* Square Properties Pane */}
+            <SquarePropertiesPane
+                isOpen={isSquarePropertiesSheetOpen}
+                onOpenChange={setIsSquarePropertiesSheetOpen}
+                selectedSquare={selectedSquare}
+                onDeleteSquare={handleDeleteSquare}
             />
         </>
     )

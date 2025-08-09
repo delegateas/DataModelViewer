@@ -26,7 +26,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jose": "^5.9.6",
-    "lodash": "^4.17.21",
+    "libavoid-js": "^0.4.5",
     "lucide-react": "^0.462.0",
     "next": "^15.3.4",
     "react": "^19.0.0",
@@ -43,7 +43,6 @@
     "@types/react-window": "^1.8.8",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
-    "libavoid-js": "^0.4.5",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"

@@ -1,7 +1,10 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { dia, routers } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
-import { EntityElement } from '@/components/diagram/entity/entity';
+import { EntityElement } from '@/components/diagram/entity/EntityElement';
+import { SquareElement } from '@/components/diagram/entity/SquareElement';
+import { SquareElementView } from '@/components/diagram/entity/SquareElementView';
+import { PRESET_COLORS } from '@/components/diagram/panes/SquarePropertiesPane';
 import { AvoidRouter } from '@/components/diagram/avoid-router/avoidrouter';
 import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
 import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiagramRender';
@@ -42,6 +45,7 @@ export interface DiagramActions {
   addEntityToDiagram: (entity: EntityType, selectedAttributes?: string[]) => void;
   addGroupToDiagram: (group: GroupType) => void;
   removeEntityFromDiagram: (entitySchemaName: string) => void;
+  addSquareToDiagram: () => void;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -416,6 +420,51 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     }
   }, [currentEntities, fitToScreen]);
 
+  const addSquareToDiagram = useCallback(() => {
+    if (!graphRef.current || !paperRef.current) {
+      return;
+    }
+
+    // Get all existing elements to find the lowest Y position (bottom-most)
+    const allElements = graphRef.current.getElements();
+    let lowestY = 50; // Default starting position
+    
+    if (allElements.length > 0) {
+      // Find the bottom-most element and add margin
+      allElements.forEach(element => {
+        const bbox = element.getBBox();
+        const elementBottom = bbox.y + bbox.height;
+        if (elementBottom > lowestY) {
+          lowestY = elementBottom + 30; // Add 30px margin
+        }
+      });
+    }
+
+    // Create a new square element
+    const squareElement = new SquareElement({
+      position: { 
+        x: 100, // Fixed X position 
+        y: lowestY 
+      },
+      data: {
+        id: `square-${Date.now()}`, // Unique ID
+        borderColor: PRESET_COLORS.borders[0].value,
+        fillColor: PRESET_COLORS.fills[0].value,
+        borderWidth: 2,
+        borderType: 'dashed',
+        opacity: 0.7
+      }
+    });
+
+    // Add the square to the graph
+    squareElement.addTo(graphRef.current);
+    
+    // Send square to the back so it renders behind entities
+    squareElement.toBack();
+
+    return squareElement;
+  }, []);
+
   const initializePaper = useCallback(async (container: HTMLElement, options: any = {}) => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
@@ -460,6 +509,24 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       background: { 
         color: '#fef3c7', // Light amber background
         ...options.background
+      },
+      // Configure custom views
+      cellViewNamespace: {
+        'delegate': {
+          'square': SquareElementView
+        }
+      },
+      // Disable interactive for squares when resize handles are visible
+      interactive: function(cellView: any) {
+        const element = cellView.model;
+        if (element.get('type') === 'delegate.square') {
+          const data = element.get('data') || {};
+          // Disable dragging if resize handles are visible
+          if (data.isSelected) {
+            return false;
+          }
+        }
+        return true; // Enable dragging for other elements or unselected squares
       },
       ...options
     });
@@ -603,5 +670,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     addEntityToDiagram,
     addGroupToDiagram,
     removeEntityFromDiagram,
+    addSquareToDiagram,
   };
 }; 

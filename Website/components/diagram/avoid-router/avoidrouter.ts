@@ -97,6 +97,11 @@ export class AvoidRouter {
     }
 
     updateShape(element: dia.Element): void {
+        // Skip squares - they shouldn't be obstacles for routing
+        if (element.get('type') === 'delegate.square') {
+            return;
+        }
+        
         const Avoid = AvoidLib.getInstance();
         const shapeRect = this.getAvoidRectFromElement(element);
 

@@ -12,7 +12,7 @@ interface ISidebarDiagramViewProps {
 }
 
 export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
-    const { addEntityToDiagram, addGroupToDiagram, currentEntities, diagramType, updateDiagramType } = useDiagramViewContext();
+    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, currentEntities, diagramType, updateDiagramType } = useDiagramViewContext();
     const [isDataExpanded, setIsDataExpanded] = useState(true);
     const [isGeneralExpanded, setIsGeneralExpanded] = useState(false);
     const [isEntitySheetOpen, setIsEntitySheetOpen] = useState(false);
@@ -71,7 +71,11 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                             </Button>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="space-y-2 pl-4 pt-2">
-                            <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-2">
+                            <Button 
+                                variant="ghost" 
+                                className="w-full justify-start gap-2 h-auto py-2"
+                                onClick={addSquareToDiagram}
+                            >
                                 <Square className="w-4 h-4" />
                                 Square
                             </Button>

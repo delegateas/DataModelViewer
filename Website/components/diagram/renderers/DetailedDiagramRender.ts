@@ -2,7 +2,7 @@
 import { dia, shapes } from '@joint/core';
 import { SimpleEntityElement } from '@/components/diagram/entity/SimpleEntityElement';
 import { DiagramRenderer, IPortMap } from '../DiagramRenderer';
-import { EntityElement } from '../entity/entity';
+import { EntityElement } from '../entity/EntityElement';
 import { AttributeType, EntityType } from '@/lib/Types';
 
 export class DetailedDiagramRender extends DiagramRenderer {
