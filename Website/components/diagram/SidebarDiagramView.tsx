@@ -2,11 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users, Save, Upload, Smartphone } from 'lucide-react';
+import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
 import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
-import { AddEntityPane, AddGroupPane } from '@/components/diagram/panes';
+import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagram/panes';
 import { DiagramType } from '@/hooks/useDiagram';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Groups } from '../../generated/Data';
 
 interface ISidebarDiagramViewProps { 
 
@@ -19,6 +20,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     const [isGeneralExpanded, setIsGeneralExpanded] = useState(false);
     const [isEntitySheetOpen, setIsEntitySheetOpen] = useState(false);
     const [isGroupSheetOpen, setIsGroupSheetOpen] = useState(false);
+    const [isResetSheetOpen, setIsResetSheetOpen] = useState(false);
 
     // If not in diagram context, show a message or return null
     if (!diagramContext) {
@@ -32,7 +34,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         );
     }
 
-    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType } = diagramContext;
+    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType, removeEntityFromDiagram, clearDiagram } = diagramContext;
 
     const handleLoadDiagram = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -44,6 +46,16 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         // Reset input value to allow loading the same file again
         event.target.value = '';
     };
+
+    const handleResetToGroup = (group: any) => {
+        // First clear the entire diagram
+        clearDiagram();
+        // Then add the selected group
+        addGroupToDiagram(group);
+    };
+
+    // Use the clearDiagram function from the hook
+    // const clearDiagram function is already available from the context
 
     return (
         <div className="flex flex-col h-full w-full">
@@ -208,6 +220,35 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 </div>
                             </div>
                         </div>
+                        
+                        <div className="border-t pt-4">
+                            <div className="space-y-2">
+                                <h3 className="font-medium text-sm">Diagram Actions</h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Reset or clear your diagram
+                                </p>
+                                <div className="flex flex-col space-y-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full justify-start"
+                                        onClick={() => setIsResetSheetOpen(true)}
+                                    >
+                                        <RotateCcw className="w-4 h-4 mr-2" />
+                                        Reset to Group
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full justify-start"
+                                        onClick={clearDiagram}
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Clear All
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </TabsContent>
             </Tabs>
@@ -226,6 +267,13 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 onOpenChange={setIsGroupSheetOpen}
                 onAddGroup={addGroupToDiagram}
                 currentEntities={currentEntities}
+            />
+
+            {/* Reset to Group Pane */}
+            <ResetToGroupPane
+                isOpen={isResetSheetOpen}
+                onOpenChange={setIsResetSheetOpen}
+                onResetToGroup={handleResetToGroup}
             />
         </div>
     );

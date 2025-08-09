@@ -4,6 +4,7 @@ export { EntityActionsPane } from './EntityActionsPane';
 export { SquarePropertiesPane } from './SquarePropertiesPane';
 export { LinkPropertiesPane } from './LinkPropertiesPane';
 export { TextPropertiesPane } from './TextPropertiesPane';
+export { ResetToGroupPane } from './ResetToGroupPane';
 
 export type { AddEntityPaneProps } from './AddEntityPane';
 export type { AddGroupPaneProps } from './AddGroupPane';

@@ -3,10 +3,10 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { dia, shapes, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
-import { EntityElement } from '@/components/diagram/entity/EntityElement';
-import { SimpleEntityElement } from '@/components/diagram/entity/SimpleEntityElement';
-import { SquareElement } from '@/components/diagram/entity/SquareElement';
-import { TextElement } from '@/components/diagram/entity/TextElement';
+import { EntityElement } from '@/components/diagram/elements/EntityElement';
+import { SimpleEntityElement } from '@/components/diagram/elements/SimpleEntityElement';
+import { SquareElement } from '@/components/diagram/elements/SquareElement';
+import { TextElement } from '@/components/diagram/elements/TextElement';
 import debounce from 'lodash/debounce';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';

@@ -1,5 +1,5 @@
 import { EntityType } from '@/lib/Types';
-import { EntityElement } from '@/components/diagram/entity/EntityElement';
+import { EntityElement } from '@/components/diagram/elements/EntityElement';
 
 export interface GridLayoutOptions {
   containerWidth: number;

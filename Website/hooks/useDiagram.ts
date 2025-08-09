@@ -1,9 +1,9 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { dia, routers, shapes } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
-import { SquareElement } from '@/components/diagram/entity/SquareElement';
-import { SquareElementView } from '@/components/diagram/entity/SquareElementView';
-import { TextElement } from '@/components/diagram/entity/TextElement';
+import { SquareElement } from '@/components/diagram/elements/SquareElement';
+import { SquareElementView } from '@/components/diagram/elements/SquareElementView';
+import { TextElement } from '@/components/diagram/elements/TextElement';
 import { AvoidRouter } from '@/components/diagram/avoid-router/avoidrouter';
 import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
 import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiagramRender';
@@ -49,6 +49,7 @@ export interface DiagramActions {
   addTextToDiagram: () => void;
   saveDiagram: () => void;
   loadDiagram: (file: File) => Promise<void>;
+  clearDiagram: () => void;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -640,6 +641,24 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     }
   }, [graphRef, paperRef, updateZoomDisplay]);
 
+  const clearDiagram = useCallback(() => {
+    if (!graphRef.current) {
+      console.warn('Graph not available for clearing');
+      return;
+    }
+
+    // Clear the entire diagram
+    graphRef.current.clear();
+    
+    // Reset currentEntities state
+    setCurrentEntities([]);
+    
+    // Clear selection
+    clearSelection();
+    
+    console.log('Diagram cleared successfully');
+  }, [graphRef, clearSelection, setCurrentEntities]);
+
   const initializePaper = useCallback(async (container: HTMLElement, options: any = {}) => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
@@ -849,5 +868,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     addTextToDiagram,
     saveDiagram,
     loadDiagram,
+    clearDiagram,
   };
 }; 

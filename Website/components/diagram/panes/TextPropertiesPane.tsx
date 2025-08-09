@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Type, Trash2 } from 'lucide-react';
-import { TextElement, TextElementData } from '../entity/TextElement';
+import { TextElement, TextElementData } from '../elements/TextElement';
 
 export interface TextPropertiesPaneProps {
     isOpen: boolean;
