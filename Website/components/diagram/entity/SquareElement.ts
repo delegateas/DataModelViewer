@@ -1,5 +1,5 @@
 import { dia, util } from '@joint/core';
-import { PRESET_COLORS } from '../panes/SquarePropertiesPane';
+import { PRESET_COLORS } from '../shared/DiagramConstants';
 
 export interface SquareElementData {
     id?: string;

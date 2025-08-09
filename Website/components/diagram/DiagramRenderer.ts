@@ -6,6 +6,7 @@ export type IPortMap = Record<string, string>;
 export abstract class DiagramRenderer {
     protected graph: dia.Graph;
     protected setSelectedKey?: (key: string | undefined) => void;
+    protected onLinkClickHandler?: (link: dia.Link) => void;
     private instanceId: string;
     protected currentSelectedKey?: string;
 
@@ -13,11 +14,17 @@ export abstract class DiagramRenderer {
         graph: dia.Graph | undefined | null,
         options?: {
         setSelectedKey?: (key: string | undefined) => void;
+        onLinkClick?: (link: dia.Link) => void;
     }) { 
         this.instanceId = Math.random().toString(36).substr(2, 9);
         if (!graph) throw new Error("Graph must be defined");
         this.graph = graph;
         this.setSelectedKey = options?.setSelectedKey;
+        this.onLinkClickHandler = options?.onLinkClick;
+        
+        // Bind methods to preserve context
+        this.onLinkClick = this.onLinkClick.bind(this);
+        this.onDocumentClick = this.onDocumentClick.bind(this);
     }
 
     abstract onDocumentClick(event: MouseEvent): void;
@@ -27,7 +34,7 @@ export abstract class DiagramRenderer {
         portMap: IPortMap
     };
 
-    abstract createLinks(entity: EntityType, entityMap: Map<string, { element: dia.Element, portMap: IPortMap }>): void;
+    abstract createLinks(entity: EntityType, entityMap: Map<string, { element: dia.Element, portMap: IPortMap }>, allEntities: EntityType[]): void;
 
     abstract highlightSelectedKey(
         graph: dia.Graph,
@@ -136,10 +143,18 @@ export abstract class DiagramRenderer {
     });
 
     // Recreate links for all entities (this ensures all relationships are updated)
+    const allEntities: EntityType[] = [];
     entityMap.forEach((entityInfo, schemaName) => {
       const entityData = entityInfo.element.get('data')?.entity;
       if (entityData) {
-        this.createLinks(entityData, entityMap);
+        allEntities.push(entityData);
+      }
+    });
+    
+    entityMap.forEach((entityInfo, schemaName) => {
+      const entityData = entityInfo.element.get('data')?.entity;
+      if (entityData) {
+        this.createLinks(entityData, entityMap, allEntities);
       }
     });
   }

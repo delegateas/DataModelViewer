@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Palette, Square, Trash2 } from 'lucide-react';
 import { SquareElement, SquareElementData } from '../entity/SquareElement';
+import { PRESET_COLORS } from '../shared/DiagramConstants';
 
 export interface SquarePropertiesPaneProps {
     isOpen: boolean;
@@ -14,23 +15,6 @@ export interface SquarePropertiesPaneProps {
     selectedSquare: SquareElement | null;
     onDeleteSquare?: () => void;
 }
-
-export const PRESET_COLORS = {
-    fills: [
-        { name: 'Light Green', value: '#dcfce7' },
-        { name: 'Light Blue', value: '#dbeafe' },
-        { name: 'Light Yellow', value: '#fefce8' },
-        { name: 'Light Red', value: '#fee2e2' },
-        { name: 'Light Purple', value: '#f3e8ff' },
-    ],
-    borders: [
-        { name: 'Green', value: '#22c55e' },
-        { name: 'Blue', value: '#3b82f6' },
-        { name: 'Yellow', value: '#eab308' },
-        { name: 'Red', value: '#ef4444' },
-        { name: 'Purple', value: '#a855f7' },
-    ]
-};
 
 export const SquarePropertiesPane: React.FC<SquarePropertiesPaneProps> = ({
     isOpen,
@@ -103,13 +87,17 @@ export const SquarePropertiesPane: React.FC<SquarePropertiesPaneProps> = ({
                     {/* Fill Color Section */}
                     <div className="space-y-3">
                         <Label className="text-sm font-medium">Fill Color</Label>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-5 gap-2">
                             {PRESET_COLORS.fills.map((color) => (
                                 <Button
                                     key={color.value}
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 p-1"
+                                    className={`h-8 p-1 transition-all hover:scale-105 ${
+                                        squareData.fillColor === color.value
+                                            ? 'ring-2 ring-blue-500 border-blue-500' 
+                                            : ''
+                                    }`}
                                     style={{ backgroundColor: color.value }}
                                     onClick={() => handlePresetFillColor(color.value)}
                                     title={color.name}
@@ -144,13 +132,17 @@ export const SquarePropertiesPane: React.FC<SquarePropertiesPaneProps> = ({
                         {/* Border Color */}
                         <div className="space-y-2">
                             <Label className="text-xs text-muted-foreground">Color</Label>
-                            <div className="grid grid-cols-4 gap-2">
+                            <div className="grid grid-cols-5 gap-2">
                                 {PRESET_COLORS.borders.map((color) => (
                                     <Button
                                         key={color.value}
                                         variant="outline"
                                         size="sm"
-                                        className="h-8 p-1"
+                                        className={`h-8 p-1 transition-all hover:scale-105 ${
+                                            squareData.borderColor === color.value
+                                                ? 'ring-2 ring-blue-500 border-blue-500' 
+                                                : ''
+                                        }`}
                                         style={{ backgroundColor: color.value }}
                                         onClick={() => handlePresetBorderColor(color.value)}
                                         title={color.name}

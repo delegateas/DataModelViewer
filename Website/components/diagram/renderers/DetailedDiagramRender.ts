@@ -35,7 +35,7 @@ export class DetailedDiagramRender extends DiagramRenderer {
         return { element: entityElement, portMap };
     }
 
-    createLinks(entity: EntityType, entityMap: Map<string, { element: dia.Element, portMap: IPortMap }>) {
+    createLinks(entity: EntityType, entityMap: Map<string, { element: dia.Element, portMap: IPortMap }>, allEntities: EntityType[]) {
         const entityInfo = entityMap.get(entity.SchemaName);
         if (!entityInfo) return;
 
@@ -53,6 +53,24 @@ export class DetailedDiagramRender extends DiagramRenderer {
                 const sourcePort = portMap[attr.SchemaName.toLowerCase()];
                 const targetPort = targetInfo.portMap[`${target.Name.toLowerCase()}id`];
                 if (!sourcePort || !targetPort) continue;
+
+                // Find the corresponding relationship for this lookup attribute
+                // Check both source and target entities as the relationship could be defined on either side
+                let relationship = entity.Relationships.find(rel => 
+                    rel.TableSchema === target.Name && 
+                    rel.Name === attr.SchemaName
+                );
+                
+                // If not found in source entity, check the target entity
+                if (!relationship) {
+                    const targetEntity = allEntities.find(e => e.SchemaName === target.Name);
+                    if (targetEntity) {
+                        // Look for the reverse relationship in the target entity
+                        relationship = targetEntity.Relationships.find(rel => 
+                            rel.TableSchema === entity.SchemaName
+                        );
+                    }
+                }
 
                 const link = new shapes.standard.Link({
                 source: { id: entityInfo.element.id, port: sourcePort },
@@ -82,6 +100,14 @@ export class DetailedDiagramRender extends DiagramRenderer {
                     }
                 }
             });
+
+            // Store relationship metadata on the link
+            if (relationship) {
+                link.set('relationshipName', relationship.LookupDisplayName);
+                link.set('relationshipSchema', relationship.RelationshipSchema);
+                link.set('sourceEntity', entity.SchemaName);
+                link.set('targetEntity', target.Name);
+            }
 
             link.addTo(this.graph);
         }
@@ -167,7 +193,14 @@ export class DetailedDiagramRender extends DiagramRenderer {
 
     onLinkClick(linkView: dia.LinkView, evt: dia.Event): void {
         evt.stopPropagation();
-        alert('Relationship info (detailed view)');
+        
+        const link = linkView.model as dia.Link;
+        if (this.onLinkClickHandler) {
+            this.onLinkClickHandler(link);
+        } else {
+            // Fallback alert if no handler is provided
+            alert('Relationship info (detailed view)');
+        }
     }
 
     getVisibleAttributes(entity: EntityType): AttributeType[] {

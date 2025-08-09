@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { PanelLeft, ZoomIn, ZoomOut, Trash2 } from 'lucide-react';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
-import { AddEntityPane, EntityActionsPane } from '@/components/diagram/panes';
+import { AddEntityPane, EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
 import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
@@ -51,9 +51,17 @@ const DiagramContent = () => {
     const handleSetSelectedKey = useCallback((key: string | undefined) => {
         setSelectedKey(key);
     }, []);
+
+    // Link click handler to pass to renderer
+    const handleLinkClick = useCallback((link: dia.Link) => {
+        setSelectedLink(link);
+        setIsLinkPropertiesSheetOpen(true);
+    }, []);
     const [isEntityActionsSheetOpen, setIsEntityActionsSheetOpen] = useState(false);
     const [selectedSquare, setSelectedSquare] = useState<SquareElement | null>(null);
     const [isSquarePropertiesSheetOpen, setIsSquarePropertiesSheetOpen] = useState(false);
+    const [selectedLink, setSelectedLink] = useState<dia.Link | null>(null);
+    const [isLinkPropertiesSheetOpen, setIsLinkPropertiesSheetOpen] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
     const [resizeData, setResizeData] = useState<{
         element: SquareElement;
@@ -78,9 +86,10 @@ const DiagramContent = () => {
         })();
 
         return new RendererClass(graph, {
-            setSelectedKey: handleSetSelectedKey
+            setSelectedKey: handleSetSelectedKey,
+            onLinkClick: handleLinkClick
         });
-    }, [diagramType, graph, handleSetSelectedKey]);
+    }, [diagramType, graph, handleSetSelectedKey, handleLinkClick]);
 
     useEffect(() => {
         if (Groups.length > 0 && !selectedGroup) selectGroup(Groups[0]);
@@ -159,7 +168,7 @@ const DiagramContent = () => {
         
         util.nextFrame(() => {
             currentEntities.forEach(entity => {
-                renderer.createLinks(entity, entityMap);
+                renderer.createLinks(entity, entityMap, currentEntities);
             });
         });
 
@@ -533,6 +542,53 @@ const DiagramContent = () => {
         }
     };
 
+    const handleUpdateLink = (linkId: string | number, properties: LinkProperties) => {
+        if (!graph) return;
+        
+        const link = graph.getCell(linkId) as dia.Link;
+        if (!link) return;
+
+        // Update link appearance
+        link.attr('line/stroke', properties.color);
+        link.attr('line/strokeWidth', properties.strokeWidth);
+        link.attr('line/targetMarker/stroke', properties.color);
+        link.attr('line/targetMarker/fill', properties.color);
+        link.attr('line/sourceMarker/stroke', properties.color);
+        
+        if (properties.strokeDasharray) {
+            link.attr('line/strokeDasharray', properties.strokeDasharray);
+        } else {
+            link.removeAttr('line/strokeDasharray');
+        }
+
+        // Update or remove label
+        if (properties.label) {
+            link.label(0, {
+                attrs: {
+                    text: {
+                        text: properties.label,
+                        fill: properties.color,
+                        fontSize: 14,
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                    },
+                    rect: {
+                        fill: 'white',
+                        stroke: properties.color,
+                        strokeWidth: 1,
+                        rx: 3,
+                        ry: 3
+                    }
+                },
+                position: {
+                    distance: 0.5,
+                    offset: -1
+                }
+            });
+        } else {
+            link.removeLabel(0);
+        }
+    };
+
     // Find the selected entity for actions
     const selectedEntityForActionsData = currentEntities.find(entity => entity.SchemaName === selectedEntityForActions);
     
@@ -592,6 +648,17 @@ const DiagramContent = () => {
                 onOpenChange={setIsSquarePropertiesSheetOpen}
                 selectedSquare={selectedSquare}
                 onDeleteSquare={handleDeleteSquare}
+            />
+
+            {/* Link Properties Pane */}
+            <LinkPropertiesPane
+                isOpen={isLinkPropertiesSheetOpen}
+                onOpenChange={(open) => {
+                    setIsLinkPropertiesSheetOpen(open);
+                    if (!open) setSelectedLink(null);
+                }}
+                selectedLink={selectedLink}
+                onUpdateLink={handleUpdateLink}
             />
         </>
     )
