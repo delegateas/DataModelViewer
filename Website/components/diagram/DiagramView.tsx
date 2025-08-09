@@ -616,18 +616,27 @@ const DiagramContent = () => {
         if (properties.label) {
             link.label(0, {
                 attrs: {
+                    rect: {
+                        fill: 'white',
+                        stroke: '#e5e7eb',
+                        strokeWidth: 1,
+                        rx: 4,
+                        ry: 4,
+                        ref: 'text',
+                        refX: -16,
+                        refY: -4,
+                        refWidth: '100%',
+                        refHeight: '100%',
+                        refWidth2: 16,
+                        refHeight2: 8,
+                    },
                     text: {
                         text: properties.label,
                         fill: properties.color,
                         fontSize: 14,
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    },
-                    rect: {
-                        fill: 'white',
-                        stroke: properties.color,
-                        strokeWidth: 1,
-                        rx: 3,
-                        ry: 3
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                        textAnchor: 'start',
+                        dominantBaseline: 'central',
                     }
                 },
                 position: {
