@@ -5,8 +5,6 @@ import { dia, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
 import { SquareElement } from '@/components/diagram/elements/SquareElement';
 import { TextElement } from '@/components/diagram/elements/TextElement';
-import { Separator } from '@/components/ui/separator';
-import { Loading } from '@/components/ui/loading';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
 import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';

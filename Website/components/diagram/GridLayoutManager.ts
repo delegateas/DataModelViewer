@@ -72,14 +72,10 @@ export const calculateGridLayout = (
   let startColumn = 0;
   let startRow = 0;
   
-  console.log('🔍 GridLayout: existingPositions received:', existingPositions);
-  
   if (existingPositions && existingPositions.length > 0) {
     // Find the rightmost and bottommost positions
     const maxX = Math.max(...existingPositions.map(pos => pos.x + pos.width));
     const maxY = Math.max(...existingPositions.map(pos => pos.y + pos.height));
-    
-    console.log('📏 GridLayout: maxX:', maxX, 'maxY:', maxY);
     
     // Start new entities to the right of existing ones, or on the next row
     startColumn = Math.floor((maxX + padding - margin) / (entityWidth + padding));
@@ -88,10 +84,6 @@ export const calculateGridLayout = (
       startColumn = 0;
       startRow = Math.floor((maxY + padding - margin) / 200); // Approximate row height
     }
-    
-    console.log('📍 GridLayout: calculated startColumn:', startColumn, 'startRow:', startRow);
-  } else {
-    console.log('📍 GridLayout: no existing positions, starting from origin');
   }
 
   // Determine how many columns can fit
@@ -101,8 +93,6 @@ export const calculateGridLayout = (
   const positions: GridPosition[] = [];
   let currentColumn = startColumn;
   let currentRow = startRow;
-
-  console.log('📐 GridLayout: maxColumns:', maxColumns, 'starting at column:', currentColumn, 'row:', currentRow);
 
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
@@ -130,11 +120,8 @@ export const calculateGridLayout = (
       ) : false;
       
       if (!isOccupied) {
-        console.log(`📍 GridLayout: placing ${entity.SchemaName} at column ${currentColumn}, row ${currentRow} (${x}, ${y})`);
         positions.push({ x, y });
         foundValidPosition = true;
-      } else {
-        console.log(`🚫 GridLayout: position (${x}, ${y}) occupied by existing entity, trying next...`);
       }
       
       // Move to next position
@@ -143,7 +130,6 @@ export const calculateGridLayout = (
     }
     
     if (!foundValidPosition) {
-      console.warn(`⚠️ GridLayout: Could not find valid position for ${entity.SchemaName}, using fallback`);
       // Fallback: place at calculated position anyway (should not happen with enough attempts)
       const x = margin + currentColumn * (entityWidth + padding);
       const y = margin + currentRow * (height + padding);
@@ -151,11 +137,9 @@ export const calculateGridLayout = (
       currentColumn++;
     }
   }
-  
-  console.log('✅ GridLayout: final positions:', positions);
 
   const gridWidth = Math.min(entities.length, maxColumns) * entityWidth + (Math.min(entities.length, maxColumns) - 1) * padding;
-  const gridHeight = (currentRow + 1) * (calculateEntityHeight(entities[0] || { Attributes: [] } as any, options.diagramType) + padding) - padding;
+  const gridHeight = (currentRow + 1) * (calculateEntityHeight(entities[0] || { Attributes: [] }, options.diagramType) + padding) - padding;
 
   return {
     positions,
