@@ -12,11 +12,15 @@ export class DetailedDiagramRender extends DiagramRenderer {
 
         if (target) {
             const schemaName = target.dataset.schemaName!;
-            const isKey = target.dataset.isKey === 'true';
-
-            if (isKey) this.setSelectedKey?.(schemaName);
+            // Toggle functionality: if clicking the same key, deselect it
+            const currentSelectedKey = this.getCurrentSelectedKey();
+            if (currentSelectedKey === schemaName) {
+                this.setAndTrackSelectedKey(undefined);
+            } else {
+                this.setAndTrackSelectedKey(schemaName);
+            }
         } else {
-            this.setSelectedKey?.(undefined);
+            this.setAndTrackSelectedKey(undefined);
         }
     }
 
@@ -85,29 +89,66 @@ export class DetailedDiagramRender extends DiagramRenderer {
     }
 
     highlightSelectedKey(graph: dia.Graph, entities: EntityType[], selectedKey: string): void {
-        const entity = entities.find(e =>
-            e.Attributes.some(a => a.SchemaName === selectedKey && a.IsPrimaryId)
-        );
-        if (!entity) return;
+        // Find the attribute and its entity
+        let selectedAttribute: AttributeType | undefined;
+        let entityWithAttribute: EntityType | undefined;
 
-        const entityId = graph.getElements().find(el =>
+        for (const entity of entities) {
+            const attribute = entity.Attributes.find(a => a.SchemaName === selectedKey);
+            if (attribute) {
+                selectedAttribute = attribute;
+                entityWithAttribute = entity;
+                break;
+            }
+        }
+
+        if (!selectedAttribute || !entityWithAttribute) return;
+
+        // Reset all links to default color first
+        graph.getLinks().forEach(link => {
+            link.attr('line/stroke', '#42a5f5');
+            link.attr('line/strokeWidth', 2);
+            link.attr('line/targetMarker/stroke', '#42a5f5');
+            link.attr('line/targetMarker/fill', '#42a5f5');
+            link.attr('line/sourceMarker/stroke', '#42a5f5');
+        });
+
+        // Find the entity element
+        const entityElement = graph.getElements().find(el =>
             el.get('type') === 'delegate.entity' &&
-            el.get('data')?.entity?.SchemaName === entity.SchemaName
-        )?.id;
+            el.get('data')?.entity?.SchemaName === entityWithAttribute.SchemaName
+        );
 
-        if (!entityId) return;
+        if (!entityElement) return;
 
         const portId = `port-${selectedKey.toLowerCase()}`;
-        graph.getLinks().forEach(link => {
-            const target = link.target();
-            if (target.id === entityId && target.port === portId) {
-                link.attr('line/stroke', '#ff6b6b');
-                link.attr('line/strokeWidth', 4);
-                link.attr('line/targetMarker/stroke', '#ff6b6b');
-                link.attr('line/targetMarker/fill', '#ff6b6b');
-                link.attr('line/sourceMarker/stroke', '#ff6b6b');
-            }
-        });
+
+        // Highlight different types of relationships based on attribute type
+        if (selectedAttribute.IsPrimaryId) {
+            // For primary keys, highlight incoming relationships (where this entity is the target)
+            graph.getLinks().forEach(link => {
+                const target = link.target();
+                if (target.id === entityElement.id && target.port === portId) {
+                    link.attr('line/stroke', '#ff6b6b');
+                    link.attr('line/strokeWidth', 4);
+                    link.attr('line/targetMarker/stroke', '#ff6b6b');
+                    link.attr('line/targetMarker/fill', '#ff6b6b');
+                    link.attr('line/sourceMarker/stroke', '#ff6b6b');
+                }
+            });
+        } else if (selectedAttribute.AttributeType === 'LookupAttribute') {
+            // For lookup attributes, highlight outgoing relationships (where this entity is the source)
+            graph.getLinks().forEach(link => {
+                const source = link.source();
+                if (source.id === entityElement.id && source.port === portId) {
+                    link.attr('line/stroke', '#ff6b6b');
+                    link.attr('line/strokeWidth', 4);
+                    link.attr('line/targetMarker/stroke', '#ff6b6b');
+                    link.attr('line/targetMarker/fill', '#ff6b6b');
+                    link.attr('line/sourceMarker/stroke', '#ff6b6b');
+                }
+            });
+        }
     }
 
     updateEntityAttributes(graph: dia.Graph, selectedKey: string): void {

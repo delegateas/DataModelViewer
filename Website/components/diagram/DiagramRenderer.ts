@@ -6,12 +6,15 @@ export type IPortMap = Record<string, string>;
 export abstract class DiagramRenderer {
     protected graph: dia.Graph;
     protected setSelectedKey?: (key: string | undefined) => void;
+    private instanceId: string;
+    protected currentSelectedKey?: string;
 
     constructor(
         graph: dia.Graph | undefined | null,
         options?: {
         setSelectedKey?: (key: string | undefined) => void;
     }) { 
+        this.instanceId = Math.random().toString(36).substr(2, 9);
         if (!graph) throw new Error("Graph must be defined");
         this.graph = graph;
         this.setSelectedKey = options?.setSelectedKey;
@@ -37,6 +40,22 @@ export abstract class DiagramRenderer {
   abstract onLinkClick(linkView: dia.LinkView, evt: dia.Event): void;
 
   abstract getVisibleAttributes(entity: EntityType): AttributeType[];
+
+  // Helper method to set selected key and track it internally
+  protected setAndTrackSelectedKey(key: string | undefined): void {
+    this.currentSelectedKey = key;
+    this.setSelectedKey?.(key);
+  }
+
+  // Helper method to get current selected key
+  protected getCurrentSelectedKey(): string | undefined {
+    return this.currentSelectedKey;
+  }
+
+  // Method to sync internal state when selectedKey is set externally
+  public updateSelectedKey(key: string | undefined): void {
+    this.currentSelectedKey = key;
+  }
 
   // Unified method to update an entity regardless of type
   updateEntity(entitySchemaName: string, updatedEntity: EntityType): void {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { dia, shapes, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
 import { EntityElement } from '@/components/diagram/entity/EntityElement';
@@ -46,6 +46,11 @@ const DiagramContent = () => {
     
     const [selectedKey, setSelectedKey] = useState<string>();
     const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
+
+    // Wrapper for setSelectedKey to pass to renderer
+    const handleSetSelectedKey = useCallback((key: string | undefined) => {
+        setSelectedKey(key);
+    }, []);
     const [isEntityActionsSheetOpen, setIsEntityActionsSheetOpen] = useState(false);
     const [selectedSquare, setSelectedSquare] = useState<SquareElement | null>(null);
     const [isSquarePropertiesSheetOpen, setIsSquarePropertiesSheetOpen] = useState(false);
@@ -73,9 +78,9 @@ const DiagramContent = () => {
         })();
 
         return new RendererClass(graph, {
-            setSelectedKey
+            setSelectedKey: handleSetSelectedKey
         });
-    }, [diagramType, graph, setSelectedKey]);
+    }, [diagramType, graph, handleSetSelectedKey]);
 
     useEffect(() => {
         if (Groups.length > 0 && !selectedGroup) selectGroup(Groups[0]);
@@ -83,9 +88,12 @@ const DiagramContent = () => {
 
     useEffect(() => {
         if (!renderer) return;
-        document.addEventListener('click', renderer.onDocumentClick);
+        
+        // Bind the method to the renderer instance
+        const boundOnDocumentClick = renderer.onDocumentClick.bind(renderer);
+        document.addEventListener('click', boundOnDocumentClick);
         return () => {
-            document.removeEventListener('click', renderer.onDocumentClick);
+            document.removeEventListener('click', boundOnDocumentClick);
         };
     }, [renderer]);
 
@@ -162,8 +170,12 @@ const DiagramContent = () => {
     }, [graph, paper, selectedGroup, currentEntities, diagramType]);
 
     useEffect(() => {
-        if (!selectedKey || !graph || !renderer) return;
+        if (!graph || !renderer) return;
         
+        // Sync the renderer's internal selectedKey state
+        renderer.updateSelectedKey(selectedKey);
+        
+        // Reset all links to default color first
         graph.getLinks().forEach(link => {
             link.attr('line/stroke', '#42a5f5');
             link.attr('line/strokeWidth', 2);
@@ -172,7 +184,10 @@ const DiagramContent = () => {
             link.attr('line/sourceMarker/stroke', '#42a5f5');
         });
         
-        renderer.highlightSelectedKey(graph, currentEntities, selectedKey);
+        // Only highlight if there's a selected key
+        if (selectedKey) {
+            renderer.highlightSelectedKey(graph, currentEntities, selectedKey);
+        }
     }, [selectedKey, graph, currentEntities, renderer]);
 
     useEffect(() => {
