@@ -584,7 +584,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
               data: cellData.data
             });
           } else {
-            console.log('Creating standard element:', cellData.type);
             // Use fromJSON for standard elements
             try {
               cell = dia.Cell.fromJSON(cellData);

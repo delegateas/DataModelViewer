@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users, Save, Upload } from 'lucide-react';
+import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users, Save, Upload, Smartphone } from 'lucide-react';
 import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane } from '@/components/diagram/panes';
 import { DiagramType } from '@/hooks/useDiagram';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ISidebarDiagramViewProps { 
 
@@ -13,6 +14,7 @@ interface ISidebarDiagramViewProps {
 
 export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType } = useDiagramViewContext();
+    const isMobile = useIsMobile();
     const [isDataExpanded, setIsDataExpanded] = useState(true);
     const [isGeneralExpanded, setIsGeneralExpanded] = useState(false);
     const [isEntitySheetOpen, setIsEntitySheetOpen] = useState(false);
@@ -42,6 +44,22 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 </TabsList>
                 
                 <TabsContent value="build" className="p-4 space-y-4">
+                    {/* Mobile Notice */}
+                    {isMobile && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                            <div className="flex items-center gap-2 text-amber-800">
+                                <Smartphone className="w-4 h-4 flex-shrink-0" />
+                                <div className="text-sm">
+                                    <p className="font-medium">Mobile Mode</p>
+                                    <p className="text-amber-700 mt-1">
+                                        Some advanced features may have limited functionality on mobile devices. 
+                                        For the best experience, use a desktop computer.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
                     {/* Data Section */}
                     <Collapsible open={isDataExpanded} onOpenChange={setIsDataExpanded}>
                         <CollapsibleTrigger asChild>
