@@ -42,7 +42,7 @@ export interface DiagramActions {
   removeAttributeFromEntity: (entitySchemaName: string, attribute: AttributeType, renderer?: DiagramRenderer) => void;
   updateDiagramType: (type: DiagramType) => void;
   addEntityToDiagram: (entity: EntityType, selectedAttributes?: string[]) => void;
-  addGroupToDiagram: (group: GroupType) => void;
+  addGroupToDiagram: (group: GroupType, selectedAttributes?: { [entitySchemaName: string]: string[] }) => void;
   removeEntityFromDiagram: (entitySchemaName: string) => void;
   addSquareToDiagram: () => void;
 }
@@ -321,7 +321,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setCurrentEntities(updatedEntities);
   }, [currentEntities, diagramType, fitToScreen]);
 
-  const addGroupToDiagram = useCallback((group: GroupType) => {
+  const addGroupToDiagram = useCallback((group: GroupType, selectedAttributes?: { [entitySchemaName: string]: string[] }) => {
     if (!graphRef.current || !paperRef.current) {
       return;
     }
@@ -335,17 +335,25 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       return; // All entities from this group are already in diagram
     }
 
-    // Initialize new entities with default visible attributes
+    // Initialize new entities with provided or default visible attributes
     const entitiesWithVisibleAttributes = newEntities.map(entity => {
-      const primaryKey = entity.Attributes.find(attr => attr.IsPrimaryId);
-      const customLookupAttributes = entity.Attributes.filter(attr =>
-        attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute
-      );
+      let initialVisibleAttributes: string[];
       
-      const initialVisibleAttributes = [
-        ...(primaryKey ? [primaryKey.SchemaName] : []),
-        ...customLookupAttributes.map(attr => attr.SchemaName)
-      ];
+      if (selectedAttributes && selectedAttributes[entity.SchemaName]) {
+        // Use the provided selected attributes
+        initialVisibleAttributes = selectedAttributes[entity.SchemaName];
+      } else {
+        // Fall back to default (primary key + custom lookup attributes)
+        const primaryKey = entity.Attributes.find(attr => attr.IsPrimaryId);
+        const customLookupAttributes = entity.Attributes.filter(attr =>
+          attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute
+        );
+        
+        initialVisibleAttributes = [
+          ...(primaryKey ? [primaryKey.SchemaName] : []),
+          ...customLookupAttributes.map(attr => attr.SchemaName)
+        ];
+      }
       
       return {
         ...entity,

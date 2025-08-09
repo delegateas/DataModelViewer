@@ -7,11 +7,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Search, Database } from 'lucide-react';
 import { Groups } from '@/generated/Data';
 import { EntityType, GroupType } from '@/lib/Types';
+import { useAttributeSelection } from '@/hooks/useAttributeSelection';
+import { AttributeSelectionPanel } from './AttributeSelectionPanel';
 
 export interface AddGroupPaneProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
-    onAddGroup: (group: GroupType) => void;
+    onAddGroup: (group: GroupType, selectedAttributes?: { [entitySchemaName: string]: string[] }) => void;
     currentEntities: EntityType[];
 }
 
@@ -22,6 +24,14 @@ export const AddGroupPane: React.FC<AddGroupPaneProps> = ({
     currentEntities
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [isAttributeSettingsExpanded, setIsAttributeSettingsExpanded] = useState(false);
+    
+    const {
+        attributeMode,
+        setAttributeMode,
+        getSelectedAttributes,
+        getAttributeModeDescription,
+    } = useAttributeSelection('custom-lookups');
 
     // Filter groups based on search term
     const filteredGroups = useMemo(() => {
@@ -36,7 +46,14 @@ export const AddGroupPane: React.FC<AddGroupPaneProps> = ({
     }, [searchTerm]);
 
     const handleAddGroup = (group: GroupType) => {
-        onAddGroup(group);
+        // Create attribute selection map for all entities in the group
+        const selectedAttributes: { [entitySchemaName: string]: string[] } = {};
+        
+        group.Entities.forEach(entity => {
+            selectedAttributes[entity.SchemaName] = getSelectedAttributes(entity);
+        });
+        
+        onAddGroup(group, selectedAttributes);
         onOpenChange(false);
     };
 
@@ -56,6 +73,15 @@ export const AddGroupPane: React.FC<AddGroupPaneProps> = ({
                     <SheetTitle>Add Group to Diagram</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-4">
+                    {/* Attribute Selection Options */}
+                    <AttributeSelectionPanel
+                        attributeMode={attributeMode}
+                        setAttributeMode={setAttributeMode}
+                        isExpanded={isAttributeSettingsExpanded}
+                        setIsExpanded={setIsAttributeSettingsExpanded}
+                        getAttributeModeDescription={getAttributeModeDescription}
+                    />
+
                     {/* Search Input */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />

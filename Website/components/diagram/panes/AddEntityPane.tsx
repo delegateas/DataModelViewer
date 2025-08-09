@@ -3,13 +3,13 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, ChevronDown, ChevronRight, Settings } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Groups } from '@/generated/Data';
 import { EntityType, GroupType, AttributeType } from '@/lib/Types';
+import { useAttributeSelection } from '@/hooks/useAttributeSelection';
+import { AttributeSelectionPanel } from './AttributeSelectionPanel';
 
 export interface AddEntityPaneProps {
     isOpen: boolean;
@@ -18,7 +18,12 @@ export interface AddEntityPaneProps {
     currentEntities: EntityType[];
 }
 
-type AttributeSelectionMode = 'minimal' | 'custom-lookups' | 'all-lookups' | 'custom';
+export interface AddEntityPaneProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    onAddEntity: (entity: EntityType, selectedAttributes?: string[]) => void;
+    currentEntities: EntityType[];
+}
 
 export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
     isOpen,
@@ -27,10 +32,19 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
     currentEntities
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [attributeMode, setAttributeMode] = useState<AttributeSelectionMode>('custom-lookups');
     const [selectedEntity, setSelectedEntity] = useState<EntityType | null>(null);
-    const [customSelectedAttributes, setCustomSelectedAttributes] = useState<string[]>([]);
     const [isAttributeSettingsExpanded, setIsAttributeSettingsExpanded] = useState(false);
+    
+    const {
+        attributeMode,
+        setAttributeMode,
+        customSelectedAttributes,
+        getSelectedAttributes,
+        initializeCustomAttributes,
+        toggleCustomAttribute,
+        resetCustomAttributes,
+        getAttributeModeDescription,
+    } = useAttributeSelection('custom-lookups');
 
     // Filter groups and entities based on search term
     const filteredData = useMemo(() => {
@@ -53,54 +67,24 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
     }, [searchTerm]);
 
     const handleAddEntity = (entity: EntityType) => {
-        let selectedAttributes: string[] = [];
-        
-        // Determine which attributes to include based on mode
-        switch (attributeMode) {
-            case 'minimal':
-                // Only primary key (handled by default in useDiagram)
-                selectedAttributes = [];
-                break;
-            case 'custom-lookups':
-                selectedAttributes = entity.Attributes
-                    .filter(attr => attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute)
-                    .map(attr => attr.SchemaName);
-                break;
-            case 'all-lookups':
-                selectedAttributes = entity.Attributes
-                    .filter(attr => attr.AttributeType === "LookupAttribute")
-                    .map(attr => attr.SchemaName);
-                break;
-            case 'custom':
-                selectedAttributes = customSelectedAttributes;
-                break;
-        }
-        
+        const selectedAttributes = getSelectedAttributes(entity);
         onAddEntity(entity, selectedAttributes);
         onOpenChange(false);
         setSelectedEntity(null);
-        setCustomSelectedAttributes([]);
+        resetCustomAttributes();
     };
 
     const handleEntityClick = (entity: EntityType) => {
         if (attributeMode === 'custom') {
             setSelectedEntity(entity);
-            // Initialize with current default (custom lookups)
-            const defaultSelected = entity.Attributes
-                .filter(attr => attr.AttributeType === "LookupAttribute" && attr.IsCustomAttribute)
-                .map(attr => attr.SchemaName);
-            setCustomSelectedAttributes(defaultSelected);
+            initializeCustomAttributes(entity);
         } else {
             handleAddEntity(entity);
         }
     };
 
     const handleCustomAttributeToggle = (attributeSchemaName: string, checked: boolean) => {
-        if (checked) {
-            setCustomSelectedAttributes(prev => [...prev, attributeSchemaName]);
-        } else {
-            setCustomSelectedAttributes(prev => prev.filter(name => name !== attributeSchemaName));
-        }
+        toggleCustomAttribute(attributeSchemaName, checked);
     };
 
     return (
@@ -111,68 +95,13 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                 </SheetHeader>
                 <div className="mt-6 space-y-4">
                     {/* Attribute Selection Options */}
-                    <Collapsible open={isAttributeSettingsExpanded} onOpenChange={setIsAttributeSettingsExpanded}>
-                        <CollapsibleTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between">
-                                <span className="flex items-center">
-                                    <Settings className="w-4 h-4 mr-2" />
-                                    Attribute Selection
-                                </span>
-                                {isAttributeSettingsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                            </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="mt-3 space-y-3 p-3 border rounded-lg bg-muted/10">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium">Default attributes to include:</Label>
-                                <div className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="radio"
-                                            id="minimal"
-                                            name="attributeMode"
-                                            checked={attributeMode === 'minimal'}
-                                            onChange={() => setAttributeMode('minimal')}
-                                            className="w-4 h-4"
-                                        />
-                                        <Label htmlFor="minimal" className="text-sm">Minimal (Primary key only)</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="radio"
-                                            id="custom-lookups"
-                                            name="attributeMode"
-                                            checked={attributeMode === 'custom-lookups'}
-                                            onChange={() => setAttributeMode('custom-lookups')}
-                                            className="w-4 h-4"
-                                        />
-                                        <Label htmlFor="custom-lookups" className="text-sm">Custom lookup attributes</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="radio"
-                                            id="all-lookups"
-                                            name="attributeMode"
-                                            checked={attributeMode === 'all-lookups'}
-                                            onChange={() => setAttributeMode('all-lookups')}
-                                            className="w-4 h-4"
-                                        />
-                                        <Label htmlFor="all-lookups" className="text-sm">All lookup attributes</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="radio"
-                                            id="custom"
-                                            name="attributeMode"
-                                            checked={attributeMode === 'custom'}
-                                            onChange={() => setAttributeMode('custom')}
-                                            className="w-4 h-4"
-                                        />
-                                        <Label htmlFor="custom" className="text-sm">Pick specific attributes</Label>
-                                    </div>
-                                </div>
-                            </div>
-                        </CollapsibleContent>
-                    </Collapsible>
+                    <AttributeSelectionPanel
+                        attributeMode={attributeMode}
+                        setAttributeMode={setAttributeMode}
+                        isExpanded={isAttributeSettingsExpanded}
+                        setIsExpanded={setIsAttributeSettingsExpanded}
+                        getAttributeModeDescription={getAttributeModeDescription}
+                    />
 
                     {/* Search Input */}
                     <div className="relative">
