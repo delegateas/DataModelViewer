@@ -168,7 +168,7 @@ const DiagramContent = () => {
         });
 
         // Calculate grid layout
-        const layoutOptions = getDefaultLayoutOptions();
+        const layoutOptions = getDefaultLayoutOptions(diagramType);
         
         // Get actual container dimensions
         const containerRect = paper?.el?.getBoundingClientRect();
@@ -179,17 +179,19 @@ const DiagramContent = () => {
         const updatedLayoutOptions = {
             ...layoutOptions,
             containerWidth: actualContainerWidth,
-            containerHeight: actualContainerHeight
+            containerHeight: actualContainerHeight,
+            diagramType: diagramType
         };
         
-        // Calculate actual heights for each entity
-        const entityHeights = currentEntities.map(entity => calculateEntityHeight(entity));
+        // Calculate actual heights for each entity based on diagram type
+        const entityHeights = currentEntities.map(entity => calculateEntityHeight(entity, diagramType));
         const maxEntityHeight = Math.max(...entityHeights, layoutOptions.entityHeight);
         
         // Use the maximum height for layout calculation to ensure proper spacing
         const adjustedLayoutOptions = {
             ...updatedLayoutOptions,
-            entityHeight: maxEntityHeight
+            entityHeight: maxEntityHeight,
+            diagramType: diagramType
         };
         
         const layout = calculateGridLayout(currentEntities, adjustedLayoutOptions);

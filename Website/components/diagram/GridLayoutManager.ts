@@ -1,6 +1,8 @@
 import { EntityType } from '@/lib/Types';
 import { EntityElement } from '@/components/diagram/elements/EntityElement';
 
+export type DiagramType = 'simple' | 'detailed';
+
 export interface GridLayoutOptions {
   containerWidth: number;
   containerHeight: number;
@@ -8,6 +10,7 @@ export interface GridLayoutOptions {
   entityHeight: number;
   padding: number;
   margin: number;
+  diagramType?: DiagramType;
 }
 
 export interface GridPosition {
@@ -24,9 +27,15 @@ export interface GridLayoutResult {
 }
 
 /**
- * Calculates the actual height of an entity based on its visible attributes
+ * Calculates the actual height of an entity based on its visible attributes and diagram type
  */
-export const calculateEntityHeight = (entity: EntityType): number => {
+export const calculateEntityHeight = (entity: EntityType, diagramType: DiagramType = 'detailed'): number => {
+  // For simple diagrams, use fixed small dimensions
+  if (diagramType === 'simple') {
+    return 80; // Fixed height for simple entities
+  }
+  
+  // For detailed diagrams, calculate based on content
   const { visibleItems } = EntityElement.getVisibleItemsAndPorts(entity);
   const itemHeight = 28;
   const itemYSpacing = 8;
@@ -67,7 +76,7 @@ export const calculateGridLayout = (
 
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
-    const height = calculateEntityHeight(entity);
+    const height = calculateEntityHeight(entity, options.diagramType);
 
     // Assign to the column with the least cumulative height
     const colIndex = columnHeights.indexOf(Math.min(...columnHeights));
@@ -94,12 +103,20 @@ export const calculateGridLayout = (
 
 
 /**
- * Estimates entity dimensions based on content
+ * Estimates entity dimensions based on content and diagram type
  */
-export const estimateEntityDimensions = (entity: EntityType): { width: number; height: number } => {
-  // Base dimensions
+export const estimateEntityDimensions = (entity: EntityType, diagramType: DiagramType = 'detailed'): { width: number; height: number } => {
+  if (diagramType === 'simple') {
+    // Fixed dimensions for simple entities
+    return {
+      width: 200,
+      height: 80
+    };
+  }
+  
+  // Base dimensions for detailed entities
   const baseWidth = 480; // Match the entity width used in EntityElement
-  const height = calculateEntityHeight(entity); // Use actual calculated height
+  const height = calculateEntityHeight(entity, diagramType); // Use actual calculated height
   
   return {
     width: baseWidth,
@@ -108,13 +125,28 @@ export const estimateEntityDimensions = (entity: EntityType): { width: number; h
 };
 
 /**
- * Gets default layout options
+ * Gets default layout options based on diagram type
  */
-export const getDefaultLayoutOptions = (): GridLayoutOptions => ({
-  containerWidth: 1920, // Use a wider default container
-  containerHeight: 1080, // Use a taller default container
-  entityWidth: 480,
-  entityHeight: 400, // This will be overridden by actual calculation
-  padding: 80, // Reduced padding for better space utilization
-  margin: 80
-}); 
+export const getDefaultLayoutOptions = (diagramType: DiagramType = 'detailed'): GridLayoutOptions => {
+  if (diagramType === 'simple') {
+    return {
+      containerWidth: 1920,
+      containerHeight: 1080,
+      entityWidth: 200, // Smaller width for simple entities
+      entityHeight: 80, // Smaller height for simple entities
+      padding: 40, // Less padding for simple diagrams
+      margin: 40, // Less margin for simple diagrams
+      diagramType: 'simple'
+    };
+  }
+  
+  return {
+    containerWidth: 1920, // Use a wider default container
+    containerHeight: 1080, // Use a taller default container
+    entityWidth: 480,
+    entityHeight: 400, // This will be overridden by actual calculation
+    padding: 80, // Reduced padding for better space utilization
+    margin: 80,
+    diagramType: 'detailed'
+  };
+}; 
