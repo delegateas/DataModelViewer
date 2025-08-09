@@ -2,9 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer } from 'lucide-react';
+import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users } from 'lucide-react';
 import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
-import { AddEntityPane } from '@/components/diagram/panes';
+import { AddEntityPane, AddGroupPane } from '@/components/diagram/panes';
 import { DiagramType } from '@/hooks/useDiagram';
 
 interface ISidebarDiagramViewProps { 
@@ -12,10 +12,11 @@ interface ISidebarDiagramViewProps {
 }
 
 export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
-    const { addEntityToDiagram, currentEntities, diagramType, updateDiagramType } = useDiagramViewContext();
+    const { addEntityToDiagram, addGroupToDiagram, currentEntities, diagramType, updateDiagramType } = useDiagramViewContext();
     const [isDataExpanded, setIsDataExpanded] = useState(true);
     const [isGeneralExpanded, setIsGeneralExpanded] = useState(false);
     const [isEntitySheetOpen, setIsEntitySheetOpen] = useState(false);
+    const [isGroupSheetOpen, setIsGroupSheetOpen] = useState(false);
 
     return (
         <div className="flex flex-col h-full w-full">
@@ -49,6 +50,14 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                             >
                                 <Database className="w-4 h-4" />
                                 Entity
+                            </Button>
+                            <Button 
+                                variant="ghost" 
+                                className="w-full justify-start gap-2 h-auto py-2"
+                                onClick={() => setIsGroupSheetOpen(true)}
+                            >
+                                <Users className="w-4 h-4" />
+                                Group
                             </Button>
                         </CollapsibleContent>
                     </Collapsible>
@@ -125,6 +134,14 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 isOpen={isEntitySheetOpen}
                 onOpenChange={setIsEntitySheetOpen}
                 onAddEntity={addEntityToDiagram}
+                currentEntities={currentEntities}
+            />
+
+            {/* Add Group Pane */}
+            <AddGroupPane
+                isOpen={isGroupSheetOpen}
+                onOpenChange={setIsGroupSheetOpen}
+                onAddGroup={addGroupToDiagram}
                 currentEntities={currentEntities}
             />
         </div>

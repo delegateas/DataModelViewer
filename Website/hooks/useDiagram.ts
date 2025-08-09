@@ -39,6 +39,7 @@ export interface DiagramActions {
   addAttributeToEntity: (entitySchemaName: string, attribute: AttributeType) => void;
   updateDiagramType: (type: DiagramType) => void;
   addEntityToDiagram: (entity: EntityType) => void;
+  addGroupToDiagram: (group: GroupType) => void;
   removeEntityFromDiagram: (entitySchemaName: string) => void;
 }
 
@@ -260,6 +261,25 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setCurrentEntities(updatedEntities);
   }, [currentEntities, diagramType, fitToScreen]);
 
+  const addGroupToDiagram = useCallback((group: GroupType) => {
+    if (!graphRef.current || !paperRef.current) {
+      return;
+    }
+
+    // Filter out entities that are already in the diagram
+    const newEntities = group.Entities.filter(entity => 
+      !currentEntities.some(e => e.SchemaName === entity.SchemaName)
+    );
+
+    if (newEntities.length === 0) {
+      return; // All entities from this group are already in diagram
+    }
+
+    // Update current entities with new entities from the group
+    const updatedEntities = [...currentEntities, ...newEntities];
+    setCurrentEntities(updatedEntities);
+  }, [currentEntities]);
+
   const removeEntityFromDiagram = useCallback((entitySchemaName: string) => {
     if (!graphRef.current) {
       return;
@@ -469,6 +489,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     addAttributeToEntity,
     updateDiagramType,
     addEntityToDiagram,
+    addGroupToDiagram,
     removeEntityFromDiagram,
   };
 }; 
