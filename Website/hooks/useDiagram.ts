@@ -546,8 +546,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       const text = await file.text();
       const diagramData = JSON.parse(text);
       
-      console.log('Parsed diagram data:', diagramData);
-      
       if (!graphRef.current || !paperRef.current) {
         console.warn('Graph or paper not available for loading');
         return;
@@ -558,8 +556,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       
       // Use JointJS built-in JSON import
       if (diagramData.graph) {
-        console.log('Loading graph data:', diagramData.graph);
-        
         // Manual recreation approach since cellNamespace isn't working
         const cells = diagramData.graph.cells || [];
         
@@ -567,7 +563,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
           let cell;
           
           if (cellData.type === 'delegate.square') {
-            console.log('Creating SquareElement:', cellData);
             cell = new SquareElement({
               id: cellData.id,
               position: cellData.position,
@@ -576,7 +571,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
               data: cellData.data
             });
           } else if (cellData.type === 'delegate.text') {
-            console.log('Creating TextElement:', cellData);
             cell = new TextElement({
               id: cellData.id,
               position: cellData.position,
@@ -599,20 +593,17 @@ export const useDiagram = (): DiagramState & DiagramActions => {
           }
         });
         
-        console.log('Graph loaded successfully');
       } else {
         console.warn('No graph data found in diagram file');
       }
       
       // Restore diagram type
       if (diagramData.diagramType) {
-        console.log('Restoring diagram type:', diagramData.diagramType);
         setDiagramType(diagramData.diagramType);
       }
       
       // Restore entities
       if (diagramData.currentEntities) {
-        console.log('Restoring entities:', diagramData.currentEntities.length);
         setCurrentEntities(diagramData.currentEntities);
       }
       
@@ -621,19 +612,15 @@ export const useDiagram = (): DiagramState & DiagramActions => {
         const { panPosition: savedPanPosition, zoom: savedZoom } = diagramData.viewState;
         
         if (savedZoom && paperRef.current) {
-          console.log('Restoring zoom:', savedZoom);
           paperRef.current.scale(savedZoom, savedZoom);
           updateZoomDisplay(savedZoom);
         }
         
         if (savedPanPosition && paperRef.current) {
-          console.log('Restoring pan position:', savedPanPosition);
           paperRef.current.translate(savedPanPosition.x, savedPanPosition.y);
           setPanPosition(savedPanPosition);
         }
       }
-      
-      console.log('Diagram loaded successfully');
     } catch (error) {
       console.error('Failed to load diagram:', error);
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
@@ -656,7 +643,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     // Clear selection
     clearSelection();
     
-    console.log('Diagram cleared successfully');
   }, [graphRef, clearSelection, setCurrentEntities]);
 
   const initializePaper = useCallback(async (container: HTMLElement, options: any = {}) => {

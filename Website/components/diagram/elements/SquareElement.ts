@@ -1,4 +1,4 @@
-import { dia, util } from '@joint/core';
+import { dia } from '@joint/core';
 import { PRESET_COLORS } from '../shared/DiagramConstants';
 
 export interface SquareElementData {
@@ -13,7 +13,7 @@ export interface SquareElementData {
 
 export class SquareElement extends dia.Element {
     
-    initialize(...args: any[]) {
+    initialize(...args: unknown[]) {
         super.initialize(...args);
         this.updateSquareAttrs();
     }

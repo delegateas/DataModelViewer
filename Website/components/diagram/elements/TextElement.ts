@@ -42,7 +42,7 @@ export class TextElement extends shapes.standard.Rectangle {
         }, super.defaults);
     }
 
-    constructor(attributes?: any, options?: any) {
+    constructor(attributes?: dia.Element.Attributes, options?: dia.Graph.Options) {
         super(attributes, options);
         
         // Set initial data if provided
@@ -126,7 +126,7 @@ export class TextElement extends shapes.standard.Rectangle {
 }
 
 // Register the custom element
-(shapes as any).delegate = {
-    ...(shapes as any).delegate,
+(shapes as Record<string, unknown>).delegate = {
+    ...(shapes as Record<string, unknown>).delegate,
     text: TextElement
 };

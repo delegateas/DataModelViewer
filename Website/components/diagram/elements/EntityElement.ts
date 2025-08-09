@@ -1,5 +1,5 @@
 import { AttributeType, EntityType } from '@/lib/Types';
-import { dia, util } from '@joint/core';
+import { dia } from '@joint/core';
 import { EntityBody } from './EntityBody';
 
 interface IEntityElement {
@@ -8,7 +8,7 @@ interface IEntityElement {
 
 export class EntityElement extends dia.Element {
 
-    initialize(...args: any[]) {
+    initialize(...args: unknown[]) {
         super.initialize(...args);
         const { entity } = this.get('data') as IEntityElement;
         if (entity) this.updateAttributes(entity);
@@ -16,7 +16,7 @@ export class EntityElement extends dia.Element {
 
     static getVisibleItemsAndPorts(entity: EntityType) {
         // Get the visible attributes list - if not set, use default logic
-        const visibleAttributeSchemaNames = (entity as any).visibleAttributeSchemaNames;
+        const visibleAttributeSchemaNames = (entity as EntityType & { visibleAttributeSchemaNames?: string[] }).visibleAttributeSchemaNames;
         
         if (visibleAttributeSchemaNames) {
             // Use the explicit visible attributes list
@@ -68,8 +68,8 @@ export class EntityElement extends dia.Element {
     }
 
     updateAttributes(entity: EntityType) {
-        const { visibleItems, portMap } = EntityElement.getVisibleItemsAndPorts(entity);
-        const selectedKey = (this.get('data') as any)?.selectedKey;
+        const { visibleItems } = EntityElement.getVisibleItemsAndPorts(entity);
+        const selectedKey = (this.get('data') as IEntityElement & { selectedKey?: string })?.selectedKey;
         const html = EntityBody({ entity, visibleItems, selectedKey });
 
         // Markup

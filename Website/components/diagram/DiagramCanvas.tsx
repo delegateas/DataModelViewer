@@ -1,5 +1,5 @@
 import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 interface DiagramCanvasProps {
   children?: React.ReactNode;
@@ -7,7 +7,6 @@ interface DiagramCanvasProps {
 
 export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
 
   const { 
     isPanning, 
@@ -23,19 +22,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
         }
       });
 
-      // Track container dimensions
-      const updateDimensions = () => {
-        if (canvasRef.current) {
-          const rect = canvasRef.current.getBoundingClientRect();
-          setContainerDimensions({ width: rect.width, height: rect.height });
-        }
-      };
-
-      updateDimensions();
-      window.addEventListener('resize', updateDimensions);
-
       return () => {
-        window.removeEventListener('resize', updateDimensions);
         destroyPaper();
       };
     }

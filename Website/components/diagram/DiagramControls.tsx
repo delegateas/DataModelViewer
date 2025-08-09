@@ -14,7 +14,6 @@ import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
 
 export const DiagramControls: React.FC = () => {
   const { 
-    zoom, 
     resetView, 
     fitToScreen 
   } = useDiagramViewContext();

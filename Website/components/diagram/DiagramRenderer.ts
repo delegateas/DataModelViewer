@@ -1,5 +1,6 @@
 import { dia } from '@joint/core';
 import { AttributeType, EntityType } from '@/lib/Types';
+import { EntityElement } from '@/components/diagram/elements/EntityElement';
 
 export type IPortMap = Record<string, string>;
 
@@ -81,13 +82,13 @@ export abstract class DiagramRenderer {
       // Call the appropriate update method based on entity type
       if (entityElement.get('type') === 'delegate.entity') {
         // For detailed entities, use updateAttributes
-        const entityElementTyped = entityElement as any;
+        const entityElementTyped = entityElement as unknown as { updateAttributes: (entity: EntityType) => void };
         if (entityElementTyped.updateAttributes) {
           entityElementTyped.updateAttributes(updatedEntity);
         }
       } else if (entityElement.get('type') === 'delegate.simple-entity') {
         // For simple entities, use updateEntity
-        const simpleEntityElementTyped = entityElement as any;
+        const simpleEntityElementTyped = entityElement as unknown as { updateEntity: (entity: EntityType) => void };
         if (simpleEntityElementTyped.updateEntity) {
           simpleEntityElementTyped.updateEntity(updatedEntity);
         }
@@ -124,7 +125,6 @@ export abstract class DiagramRenderer {
           let portMap: IPortMap;
           if (el.get('type') === 'delegate.entity') {
             // For detailed entities, get the actual port map
-            const EntityElement = require('@/components/diagram/entity/EntityElement').EntityElement;
             const { portMap: detailedPortMap } = EntityElement.getVisibleItemsAndPorts(entityData);
             portMap = detailedPortMap;
           } else {
@@ -144,14 +144,14 @@ export abstract class DiagramRenderer {
 
     // Recreate links for all entities (this ensures all relationships are updated)
     const allEntities: EntityType[] = [];
-    entityMap.forEach((entityInfo, schemaName) => {
+    entityMap.forEach((entityInfo) => {
       const entityData = entityInfo.element.get('data')?.entity;
       if (entityData) {
         allEntities.push(entityData);
       }
     });
     
-    entityMap.forEach((entityInfo, schemaName) => {
+    entityMap.forEach((entityInfo) => {
       const entityData = entityInfo.element.get('data')?.entity;
       if (entityData) {
         this.createLinks(entityData, entityMap, allEntities);

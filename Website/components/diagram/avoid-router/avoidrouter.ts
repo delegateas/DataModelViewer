@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { AvoidLib } from 'libavoid-js';
 import { g, util, mvc, dia } from '@joint/core';
 
 const defaultPin = 1;
 
+// The Avoid type is used for static access to the library
 type Avoid = ReturnType<typeof AvoidLib.getInstance>;
 
 interface AvoidRouterOptions {

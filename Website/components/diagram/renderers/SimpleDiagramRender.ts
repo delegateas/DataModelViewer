@@ -2,12 +2,11 @@
 import { dia, shapes } from '@joint/core';
 import { SimpleEntityElement } from '@/components/diagram/elements/SimpleEntityElement';
 import { DiagramRenderer, IPortMap } from '../DiagramRenderer';
-import { EntityElement } from '../elements/EntityElement';
 import { AttributeType, EntityType } from '@/lib/Types';
 
 export class SimpleDiagramRenderer extends DiagramRenderer {
     
-    onDocumentClick(event: MouseEvent): void { }
+    onDocumentClick(): void { }
 
     createEntity(entity: EntityType, position: { x: number, y: number }) {
         const entityElement = new SimpleEntityElement({
@@ -130,7 +129,7 @@ export class SimpleDiagramRenderer extends DiagramRenderer {
         });
     }
 
-    updateEntityAttributes(graph: dia.Graph, selectedKey: string | undefined): void {
+    updateEntityAttributes(): void {
         // Simple entities don't display key attributes, so nothing to do
     }
 

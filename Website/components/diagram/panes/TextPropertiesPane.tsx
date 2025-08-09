@@ -72,7 +72,7 @@ export const TextPropertiesPane: React.FC<TextPropertiesPaneProps> = ({
         }
     }, [textData, selectedText]);
 
-    const handleDataChange = (key: keyof TextElementData, value: any) => {
+    const handleDataChange = (key: keyof TextElementData, value: string | number) => {
         setTextData(prev => ({ ...prev, [key]: value }));
     };
 

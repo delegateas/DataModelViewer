@@ -1,19 +1,14 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { dia, shapes, util } from '@joint/core'
+import { dia, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
-import { EntityElement } from '@/components/diagram/elements/EntityElement';
-import { SimpleEntityElement } from '@/components/diagram/elements/SimpleEntityElement';
 import { SquareElement } from '@/components/diagram/elements/SquareElement';
 import { TextElement } from '@/components/diagram/elements/TextElement';
-import debounce from 'lodash/debounce';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { PanelLeft, ZoomIn, ZoomOut, Trash2 } from 'lucide-react';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
-import { AddEntityPane, EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
+import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
 import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
 import { TextPropertiesPane } from '@/components/diagram/panes/TextPropertiesPane';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight } from '@/components/diagram/GridLayoutManager';
@@ -36,9 +31,6 @@ const DiagramContent = () => {
         zoom,
         mousePosition,
         selectGroup,
-        zoomIn,
-        zoomOut,
-        resetView,
         fitToScreen,
         addAttributeToEntity,
         removeAttributeFromEntity,
@@ -231,7 +223,7 @@ const DiagramContent = () => {
         paper.on('link:pointerclick', renderer.onLinkClick);
         
         // Handle entity clicks
-        const handleElementClick = (elementView: any, evt: any) => {
+        const handleElementClick = (elementView: dia.ElementView, evt: dia.Event) => {
             evt.stopPropagation();
             const element = elementView.model;
             const elementType = element.get('type');
@@ -273,7 +265,7 @@ const DiagramContent = () => {
         };
 
         // Handle element hover for cursor indication
-        const handleElementMouseEnter = (elementView: any) => {
+        const handleElementMouseEnter = (elementView: dia.ElementView) => {
             const element = elementView.model;
             const elementType = element.get('type');
             
@@ -314,7 +306,7 @@ const DiagramContent = () => {
             }
         };
 
-        const handleElementMouseLeave = (elementView: any) => {
+        const handleElementMouseLeave = (elementView: dia.ElementView) => {
             const element = elementView.model;
             const elementType = element.get('type');
             
@@ -363,7 +355,7 @@ const DiagramContent = () => {
         paper.on('element:mouseleave', handleElementMouseLeave);
         
         // Handle mouse movement over squares to show resize handles only near edges
-        const handleSquareMouseMove = (cellView: any, evt: any) => {
+        const handleSquareMouseMove = (cellView: dia.CellView, evt: dia.Event) => {
             const element = cellView.model;
             const elementType = element.get('type');
             
@@ -399,7 +391,7 @@ const DiagramContent = () => {
         paper.on('cell:mousemove', handleSquareMouseMove);
         
         // Handle pointer down for resize handles - capture before other events
-        paper.on('cell:pointerdown', (cellView: any, evt: any) => {
+        paper.on('cell:pointerdown', (cellView: dia.CellView, evt: dia.Event) => {
             const element = cellView.model;
             const elementType = element.get('type');
             
@@ -432,7 +424,7 @@ const DiagramContent = () => {
                         handle: selector,
                         startSize: { width: bbox.width, height: bbox.height },
                         startPosition: { x: bbox.x, y: bbox.y },
-                        startPointer: { x: evt.clientX, y: evt.clientY }
+                        startPointer: { x: evt.clientX || 0, y: evt.clientY || 0 }
                     };
                     
                     setResizeData(resizeInfo);
@@ -471,8 +463,8 @@ const DiagramContent = () => {
                 const deltaX = evt.clientX - startPointer.x;
                 const deltaY = evt.clientY - startPointer.y;
 
-                let newSize = { width: startSize.width, height: startSize.height };
-                let newPosition = { x: startPosition.x, y: startPosition.y };
+                const newSize = { width: startSize.width, height: startSize.height };
+                const newPosition = { x: startPosition.x, y: startPosition.y };
 
                 // Calculate new size and position based on resize handle
                 switch (handle) {

@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Trash2 } from 'lucide-react';
 import { dia } from '@joint/core';
 import { PRESET_COLORS, LINE_STYLES, STROKE_WIDTHS } from '../shared/DiagramConstants';
 
@@ -91,32 +90,6 @@ export const LinkPropertiesPane: React.FC<LinkPropertiesPaneProps> = ({
         setColor(newColor);
         setCustomColor(newColor);
     };
-
-    const getLinkSourceTarget = () => {
-        if (!selectedLink) return null;
-        
-        const source = selectedLink.source();
-        const target = selectedLink.target();
-        
-        // Try to get entity names from graph elements
-        let sourceName = 'Unknown';
-        let targetName = 'Unknown';
-        
-        // This is a simplified approach - in a real app you might pass the graph or entity map
-        if (source.id) {
-            sourceName = `Entity ${source.id}`;
-        }
-        if (target.id) {
-            targetName = `Entity ${target.id}`;
-        }
-        
-        return {
-            source: sourceName,
-            target: targetName
-        };
-    };
-
-    const sourceTarget = getLinkSourceTarget();
 
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>

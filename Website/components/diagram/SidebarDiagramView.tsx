@@ -1,13 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Layers, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
 import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagram/panes';
-import { DiagramType } from '@/hooks/useDiagram';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Groups } from '../../generated/Data';
+import { GroupType } from '@/lib/Types';
 
 interface ISidebarDiagramViewProps { 
 
@@ -34,7 +33,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         );
     }
 
-    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType, removeEntityFromDiagram, clearDiagram } = diagramContext;
+    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType, clearDiagram } = diagramContext;
 
     const handleLoadDiagram = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -47,7 +46,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         event.target.value = '';
     };
 
-    const handleResetToGroup = (group: any) => {
+    const handleResetToGroup = (group: GroupType) => {
         // First clear the entire diagram
         clearDiagram();
         // Then add the selected group

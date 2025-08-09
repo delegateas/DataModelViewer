@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Palette, Square, Trash2 } from 'lucide-react';
+import { Square, Trash2 } from 'lucide-react';
 import { SquareElement, SquareElementData } from '../elements/SquareElement';
 import { PRESET_COLORS } from '../shared/DiagramConstants';
 
@@ -44,7 +44,7 @@ export const SquarePropertiesPane: React.FC<SquarePropertiesPaneProps> = ({
         }
     }, [selectedSquare]);
 
-    const handleDataChange = (key: keyof SquareElementData, value: any) => {
+    const handleDataChange = (key: keyof SquareElementData, value: string | number) => {
         const newData = { ...squareData, [key]: value };
         setSquareData(newData);
         

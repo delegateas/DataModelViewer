@@ -1,6 +1,5 @@
 // DetailedDiagramRender.ts
 import { dia, shapes } from '@joint/core';
-import { SimpleEntityElement } from '@/components/diagram/elements/SimpleEntityElement';
 import { DiagramRenderer, IPortMap } from '../DiagramRenderer';
 import { EntityElement } from '../elements/EntityElement';
 import { AttributeType, EntityType } from '@/lib/Types';
@@ -25,7 +24,7 @@ export class DetailedDiagramRender extends DiagramRenderer {
     }
 
     createEntity(entity: EntityType, position: { x: number, y: number }) {
-        const { visibleItems, portMap } = EntityElement.getVisibleItemsAndPorts(entity);
+        const { portMap } = EntityElement.getVisibleItemsAndPorts(entity);
         const entityElement = new EntityElement({
         position,
         data: { entity }
