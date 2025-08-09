@@ -43,11 +43,6 @@ const DiagramContent = () => {
     const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
     const [isLoading, setIsLoading] = useState(true);
 
-    // Debug logging for loading state changes
-    useEffect(() => {
-        console.log('Loading state changed to:', isLoading);
-    }, [isLoading]);
-
     // Wrapper for setSelectedKey to pass to renderer
     const handleSetSelectedKey = useCallback((key: string | undefined) => {
         setSelectedKey(key);
@@ -95,8 +90,20 @@ const DiagramContent = () => {
     }, [diagramType, graph, handleSetSelectedKey, handleLinkClick]);
 
     useEffect(() => {
-        if (Groups.length > 0 && !selectedGroup) selectGroup(Groups[0]);
+        if (Groups.length > 0 && !selectedGroup) {
+            selectGroup(Groups[0]);
+        }
     }, [Groups, selectedGroup, selectGroup]);
+
+    // Handle loading state when basic dependencies are ready
+    useEffect(() => {
+        if (graph && renderer) { // Remove paper dependency here since it might not be ready
+            // If we have the basic dependencies but no selected group or no entities, stop loading
+            if (!selectedGroup || currentEntities.length === 0) {
+                setIsLoading(false);
+            }
+        }
+    }, [graph, renderer, selectedGroup, currentEntities]); // Remove paper from dependencies
 
     useEffect(() => {
         if (!renderer) return;
@@ -110,15 +117,15 @@ const DiagramContent = () => {
     }, [renderer]);
 
     useEffect(() => {
-        if (!graph || !paper || !selectedGroup || !renderer) return;
+        if (!graph || !paper || !selectedGroup || !renderer) {
+            return;
+        }
 
         // Set loading state when starting diagram creation
-        console.log('Starting diagram creation, setting loading to true');
         setIsLoading(true);
 
         // If there are no entities, set loading to false immediately
         if (currentEntities.length === 0) {
-            console.log('No entities to render, setting loading to false');
             setIsLoading(false);
             return;
         }
@@ -204,7 +211,6 @@ const DiagramContent = () => {
 
         // Auto-fit to screen after a short delay to ensure all elements are rendered
         setTimeout(() => {
-            console.log('Diagram creation complete, setting loading to false');
             fitToScreen();
             // Set loading to false once diagram is complete
             setIsLoading(false);

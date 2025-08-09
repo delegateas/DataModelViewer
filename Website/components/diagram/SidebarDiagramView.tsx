@@ -59,11 +59,11 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     return (
         <div className="flex flex-col h-full w-full">
             <Tabs defaultValue="build" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="build" className="flex items-center gap-2 text-xs">
+                <TabsList className="w-full grid-cols-3 flex">
+                    <TabsTrigger value="build" className="flex items-center gap-2 text-xs flex-1">
                         <Hammer className="min-w-4 h-4" />
                     </TabsTrigger>
-                    <TabsTrigger value="settings" className="flex items-center gap-2 text-xs">
+                    <TabsTrigger value="settings" className="flex items-center gap-2 text-xs flex-1">
                         <Settings className="min-w-4 h-4" />
                     </TabsTrigger>
                 </TabsList>

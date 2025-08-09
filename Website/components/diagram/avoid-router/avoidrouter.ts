@@ -30,8 +30,21 @@ export class AvoidRouter {
     commitTransactions: boolean;
     graphListener?: mvc.Listener<any>;
 
+    private static isLoaded = false;
+
     static async load(): Promise<void> {
-        await AvoidLib.load("/libavoid.wasm");
+        if (AvoidRouter.isLoaded) {
+            console.log('Avoid library is already initialized');
+            return;
+        }
+        
+        try {
+            await AvoidLib.load("/libavoid.wasm");
+            AvoidRouter.isLoaded = true;
+        } catch (error) {
+            console.error('Failed to load Avoid library:', error);
+            throw error;
+        }
     }
 
     constructor(graph: dia.Graph, options: AvoidRouterOptions = {}) {

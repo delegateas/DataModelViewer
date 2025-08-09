@@ -10,7 +10,7 @@ import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiag
 import { DetailedDiagramRender } from '@/components/diagram/renderers/DetailedDiagramRender';
 import { PRESET_COLORS } from '@/components/diagram/shared/DiagramConstants';
 
-export type DiagramType = 'detailed' | 'simple';
+export type DiagramType = 'simple' | 'detailed';
 
 export interface DiagramState {
   zoom: number;
@@ -67,7 +67,11 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   const [currentEntities, setCurrentEntities] = useState<EntityType[]>([]);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
-  const [diagramType, setDiagramType] = useState<DiagramType>('detailed');
+  const [diagramType, setDiagramType] = useState<DiagramType>('simple');
+  
+  // State variables to track initialization status for React dependencies
+  const [paperInitialized, setPaperInitialized] = useState(false);
+  const [graphInitialized, setGraphInitialized] = useState(false);
 
   // Update state when refs change (for UI updates)
   const updateZoomDisplay = useCallback((newZoom: number) => {
@@ -651,35 +655,48 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     // Create graph if it doesn't exist
     if (!graphRef.current) {
       graphRef.current = new dia.Graph();
+      setGraphInitialized(true);
     }
 
-    await AvoidRouter.load();
-    const avoidRouter = new AvoidRouter(graphRef.current, {
-        shapeBufferDistance: 10,
-        idealNudgingDistance: 15,
-    });
-    avoidRouter.routeAll();
-    avoidRouter.addGraphListeners();
-    (routers as any).avoid = function(vertices: any, options: any, linkView: any) {
-        const graph = linkView.model.graph as dia.Graph;
-        const avoidRouterInstance = (graph as any).__avoidRouter__ as AvoidRouter;
+    try {
+      await AvoidRouter.load();
+    } catch (error) {
+      console.error('❌ Failed to initialize AvoidRouter:', error);
+      // Continue without avoid router if it fails
+    }
+    
+    let avoidRouter;
+    try {
+      avoidRouter = new AvoidRouter(graphRef.current, {
+          shapeBufferDistance: 10,
+          idealNudgingDistance: 15,
+      });
+      avoidRouter.routeAll();
+      avoidRouter.addGraphListeners();
+      (routers as any).avoid = function(vertices: any, options: any, linkView: any) {
+          const graph = linkView.model.graph as dia.Graph;
+          const avoidRouterInstance = (graph as any).__avoidRouter__ as AvoidRouter;
 
-        if (!avoidRouterInstance) {
-            console.warn('AvoidRouter not initialized on graph.');
-            return null;
-        }
+          if (!avoidRouterInstance) {
+              console.warn('AvoidRouter not initialized on graph.');
+              return null;
+          }
 
-        const link = linkView.model as dia.Link;
+          const link = linkView.model as dia.Link;
 
-        // This will update link using libavoid if possible
-        avoidRouterInstance.updateConnector(link);
-        const connRef = avoidRouterInstance.edgeRefs[link.id];
-        if (!connRef) return null;
+          // This will update link using libavoid if possible
+          avoidRouterInstance.updateConnector(link);
+          const connRef = avoidRouterInstance.edgeRefs[link.id];
+          if (!connRef) return null;
 
-        const route = connRef.displayRoute();
-        return avoidRouterInstance.getVerticesFromAvoidRoute(route);
-    };
-    (graphRef.current as any).__avoidRouter__ = avoidRouter;
+          const route = connRef.displayRoute();
+          return avoidRouterInstance.getVerticesFromAvoidRoute(route);
+      };
+      (graphRef.current as any).__avoidRouter__ = avoidRouter;
+    } catch (error) {
+      console.error('Failed to initialize AvoidRouter instance:', error);
+      // Continue without avoid router functionality
+    }
 
     // Create paper with light amber background
     const paper = new dia.Paper({
@@ -714,6 +731,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     });
 
     paperRef.current = paper;
+    setPaperInitialized(true);
     
     // Setup event listeners
     paper.on('blank:pointerdown', () => {
@@ -802,7 +820,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     };
 
     return paper;
-  }, [updateZoomDisplay, updatePanningDisplay, updateMousePosition, updatePanPosition]);
+  }, [updateZoomDisplay, updatePanningDisplay, updateMousePosition, updatePanPosition, setGraphInitialized, setPaperInitialized]);
 
   const destroyPaper = useCallback(() => {
     if (cleanupRef.current) {
@@ -810,7 +828,10 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       cleanupRef.current = null;
     }
     paperRef.current = null;
-  }, []);
+    graphRef.current = null;
+    setPaperInitialized(false);
+    setGraphInitialized(false);
+  }, [setPaperInitialized, setGraphInitialized]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -824,8 +845,8 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     zoom,
     isPanning,
     selectedElements,
-    paper: paperRef.current,
-    graph: graphRef.current,
+    paper: paperInitialized ? paperRef.current : null,
+    graph: graphInitialized ? graphRef.current : null,
     selectedGroup,
     currentEntities,
     mousePosition,
