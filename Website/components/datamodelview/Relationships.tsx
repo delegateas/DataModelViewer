@@ -65,6 +65,17 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
             )
         }
 
+        // Also filter by parent search prop if provided
+        if (search && search.length >= 3) {
+            const query = search.toLowerCase()
+            filteredRelationships = filteredRelationships.filter(rel => 
+                rel.Name.toLowerCase().includes(query) ||
+                rel.TableSchema.toLowerCase().includes(query) ||
+                rel.LookupDisplayName.toLowerCase().includes(query) ||
+                rel.RelationshipSchema.toLowerCase().includes(query)
+            )
+        }
+
         if (!sortColumn || !sortDirection) return filteredRelationships
 
         return [...filteredRelationships].sort((a, b) => {
@@ -118,6 +129,7 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
     ]
 
     const sortedRelationships = getSortedRelationships();
+    const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
 
     React.useEffect(() => {
         if (onVisibleCountChange) {
@@ -126,41 +138,65 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
     }, [onVisibleCountChange, sortedRelationships.length]);
 
     return <>
-        <div className="p-2 gap-2 border-b flex md:p-4 md:gap-4">
-            <div className="relative flex-1">
-                <Search className="absolute left-1.5 top-2 h-3 w-3 text-muted-foreground md:left-2 md:top-2.5 md:h-4 md:w-4" />
-                <Input
-                    placeholder="Search relationships..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-6 h-8 text-xs md:pl-8 md:h-10 md:text-sm"
-                />
+        <div className="p-2 gap-2 border-b flex flex-col md:p-4 md:gap-4">
+            <div className="flex gap-2 md:gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-1.5 top-2 h-3 w-3 text-muted-foreground md:left-2 md:top-2.5 md:h-4 md:w-4" />
+                    <Input
+                        placeholder="Search relationships..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                                setSearchQuery("")
+                            }
+                        }}
+                        className="pl-6 pr-8 h-8 text-xs md:pl-8 md:pr-10 md:h-10 md:text-sm"
+                    />
+                    {searchQuery && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-1 top-1 h-6 w-6 text-gray-400 hover:text-gray-600 md:right-1 md:top-1.5 md:h-7 md:w-7"
+                            title="Clear search"
+                        >
+                            <X className="h-3 w-3 md:h-4 md:w-4" />
+                        </Button>
+                    )}
+                </div>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[120px] h-8 text-xs md:w-[200px] md:h-10 md:text-sm">
+                        <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {relationshipTypes.map(type => (
+                            <SelectItem key={type.value} value={type.value} className="text-xs md:text-sm">
+                                {type.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                {(searchQuery || typeFilter !== "all") && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                            setSearchQuery("")
+                            setTypeFilter("all")
+                        }}
+                        className="h-8 w-8 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
+                        title="Clear filters"
+                    >
+                        <X className="h-3 w-3 md:h-4 md:w-4" />
+                    </Button>
+                )}
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[120px] h-8 text-xs md:w-[200px] md:h-10 md:text-sm">
-                    <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                    {relationshipTypes.map(type => (
-                        <SelectItem key={type.value} value={type.value} className="text-xs md:text-sm">
-                            {type.label}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            {(searchQuery || typeFilter !== "all") && (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                        setSearchQuery("")
-                        setTypeFilter("all")
-                    }}
-                    className="h-8 w-8 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
-                    title="Clear filters"
-                >
-                    <X className="h-3 w-3 md:h-4 md:w-4" />
-                </Button>
+            {search && search.length >= 3 && searchQuery && (
+                <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md md:text-sm">
+                    <Search className="h-3 w-3 md:h-4 md:w-4" />
+                    <span>Warning: Global search "{search}" is also active</span>
+                </div>
             )}
         </div>
         <div className="overflow-x-auto">
@@ -252,7 +288,7 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                 }`}
                             >
                                 <TableCell className="break-words py-2 text-xs md:py-3 md:text-sm">
-                                    {highlightMatch(relationship.Name, search)}
+                                    {highlightMatch(relationship.Name, highlightTerm)}
                                 </TableCell>
                                 <TableCell className="py-2 md:py-3">
                                     <Button
@@ -263,7 +299,7 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                             dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema })
                                             scrollToSection(relationship.TableSchema);
                                         }}>
-                                        {highlightMatch(relationship.TableSchema, search)}
+                                        {highlightMatch(relationship.TableSchema, highlightTerm)}
                                     </Button>
                                 </TableCell>
                                 <TableCell className="break-words py-2 text-xs md:py-3 md:text-sm">{relationship.LookupDisplayName}</TableCell>
