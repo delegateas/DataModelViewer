@@ -106,7 +106,11 @@ export const TimeSlicedSearch = ({
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setLocalValue('');
+      onSearch('');
+    } else if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onNavigateNext?.();
       if ('vibrate' in navigator) {
@@ -125,7 +129,7 @@ export const TimeSlicedSearch = ({
       e.preventDefault();
       onNavigatePrevious?.();
     }
-  }, [onNavigateNext, onNavigatePrevious]);
+  }, [onNavigateNext, onNavigatePrevious, onSearch]);
 
   const hasResults = totalResults > 0;
   const showNavigation = hasResults && localValue.length >= 3;
