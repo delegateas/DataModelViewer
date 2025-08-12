@@ -61,21 +61,37 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
 
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
-            filteredAttributes = filteredAttributes.filter(attr => 
-                attr.DisplayName.toLowerCase().includes(query) ||
-                attr.SchemaName.toLowerCase().includes(query) ||
-                (attr.Description && attr.Description.toLowerCase().includes(query))
-            )
+            filteredAttributes = filteredAttributes.filter(attr => {
+                const basicMatch = attr.DisplayName.toLowerCase().includes(query) ||
+                    attr.SchemaName.toLowerCase().includes(query) ||
+                    (attr.Description && attr.Description.toLowerCase().includes(query));
+                
+                // Check options for ChoiceAttribute and StatusAttribute
+                let optionsMatch = false;
+                if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
+                    optionsMatch = attr.Options.some(option => option.Name.toLowerCase().includes(query));
+                }
+                
+                return basicMatch || optionsMatch;
+            })
         }
 
         // Also filter by parent search prop if provided
         if (search && search.length >= 3) {
             const query = search.toLowerCase()
-            filteredAttributes = filteredAttributes.filter(attr => 
-                attr.DisplayName.toLowerCase().includes(query) ||
-                attr.SchemaName.toLowerCase().includes(query) ||
-                (attr.Description && attr.Description.toLowerCase().includes(query))
-            )
+            filteredAttributes = filteredAttributes.filter(attr => {
+                const basicMatch = attr.DisplayName.toLowerCase().includes(query) ||
+                    attr.SchemaName.toLowerCase().includes(query) ||
+                    (attr.Description && attr.Description.toLowerCase().includes(query));
+                
+                // Check options for ChoiceAttribute and StatusAttribute
+                let optionsMatch = false;
+                if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
+                    optionsMatch = attr.Options.some(option => option.Name.toLowerCase().includes(query));
+                }
+                
+                return basicMatch || optionsMatch;
+            })
         }
 
         if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute || attr.IsStandardFieldModified);
@@ -303,9 +319,11 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                             <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
                                 {highlightMatch(attribute.SchemaName, highlightTerm)}
                             </TableCell>
-                            <TableCell className="break-words py-2 md:py-3">{getAttributeComponent(entity, attribute)}</TableCell>
+                            <TableCell className="break-words py-2 md:py-3">{getAttributeComponent(entity, attribute, highlightMatch, highlightTerm)}</TableCell>
                             <TableCell className="py-2 md:py-3"><AttributeDetails attribute={attribute} /></TableCell>
-                            <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">{attribute.Description}</TableCell>
+                            <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
+                                {highlightMatch(attribute.Description ?? "", highlightTerm)}
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -314,12 +332,12 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     </>
 }
 
-function getAttributeComponent(entity: EntityType, attribute: AttributeType) {
+function getAttributeComponent(entity: EntityType, attribute: AttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string) {
     const key = `${attribute.SchemaName}-${entity.SchemaName}`;
 
     switch (attribute.AttributeType) {
         case 'ChoiceAttribute':
-            return <ChoiceAttribute key={key} attribute={attribute} />;
+            return <ChoiceAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'DateTimeAttribute':
             return <DateTimeAttribute key={key} attribute={attribute} />;
         case 'GenericAttribute':
