@@ -7,8 +7,8 @@ interface InitMessage {
 }
 
 interface SearchMessage {
-  type?: undefined;
-  data?: string;
+  type: 'search';
+  data: string;
 }
 
 type WorkerMessage = InitMessage | SearchMessage | string;

@@ -52,6 +52,21 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
         }
     }
 
+    // Helper function to check if an attribute matches a search query
+    const attributeMatchesSearch = (attr: AttributeType, query: string): boolean => {
+        const basicMatch = attr.DisplayName.toLowerCase().includes(query) ||
+            attr.SchemaName.toLowerCase().includes(query) ||
+            (attr.Description && attr.Description.toLowerCase().includes(query));
+        
+        // Check options for ChoiceAttribute and StatusAttribute
+        let optionsMatch = false;
+        if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
+            optionsMatch = attr.Options.some(option => option.Name.toLowerCase().includes(query));
+        }
+        
+        return basicMatch || optionsMatch;
+    };
+
     const getSortedAttributes = () => {
         let filteredAttributes = entity.Attributes
 
@@ -61,37 +76,13 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
 
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
-            filteredAttributes = filteredAttributes.filter(attr => {
-                const basicMatch = attr.DisplayName.toLowerCase().includes(query) ||
-                    attr.SchemaName.toLowerCase().includes(query) ||
-                    (attr.Description && attr.Description.toLowerCase().includes(query));
-                
-                // Check options for ChoiceAttribute and StatusAttribute
-                let optionsMatch = false;
-                if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
-                    optionsMatch = attr.Options.some(option => option.Name.toLowerCase().includes(query));
-                }
-                
-                return basicMatch || optionsMatch;
-            })
+            filteredAttributes = filteredAttributes.filter(attr => attributeMatchesSearch(attr, query))
         }
 
         // Also filter by parent search prop if provided
         if (search && search.length >= 3) {
             const query = search.toLowerCase()
-            filteredAttributes = filteredAttributes.filter(attr => {
-                const basicMatch = attr.DisplayName.toLowerCase().includes(query) ||
-                    attr.SchemaName.toLowerCase().includes(query) ||
-                    (attr.Description && attr.Description.toLowerCase().includes(query));
-                
-                // Check options for ChoiceAttribute and StatusAttribute
-                let optionsMatch = false;
-                if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
-                    optionsMatch = attr.Options.some(option => option.Name.toLowerCase().includes(query));
-                }
-                
-                return basicMatch || optionsMatch;
-            })
+            filteredAttributes = filteredAttributes.filter(attr => attributeMatchesSearch(attr, query))
         }
 
         if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute || attr.IsStandardFieldModified);
