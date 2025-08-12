@@ -95,7 +95,7 @@ function DatamodelViewContent() {
 
     useEffect(() => {
         if (!workerRef.current) {
-            workerRef.current = new Worker(new URL("./searchWorker.js", import.meta.url));
+            workerRef.current = new Worker(new URL("./searchWorker.ts", import.meta.url));
         }
 
         // Initialize or re-initialize worker with groups when groups change

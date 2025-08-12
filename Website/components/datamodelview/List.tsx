@@ -129,10 +129,31 @@ export const List = ({ }: IListProps) => {
     }, [flatItems, rowVirtualizer]);
 
     useEffect(() => {
-        requestAnimationFrame(() => {
-            rowVirtualizer.measure();
-        });
-    }, [flatItems]);
+        // Only measure if we're not filtering - let the virtualizer handle filtered states naturally
+        if (!search || search.length < 3) {
+            requestAnimationFrame(() => {
+                rowVirtualizer.measure();
+            });
+        }
+    }, [flatItems, search, rowVirtualizer]);
+
+    // Handle scrolling to top when starting a search
+    const prevSearchLengthRef = useRef(search.length);
+    useEffect(() => {
+        const currentSearchLength = search.length;
+        const prevSearchLength = prevSearchLengthRef.current;
+        
+        // If we just crossed from < 3 to >= 3 characters (starting a search)
+        if (prevSearchLength < 3 && currentSearchLength >= 3) {
+            setTimeout(() => {
+                if (parentRef.current) {
+                    parentRef.current.scrollTop = 0;
+                }
+            }, 50); // Small delay to ensure virtualizer has processed the new items
+        }
+        
+        prevSearchLengthRef.current = currentSearchLength;
+    }, [search]);
 
     // Throttled scroll handler to reduce calculations
     const handleScroll = useCallback(() => {
@@ -210,8 +231,9 @@ export const List = ({ }: IListProps) => {
 
     return (
         <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }} className="p-6 relative">
-            {/* Add skeleton loading state */}
-            {flatItems.length === 0 && datamodelView.loading && (
+
+            {/* Show skeleton loading state only when initially loading */}
+            {flatItems.length === 0 && datamodelView.loading && (!search || search.length < 3) && (
                 <div className="space-y-8">
                     {[...Array(5)].map((_, i) => (
                         <div key={i} className="bg-white rounded-lg border border-gray-300 shadow-md animate-pulse">
@@ -227,6 +249,16 @@ export const List = ({ }: IListProps) => {
                     ))}
                 </div>
             )}
+
+            {/* Show no results message when searching but no items found */}
+            {flatItems.length === 0 && search && search.length >= 3 && (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                    <div className="text-lg font-medium mb-2">No tables found</div>
+                    <div className="text-sm text-center">
+                        No attributes match your search for &quot;{search}&quot;
+                    </div>
+                </div>
+            )}
             
             {/* Virtualized list */}
             <div
@@ -234,7 +266,7 @@ export const List = ({ }: IListProps) => {
                     height: `${rowVirtualizer.getTotalSize()}px`,
                     width: '100%',
                     position: 'relative',
-                    visibility: flatItems.length === 0 && datamodelView.loading ? 'hidden' : 'visible'
+                    visibility: flatItems.length === 0 ? 'hidden' : 'visible'
                 }}
             >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {

@@ -4,8 +4,9 @@ import { EntityType, AttributeType } from "@/lib/Types"
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../ui/table"
 import { Button } from "../ui/button"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Eye } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Eye, Search, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./../ui/select"
+import { Input } from "../ui/input"
 import { AttributeDetails } from "./../entity/AttributeDetails"
 import BooleanAttribute from "./../attributes/BooleanAttribute"
 import ChoiceAttribute from "./../attributes/ChoiceAttribute"
@@ -33,6 +34,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [hideStandardFields, setHideStandardFields] = useState<boolean>(true)
+    const [searchQuery, setSearchQuery] = useState("")
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -50,6 +52,21 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
         }
     }
 
+    // Helper function to check if an attribute matches a search query
+    const attributeMatchesSearch = (attr: AttributeType, query: string): boolean => {
+        const basicMatch = attr.DisplayName.toLowerCase().includes(query) ||
+            attr.SchemaName.toLowerCase().includes(query) ||
+            (attr.Description && attr.Description.toLowerCase().includes(query));
+        
+        // Check options for ChoiceAttribute and StatusAttribute
+        let optionsMatch = false;
+        if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
+            optionsMatch = attr.Options.some(option => option.Name.toLowerCase().includes(query));
+        }
+        
+        return basicMatch || optionsMatch;
+    };
+
     const getSortedAttributes = () => {
         let filteredAttributes = entity.Attributes
 
@@ -57,13 +74,15 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
             filteredAttributes = filteredAttributes.filter(attr => attr.AttributeType === typeFilter)
         }
 
-        // Filter by search prop (from parent)
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase()
+            filteredAttributes = filteredAttributes.filter(attr => attributeMatchesSearch(attr, query))
+        }
+
+        // Also filter by parent search prop if provided
         if (search && search.length >= 3) {
-            const query = search.toLowerCase();
-            filteredAttributes = filteredAttributes.filter(attr => 
-                attr.DisplayName.toLowerCase().includes(query) ||
-                attr.SchemaName.toLowerCase().includes(query)
-            );
+            const query = search.toLowerCase()
+            filteredAttributes = filteredAttributes.filter(attr => attributeMatchesSearch(attr, query))
         }
 
         if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute || attr.IsStandardFieldModified);
@@ -104,6 +123,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     }
 
     const sortedAttributes = getSortedAttributes();
+    const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
 
     // Notify parent of visible count
     React.useEffect(() => {
@@ -134,35 +154,104 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     ]
 
     return <>
-        <div className="p-2 gap-2 border-b flex md:p-4 md:gap-4">
-            {/* Removed internal search input, now using parent search */}
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[120px] h-8 text-xs md:w-[200px] md:h-10 md:text-sm">
-                    <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                    {attributeTypes.map(type => (
-                        <SelectItem key={type} value={type} className="text-xs md:text-sm">
-                            {type === "all" ? "All Types" : type.replace("Attribute", "")}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => setHideStandardFields(!hideStandardFields)}
-                className="h-8 w-8 bg-gray-100 hover:bg-gray-300 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
-                title="Control customfields"
-            >
-                {
-                    hideStandardFields ? <EyeOff className="w-3 h-3 md:w-4 md:h-4" /> : <Eye className="w-3 h-3 md:w-4 md:h-4" />
-                }
-            </Button>
+        <div className="p-2 gap-2 border-b flex flex-col md:p-4 md:gap-4">
+            <div className="flex gap-2 md:gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-1.5 top-2 h-3 w-3 text-muted-foreground md:left-2 md:top-2.5 md:h-4 md:w-4" />
+                    <Input
+                        placeholder="Search attributes..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                                setSearchQuery("")
+                            }
+                        }}
+                        className="pl-6 pr-8 h-8 text-xs md:pl-8 md:pr-10 md:h-10 md:text-sm"
+                    />
+                    {searchQuery && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-1 top-1 h-6 w-6 text-gray-400 hover:text-gray-600 md:right-1 md:top-1.5 md:h-7 md:w-7"
+                            title="Clear search"
+                        >
+                            <X className="h-3 w-3 md:h-4 md:w-4" />
+                        </Button>
+                    )}
+                </div>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[120px] h-8 text-xs md:w-[200px] md:h-10 md:text-sm">
+                        <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {attributeTypes.map(type => (
+                            <SelectItem key={type} value={type} className="text-xs md:text-sm">
+                                {type === "all" ? "All Types" : type.replace("Attribute", "")}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => setHideStandardFields(!hideStandardFields)}
+                    className="h-8 w-8 bg-gray-100 hover:bg-gray-300 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
+                    title="Control customfields"
+                >
+                    {
+                        hideStandardFields ? <EyeOff className="w-3 h-3 md:w-4 md:h-4" /> : <Eye className="w-3 h-3 md:w-4 md:h-4" />
+                    }
+                </Button>
+                {(searchQuery || typeFilter !== "all") && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                            setSearchQuery("")
+                            setTypeFilter("all")
+                        }}
+                        className="h-8 w-8 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
+                        title="Clear filters"
+                    >
+                        <X className="h-3 w-3 md:h-4 md:w-4" />
+                    </Button>
+                )}
+            </div>
+            {search && search.length >= 3 && searchQuery && (
+                <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md md:text-sm">
+                    <Search className="h-3 w-3 md:h-4 md:w-4" />
+                    <span>Warning: Global search &quot;{search}&quot; is also active</span>
+                </div>
+            )}
         </div>
         {sortedAttributes.length === 0 ? (
-            <div className="p-4 text-gray-500 text-center">
-                <p>No attributes available for this table</p>
+            <div className="p-8 text-center text-gray-500">
+                {searchQuery || typeFilter !== "all" ? (
+                    <div className="flex flex-col items-center gap-2">
+                        <p>
+                            {searchQuery && typeFilter !== "all" 
+                                ? `No ${typeFilter === "all" ? "" : typeFilter.replace("Attribute", "")} attributes found matching "${searchQuery}"`
+                                : searchQuery 
+                                    ? `No attributes found matching "${searchQuery}"`
+                                    : `No ${typeFilter === "all" ? "" : typeFilter.replace("Attribute", "")} attributes available`
+                            }
+                        </p>
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setSearchQuery("")
+                                setTypeFilter("all")
+                            }}
+                            className="text-blue-600 hover:text-blue-700"
+                        >
+                            Clear filters
+                        </Button>
+                    </div>
+                ) : (
+                    <p>No attributes available for this table</p>
+                )}
             </div>
         ) : (
             <Table>
@@ -216,14 +305,16 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                             }`}
                         >
                             <TableCell className="break-words font-medium py-2 text-xs md:py-3 md:text-sm">
-                                {highlightMatch(attribute.DisplayName, search)}
+                                {highlightMatch(attribute.DisplayName, highlightTerm)}
                             </TableCell>
                             <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
-                                {highlightMatch(attribute.SchemaName, search)}
+                                {highlightMatch(attribute.SchemaName, highlightTerm)}
                             </TableCell>
-                            <TableCell className="break-words py-2 md:py-3">{getAttributeComponent(entity, attribute)}</TableCell>
+                            <TableCell className="break-words py-2 md:py-3">{getAttributeComponent(entity, attribute, highlightMatch, highlightTerm)}</TableCell>
                             <TableCell className="py-2 md:py-3"><AttributeDetails attribute={attribute} /></TableCell>
-                            <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">{attribute.Description}</TableCell>
+                            <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
+                                {highlightMatch(attribute.Description ?? "", highlightTerm)}
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -232,12 +323,12 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     </>
 }
 
-function getAttributeComponent(entity: EntityType, attribute: AttributeType) {
+function getAttributeComponent(entity: EntityType, attribute: AttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string) {
     const key = `${attribute.SchemaName}-${entity.SchemaName}`;
 
     switch (attribute.AttributeType) {
         case 'ChoiceAttribute':
-            return <ChoiceAttribute key={key} attribute={attribute} />;
+            return <ChoiceAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'DateTimeAttribute':
             return <DateTimeAttribute key={key} attribute={attribute} />;
         case 'GenericAttribute':
