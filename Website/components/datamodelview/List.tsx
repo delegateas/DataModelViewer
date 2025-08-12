@@ -231,8 +231,9 @@ export const List = ({ }: IListProps) => {
 
     return (
         <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }} className="p-6 relative">
-            {/* Add skeleton loading state */}
-            {flatItems.length === 0 && datamodelView.loading && (
+
+            {/* Show skeleton loading state only when initially loading */}
+            {flatItems.length === 0 && datamodelView.loading && (!search || search.length < 3) && (
                 <div className="space-y-8">
                     {[...Array(5)].map((_, i) => (
                         <div key={i} className="bg-white rounded-lg border border-gray-300 shadow-md animate-pulse">
@@ -248,6 +249,16 @@ export const List = ({ }: IListProps) => {
                     ))}
                 </div>
             )}
+
+            {/* Show no results message when searching but no items found */}
+            {flatItems.length === 0 && search && search.length >= 3 && (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                    <div className="text-lg font-medium mb-2">No tables found</div>
+                    <div className="text-sm text-center">
+                        Nothing attributes match your search for "{search}"
+                    </div>
+                </div>
+            )}
             
             {/* Virtualized list */}
             <div
@@ -255,7 +266,7 @@ export const List = ({ }: IListProps) => {
                     height: `${rowVirtualizer.getTotalSize()}px`,
                     width: '100%',
                     position: 'relative',
-                    visibility: flatItems.length === 0 && datamodelView.loading ? 'hidden' : 'visible'
+                    visibility: flatItems.length === 0 ? 'hidden' : 'visible'
                 }}
             >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {
