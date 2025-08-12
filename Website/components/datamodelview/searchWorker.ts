@@ -43,13 +43,13 @@ self.onmessage = async function(e: MessageEvent<WorkerMessage>) {
   const search = (typeof e.data === 'string' ? e.data : e.data?.data || '').trim().toLowerCase();
   
   if (!groups) {
-    const response: ResultsMessage = { type: 'results', data: [], complete: true };
+    const response: WorkerResponse = { type: 'results', data: [], complete: true };
     self.postMessage(response);
     return;
   }
 
   // First quickly send back a "started" message
-  const startedMessage: StartedMessage = { type: 'started' };
+  const startedMessage: WorkerResponse = { type: 'started' };
   self.postMessage(startedMessage);
   
   const allItems: Array<
@@ -97,7 +97,7 @@ self.onmessage = async function(e: MessageEvent<WorkerMessage>) {
     const chunk = allItems.slice(i, i + CHUNK_SIZE);
     const isLastChunk = i + CHUNK_SIZE >= allItems.length;
     
-    const response: ResultsMessage = {
+    const response: WorkerResponse = {
       type: 'results',
       data: chunk,
       complete: isLastChunk,

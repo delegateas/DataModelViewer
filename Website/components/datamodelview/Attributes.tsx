@@ -231,7 +231,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
             {search && search.length >= 3 && searchQuery && (
                 <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md md:text-sm">
                     <Search className="h-3 w-3 md:h-4 md:w-4" />
-                    <span>Warning: Global search "{search}" is also active</span>
+                    <span>Warning: Global search &quot;{search}&quot; is also active</span>
                 </div>
             )}
         </div>
