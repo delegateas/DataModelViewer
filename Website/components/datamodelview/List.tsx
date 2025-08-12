@@ -129,10 +129,31 @@ export const List = ({ }: IListProps) => {
     }, [flatItems, rowVirtualizer]);
 
     useEffect(() => {
-        requestAnimationFrame(() => {
-            rowVirtualizer.measure();
-        });
-    }, [flatItems]);
+        // Only measure if we're not filtering - let the virtualizer handle filtered states naturally
+        if (!search || search.length < 3) {
+            requestAnimationFrame(() => {
+                rowVirtualizer.measure();
+            });
+        }
+    }, [flatItems, search, rowVirtualizer]);
+
+    // Handle scrolling to top when starting a search
+    const prevSearchLengthRef = useRef(search.length);
+    useEffect(() => {
+        const currentSearchLength = search.length;
+        const prevSearchLength = prevSearchLengthRef.current;
+        
+        // If we just crossed from < 3 to >= 3 characters (starting a search)
+        if (prevSearchLength < 3 && currentSearchLength >= 3) {
+            setTimeout(() => {
+                if (parentRef.current) {
+                    parentRef.current.scrollTop = 0;
+                }
+            }, 50); // Small delay to ensure virtualizer has processed the new items
+        }
+        
+        prevSearchLengthRef.current = currentSearchLength;
+    }, [search]);
 
     // Throttled scroll handler to reduce calculations
     const handleScroll = useCallback(() => {
