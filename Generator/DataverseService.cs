@@ -80,8 +80,11 @@ namespace Generator
             var referencedEntityMetadata = await GetEntityMetadataByLogicalName(relatedEntityLogicalNames.ToList());
 
             var allEntityMetadata = entitiesInSolutionMetadata.Concat(referencedEntityMetadata).ToList();
+            var logicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => new ExtendedEntityInformation { Name = x.SchemaName, IsInSolution = entitiesInSolutionMetadata.Any(e => e.LogicalName == x.LogicalName) });
+            var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.UserLocalizedLabel?.Label ?? attr.SchemaName) ?? []);
+
             var entityIconMap = await GetEntityIconMap(allEntityMetadata);
-            var pluginStepAttributeMap = await GetPluginStepAttributes(allEntityMetadata, pluginStepsInSolution);
+            var pluginStepAttributeMap = await GetPluginStepAttributes(logicalToSchema.Keys.ToHashSet(), pluginStepsInSolution);
 
             var records =
                 entitiesInSolutionMetadata
@@ -101,8 +104,6 @@ namespace Generator
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
                 .ToList();
 
-            var logicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => new ExtendedEntityInformation { Name = x.SchemaName, IsInSolution = entitiesInSolutionMetadata.Any(e => e.LogicalName == x.LogicalName) });
-            var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.UserLocalizedLabel?.Label ?? attr.SchemaName) ?? []);
 
             return records
                 .Select(x =>
@@ -547,7 +548,7 @@ namespace Generator
             return $"{uri.Scheme}://{uri.Host}";
         }
 
-        private async Task<Dictionary<string, Dictionary<string, HashSet<string>>>> GetPluginStepAttributes(IEnumerable<EntityMetadata> allEntityMetadata, List<Guid> pluginStepsInSolution)
+        private async Task<Dictionary<string, Dictionary<string, HashSet<string>>>> GetPluginStepAttributes(HashSet<string> relevantLogicalNames, List<Guid> pluginStepsInSolution)
         {
             logger.LogInformation("Retrieving plugin step attributes...");
             
@@ -555,11 +556,6 @@ namespace Generator
 
             try
             {
-                // Build type code to logical name mapping from entity metadata
-                var typeCodeToLogicalName = allEntityMetadata
-                    .Where(entity => entity.ObjectTypeCode.HasValue)
-                    .ToDictionary(entity => entity.ObjectTypeCode!.Value, entity => entity.LogicalName);
-
                 // Query sdkmessageprocessingstep table for steps with filtering attributes
                 var stepQuery = new QueryExpression("sdkmessageprocessingstep")
                 {
@@ -608,31 +604,32 @@ namespace Generator
                 foreach (var step in stepResults.Entities)
                 {
                     var filteringAttributes = step.GetAttributeValue<string>("filteringattributes");
-                    var entityTypeCode = step.GetAttributeValue<AliasedValue>("filter.primaryobjecttypecode")?.Value as int?;
+                    var entityLogicalName = step.GetAttributeValue<AliasedValue>("filter.primaryobjecttypecode")?.Value as string;
                     var pluginTypeName = step.GetAttributeValue<AliasedValue>("plugintype.name")?.Value as string;
                     
-                    if (string.IsNullOrEmpty(filteringAttributes) || !entityTypeCode.HasValue || string.IsNullOrEmpty(pluginTypeName))
+                    if (string.IsNullOrEmpty(filteringAttributes) || string.IsNullOrEmpty(entityLogicalName) || string.IsNullOrEmpty(pluginTypeName))
                         continue;
                     
                     // Get entity logical name from metadata mapping
-                    if (!typeCodeToLogicalName.TryGetValue(entityTypeCode.Value, out var logicalName))
+                    if (!relevantLogicalNames.Contains(entityLogicalName))
                     {
-                        logger.LogDebug("Unknown entity type code: {TypeCode}", entityTypeCode.Value);
+                        logger.LogDebug("Unknown entity type code: {TypeCode}", entityLogicalName);
                         continue;
                     }
                     
-                    if (!pluginStepAttributeMap.ContainsKey(logicalName))
-                        pluginStepAttributeMap[logicalName] = new Dictionary<string, HashSet<string>>();
+                    if (!pluginStepAttributeMap.ContainsKey(entityLogicalName))
+                        pluginStepAttributeMap[entityLogicalName] = new Dictionary<string, HashSet<string>>();
                     
                     // Parse comma-separated attribute names
                     var attributeNames = filteringAttributes.Split(',', StringSplitOptions.RemoveEmptyEntries);
                     foreach (var attributeName in attributeNames)
                     {
                         var trimmedAttributeName = attributeName.Trim();
-                        if (!pluginStepAttributeMap[logicalName].ContainsKey(trimmedAttributeName))
-                            pluginStepAttributeMap[logicalName][trimmedAttributeName] = new HashSet<string>();
+                        if (!pluginStepAttributeMap[entityLogicalName].ContainsKey(trimmedAttributeName))
+                            pluginStepAttributeMap[entityLogicalName][trimmedAttributeName] = new HashSet<string>();
                         
-                        pluginStepAttributeMap[logicalName][trimmedAttributeName].Add(pluginTypeName);
+                        var pluginTypeNameParts = pluginTypeName.Split('.');
+                        pluginStepAttributeMap[entityLogicalName][trimmedAttributeName].Add(pluginTypeNameParts[pluginTypeNameParts.Length - 1]);
                     }
                 }
                 
