@@ -35,7 +35,10 @@ export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
     }
 
     if (attribute.HasPluginStep) {
-        details.push({ icon: <Zap className="h-4 w-4" />, tooltip: "Plugin Step" });
+        const pluginTypesTooltip = attribute.PluginTypeNames.length > 0 
+            ? `Plugin Steps: ${attribute.PluginTypeNames.join(', ')}`
+            : "Plugin Step";
+        details.push({ icon: <Zap className="h-4 w-4" />, tooltip: pluginTypesTooltip });
     }
 
     return (
