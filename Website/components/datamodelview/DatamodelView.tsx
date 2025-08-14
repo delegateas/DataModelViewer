@@ -34,7 +34,7 @@ function DatamodelViewContent() {
     const datamodelDataDispatch = useDatamodelDataDispatch();
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
-    const accumulatedResultsRef = useRef<any[]>([]); // Track all results during search
+    const accumulatedResultsRef = useRef<Array<{ type: string; entity: { SchemaName: string }; group: { Name: string } }>>([]); // Track all results during search
 
     // Calculate total search results
     const totalResults = filtered.length > 0 ? filtered.filter(item => item.type === 'entity').length : 0;
