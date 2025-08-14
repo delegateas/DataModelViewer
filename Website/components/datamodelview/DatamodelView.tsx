@@ -34,6 +34,7 @@ function DatamodelViewContent() {
     const datamodelDataDispatch = useDatamodelDataDispatch();
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+    const accumulatedResultsRef = useRef<Array<{ type: string; entity: { SchemaName: string }; group: { Name: string } }>>([]); // Track all results during search
 
     // Calculate total search results
     const totalResults = filtered.length > 0 ? filtered.filter(item => item.type === 'entity').length : 0;
@@ -114,20 +115,27 @@ function DatamodelViewContent() {
                 // setSearchProgress(0);
                 setCurrentSearchIndex(0);
                 // Start with empty results to show loading state
+                accumulatedResultsRef.current = []; // Reset accumulated results
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
             } 
             else if (message.type === 'results') {
                 // setSearchProgress(message.progress || 0);
                 
-                // For chunked results, append to existing
+                // Accumulate results in ref for immediate access
+                accumulatedResultsRef.current = [...accumulatedResultsRef.current, ...message.data];
+                
+                // For chunked results, always append to existing
+                datamodelDataDispatch({ type: "APPEND_FILTERED", payload: message.data });
+                
+                // Only handle completion logic when all chunks are received
                 if (message.complete) {
-                    datamodelDataDispatch({ type: "SET_FILTERED", payload: message.data });
                     datamodelDispatch({ type: "SET_LOADING", payload: false });
                     // Set to first result if we have any and auto-navigate to it
-                    const entityResults = message.data.filter((item: { type: string }) => item.type === 'entity');
-                    if (entityResults.length > 0) {
+                    // Use accumulated results from ref for immediate access
+                    const allFilteredResults = accumulatedResultsRef.current.filter((item: { type: string }) => item.type === 'entity');
+                    if (allFilteredResults.length > 0) {
                         setCurrentSearchIndex(1);
-                        const firstEntity = entityResults[0];
+                        const firstEntity = allFilteredResults[0];
                         datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstEntity.entity.SchemaName });
                         datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstEntity.group.Name });
                         // Small delay to ensure virtual list is ready
@@ -135,8 +143,6 @@ function DatamodelViewContent() {
                             scrollToSection(firstEntity.entity.SchemaName);
                         }, 100);
                     }
-                } else {
-                    datamodelDataDispatch({ type: "APPEND_FILTERED", payload: message.data });
                 }
             }
             else {
