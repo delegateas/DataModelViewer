@@ -91,7 +91,15 @@ export const AboutView = ({}: IAboutViewProps) => {
 
             {/* Data Sync */}
             <div className="text-center text-sm text-gray-500 mt-8">
-              Last Synched - {LastSynched ? LastSynched.toLocaleString(undefined, { timeZoneName: 'short' }) : '...'}
+              Last synchronization: <b>{LastSynched ? LastSynched.toLocaleString('en-DK', { 
+                  timeZone: 'Europe/Copenhagen',
+                  timeZoneName: 'short',
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+              }) : '...'}</b>
             </div>
           </div>
         </TooltipProvider>
