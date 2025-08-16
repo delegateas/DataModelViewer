@@ -7,6 +7,8 @@ public abstract class Attribute
     public bool IsStandardFieldModified { get; set; }
     public bool IsCustomAttribute { get; set; }
     public bool IsPrimaryId { get; set; }
+    public HashSet<string> PluginTypeNames { get; set; } = new HashSet<string>();
+    public bool HasPluginStep => PluginTypeNames.Count > 0;
     public string DisplayName { get; }
     public string SchemaName { get; }
     public string Description { get; }

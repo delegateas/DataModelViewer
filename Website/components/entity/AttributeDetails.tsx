@@ -1,7 +1,7 @@
 'use client'
 
 import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
-import { Calculator, CircleAlert, CirclePlus, Eye, Lock, Sigma } from "lucide-react";
+import { Calculator, CircleAlert, CirclePlus, Eye, Lock, Sigma, Zap } from "lucide-react";
 import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../ui/hybridtooltop";
 
 export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
@@ -32,6 +32,13 @@ export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
 
     if (attribute.IsColumnSecured) {
         details.push({ icon: <Lock className="h-4 w-4" />, tooltip: "Field Security" });
+    }
+
+    if (attribute.HasPluginStep) {
+        const pluginTypesTooltip = attribute.PluginTypeNames.length > 0 
+            ? `Plugin Steps: ${attribute.PluginTypeNames.join(', ')}`
+            : "Plugin Step";
+        details.push({ icon: <Zap className="h-4 w-4" />, tooltip: pluginTypesTooltip });
     }
 
     return (
