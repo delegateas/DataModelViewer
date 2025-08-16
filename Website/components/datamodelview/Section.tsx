@@ -74,10 +74,13 @@ export const Section = React.memo(
                                     </TabsTrigger> 
                                     : <></> 
                                 }
-                                <TabsTrigger value="keys" className="flex items-center min-w-[100px] sm:min-w-[120px] px-2 sm:px-4 py-2 text-xs sm:text-sm truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
-                                    <KeyRound className="mr-2 h-4 w-4 shrink-0" />
-                                    <span className="truncate">Keys [{visibleKeyCount}]</span>
-                                </TabsTrigger>
+                                {entity.Keys.length ? 
+                                    <TabsTrigger value="keys" className="flex items-center min-w-[100px] sm:min-w-[120px] px-2 sm:px-4 py-2 text-xs sm:text-sm truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
+                                        <KeyRound className="mr-2 h-4 w-4 shrink-0" />
+                                        <span className="truncate">Keys [{visibleKeyCount}]</span>
+                                    </TabsTrigger>
+                                    : <></> 
+                                }
                             </TabsList>
                             <TabsContent value="attributes" className="m-0 p-0">
                                 <Attributes entity={entity} search={search} />

@@ -102,7 +102,8 @@ export default function LoginPage() {
                 {/* Footer Information */}
                 <div className="mt-6 text-center space-y-1 text-gray-700 text-xs">
                     <div className="">
-                        Last Synched: <b>{LastSynched ? LastSynched.toLocaleString(undefined, { 
+                        Last synchronization: <b>{LastSynched ? LastSynched.toLocaleString('en-DK', { 
+                            timeZone: 'Europe/Copenhagen',
                             timeZoneName: 'short',
                             year: 'numeric',
                             month: 'short',

@@ -220,6 +220,7 @@ namespace Generator
                 PicklistAttributeMetadata picklist => new ChoiceAttribute(picklist),
                 MultiSelectPicklistAttributeMetadata multiSelect => new ChoiceAttribute(multiSelect),
                 LookupAttributeMetadata lookup => new LookupAttribute(lookup, logicalToSchema, logger),
+                StateAttributeMetadata state => new ChoiceAttribute(state),
                 StatusAttributeMetadata status => new StatusAttribute(status, (StateAttributeMetadata)entity.Attributes.First(x => x is StateAttributeMetadata)),
                 StringAttributeMetadata stringMetadata => new StringAttribute(stringMetadata),
                 IntegerAttributeMetadata integer => new IntegerAttribute(integer),
