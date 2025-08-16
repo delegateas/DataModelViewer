@@ -26,6 +26,7 @@ export type EntityType = {
     SecurityRoles: SecurityRole[],
     Keys: Key[],
     IconBase64: string | null,
+    visibleAttributeSchemaNames?: string[],
 }
 
 export const enum RequiredLevel {
@@ -163,6 +164,7 @@ export type CascadeConfigurationType = {
 }
 
 export type RelationshipType = {
+    IsCustom: boolean,
     Name: string,
     TableSchema: string,
     LookupDisplayName: string,

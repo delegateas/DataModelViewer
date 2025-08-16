@@ -27,6 +27,11 @@ export const List = ({ }: IListProps) => {
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
     const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
     
+    // Track position before search for restoration
+    const positionBeforeSearch = useRef<{ section: string | null; scrollTop: number } | null>(null);
+    const isTabSwitching = useRef(false);
+    const isIntentionalScroll = useRef(false);
+    
     const getSectionRefCallback = (schemaName: string) => (el: HTMLDivElement | null) => {
         sectionRefs.current[schemaName] = el;
     };
@@ -78,6 +83,25 @@ export const List = ({ }: IListProps) => {
             if (!item) return 100;
             return item.type === 'group' ? 92 : 300;
         },
+        // Override scroll behavior to prevent jumping during tab switches
+        scrollToFn: (offset, options) => { 
+            // When switching tabs during search, don't change scroll position
+            if (isTabSwitching.current && !isIntentionalScroll.current) {
+                return;
+            }
+            
+            // Reset the intentional scroll flag after use
+            if (isIntentionalScroll.current) {
+                isIntentionalScroll.current = false;
+            }
+            
+            // Default scroll behavior for other cases
+            const scrollElement = parentRef.current;
+            if (scrollElement) {
+                console.log("setting scroll to: " + offset + " - " + options.adjustments)
+                scrollElement.scrollTop = offset;
+            }
+        },
     });
 
     const scrollToSection = useCallback((sectionId: string) => {
@@ -109,6 +133,7 @@ export const List = ({ }: IListProps) => {
             }
 
             try {
+                isIntentionalScroll.current = true; // Mark this as intentional scroll
                 rowVirtualizer.scrollToIndex(sectionIndex, { 
                     align: 'start'
                 });
@@ -129,10 +154,64 @@ export const List = ({ }: IListProps) => {
     }, [flatItems, rowVirtualizer]);
 
     useEffect(() => {
-        requestAnimationFrame(() => {
-            rowVirtualizer.measure();
-        });
-    }, [flatItems]);
+        // Only measure if we're not filtering - let the virtualizer handle filtered states naturally
+        if (!search || search.length < 3) {
+            requestAnimationFrame(() => {
+                rowVirtualizer.measure();
+            });
+        }
+    }, [flatItems, search, rowVirtualizer]);
+
+    // Handle scrolling to top when starting a search
+    const prevSearchLengthRef = useRef(search.length);
+    useEffect(() => {
+        const currentSearchLength = search.length;
+        const prevSearchLength = prevSearchLengthRef.current;
+        
+        // Store position before starting search (crossing from < 3 to >= 3 characters)
+        if (prevSearchLength < 3 && currentSearchLength >= 3) {
+            positionBeforeSearch.current = {
+                section: datamodelView.currentSection,
+                scrollTop: parentRef.current?.scrollTop || 0
+            };
+            
+            setTimeout(() => {
+                if (parentRef.current) {
+                    parentRef.current.scrollTop = 0;
+                }
+            }, 50); // Small delay to ensure virtualizer has processed the new items
+        }
+        // Restore position when stopping search (crossing from >= 3 to < 3 characters)
+        else if (prevSearchLength >= 3 && currentSearchLength < 3) {
+            if (positionBeforeSearch.current) {
+                const { section, scrollTop } = positionBeforeSearch.current;
+                
+                // Restore to the section where the user was before searching
+                if (section) {
+                    setTimeout(() => {
+                        const sectionIndex = flatItems.findIndex(item => 
+                            item.type === 'entity' && item.entity.SchemaName === section
+                        );
+                        
+                        if (sectionIndex !== -1) {
+                            // Scroll to the section they were at before search
+                            isIntentionalScroll.current = true; // Mark this as intentional scroll
+                            rowVirtualizer.scrollToIndex(sectionIndex, { align: 'start' });
+                        } else {
+                            // Fallback to original scroll position
+                            if (parentRef.current) {
+                                parentRef.current.scrollTop = scrollTop;
+                            }
+                        }
+                    }, 100); // Delay to ensure flatItems is updated
+                }
+                
+                positionBeforeSearch.current = null;
+            }
+        }
+        
+        prevSearchLengthRef.current = currentSearchLength;
+    }, [search, datamodelView.currentSection, flatItems, rowVirtualizer]);
 
     // Throttled scroll handler to reduce calculations
     const handleScroll = useCallback(() => {
@@ -210,8 +289,9 @@ export const List = ({ }: IListProps) => {
 
     return (
         <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }} className="p-6 relative">
-            {/* Add skeleton loading state */}
-            {flatItems.length === 0 && datamodelView.loading && (
+
+            {/* Show skeleton loading state only when initially loading */}
+            {flatItems.length === 0 && datamodelView.loading && (!search || search.length < 3) && (
                 <div className="space-y-8">
                     {[...Array(5)].map((_, i) => (
                         <div key={i} className="bg-white rounded-lg border border-gray-300 shadow-md animate-pulse">
@@ -227,6 +307,16 @@ export const List = ({ }: IListProps) => {
                     ))}
                 </div>
             )}
+
+            {/* Show no results message when searching but no items found */}
+            {flatItems.length === 0 && search && search.length >= 3 && (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                    <div className="text-lg font-medium mb-2">No tables found</div>
+                    <div className="text-sm text-center">
+                        No attributes match your search for &quot;{search}&quot;
+                    </div>
+                </div>
+            )}
             
             {/* Virtualized list */}
             <div
@@ -234,7 +324,7 @@ export const List = ({ }: IListProps) => {
                     height: `${rowVirtualizer.getTotalSize()}px`,
                     width: '100%',
                     position: 'relative',
-                    visibility: flatItems.length === 0 && datamodelView.loading ? 'hidden' : 'visible'
+                    visibility: flatItems.length === 0 ? 'hidden' : 'visible'
                 }}
             >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {
@@ -274,6 +364,15 @@ export const List = ({ }: IListProps) => {
                                     entity={item.entity}
                                     group={item.group}
                                     onContentChange={() => remeasureSection(item.entity.SchemaName)}
+                                    onTabChange={(isChanging: boolean) => {
+                                        isTabSwitching.current = isChanging;
+                                        if (isChanging) {
+                                            // Reset after a short delay to allow for the content change
+                                            setTimeout(() => {
+                                                isTabSwitching.current = false;
+                                            }, 100);
+                                        }
+                                    }}
                                     search={search}
                                 />
                             </div>

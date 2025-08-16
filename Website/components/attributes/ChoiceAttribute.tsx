@@ -3,7 +3,7 @@ import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
 import { CheckCircle, Circle, Square, CheckSquare } from "lucide-react"
 
-export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttributeType }) {
+export default function ChoiceAttribute({ attribute, highlightMatch, highlightTerm }: { attribute: ChoiceAttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string }) {
 
     const isMobile = useIsMobile();
 
@@ -39,7 +39,7 @@ export default function ChoiceAttribute({ attribute }: { attribute: ChoiceAttrib
                                             <Circle className="w-2 h-2 text-gray-400 md:w-3 md:h-3" />
                                         )
                                     )}
-                                    <span className="text-xs md:text-sm">{option.Name}</span>
+                                    <span className="text-xs md:text-sm">{highlightMatch(option.Name, highlightTerm)}</span>
                                 </div>
                                 {option.Color && (
                                     <div 

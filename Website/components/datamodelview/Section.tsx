@@ -14,15 +14,24 @@ interface ISectionProps {
     entity: EntityType;
     group: GroupType;
     onContentChange?: () => void;
+    onTabChange?: (isChanging: boolean) => void;
     search?: string;
 }
 
 export const Section = React.memo(
-    ({ entity, group, onContentChange, search }: ISectionProps) => {
+    ({ entity, group, onContentChange, onTabChange, search }: ISectionProps) => {
         // Use useRef to track previous props for comparison
         const prevSearch = React.useRef(search);
         
         const [tab, setTab] = React.useState("attributes");
+        
+        // Handle tab changes to notify parent component
+        const handleTabChange = React.useCallback((value: string) => {
+            if (onTabChange) {
+                onTabChange(true); // Signal that tab switching is starting
+            }
+            setTab(value);
+        }, [onTabChange]);
         
         // Only compute these counts when needed
         const visibleAttributeCount = React.useMemo(() => entity.Attributes.length, [entity.Attributes]);
@@ -51,7 +60,7 @@ export const Section = React.memo(
                         )}
                     </div>
 
-                    <Tabs defaultValue="attributes" value={tab} onValueChange={setTab}>
+                    <Tabs defaultValue="attributes" value={tab} onValueChange={handleTabChange}>
                         <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
                             <TabsList className="bg-transparent p-0 flex overflow-x-auto no-scrollbar gap-1 sm:gap-2">
                                 <TabsTrigger value="attributes" className="flex items-center min-w-[120px] sm:min-w-[140px] px-2 sm:px-4 py-2 text-xs sm:text-sm truncate data-[state=active]:bg-gray-50 data-[state=active]:shadow-sm transition-all duration-200">
