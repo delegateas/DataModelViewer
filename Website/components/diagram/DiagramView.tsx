@@ -29,6 +29,7 @@ const DiagramContent = () => {
         currentEntities,
         zoom,
         mousePosition,
+        isPanning,
         selectGroup,
         fitToScreen,
         addAttributeToEntity,
@@ -39,6 +40,7 @@ const DiagramContent = () => {
     
     const [selectedKey, setSelectedKey] = useState<string>();
     const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
+    const [selectedArea, setSelectedArea] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } }>({ start: { x: 0, y: 0 }, end: { x: 0, y: 0 } });
     const [isLoading, setIsLoading] = useState(true);
     
     // Persistent tracking of entity positions across renders
@@ -351,6 +353,12 @@ const DiagramContent = () => {
             const element = elementView.model;
             const elementType = element.get('type');
             
+            // Check if Ctrl is pressed - if so, skip opening any panes (selection is handled in useDiagram)
+            const isCtrlPressed = (evt.originalEvent as MouseEvent)?.ctrlKey || (evt.originalEvent as MouseEvent)?.metaKey;
+            if (isCtrlPressed) {
+                return;
+            }
+            
             if (elementType === 'delegate.square') {
                 const squareElement = element as SquareElement;
                 
@@ -659,24 +667,46 @@ const DiagramContent = () => {
         };
     }, [isResizing, resizeData, paper]);
 
-    // Handle clicking outside to deselect squares
+    // Handle clicking outside to deselect squares and manage area selection
     useEffect(() => {
         if (!paper) return;
 
-        const handleBlankClick = () => {
+        const handleBlankClick = (evt: dia.Event, x: number, y: number) => {
             if (selectedSquare) {
                 selectedSquare.hideResizeHandles();
                 setSelectedSquare(null);
                 setIsSquarePropertiesSheetOpen(false);
             }
+        }
+
+        const handleBlankPointerDown = (evt: dia.Event, x: number, y: number) => {
+            
+            // Don't set selected area if we were panning
+            if (!isPanning) {
+                setSelectedArea({ 
+                    ...selectedArea,
+                    start: { x, y }
+                });
+            }
         };
 
+        const handleBlankPointerUp = (evt: dia.Event, x: number, y: number) => {
+            console.log('Blank pointer up at:', x, y);
+            if (!isPanning && Math.abs(selectedArea.start.x - x) > 10 && Math.abs(selectedArea.start.y - y) > 10) {
+                // TODO
+            }
+        };
+
+        paper.on('blank:pointerdown', handleBlankPointerDown);
+        paper.on('blank:pointerup', handleBlankPointerUp);
         paper.on('blank:pointerclick', handleBlankClick);
 
         return () => {
+            paper.off('blank:pointerdown', handleBlankPointerDown);
+            paper.off('blank:pointerup', handleBlankPointerUp);
             paper.off('blank:pointerclick', handleBlankClick);
         };
-    }, [paper, selectedSquare]);
+    }, [paper, selectedSquare, isPanning, selectedArea]);
 
     const handleAddAttribute = (attribute: AttributeType) => {
         if (!selectedEntityForActions || !renderer) return;
@@ -796,6 +826,24 @@ const DiagramContent = () => {
                         <p className="text-sm text-amber-800">
                             <strong>Open Beta Feature:</strong> This ER Diagram feature is currently in beta. Some functionality may not work fully.
                         </p>
+                    </div>
+                </div>
+
+                {/* Interaction Help Banner */}
+                <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
+                    <div className="flex items-center gap-4 text-sm text-blue-700">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 border border-blue-500 rounded-sm"></div>
+                            <span><strong>Drag:</strong> Select area</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <kbd className="bg-blue-200 px-1 rounded text-xs">Ctrl</kbd>
+                            <span><strong>+ Drag:</strong> Pan diagram</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span>🖱️</span>
+                            <span><strong>Scroll:</strong> Zoom</span>
+                        </div>
                     </div>
                 </div>
                 
