@@ -34,7 +34,6 @@ const DiagramContent = () => {
         fitToScreen,
         addAttributeToEntity,
         removeAttributeFromEntity,
-        toggleElementSelection,
         diagramType,
         removeEntityFromDiagram,
         setEventCallbacks
@@ -50,6 +49,9 @@ const DiagramContent = () => {
     
     // Track previous diagram type to detect changes
     const previousDiagramTypeRef = useRef<string>(diagramType);
+    
+    // Track previous entities to detect changes
+    const previousEntitiesRef = useRef<string[]>([]);
 
     // Wrapper for setSelectedKey to pass to renderer
     const handleSetSelectedKey = useCallback((key: string | undefined) => {
@@ -124,17 +126,14 @@ const DiagramContent = () => {
         };
     }, [renderer]);
 
-    useEffect(() => {
+    /**
+     * Rerenders the entire diagram, preserving positions of existing entities
+     * and using grid layout for new entities. This is the main rendering method
+     * that handles all entity positioning and relationship creation.
+     */
+    const rerenderDiagram = useCallback(() => {
         if (!graph || !paper || !selectedGroup || !renderer) {
             return;
-        }
-
-        // Check if diagram type has changed and clear all positions if so
-        let diagramTypeChanged = false;
-        if (previousDiagramTypeRef.current !== diagramType) {
-            entityPositionsRef.current.clear();
-            previousDiagramTypeRef.current = diagramType;
-            diagramTypeChanged = true;
         }
 
         // Set loading state when starting diagram creation
@@ -168,17 +167,13 @@ const DiagramContent = () => {
         }));
         
         // Update persistent position tracking with current positions
-        // Skip this if diagram type changed to ensure all entities are treated as new
-        if (!diagramTypeChanged) {
-            existingEntities.forEach(element => {
-                const entityData = element.get('data');
-                if (entityData?.entity?.SchemaName) {
-                    const position = element.position();
-                    entityPositionsRef.current.set(entityData.entity.SchemaName, position);
-                }
-            });
-        } else {
-        }
+        existingEntities.forEach(element => {
+            const entityData = element.get('data');
+            if (entityData?.entity?.SchemaName) {
+                const position = element.position();
+                entityPositionsRef.current.set(entityData.entity.SchemaName, position);
+            }
+        });
         
         // Clean up position tracking for entities that are no longer in currentEntities
         const currentEntityNames = new Set(currentEntities.map(e => e.SchemaName));
@@ -190,6 +185,10 @@ const DiagramContent = () => {
         
         // Clear existing elements
         graph.clear();
+        
+        // Additional safety: remove any remaining links that might not have been cleared
+        const remainingLinks = graph.getLinks();
+        remainingLinks.forEach(link => link.remove());
         
         // Re-add preserved squares with their data
         squareData.forEach(({ element, data, position, size }) => {
@@ -233,7 +232,6 @@ const DiagramContent = () => {
             entityPositionsRef.current.has(entity.SchemaName)
         );
         
-
         // Store entity elements and port maps by SchemaName for easy lookup
         const entityMap = new Map();
         const placedEntityPositions: { x: number; y: number; width: number; height: number }[] = [];
@@ -256,7 +254,6 @@ const DiagramContent = () => {
             });
         });
         
-        
         // Then, create new entities with grid layout that avoids already placed entities
         if (newEntities.length > 0) {
             // Calculate actual heights for new entities based on diagram type
@@ -269,7 +266,6 @@ const DiagramContent = () => {
                 diagramType: diagramType
             };
             
-            
             const layout = calculateGridLayout(newEntities, adjustedLayoutOptions, placedEntityPositions);
             
             // Create new entities with grid layout positions
@@ -281,7 +277,6 @@ const DiagramContent = () => {
                 // Update persistent position tracking for newly placed entities
                 entityPositionsRef.current.set(entity.SchemaName, position);
             });
-        } else {
         }
         
         util.nextFrame(() => {
@@ -296,7 +291,115 @@ const DiagramContent = () => {
             // Set loading to false once diagram is complete
             setIsLoading(false);
         }, 200);
-    }, [graph, paper, selectedGroup, currentEntities, diagramType]);
+    }, [graph, paper, selectedGroup, currentEntities, diagramType, renderer, fitToScreen]);
+
+    /**
+     * Rerenders a single entity and its associated links without affecting other entities.
+     * This is more efficient than a full diagram rerender when only one entity needs updating.
+     * @param entitySchemaName The schema name of the entity to rerender
+     */
+    const rerenderSingleEntity = useCallback((entitySchemaName: string) => {
+        if (!graph || !renderer) {
+            return;
+        }
+
+        // Find the entity in currentEntities
+        const entity = currentEntities.find(e => e.SchemaName === entitySchemaName);
+        if (!entity) {
+            return;
+        }
+
+        // Update the entity using the renderer's updateEntity method
+        renderer.updateEntity(entitySchemaName, entity);
+    }, [graph, renderer, currentEntities]);
+
+    /**
+     * Smart rendering method that detects what has changed and renders accordingly.
+     * - If diagram type changed: full rerender
+     * - If entities were added: partial rerender (add new entities only)
+     * - If entities were removed: no action needed (already handled by removeEntityFromDiagram)
+     * - If only attribute visibility changed: full rerender (for now)
+     * This prevents unnecessary rerenders and duplicate links.
+     */
+    const smartRender = useCallback(() => {
+        if (!graph || !paper || !selectedGroup || !renderer) {
+            return;
+        }
+
+        // Check if diagram type has changed
+        let diagramTypeChanged = false;
+        if (previousDiagramTypeRef.current !== diagramType) {
+            entityPositionsRef.current.clear();
+            previousDiagramTypeRef.current = diagramType;
+            diagramTypeChanged = true;
+        }
+
+        // Get current entity schema names
+        const currentEntityNames = currentEntities.map(e => e.SchemaName);
+        const previousEntityNames = previousEntitiesRef.current;
+
+        // Check what type of change occurred
+        const entitiesAdded = currentEntityNames.filter(name => !previousEntityNames.includes(name));
+        const entitiesRemoved = previousEntityNames.filter(name => !currentEntityNames.includes(name));
+
+        // Update the previous entities reference
+        previousEntitiesRef.current = [...currentEntityNames];
+
+        // If diagram type changed, do a full rerender
+        if (diagramTypeChanged) {
+            rerenderDiagram();
+            return;
+        }
+
+        // If entities were added, we need to render them
+        if (entitiesAdded.length > 0) {
+            // For now, do a full rerender when entities are added
+            // TODO: Could be optimized to only add new entities
+            rerenderDiagram();
+            return;
+        }
+
+        // If entities were removed, no action needed - removeEntityFromDiagram already handled it
+        if (entitiesRemoved.length > 0) {
+            // Just clean up the position tracking for removed entities
+            entitiesRemoved.forEach(entityName => {
+                entityPositionsRef.current.delete(entityName);
+            });
+            return;
+        }
+
+        // Check for attribute changes in existing entities
+        const elementsInGraph = graph.getElements().filter(element => {
+            const entityData = element.get('data');
+            return entityData?.entity;
+        });
+
+        let needsFullRender = false;
+        for (const element of elementsInGraph) {
+            const graphEntity = element.get('data')?.entity;
+            const currentEntity = currentEntities.find(e => e.SchemaName === graphEntity?.SchemaName);
+            
+            if (currentEntity && graphEntity) {
+                // Check if visible attributes have changed
+                const currentVisibleAttrs = currentEntity.visibleAttributeSchemaNames || [];
+                const graphVisibleAttrs = graphEntity.visibleAttributeSchemaNames || [];
+                
+                if (currentVisibleAttrs.length !== graphVisibleAttrs.length ||
+                    currentVisibleAttrs.some(attr => !graphVisibleAttrs.includes(attr))) {
+                    needsFullRender = true;
+                    break;
+                }
+            }
+        }
+
+        if (needsFullRender) {
+            rerenderDiagram();
+        }
+    }, [graph, paper, selectedGroup, currentEntities, diagramType, renderer, rerenderDiagram]);
+
+    useEffect(() => {
+        smartRender();
+    }, [smartRender]);
 
     useEffect(() => {
         if (!graph || !renderer) return;

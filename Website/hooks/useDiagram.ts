@@ -432,7 +432,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
 
     // Find and remove the entity element from the graph
     const entityElement = graphRef.current.getElements().find(el => 
-      el.get('type') === 'delegate.entity' && 
+      (el.get('type') === 'delegate.entity' || el.get('type') === 'delegate.simple-entity') && 
       el.get('data')?.entity?.SchemaName === entitySchemaName
     );
 
@@ -444,6 +444,11 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       // Remove the entity element
       entityElement.remove();
     }
+
+    // Trigger fit to screen after removal
+    setTimeout(() => {
+      fitToScreen();
+    }, 100);
   }, [currentEntities, fitToScreen]);
 
   const addSquareToDiagram = useCallback(() => {

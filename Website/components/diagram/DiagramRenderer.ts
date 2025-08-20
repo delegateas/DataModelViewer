@@ -108,11 +108,13 @@ export abstract class DiagramRenderer {
       el.get('data')?.entity?.SchemaName === entity.SchemaName
     );
 
-    if (entityElement) {
-      // Remove all links connected to this entity
-      const connectedLinks = this.graph.getConnectedLinks(entityElement);
-      connectedLinks.forEach(link => link.remove());
+    if (!entityElement) {
+      return;
     }
+
+    // Remove all links connected to this entity
+    const connectedLinks = this.graph.getConnectedLinks(entityElement);
+    connectedLinks.forEach(link => link.remove());
 
     // Recreate the entity map for link creation
     const entityMap = new Map<string, { element: dia.Element, portMap: IPortMap }>();
@@ -142,7 +144,7 @@ export abstract class DiagramRenderer {
       }
     });
 
-    // Recreate links for all entities (this ensures all relationships are updated)
+    // Get all entities for the createLinks method
     const allEntities: EntityType[] = [];
     entityMap.forEach((entityInfo) => {
       const entityData = entityInfo.element.get('data')?.entity;
@@ -151,11 +153,7 @@ export abstract class DiagramRenderer {
       }
     });
     
-    entityMap.forEach((entityInfo) => {
-      const entityData = entityInfo.element.get('data')?.entity;
-      if (entityData) {
-        this.createLinks(entityData, entityMap, allEntities);
-      }
-    });
+    // Only recreate links for the specific entity that was updated
+    this.createLinks(entity, entityMap, allEntities);
   }
 }
