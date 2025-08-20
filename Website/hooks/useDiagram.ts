@@ -13,6 +13,16 @@ import { entityStyleManager } from '@/lib/entity-styling';
 
 export type DiagramType = 'simple' | 'detailed';
 
+// Event handler callbacks interface
+export interface DiagramEventCallbacks {
+  onSquareClick?: (square: SquareElement) => void;
+  onTextClick?: (text: TextElement) => void;
+  onEntityClick?: (entitySchemaName: string) => void;
+  onLinkClick?: (link: dia.Link) => void;
+  onSquareHover?: (square: SquareElement, isHovered: boolean) => void;
+  onTextHover?: (text: TextElement, isHovered: boolean) => void;
+}
+
 export interface DiagramState {
   zoom: number;
   isPanning: boolean;
@@ -60,6 +70,9 @@ export interface DiagramActions {
   saveDiagram: () => void;
   loadDiagram: (file: File) => Promise<void>;
   clearDiagram: () => void;
+
+  // Event handler registration
+  setEventCallbacks: (callbacks: DiagramEventCallbacks) => void;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -70,6 +83,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   const selectedElementsRef = useRef<string[]>([]);
   const cleanupRef = useRef<(() => void) | null>(null);
   const isAddingAttributeRef = useRef(false);
+  const eventCallbacksRef = useRef<DiagramEventCallbacks>({});
   
   const [zoom, setZoomState] = useState(1);
   const [isPanning, setIsPanningState] = useState(false);
@@ -83,6 +97,11 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   // State variables to track initialization status for React dependencies
   const [paperInitialized, setPaperInitialized] = useState(false);
   const [graphInitialized, setGraphInitialized] = useState(false);
+
+  // Set event callbacks
+  const setEventCallbacks = useCallback((callbacks: DiagramEventCallbacks) => {
+    eventCallbacksRef.current = callbacks;
+  }, []);
 
   // Update state when refs change (for UI updates)
   const updateZoomDisplay = useCallback((newZoom: number) => {
@@ -981,6 +1000,126 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       }
     });
 
+    // Add centralized click handler for all element types
+    paper.on('element:pointerclick', (elementView: dia.ElementView, evt: any) => {
+      evt.stopPropagation();
+      const element = elementView.model;
+      const elementType = element.get('type');
+      
+      // Check if Ctrl is pressed - handle multi-selection for entities
+      const isCtrlPressed = evt.originalEvent?.ctrlKey || evt.originalEvent?.metaKey;
+      
+      // Handle entity Ctrl+click for multi-selection (already handled in pointerdown)
+      if (isCtrlPressed && elementType === 'delegate.entity') {
+        return;
+      } else if (isCtrlPressed) {
+        // For non-entity elements when Ctrl is pressed, just return
+        return;
+      }
+      
+      if (elementType === 'delegate.square') {
+        const squareElement = element as SquareElement;
+        eventCallbacksRef.current.onSquareClick?.(squareElement);
+        return;
+      }
+      
+      if (elementType === 'delegate.text') {
+        const textElement = element as TextElement;
+        eventCallbacksRef.current.onTextClick?.(textElement);
+        return;
+      }
+      
+      // Handle entity clicks
+      if (elementType === 'delegate.entity') {
+        // Check if the click target is an attribute button
+        const target = evt.originalEvent?.target as HTMLElement;
+        const isAttributeButton = target?.closest('button[data-schema-name]');
+        
+        // If clicking on an attribute, don't trigger entity click callback
+        if (isAttributeButton) {
+          return;
+        }
+        
+        const entityData = element.get('data');
+        if (entityData?.entity) {
+          eventCallbacksRef.current.onEntityClick?.(entityData.entity.SchemaName);
+        }
+      }
+    });
+
+    // Add centralized hover handlers
+    paper.on('element:mouseenter', (elementView: dia.ElementView) => {
+      const element = elementView.model;
+      const elementType = element.get('type');
+      
+      if (elementType === 'delegate.square') {
+        const squareElement = element as SquareElement;
+        // Handle square hover
+        elementView.el.style.cursor = 'pointer';
+        // Add a subtle glow effect for squares
+        element.attr('body/filter', 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))');
+        eventCallbacksRef.current.onSquareHover?.(squareElement, true);
+        return;
+      }
+      
+      if (elementType === 'delegate.text') {
+        const textElement = element as TextElement;
+        // Handle text hover
+        elementView.el.style.cursor = 'pointer';
+        // Add a subtle glow effect for text elements
+        element.attr('body/filter', 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))');
+        eventCallbacksRef.current.onTextHover?.(textElement, true);
+        return;
+      }
+      
+      // Handle entity hover using centralized style manager
+      if (elementType === 'delegate.entity') {
+        const entityData = element.get('data');
+        if (entityData?.entity) {
+          entityStyleManager.handleEntityMouseEnter(element, paper);
+        }
+      }
+    });
+
+    paper.on('element:mouseleave', (elementView: dia.ElementView) => {
+      const element = elementView.model;
+      const elementType = element.get('type');
+      
+      if (elementType === 'delegate.square') {
+        const squareElement = element as SquareElement;
+        // Handle square hover leave
+        elementView.el.style.cursor = 'default';
+        // Remove glow effect
+        element.attr('body/filter', 'none');
+        eventCallbacksRef.current.onSquareHover?.(squareElement, false);
+        return;
+      }
+      
+      if (elementType === 'delegate.text') {
+        const textElement = element as TextElement;
+        // Handle text hover leave
+        elementView.el.style.cursor = 'default';
+        // Remove glow effect
+        element.attr('body/filter', 'none');
+        eventCallbacksRef.current.onTextHover?.(textElement, false);
+        return;
+      }
+      
+      // Handle entity hover leave using centralized style manager
+      if (elementType === 'delegate.entity') {
+        const entityData = element.get('data');
+        if (entityData?.entity) {
+          entityStyleManager.handleEntityMouseLeave(element, paper);
+        }
+      }
+    });
+
+    // Add centralized link click handler
+    paper.on('link:pointerclick', (linkView: any, evt: any) => {
+      const link = linkView.model as dia.Link;
+      eventCallbacksRef.current.onLinkClick?.(link);
+    });
+
     paper.on('element:pointermove', (elementView: dia.ElementView, evt: any) => {
       if (isGroupDragging && Object.keys(groupDragStartPositions).length > 0) {
         const rect = (paper.el as HTMLElement).getBoundingClientRect();
@@ -1173,5 +1312,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     saveDiagram,
     loadDiagram,
     clearDiagram,
+    setEventCallbacks,
   };
 }; 

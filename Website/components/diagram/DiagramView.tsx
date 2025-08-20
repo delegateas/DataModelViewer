@@ -8,7 +8,6 @@ import { TextElement } from '@/components/diagram/elements/TextElement';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
 import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
-import { entityStyleManager } from '@/lib/entity-styling';
 import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
 import { TextPropertiesPane } from '@/components/diagram/panes/TextPropertiesPane';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '@/components/diagram/GridLayoutManager';
@@ -35,8 +34,10 @@ const DiagramContent = () => {
         fitToScreen,
         addAttributeToEntity,
         removeAttributeFromEntity,
+        toggleElementSelection,
         diagramType,
-        removeEntityFromDiagram
+        removeEntityFromDiagram,
+        setEventCallbacks
     } = useDiagramViewContext();
     
     const [selectedKey, setSelectedKey] = useState<string>();
@@ -323,128 +324,39 @@ const DiagramContent = () => {
         renderer.updateEntityAttributes(graph, selectedKey);
     }, [selectedKey, graph, renderer]);
 
+    // Set up centralized event callbacks
     useEffect(() => {
-        if (!paper || !renderer) return;
-        
-        // Handle link clicks
-        paper.on('link:pointerclick', renderer.onLinkClick);
-        
-        // Handle entity clicks
-        const handleElementClick = (elementView: dia.ElementView, evt: dia.Event) => {
-            evt.stopPropagation();
-            const element = elementView.model;
-            const elementType = element.get('type');
-            
-            // Check if Ctrl is pressed - if so, skip opening any panes (selection is handled in useDiagram)
-            const isCtrlPressed = (evt.originalEvent as MouseEvent)?.ctrlKey || (evt.originalEvent as MouseEvent)?.metaKey;
-            if (isCtrlPressed) {
-                return;
-            }
-            
-            if (elementType === 'delegate.square') {
-                const squareElement = element as SquareElement;
-                
-                // Only open properties panel for squares (resize handles are shown on hover)
-                setSelectedSquare(squareElement);
+        setEventCallbacks({
+            onSquareClick: (square: SquareElement) => {
+                setSelectedSquare(square);
                 setIsSquarePropertiesSheetOpen(true);
-                return;
-            }
-            
-            if (elementType === 'delegate.text') {
-                const textElement = element as TextElement;
-                
-                // Open properties panel for text elements
-                setSelectedText(textElement);
+            },
+            onTextClick: (text: TextElement) => {
+                setSelectedText(text);
                 setIsTextPropertiesSheetOpen(true);
-                return;
-            }
-            
-            // Handle entity clicks
-            // Check if the click target is an attribute button
-            const target = evt.originalEvent?.target as HTMLElement;
-            const isAttributeButton = target?.closest('button[data-schema-name]');
-            
-            // If clicking on an attribute, let the renderer handle it and don't open the entity actions sheet
-            if (isAttributeButton) {
-                return;
-            }
-            
-            const entityData = element.get('data');
-            
-            if (entityData?.entity) {
-                setSelectedEntityForActions(entityData.entity.SchemaName);
+            },
+            onEntityClick: (entitySchemaName: string) => {
+                setSelectedEntityForActions(entitySchemaName);
                 setIsEntityActionsSheetOpen(true);
+            },
+            onLinkClick: (link: dia.Link) => {
+                setSelectedLink(link);
+                setIsLinkPropertiesSheetOpen(true);
+            },
+            onSquareHover: (square: SquareElement, isHovered: boolean) => {
+                // Handle square hover state if needed
+                // For now, the styling is handled in useDiagram
+            },
+            onTextHover: (text: TextElement, isHovered: boolean) => {
+                // Handle text hover state if needed
+                // For now, the styling is handled in useDiagram
             }
-        };
+        });
+    }, [setEventCallbacks]);
 
-        // Handle element hover for cursor indication
-        const handleElementMouseEnter = (elementView: dia.ElementView) => {
-            const element = elementView.model;
-            const elementType = element.get('type');
-            
-            if (elementType === 'delegate.square') {
-                // Handle square hover
-                elementView.el.style.cursor = 'pointer';
-                // Add a subtle glow effect for squares
-                element.attr('body/filter', 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))');
-                
-                // Don't show resize handles on general hover - only on edge hover
-                return;
-            }
-            
-            if (elementType === 'delegate.text') {
-                // Handle text hover
-                elementView.el.style.cursor = 'pointer';
-                // Add a subtle glow effect for text elements
-                element.attr('body/filter', 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))');
-                return;
-            }
-            
-            // Handle entity hover using centralized style manager
-            const entityData = element.get('data');
-            
-            if (entityData?.entity && paper) {
-                entityStyleManager.handleEntityMouseEnter(element, paper);
-            }
-        };
-
-        const handleElementMouseLeave = (elementView: dia.ElementView) => {
-            const element = elementView.model;
-            const elementType = element.get('type');
-            
-            if (elementType === 'delegate.square') {
-                // Handle square hover leave
-                elementView.el.style.cursor = 'default';
-                // Remove glow effect
-                element.attr('body/filter', 'none');
-                
-                // Hide resize handles when leaving square area (unless selected for properties)
-                const squareElement = element as SquareElement;
-                if (selectedSquare?.id !== squareElement.id) {
-                    squareElement.hideResizeHandles();
-                }
-                return;
-            }
-            
-            if (elementType === 'delegate.text') {
-                // Handle text hover leave
-                elementView.el.style.cursor = 'default';
-                // Remove glow effect
-                element.attr('body/filter', 'none');
-                return;
-            }
-            
-            // Handle entity hover leave using centralized style manager
-            const entityData = element.get('data');
-            
-            if (entityData?.entity && paper) {
-                entityStyleManager.handleEntityMouseLeave(element, paper);
-            }
-        };
-        
-        paper.on('element:pointerclick', handleElementClick);
-        paper.on('element:mouseenter', handleElementMouseEnter);
-        paper.on('element:mouseleave', handleElementMouseLeave);
+    // Square-specific event handlers (mouse movement and resizing)
+    useEffect(() => {
+        if (!paper) return;
         
         // Handle mouse movement over squares to show resize handles only near edges
         const handleSquareMouseMove = (cellView: dia.CellView, evt: dia.Event) => {
@@ -484,10 +396,8 @@ const DiagramContent = () => {
             }
         };
         
-        paper.on('cell:mousemove', handleSquareMouseMove);
-        
         // Handle pointer down for resize handles - capture before other events
-        paper.on('cell:pointerdown', (cellView: dia.CellView, evt: dia.Event) => {
+        const handleResizePointerDown = (cellView: dia.CellView, evt: dia.Event) => {
             const element = cellView.model;
             const elementType = element.get('type');
             
@@ -527,17 +437,16 @@ const DiagramContent = () => {
                     setIsResizing(true);
                 }
             }
-        });
+        };
+        
+        paper.on('cell:mousemove', handleSquareMouseMove);
+        paper.on('cell:pointerdown', handleResizePointerDown);
         
         return () => {
-            paper.off('link:pointerclick', renderer.onLinkClick);
-            paper.off('element:pointerclick', handleElementClick);
-            paper.off('element:mouseenter', handleElementMouseEnter);
-            paper.off('element:mouseleave', handleElementMouseLeave);
             paper.off('cell:mousemove', handleSquareMouseMove);
-            paper.off('cell:pointerdown');
+            paper.off('cell:pointerdown', handleResizePointerDown);
         };
-    }, [paper, renderer, selectedSquare]);
+    }, [paper, selectedSquare]);
 
     // Handle resize operations
     useEffect(() => {
