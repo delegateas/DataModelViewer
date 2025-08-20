@@ -9,6 +9,7 @@ import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
 import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiagramRender';
 import { DetailedDiagramRender } from '@/components/diagram/renderers/DetailedDiagramRender';
 import { PRESET_COLORS } from '@/components/diagram/shared/DiagramConstants';
+import { entityStyleManager } from '@/lib/entity-styling';
 
 export type DiagramType = 'simple' | 'detailed';
 
@@ -759,45 +760,13 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     paperRef.current = paper;
     setPaperInitialized(true);
     
-    // Centralized function to apply selection styling
-    const applySelectionStyling = (element: dia.Element, isSelected: boolean) => {
-      const foreignObject = element.findView(paper)?.el.querySelector('foreignObject');
-      const htmlContent = foreignObject?.querySelector('[data-entity-schema]') as HTMLElement;
-      if (htmlContent) {
-        if (isSelected) {
-          // More prominent selection styling
-          htmlContent.style.border = '3px solid #3b82f6';
-          htmlContent.style.borderRadius = '12px';
-          htmlContent.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.3)';
-          htmlContent.style.backgroundColor = 'rgba(59, 130, 246, 0.05)';
-          htmlContent.style.transform = 'scale(1.02)';
-          htmlContent.style.transition = 'all 0.2s ease-in-out';
-          htmlContent.style.zIndex = '10';
-        } else {
-          // Clear selection styling
-          htmlContent.style.border = 'none';
-          htmlContent.style.borderRadius = '';
-          htmlContent.style.boxShadow = 'none';
-          htmlContent.style.backgroundColor = '';
-          htmlContent.style.transform = '';
-          htmlContent.style.transition = '';
-          htmlContent.style.zIndex = '';
-        }
-      }
-    };
-
-    // Function to update all entity selection styling
-    const updateAllSelectionStyling = () => {
-      if (graphRef.current) {
-        graphRef.current.getElements().forEach(element => {
-          const entityData = element.get('data');
-          if (entityData?.entity) {
-            const elementId = element.id.toString();
-            const isSelected = selectedElementsRef.current.includes(elementId);
-            applySelectionStyling(element, isSelected);
-          }
-        });
-      }
+    // Update entity style manager when selected elements change
+    const updateEntityStyleManager = () => {
+      entityStyleManager.handleSelectionChange(
+        selectedElementsRef.current,
+        graphRef.current!,
+        paper
+      );
     };
     
     // Area selection state tracking
@@ -860,7 +829,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       
       if (isSelecting) {
         // Finalize selection and apply permanent visual feedback
-        updateAllSelectionStyling();
+        updateEntityStyleManager();
         
         isSelecting = false;
         currentAreaSelection = []; // Clear the area selection tracking
@@ -940,15 +909,8 @@ export const useDiagram = (): DiagramState & DiagramActions => {
           selectedElementsRef.current = selectedIds;
           setSelectedElements(selectedIds);
           
-          // Apply visual feedback to all entities
-          graphRef.current.getElements().forEach(element => {
-            const entityData = element.get('data');
-            if (entityData?.entity) {
-              const elementId = element.id.toString();
-              const isSelected = selectedIds.includes(elementId);
-              applySelectionStyling(element, isSelected);
-            }
-          });
+          // Apply visual feedback using entity style manager
+          entityStyleManager.handleSelectionChange(selectedIds, graphRef.current, paper);
         }
       }
     });
@@ -978,8 +940,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
         
         // Update visual feedback after a short delay to let state update
         setTimeout(() => {
-          const isNowSelected = selectedElementsRef.current.includes(elementId);
-          applySelectionStyling(element, isNowSelected);
+          updateEntityStyleManager();
         }, 0);
       } else if (currentSelection.includes(elementId) && currentSelection.length > 1) {
         // Start group dragging if clicking on already selected element (and there are multiple selected)
@@ -1016,7 +977,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
         selectElement(elementId);
         
         // Update visual feedback
-        updateAllSelectionStyling();
+        updateEntityStyleManager();
       }
     });
 
@@ -1065,7 +1026,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
         if (!isSelecting) {
           clearSelection();
           // Clear visual feedback
-          updateAllSelectionStyling();
+          updateEntityStyleManager();
         }
         
         // Regular drag = area selection
@@ -1161,39 +1122,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   // Update selection styling whenever selectedElements changes
   useEffect(() => {
     if (paperRef.current && graphRef.current) {
-      const paper = paperRef.current;
-      if (graphRef.current) {
-        graphRef.current.getElements().forEach(element => {
-          const entityData = element.get('data');
-          if (entityData?.entity) {
-            const elementId = element.id.toString();
-            const isSelected = selectedElements.includes(elementId);
-            const foreignObject = element.findView(paper)?.el.querySelector('foreignObject');
-            const htmlContent = foreignObject?.querySelector('[data-entity-schema]') as HTMLElement;
-            if (htmlContent) {
-              if (isSelected) {
-                // More prominent selection styling
-                htmlContent.style.border = '3px solid #3b82f6';
-                htmlContent.style.borderRadius = '12px';
-                htmlContent.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.3)';
-                htmlContent.style.backgroundColor = 'rgba(59, 130, 246, 0.05)';
-                htmlContent.style.transform = 'scale(1.02)';
-                htmlContent.style.transition = 'all 0.2s ease-in-out';
-                htmlContent.style.zIndex = '10';
-              } else {
-                // Clear selection styling
-                htmlContent.style.border = 'none';
-                htmlContent.style.borderRadius = '';
-                htmlContent.style.boxShadow = 'none';
-                htmlContent.style.backgroundColor = '';
-                htmlContent.style.transform = '';
-                htmlContent.style.transition = '';
-                htmlContent.style.zIndex = '';
-              }
-            }
-          }
-        });
-      }
+      entityStyleManager.handleSelectionChange(selectedElements, graphRef.current, paperRef.current);
     }
   }, [selectedElements]);
 
