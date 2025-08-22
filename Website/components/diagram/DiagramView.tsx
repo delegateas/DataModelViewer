@@ -25,18 +25,11 @@ const DiagramContent = () => {
     const { 
         graph, 
         paper, 
-        selectedGroup, 
         currentEntities,
-        zoom,
-        mousePosition,
-        isPanning,
-        selectGroup,
-        fitToScreen,
         addAttributeToEntity,
         removeAttributeFromEntity,
         diagramType,
         removeEntityFromDiagram,
-        setEventCallbacks
     } = useDiagramViewContext();
     
     const [selectedKey, setSelectedKey] = useState<string>();
@@ -63,13 +56,16 @@ const DiagramContent = () => {
         setSelectedLink(link);
         setIsLinkPropertiesSheetOpen(true);
     }, []);
-    const [isEntityActionsSheetOpen, setIsEntityActionsSheetOpen] = useState(false);
+
     const [selectedSquare, setSelectedSquare] = useState<SquareElement | null>(null);
-    const [isSquarePropertiesSheetOpen, setIsSquarePropertiesSheetOpen] = useState(false);
     const [selectedText, setSelectedText] = useState<TextElement | null>(null);
-    const [isTextPropertiesSheetOpen, setIsTextPropertiesSheetOpen] = useState(false);
     const [selectedLink, setSelectedLink] = useState<dia.Link | null>(null);
+
+    const [isEntityActionsSheetOpen, setIsEntityActionsSheetOpen] = useState(false);
+    const [isSquarePropertiesSheetOpen, setIsSquarePropertiesSheetOpen] = useState(false);
+    const [isTextPropertiesSheetOpen, setIsTextPropertiesSheetOpen] = useState(false);
     const [isLinkPropertiesSheetOpen, setIsLinkPropertiesSheetOpen] = useState(false);
+
     const [isResizing, setIsResizing] = useState(false);
     const [resizeData, setResizeData] = useState<{
         element: SquareElement;
@@ -100,22 +96,6 @@ const DiagramContent = () => {
     }, [diagramType, graph, handleSetSelectedKey, handleLinkClick]);
 
     useEffect(() => {
-        if (Groups.length > 0 && !selectedGroup) {
-            selectGroup(Groups[0]);
-        }
-    }, [Groups, selectedGroup, selectGroup]);
-
-    // Handle loading state when basic dependencies are ready
-    useEffect(() => {
-        if (graph && renderer) { // Remove paper dependency here since it might not be ready
-            // If we have the basic dependencies but no selected group or no entities, stop loading
-            if (!selectedGroup || currentEntities.length === 0) {
-                setIsLoading(false);
-            }
-        }
-    }, [graph, renderer, selectedGroup, currentEntities]); // Remove paper from dependencies
-
-    useEffect(() => {
         if (!renderer) return;
         
         // Bind the method to the renderer instance
@@ -132,7 +112,7 @@ const DiagramContent = () => {
      * that handles all entity positioning and relationship creation.
      */
     const rerenderDiagram = useCallback(() => {
-        if (!graph || !paper || !selectedGroup || !renderer) {
+        if (!graph || !paper || !renderer) {
             return;
         }
 
@@ -291,7 +271,7 @@ const DiagramContent = () => {
             // Set loading to false once diagram is complete
             setIsLoading(false);
         }, 200);
-    }, [graph, paper, selectedGroup, currentEntities, diagramType, renderer, fitToScreen]);
+    }, [graph, paper, currentEntities, diagramType, renderer, fitToScreen]);
 
     /**
      * Rerenders a single entity and its associated links without affecting other entities.
@@ -322,7 +302,7 @@ const DiagramContent = () => {
      * This prevents unnecessary rerenders and duplicate links.
      */
     const smartRender = useCallback(() => {
-        if (!graph || !paper || !selectedGroup || !renderer) {
+        if (!graph || !paper || !renderer) {
             return;
         }
 
@@ -395,7 +375,7 @@ const DiagramContent = () => {
         if (needsFullRender) {
             rerenderDiagram();
         }
-    }, [graph, paper, selectedGroup, currentEntities, diagramType, renderer, rerenderDiagram]);
+    }, [graph, paper, currentEntities, diagramType, renderer, rerenderDiagram]);
 
     useEffect(() => {
         smartRender();

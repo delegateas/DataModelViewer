@@ -67,8 +67,8 @@ const DEFAULT_ENTITY_STYLING: EntityStylingConfig = {
  * Handles all entity visual states including hover, selection, and combined states
  */
 export class EntityStyleManager {
-  private selectedElements: Set<string> = new Set();
-  private hoveredElements: Set<string> = new Set();
+  private selectedElements: Set<dia.Cell.ID> = new Set();
+  private hoveredElements: Set<dia.Cell.ID> = new Set();
   private config: EntityStylingConfig;
 
   constructor(config: EntityStylingConfig = DEFAULT_ENTITY_STYLING) {
@@ -78,7 +78,7 @@ export class EntityStyleManager {
   /**
    * Update the list of selected elements
    */
-  setSelectedElements(elementIds: string[]): void {
+  setSelectedElements(elementIds: dia.Cell.ID[]): void {
     this.selectedElements.clear();
     elementIds.forEach(id => this.selectedElements.add(id));
   }
@@ -230,7 +230,7 @@ export class EntityStyleManager {
   /**
    * Handle selection change
    */
-  handleSelectionChange(selectedElementIds: string[], graph: dia.Graph, paper: dia.Paper): void {
+  handleSelectionChange(selectedElementIds: dia.Cell.ID[], graph: dia.Graph, paper: dia.Paper): void {
     console.log('🔄 Selection change:', selectedElementIds);
     this.setSelectedElements(selectedElementIds);
     this.applyAllEntityStyling(graph, paper);
