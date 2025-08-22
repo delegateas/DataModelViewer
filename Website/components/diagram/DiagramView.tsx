@@ -10,7 +10,6 @@ import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndi
 import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
 import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
 import { TextPropertiesPane } from '@/components/diagram/panes/TextPropertiesPane';
-import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
 import { AppSidebar } from '../AppSidebar';
 import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
@@ -30,20 +29,28 @@ const DiagramContent = () => {
         removeAttributeFromEntity,
         diagramType,
         removeEntityFromDiagram,
+        fitToScreen,
+        setEventCallbacks,
+        getZoom,
+        getMousePosition,
+        getIsPanning,
+        getRenderingService,
     } = useDiagramViewContext();
+    
+    // Get current values for display
+    const zoom = getZoom();
+    const mousePosition = getMousePosition();
+    const isPanning = getIsPanning();
     
     const [selectedKey, setSelectedKey] = useState<string>();
     const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
     const [selectedArea, setSelectedArea] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } }>({ start: { x: 0, y: 0 }, end: { x: 0, y: 0 } });
     const [isLoading, setIsLoading] = useState(true);
     
-    // Persistent tracking of entity positions across renders
-    const entityPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
-    
     // Track previous diagram type to detect changes
     const previousDiagramTypeRef = useRef<string>(diagramType);
     
-    // Track previous entities to detect changes
+    // Track previous entities to detect changes  
     const previousEntitiesRef = useRef<string[]>([]);
 
     // Wrapper for setSelectedKey to pass to renderer
@@ -107,199 +114,24 @@ const DiagramContent = () => {
     }, [renderer]);
 
     /**
-     * Rerenders the entire diagram, preserving positions of existing entities
-     * and using grid layout for new entities. This is the main rendering method
-     * that handles all entity positioning and relationship creation.
+     * Simplified rendering method using DiagramRenderingService
+     * Replaces the complex rerenderDiagram function with proper manager-based architecture
      */
     const rerenderDiagram = useCallback(() => {
-        if (!graph || !paper || !renderer) {
+        const renderingService = getRenderingService();
+        
+        if (!renderingService || !renderer) {
             return;
         }
 
-        // Set loading state when starting diagram creation
-        setIsLoading(true);
+        // Use the rendering service to handle all diagram rendering responsibilities
+        renderingService.renderDiagram(renderer, fitToScreen, setIsLoading);
+    }, [getRenderingService, renderer, fitToScreen]);
 
-        // If there are no entities, set loading to false immediately
-        if (currentEntities.length === 0) {
-            setIsLoading(false);
-            return;
-        }
-
-        // Preserve squares, text elements, and existing entity positions before clearing
-        const squares = graph.getElements().filter(element => element.get('type') === 'delegate.square');
-        const textElements = graph.getElements().filter(element => element.get('type') === 'delegate.text');
-        const existingEntities = graph.getElements().filter(element => {
-            const entityData = element.get('data');
-            return entityData?.entity; // This is an entity element
-        });
-        
-        const squareData = squares.map(square => ({
-            element: square,
-            data: square.get('data'),
-            position: square.position(),
-            size: square.size()
-        }));
-        const textData = textElements.map(textElement => ({
-            element: textElement,
-            data: textElement.get('data'),
-            position: textElement.position(),
-            size: textElement.size()
-        }));
-        
-        // Update persistent position tracking with current positions
-        existingEntities.forEach(element => {
-            const entityData = element.get('data');
-            if (entityData?.entity?.SchemaName) {
-                const position = element.position();
-                entityPositionsRef.current.set(entityData.entity.SchemaName, position);
-            }
-        });
-        
-        // Clean up position tracking for entities that are no longer in currentEntities
-        const currentEntityNames = new Set(currentEntities.map(e => e.SchemaName));
-        for (const [schemaName] of entityPositionsRef.current) {
-            if (!currentEntityNames.has(schemaName)) {
-                entityPositionsRef.current.delete(schemaName);
-            }
-        }
-        
-        // Clear existing elements
-        graph.clear();
-        
-        // Additional safety: remove any remaining links that might not have been cleared
-        const remainingLinks = graph.getLinks();
-        remainingLinks.forEach(link => link.remove());
-        
-        // Re-add preserved squares with their data
-        squareData.forEach(({ element, data, position, size }) => {
-            element.addTo(graph);
-            element.position(position.x, position.y);
-            element.resize(size.width, size.height);
-            element.set('data', data);
-            element.toBack(); // Keep squares at the back
-        });
-
-        // Re-add preserved text elements with their data
-        textData.forEach(({ element, data, position, size }) => {
-            element.addTo(graph);
-            element.position(position.x, position.y);
-            element.resize(size.width, size.height);
-            element.set('data', data);
-            element.toFront(); // Keep text elements at the front
-        });
-
-        // Calculate grid layout
-        const layoutOptions = getDefaultLayoutOptions(diagramType);
-        
-        // Get actual container dimensions
-        const containerRect = paper?.el?.getBoundingClientRect();
-        const actualContainerWidth = containerRect?.width || layoutOptions.containerWidth;
-        const actualContainerHeight = containerRect?.height || layoutOptions.containerHeight;
-        
-        // Update layout options with actual container dimensions
-        const updatedLayoutOptions = {
-            ...layoutOptions,
-            containerWidth: actualContainerWidth,
-            containerHeight: actualContainerHeight,
-            diagramType: diagramType
-        };
-        
-        // Separate new entities from existing ones using persistent position tracking
-        const newEntities = currentEntities.filter(entity => 
-            !entityPositionsRef.current.has(entity.SchemaName)
-        );
-        const existingEntitiesWithPositions = currentEntities.filter(entity => 
-            entityPositionsRef.current.has(entity.SchemaName)
-        );
-        
-        // Store entity elements and port maps by SchemaName for easy lookup
-        const entityMap = new Map();
-        const placedEntityPositions: { x: number; y: number; width: number; height: number }[] = [];
-        
-        // First, create existing entities with their preserved positions
-        existingEntitiesWithPositions.forEach((entity) => {
-            const position = entityPositionsRef.current.get(entity.SchemaName);
-            if (!position) return; // Skip if position is undefined
-            
-            const { element, portMap } = renderer.createEntity(entity, position);
-            entityMap.set(entity.SchemaName, { element, portMap });
-            
-            // Track this position for collision avoidance
-            const dimensions = estimateEntityDimensions(entity, diagramType);
-            placedEntityPositions.push({
-                x: position.x,
-                y: position.y,
-                width: dimensions.width,
-                height: dimensions.height
-            });
-        });
-        
-        // Then, create new entities with grid layout that avoids already placed entities
-        if (newEntities.length > 0) {
-            // Calculate actual heights for new entities based on diagram type
-            const entityHeights = newEntities.map(entity => calculateEntityHeight(entity, diagramType));
-            const maxEntityHeight = Math.max(...entityHeights, layoutOptions.entityHeight);
-            
-            const adjustedLayoutOptions = {
-                ...updatedLayoutOptions,
-                entityHeight: maxEntityHeight,
-                diagramType: diagramType
-            };
-            
-            const layout = calculateGridLayout(newEntities, adjustedLayoutOptions, placedEntityPositions);
-            
-            // Create new entities with grid layout positions
-            newEntities.forEach((entity, index) => {
-                const position = layout.positions[index] || { x: 50, y: 50 };
-                const { element, portMap } = renderer.createEntity(entity, position);
-                entityMap.set(entity.SchemaName, { element, portMap });
-                
-                // Update persistent position tracking for newly placed entities
-                entityPositionsRef.current.set(entity.SchemaName, position);
-            });
-        }
-        
-        util.nextFrame(() => {
-            currentEntities.forEach(entity => {
-                renderer.createLinks(entity, entityMap, currentEntities);
-            });
-        });
-
-        // Auto-fit to screen after a short delay to ensure all elements are rendered
-        setTimeout(() => {
-            fitToScreen();
-            // Set loading to false once diagram is complete
-            setIsLoading(false);
-        }, 200);
-    }, [graph, paper, currentEntities, diagramType, renderer, fitToScreen]);
-
-    /**
-     * Rerenders a single entity and its associated links without affecting other entities.
-     * This is more efficient than a full diagram rerender when only one entity needs updating.
-     * @param entitySchemaName The schema name of the entity to rerender
-     */
-    const rerenderSingleEntity = useCallback((entitySchemaName: string) => {
-        if (!graph || !renderer) {
-            return;
-        }
-
-        // Find the entity in currentEntities
-        const entity = currentEntities.find(e => e.SchemaName === entitySchemaName);
-        if (!entity) {
-            return;
-        }
-
-        // Update the entity using the renderer's updateEntity method
-        renderer.updateEntity(entitySchemaName, entity);
-    }, [graph, renderer, currentEntities]);
 
     /**
      * Smart rendering method that detects what has changed and renders accordingly.
-     * - If diagram type changed: full rerender
-     * - If entities were added: partial rerender (add new entities only)
-     * - If entities were removed: no action needed (already handled by removeEntityFromDiagram)
-     * - If only attribute visibility changed: full rerender (for now)
-     * This prevents unnecessary rerenders and duplicate links.
+     * Simplified to work with DiagramRenderingService
      */
     const smartRender = useCallback(() => {
         if (!graph || !paper || !renderer) {
@@ -309,7 +141,11 @@ const DiagramContent = () => {
         // Check if diagram type has changed
         let diagramTypeChanged = false;
         if (previousDiagramTypeRef.current !== diagramType) {
-            entityPositionsRef.current.clear();
+            // Clear rendering service positions when diagram type changes
+            const renderingService = getRenderingService();
+            if (renderingService) {
+                renderingService.clearEntityPositions();
+            }
             previousDiagramTypeRef.current = diagramType;
             diagramTypeChanged = true;
         }
@@ -333,18 +169,13 @@ const DiagramContent = () => {
 
         // If entities were added, we need to render them
         if (entitiesAdded.length > 0) {
-            // For now, do a full rerender when entities are added
-            // TODO: Could be optimized to only add new entities
             rerenderDiagram();
             return;
         }
 
         // If entities were removed, no action needed - removeEntityFromDiagram already handled it
         if (entitiesRemoved.length > 0) {
-            // Just clean up the position tracking for removed entities
-            entitiesRemoved.forEach(entityName => {
-                entityPositionsRef.current.delete(entityName);
-            });
+            // The DiagramRenderingService will handle position cleanup during next render
             return;
         }
 
@@ -375,7 +206,7 @@ const DiagramContent = () => {
         if (needsFullRender) {
             rerenderDiagram();
         }
-    }, [graph, paper, currentEntities, diagramType, renderer, rerenderDiagram]);
+    }, [graph, paper, currentEntities, diagramType, renderer, rerenderDiagram, getRenderingService]);
 
     useEffect(() => {
         smartRender();
@@ -407,7 +238,7 @@ const DiagramContent = () => {
         renderer.updateEntityAttributes(graph, selectedKey);
     }, [selectedKey, graph, renderer]);
 
-    // Set up centralized event callbacks
+    // Set up centralized event callbacks using DiagramInitializer
     useEffect(() => {
         setEventCallbacks({
             onSquareClick: (square: SquareElement) => {
@@ -428,11 +259,11 @@ const DiagramContent = () => {
             },
             onSquareHover: (square: SquareElement, isHovered: boolean) => {
                 // Handle square hover state if needed
-                // For now, the styling is handled in useDiagram
+                // Styling is handled in the diagram initialization
             },
             onTextHover: (text: TextElement, isHovered: boolean) => {
                 // Handle text hover state if needed
-                // For now, the styling is handled in useDiagram
+                // Styling is handled in the diagram initialization
             }
         });
     }, [setEventCallbacks]);

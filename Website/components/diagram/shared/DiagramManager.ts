@@ -10,6 +10,7 @@ import { DiagramSelection } from "./DiagramSelection";
 import { DiagramEntityManager } from "./DiagramEntityManager";
 import { DiagramElementManager } from "./DiagramElementManager";
 import { DiagramPersistenceManager } from "./DiagramPersistenceManager";
+import { DiagramRenderingService } from "./DiagramRenderingService";
 
 export type DiagramType = 'simple' | 'detailed';
 
@@ -47,6 +48,7 @@ export class DiagramManager {
     private entityManager: DiagramEntityManager | null = null;
     private elementManager: DiagramElementManager | null = null;
     private persistenceManager: DiagramPersistenceManager | null = null;
+    private renderingService: DiagramRenderingService | null = null;
 
     // State
     private paperInitialized: boolean = false;
@@ -73,6 +75,7 @@ export class DiagramManager {
         this.entityManager = new DiagramEntityManager(graph, paper);
         this.elementManager = new DiagramElementManager(graph, paper);
         this.persistenceManager = new DiagramPersistenceManager(graph, paper, this.controls);
+        this.renderingService = new DiagramRenderingService(graph, paper, this.entityManager, this.elementManager);
 
         this.paperInitialized = true;
         this.graphInitialized = true;
@@ -232,5 +235,23 @@ export class DiagramManager {
 
     public clearSelection(): void {
         this.selection?.clearSelection();
+    }
+
+    // Control state methods
+    public getZoom(): number {
+        return this.controls?.getZoom() || 1;
+    }
+
+    public getMousePosition(): { x: number; y: number } {
+        return this.controls?.getMousePosition() || { x: 0, y: 0 };
+    }
+
+    public getIsPanning(): boolean {
+        return this.controls?.getIsPanning() || false;
+    }
+
+    // Rendering service access
+    public getRenderingService(): DiagramRenderingService | null {
+        return this.renderingService;
     }
 }

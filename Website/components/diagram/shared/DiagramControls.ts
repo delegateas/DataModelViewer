@@ -5,12 +5,29 @@ export class DiagramControls {
 
     private zoom: number = 1;
     private mousePosition: { x: number; y: number } = { x: 0, y: 0 };
+    private isPanning: boolean = false;
 
     constructor(paper: dia.Paper) {
         this.paper = paper;
 
-        this.paper.el.addEventListener('wheel', this.handleWheel);
-        this.paper.el.addEventListener('mousemove', this.handleMouseMove);
+        this.paper.el.addEventListener('wheel', this.handleWheel.bind(this));
+        this.paper.el.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        
+        // Track panning state
+        this.paper.on('blank:pointerdown', () => {
+            this.isPanning = false; // Initially not panning
+        });
+        
+        this.paper.on('blank:pointermove', () => {
+            this.isPanning = true; // We are now panning
+        });
+        
+        this.paper.on('blank:pointerup', () => {
+            // Reset panning state after a short delay
+            setTimeout(() => {
+                this.isPanning = false;
+            }, 100);
+        });
     }
 
     public getZoom() {
@@ -19,6 +36,14 @@ export class DiagramControls {
 
     public getPanPosition() {
         return this.mousePosition;
+    }
+
+    public getMousePosition() {
+        return this.mousePosition;
+    }
+
+    public getIsPanning() {
+        return this.isPanning;
     }
 
     public reset() {

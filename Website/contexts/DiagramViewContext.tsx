@@ -1,5 +1,5 @@
+import { DiagramActions, DiagramState, useDiagram } from '@/components/diagram/hooks/useDiagram';
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useDiagram, DiagramState, DiagramActions } from '@/components/diagram/hooks/useDiagramRefactored';
 
 interface DiagramViewContextType extends DiagramState, DiagramActions {}
 

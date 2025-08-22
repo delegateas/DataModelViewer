@@ -28,6 +28,13 @@ export interface DiagramActions {
   saveDiagram: () => void;
   loadDiagram: (file: File) => Promise<void>;
   clearDiagram: () => void;
+  fitToScreen: () => void;
+  resetView: () => void;
+  setEventCallbacks: (callbacks: any) => void;
+  getZoom: () => number;
+  getMousePosition: () => { x: number; y: number };
+  getIsPanning: () => boolean;
+  getRenderingService: () => any | null;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -169,6 +176,26 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setDiagramType('simple');
   }, [diagramManager]);
 
+  const setEventCallbacks = useCallback((callbacks: any) => {
+    diagramManager.setEventCallbacks(callbacks);
+  }, [diagramManager]);
+
+  const getZoom = useCallback(() => {
+    return diagramManager.getZoom();
+  }, [diagramManager]);
+
+  const getMousePosition = useCallback(() => {
+    return diagramManager.getMousePosition();
+  }, [diagramManager]);
+
+  const getIsPanning = useCallback(() => {
+    return diagramManager.getIsPanning();
+  }, [diagramManager]);
+
+  const getRenderingService = useCallback(() => {
+    return diagramManager.getRenderingService();
+  }, [diagramManager]);
+
   // Update selection styling whenever selectedElements changes
   useEffect(() => {
     const paper = diagramManager.getPaper();
@@ -207,5 +234,12 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     saveDiagram,
     loadDiagram,
     clearDiagram,
+    fitToScreen,
+    resetView,
+    setEventCallbacks,
+    getZoom,
+    getMousePosition,
+    getIsPanning,
+    getRenderingService,
   };
 };
