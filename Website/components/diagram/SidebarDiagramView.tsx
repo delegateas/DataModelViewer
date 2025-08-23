@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2, Route } from 'lucide-react';
 import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagram/panes';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -17,6 +17,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     const isMobile = useIsMobile();
     const [isDataExpanded, setIsDataExpanded] = useState(true);
     const [isGeneralExpanded, setIsGeneralExpanded] = useState(false);
+    const [isRouterExpanded, setIsRouterExpanded] = useState(false);
     const [isEntitySheetOpen, setIsEntitySheetOpen] = useState(false);
     const [isGroupSheetOpen, setIsGroupSheetOpen] = useState(false);
     const [isResetSheetOpen, setIsResetSheetOpen] = useState(false);
@@ -33,7 +34,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         );
     }
 
-    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType, clearDiagram } = diagramContext;
+    const { addEntityToDiagram, addGroupToDiagram, addSquareToDiagram, addTextToDiagram, saveDiagram, loadDiagram, currentEntities, diagramType, updateDiagramType, clearDiagram, routeAllConnections } = diagramContext;
 
     const handleLoadDiagram = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -51,6 +52,10 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         clearDiagram();
         // Then add the selected group
         addGroupToDiagram(group);
+    };
+
+    const handleRouteAll = () => {
+        routeAllConnections();
     };
 
     // Use the clearDiagram function from the hook
@@ -137,6 +142,26 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                             >
                                 <Type className="w-4 h-4" />
                                 Text
+                            </Button>
+                        </CollapsibleContent>
+                    </Collapsible>
+
+                    {/* Router Section */}
+                    <Collapsible open={isRouterExpanded} onOpenChange={setIsRouterExpanded}>
+                        <CollapsibleTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                                <span className="font-medium">Router</span>
+                                {isRouterExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-2 pl-4 pt-2">
+                            <Button 
+                                variant="ghost" 
+                                className="w-full justify-start gap-2 h-auto py-2"
+                                onClick={handleRouteAll}
+                            >
+                                <Route className="w-4 h-4" />
+                                Re-route All
                             </Button>
                         </CollapsibleContent>
                     </Collapsible>

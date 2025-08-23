@@ -36,39 +36,61 @@ export class DiagramInitializer {
             // Continue without avoid router if it fails
         }
         
-        // let avoidRouter;
-        // try {
-        //     avoidRouter = new AvoidRouter(this.graph, {
-        //         shapeBufferDistance: 10,
-        //         idealNudgingDistance: 15,
-        //     });
-        //     avoidRouter.routeAll();
-        //     avoidRouter.addGraphListeners();
-        //     (routers as any).avoid = function(vertices: any, options: any, linkView: any) {
-        //         const graph = linkView.model.graph as dia.Graph;
-        //         const avoidRouterInstance = (graph as any).__avoidRouter__ as AvoidRouter;
+        let avoidRouter;
+        let avoidRouterFailed = false; // Circuit breaker flag
+        try {
+            avoidRouter = new AvoidRouter(this.graph, {
+                shapeBufferDistance: 10,
+                idealNudgingDistance: 15,
+            });
+            avoidRouter.routeAll();
+            // Essential: Graph listeners keep avoid router state synchronized with diagram changes
+            // Without this, the avoid router crashes when elements are added/moved/removed
+            avoidRouter.addGraphListeners();
+            (routers as any).avoid = function(vertices: any, options: any, linkView: any) {
+                // Circuit breaker: if avoid router has failed, use manhattan routing immediately
+                if (avoidRouterFailed) {
+                    return (routers as any).manhattan(vertices, options, linkView);
+                }
 
-        //         if (!avoidRouterInstance) {
-        //             return vertices;
-        //         }
+                const graph = linkView.model.graph as dia.Graph;
+                const avoidRouterInstance = (graph as any).__avoidRouter__ as AvoidRouter;
 
-        //         const link = linkView.model as dia.Link;
+                if (!avoidRouterInstance) {
+                    console.warn('Avoid router instance not available, using manhattan routing');
+                    return (routers as any).manhattan(vertices, options, linkView);
+                }
 
-        //         // This will update link using libavoid if possible
-        //         avoidRouterInstance.updateConnector(link);
-        //         const connRef = avoidRouterInstance.edgeRefs[link.id];
-        //         if (!connRef) {
-        //             return vertices;
-        //         }
+                const link = linkView.model as dia.Link;
 
-        //         const route = connRef.displayRoute();
-        //         return avoidRouterInstance.getVerticesFromAvoidRoute(route);
-        //     };
-        //     (this.graph as any).__avoidRouter__ = avoidRouter;
-        // } catch (error) {
-        //     console.error('Failed to initialize AvoidRouter instance:', error);
-        //     // Continue without avoid router functionality
-        // }
+                try {
+                    // Check if the avoid router is still in a valid state
+                    if (avoidRouterInstance.edgeRefs && typeof avoidRouterInstance.updateConnector === 'function') {
+                        // This will update link using libavoid if possible
+                        avoidRouterInstance.updateConnector(link);
+                        const connRef = avoidRouterInstance.edgeRefs[link.id];
+                        if (connRef && typeof connRef.displayRoute === 'function') {
+                            const route = connRef.displayRoute();
+                            const computedVertices = avoidRouterInstance.getVerticesFromAvoidRoute(route);
+                            return computedVertices;
+                        }
+                    }
+                    
+                    // If we reach here, avoid router couldn't process this link
+                    return vertices;
+                } catch (error) {
+                    // Set circuit breaker flag to prevent further avoid router attempts
+                    avoidRouterFailed = true;
+                    console.error('Avoid router failed permanently, switching to manhattan routing for all future links:', error);
+                    // Fall back to manhattan routing
+                    return (routers as any).manhattan(vertices, options, linkView);
+                }
+            };
+            (this.graph as any).__avoidRouter__ = avoidRouter;
+        } catch (error) {
+            console.error('Failed to initialize AvoidRouter instance:', error);
+            // Continue without avoid router functionality
+        }
 
         // Create paper with light amber background
         this.paper = new dia.Paper({

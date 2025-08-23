@@ -35,6 +35,7 @@ export interface DiagramActions {
   getMousePosition: () => { x: number; y: number };
   getIsPanning: () => boolean;
   getRenderingService: () => any | null;
+  routeAllConnections: () => void;
 }
 
 export const useDiagram = (): DiagramState & DiagramActions => {
@@ -196,6 +197,10 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     return diagramManager.getRenderingService();
   }, [diagramManager]);
 
+  const routeAllConnections = useCallback(() => {
+    diagramManager.routeAllConnections();
+  }, [diagramManager]);
+
   // Update selection styling whenever selectedElements changes
   useEffect(() => {
     const paper = diagramManager.getPaper();
@@ -241,5 +246,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     getMousePosition,
     getIsPanning,
     getRenderingService,
+    routeAllConnections,
   };
 };

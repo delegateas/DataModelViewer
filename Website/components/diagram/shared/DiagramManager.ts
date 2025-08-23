@@ -254,4 +254,27 @@ export class DiagramManager {
     public getRenderingService(): DiagramRenderingService | null {
         return this.renderingService;
     }
+
+    // Avoid router access and control
+    public getAvoidRouter(): any | null {
+        const graph = this.getGraph();
+        if (graph) {
+            return (graph as any).__avoidRouter__ || null;
+        }
+        return null;
+    }
+
+    public routeAllConnections(): void {
+        const avoidRouter = this.getAvoidRouter();
+        if (avoidRouter && typeof avoidRouter.routeAll === 'function') {
+            try {
+                avoidRouter.routeAll();
+                console.log('✅ Successfully re-routed all connections');
+            } catch (error) {
+                console.error('❌ Failed to route connections:', error);
+            }
+        } else {
+            console.warn('⚠️ Avoid router not available or routeAll method not found');
+        }
+    }
 }
