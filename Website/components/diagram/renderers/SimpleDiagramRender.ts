@@ -68,7 +68,6 @@ export class SimpleDiagramRenderer extends DiagramRenderer {
                         ? { id: targetInfo.element.id, port: targetInfo.portMap.left }
                         : { id: targetInfo.element.id },
                     router: { name: 'avoid', args: { padding: 10 } },
-                    // router: { name: 'manhattan', args: { padding: 10 } },
                     connector: { name: 'jumpover', args: { radius: 8 } },
                     attrs: {
                         line: {

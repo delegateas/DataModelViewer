@@ -44,8 +44,6 @@ export class DiagramInitializer {
                 idealNudgingDistance: 15,
             });
             avoidRouter.routeAll();
-            // Essential: Graph listeners keep avoid router state synchronized with diagram changes
-            // Without this, the avoid router crashes when elements are added/moved/removed
             avoidRouter.addGraphListeners();
             (routers as any).avoid = function(vertices: any, options: any, linkView: any) {
                 // Circuit breaker: if avoid router has failed, use manhattan routing immediately
