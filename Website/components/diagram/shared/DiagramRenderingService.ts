@@ -2,8 +2,8 @@ import { dia, util } from '@joint/core';
 import { EntityType } from '@/lib/Types';
 import { DiagramEntityManager } from './DiagramEntityManager';
 import { DiagramElementManager } from './DiagramElementManager';
-import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '../GridLayoutManager';
-import { DiagramRenderer } from '../DiagramRenderer';
+import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from './GridLayoutManager';
+import { DiagramRenderer } from '../renderers/DiagramRenderer';
 
 /**
  * Service responsible for rendering and re-rendering diagrams

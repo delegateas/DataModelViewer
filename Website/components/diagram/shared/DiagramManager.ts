@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { dia } from "@joint/core";
 import { EntityType, AttributeType, GroupType } from "@/lib/Types";
-import { DiagramRenderer } from "@/components/diagram/DiagramRenderer";
+import { DiagramRenderer } from "@/components/diagram/renderers/DiagramRenderer";
 
 // Import all the manager classes
 import { DiagramInitializer, DiagramInitializationCallbacks } from "./DiagramInitializer";

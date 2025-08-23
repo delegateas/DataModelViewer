@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { dia } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
-import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
+import { DiagramRenderer } from '@/components/diagram/renderers/DiagramRenderer';
 import { entityStyleManager } from '@/lib/entity-styling';
 import { DiagramManager } from '@/components/diagram/shared/DiagramManager';
 

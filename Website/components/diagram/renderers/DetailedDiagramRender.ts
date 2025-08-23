@@ -1,6 +1,6 @@
 // DetailedDiagramRender.ts
 import { dia, shapes } from '@joint/core';
-import { DiagramRenderer, IPortMap } from '../DiagramRenderer';
+import { DiagramRenderer, IPortMap } from './DiagramRenderer';
 import { EntityElement } from '../elements/EntityElement';
 import { AttributeType, EntityType } from '@/lib/Types';
 
