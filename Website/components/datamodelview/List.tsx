@@ -98,7 +98,6 @@ export const List = ({ }: IListProps) => {
             // Default scroll behavior for other cases
             const scrollElement = parentRef.current;
             if (scrollElement) {
-                console.log("setting scroll to: " + offset + " - " + options.adjustments)
                 scrollElement.scrollTop = offset;
             }
         },

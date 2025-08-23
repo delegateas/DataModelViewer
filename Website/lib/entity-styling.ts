@@ -140,8 +140,6 @@ export class EntityStyleManager {
     const elementId = element.id.toString();
     const state = this.getElementState(elementId);
     
-    console.log('🎨 Applying styling to entity:', elementId, 'State:', state);
-    
     // Get the element view and HTML content
     const elementView = element.findView(paper);
     if (!elementView) return;
@@ -154,9 +152,7 @@ export class EntityStyleManager {
     // Get styling for current state
     const styling = this.getStyleForState(state);
     
-    console.log('🎨 Styling to apply:', styling);
-    
-    // Always apply styling based on current state (selection takes precedence over hover)
+    // Apply styling based on current state (selection takes precedence over hover)
     htmlContent.style.border = styling.border;
     htmlContent.style.borderRadius = styling.borderRadius;
     elementView.el.style.cursor = styling.cursor;
@@ -222,7 +218,6 @@ export class EntityStyleManager {
    */
   handleEntityMouseLeave(element: dia.Element, paper: dia.Paper): void {
     const elementId = element.id.toString();
-    console.log('🖱️ Mouse leave entity:', elementId, 'Selected:', this.selectedElements.has(elementId));
     this.setElementHover(elementId, false);
     this.applyEntityStyling(element, paper);
   }
@@ -231,7 +226,6 @@ export class EntityStyleManager {
    * Handle selection change
    */
   handleSelectionChange(selectedElementIds: dia.Cell.ID[], graph: dia.Graph, paper: dia.Paper): void {
-    console.log('🔄 Selection change:', selectedElementIds);
     this.setSelectedElements(selectedElementIds);
     this.applyAllEntityStyling(graph, paper);
   }
