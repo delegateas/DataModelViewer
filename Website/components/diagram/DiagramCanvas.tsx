@@ -10,7 +10,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
   const [isCtrlPressed, setIsCtrlPressed] = useState(false);
 
   const { 
-    isPanning, 
+    getIsPanning, 
     initializePaper, 
     destroyPaper 
   } = useDiagramViewContext();
@@ -59,7 +59,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
 
   // Determine cursor based on state
   const getCursor = () => {
-    if (isPanning) return 'cursor-grabbing';
+    if (getIsPanning()) return 'cursor-grabbing';
     if (isCtrlPressed) return 'cursor-grab';
     return 'cursor-crosshair'; // Default to crosshair for area selection
   };
@@ -72,21 +72,21 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
       />
       
       {/* Interaction mode indicators */}
-      {isPanning && (
+      {getIsPanning() && (
         <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-1 rounded-md text-sm font-medium flex items-center gap-2">
           <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
           Panning...
         </div>
       )}
       
-      {isCtrlPressed && !isPanning && (
+      {isCtrlPressed && !getIsPanning() && (
         <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-md text-sm font-medium flex items-center gap-2">
           <kbd className="bg-green-600 px-1 rounded text-xs">Ctrl</kbd>
           Hold + Drag to Pan
         </div>
       )}
       
-      {!isCtrlPressed && !isPanning && (
+      {!isCtrlPressed && !getIsPanning() && (
         <div className="absolute top-4 left-4 bg-purple-500 text-white px-3 py-1 rounded-md text-sm font-medium flex items-center gap-2">
           <div className="w-2 h-2 border border-white rounded-sm"></div>
           Drag to Select Area
