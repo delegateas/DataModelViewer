@@ -200,7 +200,7 @@ export const getDefaultLayoutOptions = (diagramType: DiagramType = 'detailed'): 
       containerHeight: 1080,
       entityWidth: 200, // Smaller width for simple entities
       entityHeight: 80, // Smaller height for simple entities
-      padding: 40, // Less padding for simple diagrams
+      padding: 80, // Less padding for simple diagrams
       margin: 40, // Less margin for simple diagrams
       diagramType: 'simple'
     };

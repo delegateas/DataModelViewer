@@ -36,39 +36,39 @@ export class DiagramInitializer {
             // Continue without avoid router if it fails
         }
         
-        let avoidRouter;
-        try {
-            avoidRouter = new AvoidRouter(this.graph, {
-                shapeBufferDistance: 10,
-                idealNudgingDistance: 15,
-            });
-            avoidRouter.routeAll();
-            avoidRouter.addGraphListeners();
-            (routers as any).avoid = function(vertices: any, options: any, linkView: any) {
-                const graph = linkView.model.graph as dia.Graph;
-                const avoidRouterInstance = (graph as any).__avoidRouter__ as AvoidRouter;
+        // let avoidRouter;
+        // try {
+        //     avoidRouter = new AvoidRouter(this.graph, {
+        //         shapeBufferDistance: 10,
+        //         idealNudgingDistance: 15,
+        //     });
+        //     avoidRouter.routeAll();
+        //     avoidRouter.addGraphListeners();
+        //     (routers as any).avoid = function(vertices: any, options: any, linkView: any) {
+        //         const graph = linkView.model.graph as dia.Graph;
+        //         const avoidRouterInstance = (graph as any).__avoidRouter__ as AvoidRouter;
 
-                if (!avoidRouterInstance) {
-                    return vertices;
-                }
+        //         if (!avoidRouterInstance) {
+        //             return vertices;
+        //         }
 
-                const link = linkView.model as dia.Link;
+        //         const link = linkView.model as dia.Link;
 
-                // This will update link using libavoid if possible
-                avoidRouterInstance.updateConnector(link);
-                const connRef = avoidRouterInstance.edgeRefs[link.id];
-                if (!connRef) {
-                    return vertices;
-                }
+        //         // This will update link using libavoid if possible
+        //         avoidRouterInstance.updateConnector(link);
+        //         const connRef = avoidRouterInstance.edgeRefs[link.id];
+        //         if (!connRef) {
+        //             return vertices;
+        //         }
 
-                const route = connRef.displayRoute();
-                return avoidRouterInstance.getVerticesFromAvoidRoute(route);
-            };
-            (this.graph as any).__avoidRouter__ = avoidRouter;
-        } catch (error) {
-            console.error('Failed to initialize AvoidRouter instance:', error);
-            // Continue without avoid router functionality
-        }
+        //         const route = connRef.displayRoute();
+        //         return avoidRouterInstance.getVerticesFromAvoidRoute(route);
+        //     };
+        //     (this.graph as any).__avoidRouter__ = avoidRouter;
+        // } catch (error) {
+        //     console.error('Failed to initialize AvoidRouter instance:', error);
+        //     // Continue without avoid router functionality
+        // }
 
         // Create paper with light amber background
         this.paper = new dia.Paper({
