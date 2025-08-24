@@ -9,6 +9,7 @@ import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
 import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiagramRender';
 import { DetailedDiagramRender } from '@/components/diagram/renderers/DetailedDiagramRender';
 import { PRESET_COLORS } from '@/components/diagram/shared/DiagramConstants';
+import { entityStyleManager } from '@/lib/entity-styling';
 
 export type DiagramType = 'simple' | 'detailed';
 
@@ -26,14 +27,23 @@ export interface DiagramState {
 }
 
 export interface DiagramActions {
+  // Zoom
   zoomIn: () => void;
   zoomOut: () => void;
   resetView: () => void;
   fitToScreen: () => void;
   setZoom: (zoom: number) => void;
+
+  // Pan
   setIsPanning: (isPanning: boolean) => void;
+
+  // Select
   selectElement: (elementId: string) => void;
+  selectMultipleElements: (elementIds: string[]) => void;
+  toggleElementSelection: (elementId: string) => void;
   clearSelection: () => void;
+
+  // Other
   initializePaper: (container: HTMLElement, options?: any) => void;
   destroyPaper: () => void;
   selectGroup: (group: GroupType) => void;
@@ -57,9 +67,10 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   const graphRef = useRef<dia.Graph | null>(null);
   const zoomRef = useRef(1);
   const isPanningRef = useRef(false);
+  const selectedElementsRef = useRef<string[]>([]);
   const cleanupRef = useRef<(() => void) | null>(null);
   const isAddingAttributeRef = useRef(false);
-  
+
   const [zoom, setZoomState] = useState(1);
   const [isPanning, setIsPanningState] = useState(false);
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
@@ -148,12 +159,28 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   }, [updatePanningDisplay]);
 
   const selectElement = useCallback((elementId: string) => {
-    setSelectedElements(prev => 
-      prev.includes(elementId) ? prev : [...prev, elementId]
-    );
+    const newSelection = [elementId];
+    selectedElementsRef.current = newSelection;
+    setSelectedElements(newSelection);
+  }, []);
+
+  const selectMultipleElements = useCallback((elementIds: string[]) => {
+    selectedElementsRef.current = elementIds;
+    setSelectedElements(elementIds);
+  }, []);
+
+  const toggleElementSelection = useCallback((elementId: string) => {
+    setSelectedElements(prev => {
+      const newSelection = prev.includes(elementId) 
+        ? prev.filter(id => id !== elementId) 
+        : [...prev, elementId];
+      selectedElementsRef.current = newSelection;
+      return newSelection;
+    });
   }, []);
 
   const clearSelection = useCallback(() => {
+    selectedElementsRef.current = [];
     setSelectedElements([]);
   }, []);
 
@@ -733,21 +760,93 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     paperRef.current = paper;
     setPaperInitialized(true);
     
+    // Update entity style manager when selected elements change
+    const updateEntityStyleManager = () => {
+      entityStyleManager.handleSelectionChange(
+        selectedElementsRef.current,
+        graphRef.current!,
+        paper
+      );
+    };
+    
+    // Area selection state tracking
+    let isSelecting = false;
+    let selectionStartX = 0;
+    let selectionStartY = 0;
+    let selectionElement: SVGRectElement | null = null;
+    let currentAreaSelection: string[] = []; // Track current area selection
+
+    // Create selection overlay element
+    const createSelectionOverlay = (x: number, y: number, width: number, height: number) => {
+      const paperSvg = paper.el.querySelector('svg');
+      if (!paperSvg) return null;
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x.toString());
+      rect.setAttribute('y', y.toString());
+      rect.setAttribute('width', width.toString());
+      rect.setAttribute('height', height.toString());
+      rect.setAttribute('fill', 'rgba(59, 130, 246, 0.1)');
+      rect.setAttribute('stroke', '#3b82f6');
+      rect.setAttribute('stroke-width', '2');
+      rect.setAttribute('stroke-dasharray', '5,5');
+      rect.setAttribute('pointer-events', 'none');
+      rect.style.zIndex = '1000';
+      
+      paperSvg.appendChild(rect);
+      return rect;
+    };
+
     // Setup event listeners
-    paper.on('blank:pointerdown', () => {
-      updatePanningDisplay(true);
-      const paperEl = paper.el as HTMLElement;
-      paperEl.style.cursor = 'grabbing';
+    paper.on('blank:pointerdown', (evt: any) => {
+      const isCtrlPressed = evt.originalEvent?.ctrlKey || evt.originalEvent?.metaKey;
+      
+      if (isCtrlPressed) {
+        // Ctrl + drag = pan
+        updatePanningDisplay(true);
+        const paperEl = paper.el as HTMLElement;
+        paperEl.style.cursor = 'grabbing';
+      } else {
+        // Regular drag = area selection
+        const currentTranslate = paper.translate();
+        const currentScale = paper.scale();
+        const rect = (paper.el as HTMLElement).getBoundingClientRect();
+        
+        // Calculate start position in diagram coordinates
+        selectionStartX = (evt.originalEvent.clientX - rect.left - currentTranslate.tx) / currentScale.sx;
+        selectionStartY = (evt.originalEvent.clientY - rect.top - currentTranslate.ty) / currentScale.sy;
+        
+        isSelecting = true;
+        const paperEl = paper.el as HTMLElement;
+        paperEl.style.cursor = 'crosshair';
+      }
     });
 
     paper.on('blank:pointerup', () => {
-      updatePanningDisplay(false);
+      if (isPanningRef.current) {
+        updatePanningDisplay(false);
+      }
+      
+      if (isSelecting) {
+        // Finalize selection and apply permanent visual feedback
+        updateEntityStyleManager();
+        
+        isSelecting = false;
+        currentAreaSelection = []; // Clear the area selection tracking
+        // Remove selection overlay
+        if (selectionElement) {
+          selectionElement.remove();
+          selectionElement = null;
+        }
+      }
+      
       const paperEl = paper.el as HTMLElement;
       paperEl.style.cursor = 'default';
     });
 
     paper.on('blank:pointermove', (evt: any) => {
       if (isPanningRef.current) {
+        // Handle panning
         const currentTranslate = paper.translate();
         const deltaX = evt.originalEvent.movementX || 0;
         const deltaY = evt.originalEvent.movementY || 0;
@@ -755,6 +854,187 @@ export const useDiagram = (): DiagramState & DiagramActions => {
         const newTranslateY = currentTranslate.ty + deltaY;
         paper.translate(newTranslateX, newTranslateY);
         updatePanPosition({ x: newTranslateX, y: newTranslateY });
+      } else if (isSelecting) {
+        // Handle area selection
+        const currentTranslate = paper.translate();
+        const currentScale = paper.scale();
+        const rect = (paper.el as HTMLElement).getBoundingClientRect();
+        
+        // Calculate current mouse position in diagram coordinates
+        const currentX = (evt.originalEvent.clientX - rect.left - currentTranslate.tx) / currentScale.sx;
+        const currentY = (evt.originalEvent.clientY - rect.top - currentTranslate.ty) / currentScale.sy;
+        
+        // Calculate selection rectangle bounds
+        const x = Math.min(selectionStartX, currentX);
+        const y = Math.min(selectionStartY, currentY);
+        const width = Math.abs(currentX - selectionStartX);
+        const height = Math.abs(currentY - selectionStartY);
+        
+        // Convert to screen coordinates for overlay
+        const screenX = x * currentScale.sx + currentTranslate.tx;
+        const screenY = y * currentScale.sy + currentTranslate.ty;
+        const screenWidth = width * currentScale.sx;
+        const screenHeight = height * currentScale.sy;
+        
+        // Update or create selection overlay
+        if (selectionElement) {
+          selectionElement.setAttribute('x', screenX.toString());
+          selectionElement.setAttribute('y', screenY.toString());
+          selectionElement.setAttribute('width', screenWidth.toString());
+          selectionElement.setAttribute('height', screenHeight.toString());
+        } else {
+          selectionElement = createSelectionOverlay(screenX, screenY, screenWidth, screenHeight);
+        }
+        
+        // Select elements within the area and provide visual feedback
+        if (graphRef.current && width > 10 && height > 10) { // Minimum selection size
+          const elementsInArea = graphRef.current.getElements().filter(element => {
+            const bbox = element.getBBox();
+            const elementType = element.get('type');
+            
+            // Check if element center is within selection bounds
+            const elementCenterX = bbox.x + bbox.width / 2;
+            const elementCenterY = bbox.y + bbox.height / 2;
+            
+            return elementCenterX >= x && elementCenterX <= x + width && 
+                   elementCenterY >= y && elementCenterY <= y + height;
+          });
+          
+          // Update selected elements in real-time during drag
+          const selectedIds = elementsInArea.map(el => el.id.toString());
+          currentAreaSelection = selectedIds; // Store for use in pointerup
+          selectedElementsRef.current = selectedIds;
+          setSelectedElements(selectedIds);
+          
+          // Apply visual feedback using entity style manager
+          entityStyleManager.handleSelectionChange(selectedIds, graphRef.current, paper);
+        }
+      }
+    });
+
+    // Group dragging state
+    let isGroupDragging = false;
+    let groupDragStartPositions: { [id: string]: { x: number; y: number } } = {};
+    let dragStartMousePos = { x: 0, y: 0 };
+
+    // Element interaction handlers
+    paper.on('element:pointerdown', (elementView: dia.ElementView, evt: any) => {
+      const element = elementView.model;
+      const elementType = element.get('type');
+      
+      const elementId = element.id.toString();
+      const isCtrlPressed = evt.originalEvent?.ctrlKey || evt.originalEvent?.metaKey;
+      const currentSelection = selectedElementsRef.current;
+      
+      if (isCtrlPressed) {
+        // Ctrl+click: toggle selection
+        toggleElementSelection(elementId);
+        evt.preventDefault();
+        evt.stopPropagation();
+        
+        // Update visual feedback after a short delay to let state update
+        setTimeout(() => {
+          updateEntityStyleManager();
+        }, 0);
+      } else if (currentSelection.includes(elementId) && currentSelection.length > 1) {
+        // Start group dragging if clicking on already selected element (and there are multiple selected)
+        isGroupDragging = true;
+        groupDragStartPositions = {};
+        
+        // Store initial positions for all selected elements
+        currentSelection.forEach(id => {
+          const elem = graphRef.current?.getCell(id);
+          if (elem) {
+            const pos = elem.position();
+            groupDragStartPositions[id] = { x: pos.x, y: pos.y };
+          }
+        });
+        
+        // Store initial mouse position
+        const rect = (paper.el as HTMLElement).getBoundingClientRect();
+        const currentTranslate = paper.translate();
+        const currentScale = paper.scale();
+        dragStartMousePos = {
+          x: (evt.originalEvent.clientX - rect.left - currentTranslate.tx) / currentScale.sx,
+          y: (evt.originalEvent.clientY - rect.top - currentTranslate.ty) / currentScale.sy
+        };
+        
+        evt.preventDefault();
+        evt.stopPropagation();
+      } else if (currentSelection.includes(elementId) && currentSelection.length === 1) {
+        // Single selected element - allow normal JointJS dragging behavior
+        // Don't prevent default, let JointJS handle the dragging
+        return;
+      } else {
+        // Regular click: clear selection and select only this element
+        clearSelection();
+        selectElement(elementId);
+        
+        // Update visual feedback
+        updateEntityStyleManager();
+      }
+    });
+
+    paper.on('element:pointermove', (elementView: dia.ElementView, evt: any) => {
+      if (isGroupDragging && Object.keys(groupDragStartPositions).length > 0) {
+        const rect = (paper.el as HTMLElement).getBoundingClientRect();
+        const currentTranslate = paper.translate();
+        const currentScale = paper.scale();
+        
+        const currentMouseX = (evt.originalEvent.clientX - rect.left - currentTranslate.tx) / currentScale.sx;
+        const currentMouseY = (evt.originalEvent.clientY - rect.top - currentTranslate.ty) / currentScale.sy;
+        
+        const deltaX = currentMouseX - dragStartMousePos.x;
+        const deltaY = currentMouseY - dragStartMousePos.y;
+        
+        // Move all selected elements
+        Object.keys(groupDragStartPositions).forEach(id => {
+          const elem = graphRef.current?.getCell(id);
+          if (elem) {
+            const startPos = groupDragStartPositions[id];
+            elem.set('position', { x: startPos.x + deltaX, y: startPos.y + deltaY });
+          }
+        });
+        
+        evt.preventDefault();
+        evt.stopPropagation();
+      }
+    });
+
+    paper.on('element:pointerup', () => {
+      isGroupDragging = false;
+      groupDragStartPositions = {};
+    });
+
+    // Clear selection when clicking on blank area (unless Ctrl+dragging)
+    paper.on('blank:pointerdown', (evt: any) => {
+      const isCtrlPressed = evt.originalEvent?.ctrlKey || evt.originalEvent?.metaKey;
+      
+      if (isCtrlPressed) {
+        // Ctrl + drag = pan
+        updatePanningDisplay(true);
+        const paperEl = paper.el as HTMLElement;
+        paperEl.style.cursor = 'grabbing';
+      } else {
+        // Clear selection before starting area selection
+        if (!isSelecting) {
+          clearSelection();
+          // Clear visual feedback
+          updateEntityStyleManager();
+        }
+        
+        // Regular drag = area selection
+        const currentTranslate = paper.translate();
+        const currentScale = paper.scale();
+        const rect = (paper.el as HTMLElement).getBoundingClientRect();
+        
+        // Calculate start position in diagram coordinates
+        selectionStartX = (evt.originalEvent.clientX - rect.left - currentTranslate.tx) / currentScale.sx;
+        selectionStartY = (evt.originalEvent.clientY - rect.top - currentTranslate.ty) / currentScale.sy;
+        
+        isSelecting = true;
+        const paperEl = paper.el as HTMLElement;
+        paperEl.style.cursor = 'crosshair';
       }
     });
 
@@ -833,6 +1113,13 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setGraphInitialized(false);
   }, [setPaperInitialized, setGraphInitialized]);
 
+  // Update selection styling whenever selectedElements changes
+  useEffect(() => {
+    if (paperRef.current && graphRef.current) {
+      entityStyleManager.handleSelectionChange(selectedElements, graphRef.current, paperRef.current);
+    }
+  }, [selectedElements]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -861,6 +1148,8 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     setZoom,
     setIsPanning,
     selectElement,
+    selectMultipleElements,
+    toggleElementSelection,
     clearSelection,
     initializePaper,
     destroyPaper,

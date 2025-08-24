@@ -8,6 +8,7 @@ import { TextElement } from '@/components/diagram/elements/TextElement';
 import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
 import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
 import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
+import { entityStyleManager } from '@/lib/entity-styling';
 import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
 import { TextPropertiesPane } from '@/components/diagram/panes/TextPropertiesPane';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '@/components/diagram/GridLayoutManager';
@@ -29,6 +30,7 @@ const DiagramContent = () => {
         currentEntities,
         zoom,
         mousePosition,
+        isPanning,
         selectGroup,
         fitToScreen,
         addAttributeToEntity,
@@ -39,6 +41,7 @@ const DiagramContent = () => {
     
     const [selectedKey, setSelectedKey] = useState<string>();
     const [selectedEntityForActions, setSelectedEntityForActions] = useState<string>();
+    const [selectedArea, setSelectedArea] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } }>({ start: { x: 0, y: 0 }, end: { x: 0, y: 0 } });
     const [isLoading, setIsLoading] = useState(true);
     
     // Persistent tracking of entity positions across renders
@@ -128,7 +131,6 @@ const DiagramContent = () => {
         // Check if diagram type has changed and clear all positions if so
         let diagramTypeChanged = false;
         if (previousDiagramTypeRef.current !== diagramType) {
-            console.log(`🔄 Diagram type changed from ${previousDiagramTypeRef.current} to ${diagramType}, clearing all entity positions`);
             entityPositionsRef.current.clear();
             previousDiagramTypeRef.current = diagramType;
             diagramTypeChanged = true;
@@ -167,29 +169,23 @@ const DiagramContent = () => {
         // Update persistent position tracking with current positions
         // Skip this if diagram type changed to ensure all entities are treated as new
         if (!diagramTypeChanged) {
-            console.log('🔍 Before update - entityPositionsRef has:', Array.from(entityPositionsRef.current.keys()));
             existingEntities.forEach(element => {
                 const entityData = element.get('data');
                 if (entityData?.entity?.SchemaName) {
                     const position = element.position();
                     entityPositionsRef.current.set(entityData.entity.SchemaName, position);
-                    console.log(`📍 Updated position for ${entityData.entity.SchemaName}:`, position);
                 }
             });
         } else {
-            console.log('🔄 Skipping position update due to diagram type change');
         }
         
         // Clean up position tracking for entities that are no longer in currentEntities
         const currentEntityNames = new Set(currentEntities.map(e => e.SchemaName));
-        console.log('📋 Current entities:', Array.from(currentEntityNames));
         for (const [schemaName] of entityPositionsRef.current) {
             if (!currentEntityNames.has(schemaName)) {
-                console.log(`🗑️ Removing position tracking for deleted entity: ${schemaName}`);
                 entityPositionsRef.current.delete(schemaName);
             }
         }
-        console.log('🔍 After cleanup - entityPositionsRef has:', Array.from(entityPositionsRef.current.keys()));
         
         // Clear existing elements
         graph.clear();
@@ -236,20 +232,16 @@ const DiagramContent = () => {
             entityPositionsRef.current.has(entity.SchemaName)
         );
         
-        console.log('🆕 New entities (no tracked position):', newEntities.map(e => e.SchemaName));
-        console.log('📌 Existing entities (have tracked position):', existingEntitiesWithPositions.map(e => e.SchemaName));
 
         // Store entity elements and port maps by SchemaName for easy lookup
         const entityMap = new Map();
         const placedEntityPositions: { x: number; y: number; width: number; height: number }[] = [];
         
         // First, create existing entities with their preserved positions
-        console.log('🔧 Creating existing entities with preserved positions...');
         existingEntitiesWithPositions.forEach((entity) => {
             const position = entityPositionsRef.current.get(entity.SchemaName);
             if (!position) return; // Skip if position is undefined
             
-            console.log(`📍 Placing existing entity ${entity.SchemaName} at:`, position);
             const { element, portMap } = renderer.createEntity(entity, position);
             entityMap.set(entity.SchemaName, { element, portMap });
             
@@ -263,11 +255,9 @@ const DiagramContent = () => {
             });
         });
         
-        console.log('🚧 Collision avoidance positions:', placedEntityPositions);
         
         // Then, create new entities with grid layout that avoids already placed entities
         if (newEntities.length > 0) {
-            console.log('🆕 Creating new entities with grid layout...');
             // Calculate actual heights for new entities based on diagram type
             const entityHeights = newEntities.map(entity => calculateEntityHeight(entity, diagramType));
             const maxEntityHeight = Math.max(...entityHeights, layoutOptions.entityHeight);
@@ -278,25 +268,19 @@ const DiagramContent = () => {
                 diagramType: diagramType
             };
             
-            console.log('📊 Grid layout options:', adjustedLayoutOptions);
-            console.log('🚧 Avoiding existing positions:', placedEntityPositions);
             
             const layout = calculateGridLayout(newEntities, adjustedLayoutOptions, placedEntityPositions);
-            console.log('📐 Calculated grid positions:', layout.positions);
             
             // Create new entities with grid layout positions
             newEntities.forEach((entity, index) => {
                 const position = layout.positions[index] || { x: 50, y: 50 };
-                console.log(`🆕 Placing new entity ${entity.SchemaName} at:`, position);
                 const { element, portMap } = renderer.createEntity(entity, position);
                 entityMap.set(entity.SchemaName, { element, portMap });
                 
                 // Update persistent position tracking for newly placed entities
                 entityPositionsRef.current.set(entity.SchemaName, position);
-                console.log(`💾 Saved position for ${entity.SchemaName}:`, position);
             });
         } else {
-            console.log('✅ No new entities to place with grid layout');
         }
         
         util.nextFrame(() => {
@@ -350,6 +334,12 @@ const DiagramContent = () => {
             evt.stopPropagation();
             const element = elementView.model;
             const elementType = element.get('type');
+            
+            // Check if Ctrl is pressed - if so, skip opening any panes (selection is handled in useDiagram)
+            const isCtrlPressed = (evt.originalEvent as MouseEvent)?.ctrlKey || (evt.originalEvent as MouseEvent)?.metaKey;
+            if (isCtrlPressed) {
+                return;
+            }
             
             if (elementType === 'delegate.square') {
                 const squareElement = element as SquareElement;
@@ -410,22 +400,11 @@ const DiagramContent = () => {
                 return;
             }
             
-            // Handle entity hover
+            // Handle entity hover using centralized style manager
             const entityData = element.get('data');
             
-            if (entityData?.entity) {
-                // Change cursor on the SVG element
-                elementView.el.style.cursor = 'pointer';
-                
-                // Find the foreignObject and its HTML content for the border effect
-                const foreignObject = elementView.el.querySelector('foreignObject');
-                const htmlContent = foreignObject?.querySelector('[data-entity-schema]') as HTMLElement;
-                
-                if (htmlContent && !htmlContent.hasAttribute('data-hover-active')) {
-                    htmlContent.setAttribute('data-hover-active', 'true');
-                    htmlContent.style.border = '1px solid #3b82f6';
-                    htmlContent.style.borderRadius = '10px';
-                }
+            if (entityData?.entity && paper) {
+                entityStyleManager.handleEntityMouseEnter(element, paper);
             }
         };
 
@@ -455,21 +434,11 @@ const DiagramContent = () => {
                 return;
             }
             
-            // Handle entity hover leave
+            // Handle entity hover leave using centralized style manager
             const entityData = element.get('data');
             
-            if (entityData?.entity) {
-                // Remove hover styling
-                elementView.el.style.cursor = 'default';
-                
-                // Remove border from HTML content
-                const foreignObject = elementView.el.querySelector('foreignObject');
-                const htmlContent = foreignObject?.querySelector('[data-entity-schema]') as HTMLElement;
-                
-                if (htmlContent) {
-                    htmlContent.removeAttribute('data-hover-active');
-                    htmlContent.style.border = 'none';
-                }
+            if (entityData?.entity && paper) {
+                entityStyleManager.handleEntityMouseLeave(element, paper);
             }
         };
         
@@ -590,44 +559,49 @@ const DiagramContent = () => {
                 const deltaX = evt.clientX - startPointer.x;
                 const deltaY = evt.clientY - startPointer.y;
 
+                // Adjust deltas based on paper scaling and translation
+                const scale = paper.scale();
+                const adjustedDeltaX = deltaX / scale.sx;
+                const adjustedDeltaY = deltaY / scale.sy;
+
                 const newSize = { width: startSize.width, height: startSize.height };
                 const newPosition = { x: startPosition.x, y: startPosition.y };
 
                 // Calculate new size and position based on resize handle
                 switch (handle) {
                     case 'resize-se': // Southeast
-                        newSize.width = Math.max(50, startSize.width + deltaX);
-                        newSize.height = Math.max(30, startSize.height + deltaY);
+                        newSize.width = Math.max(50, startSize.width + adjustedDeltaX);
+                        newSize.height = Math.max(30, startSize.height + adjustedDeltaY);
                         break;
                     case 'resize-sw': // Southwest
-                        newSize.width = Math.max(50, startSize.width - deltaX);
-                        newSize.height = Math.max(30, startSize.height + deltaY);
-                        newPosition.x = startPosition.x + deltaX;
+                        newSize.width = Math.max(50, startSize.width - adjustedDeltaX);
+                        newSize.height = Math.max(30, startSize.height + adjustedDeltaY);
+                        newPosition.x = startPosition.x + adjustedDeltaX;
                         break;
                     case 'resize-ne': // Northeast
-                        newSize.width = Math.max(50, startSize.width + deltaX);
-                        newSize.height = Math.max(30, startSize.height - deltaY);
-                        newPosition.y = startPosition.y + deltaY;
+                        newSize.width = Math.max(50, startSize.width + adjustedDeltaX);
+                        newSize.height = Math.max(30, startSize.height - adjustedDeltaY);
+                        newPosition.y = startPosition.y + adjustedDeltaY;
                         break;
                     case 'resize-nw': // Northwest
-                        newSize.width = Math.max(50, startSize.width - deltaX);
-                        newSize.height = Math.max(30, startSize.height - deltaY);
-                        newPosition.x = startPosition.x + deltaX;
-                        newPosition.y = startPosition.y + deltaY;
+                        newSize.width = Math.max(50, startSize.width - adjustedDeltaX);
+                        newSize.height = Math.max(30, startSize.height - adjustedDeltaY);
+                        newPosition.x = startPosition.x + adjustedDeltaX;
+                        newPosition.y = startPosition.y + adjustedDeltaY;
                         break;
                     case 'resize-e': // East
-                        newSize.width = Math.max(50, startSize.width + deltaX);
+                        newSize.width = Math.max(50, startSize.width + adjustedDeltaX);
                         break;
                     case 'resize-w': // West
-                        newSize.width = Math.max(50, startSize.width - deltaX);
-                        newPosition.x = startPosition.x + deltaX;
+                        newSize.width = Math.max(50, startSize.width - adjustedDeltaX);
+                        newPosition.x = startPosition.x + adjustedDeltaX;
                         break;
                     case 'resize-s': // South
-                        newSize.height = Math.max(30, startSize.height + deltaY);
+                        newSize.height = Math.max(30, startSize.height + adjustedDeltaY);
                         break;
                     case 'resize-n': // North
-                        newSize.height = Math.max(30, startSize.height - deltaY);
-                        newPosition.y = startPosition.y + deltaY;
+                        newSize.height = Math.max(30, startSize.height - adjustedDeltaY);
+                        newPosition.y = startPosition.y + adjustedDeltaY;
                         break;
                 }
 
@@ -659,7 +633,7 @@ const DiagramContent = () => {
         };
     }, [isResizing, resizeData, paper]);
 
-    // Handle clicking outside to deselect squares
+    // Handle clicking outside to deselect squares and manage area selection
     useEffect(() => {
         if (!paper) return;
 
@@ -669,14 +643,35 @@ const DiagramContent = () => {
                 setSelectedSquare(null);
                 setIsSquarePropertiesSheetOpen(false);
             }
+        }
+
+        const handleBlankPointerDown = (_: dia.Event, x: number, y: number) => {
+            
+            // Don't set selected area if we were panning
+            if (!isPanning) {
+                setSelectedArea({ 
+                    ...selectedArea,
+                    start: { x, y }
+                });
+            }
         };
 
+        const handleBlankPointerUp = (evt: dia.Event, x: number, y: number) => {
+            if (!isPanning && Math.abs(selectedArea.start.x - x) > 10 && Math.abs(selectedArea.start.y - y) > 10) {
+                // TODO
+            }
+        };
+
+        paper.on('blank:pointerdown', handleBlankPointerDown);
+        paper.on('blank:pointerup', handleBlankPointerUp);
         paper.on('blank:pointerclick', handleBlankClick);
 
         return () => {
+            paper.off('blank:pointerdown', handleBlankPointerDown);
+            paper.off('blank:pointerup', handleBlankPointerUp);
             paper.off('blank:pointerclick', handleBlankClick);
         };
-    }, [paper, selectedSquare]);
+    }, [paper, selectedSquare, isPanning, selectedArea]);
 
     const handleAddAttribute = (attribute: AttributeType) => {
         if (!selectedEntityForActions || !renderer) return;
@@ -794,7 +789,7 @@ const DiagramContent = () => {
                             <span className="text-white text-xs font-bold">β</span>
                         </div>
                         <p className="text-sm text-amber-800">
-                            <strong>Open Beta Feature:</strong> This ER Diagram feature is currently in beta. Some functionality may not work fully.
+                            <strong>Open Beta Feature:</strong> This ER Diagram feature is currently in beta. Some functionality may not work fully. <b>we do not recommend more than 20 entities</b>
                         </p>
                     </div>
                 </div>
