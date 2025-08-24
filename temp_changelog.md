@@ -1,17 +1,19 @@
-## [1.3.4] - 2025-08-16
+## [1.3.5] - 2025-08-24
 
 ### Features
 
-* Add solution filtering and plugin type names to plugin step indicators ([e6dda88](https://github.com/delegateas/DataModelViewer/commit/e6dda88))
-* Implement plugin step indicators for attributes ([22259f3](https://github.com/delegateas/DataModelViewer/commit/22259f3))
+* selection changes. Multiple entity selection, adding and removing entities from selection via ctrl click. ([4ed27ae](https://github.com/delegateas/DataModelViewer/commit/4ed27ae))
 
-### Code Refactoring
+### Bug Fixes
 
-* Refactor GetPluginStepAttributes to use entity logical names and streamline metadata mapping ([49ddc39](https://github.com/delegateas/DataModelViewer/commit/49ddc39))
+* ESLint errors ([0b90976](https://github.com/delegateas/DataModelViewer/commit/0b90976))
+* allow multi selection of squares and texts as well ([413fb54](https://github.com/delegateas/DataModelViewer/commit/413fb54))
+* correct scale delta for quare resize ([aad29d0](https://github.com/delegateas/DataModelViewer/commit/aad29d0))
 
 ### Other Changes
 
-* Use object type codes from entity metadata instead of hardcoded list ([cc0d929](https://github.com/delegateas/DataModelViewer/commit/cc0d929))
-* Initial plan ([f208144](https://github.com/delegateas/DataModelViewer/commit/f208144))
+* warning regarding limitations ([af930e4](https://github.com/delegateas/DataModelViewer/commit/af930e4))
+* removed help banner and action banner ([9b815de](https://github.com/delegateas/DataModelViewer/commit/9b815de))
+* removed some console.logs fixed some styling issues with selection vs. hover ([a54e6c4](https://github.com/delegateas/DataModelViewer/commit/a54e6c4))
 
 
