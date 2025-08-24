@@ -561,7 +561,6 @@ const DiagramContent = () => {
 
                 // Adjust deltas based on paper scaling and translation
                 const scale = paper.scale();
-                const translate = paper.translate();
                 const adjustedDeltaX = deltaX / scale.sx;
                 const adjustedDeltaY = deltaY / scale.sy;
 
@@ -638,7 +637,7 @@ const DiagramContent = () => {
     useEffect(() => {
         if (!paper) return;
 
-        const handleBlankClick = (evt: dia.Event, x: number, y: number) => {
+        const handleBlankClick = () => {
             if (selectedSquare) {
                 selectedSquare.hideResizeHandles();
                 setSelectedSquare(null);
@@ -646,7 +645,7 @@ const DiagramContent = () => {
             }
         }
 
-        const handleBlankPointerDown = (evt: dia.Event, x: number, y: number) => {
+        const handleBlankPointerDown = (_: dia.Event, x: number, y: number) => {
             
             // Don't set selected area if we were panning
             if (!isPanning) {
