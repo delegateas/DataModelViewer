@@ -1,6 +1,6 @@
 // SimpleDiagramRenderer.ts
 import { dia, shapes } from '@joint/core';
-import { SimpleEntityElement } from '@/components/diagram/elements/SimpleEntityElement';
+import { SimpleEntityElement } from '@/components/diagramview/elements/SimpleEntityElement';
 import { DiagramRenderer, IPortMap } from '../DiagramRenderer';
 import { AttributeType, EntityType } from '@/lib/Types';
 

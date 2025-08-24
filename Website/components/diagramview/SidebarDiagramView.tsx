@@ -4,7 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/shared/ui/button';
 import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
 import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
-import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagram/panes';
+import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagramview/panes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { GroupType } from '@/lib/Types';
 
