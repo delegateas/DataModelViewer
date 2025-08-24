@@ -3,7 +3,7 @@
 import { EntityType } from "@/lib/Types"
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../ui/table"
 import { Button } from "../ui/button"
-import { CascadeConfiguration } from "../entity/CascadeConfiguration"
+import { CascadeConfiguration } from "./entity/CascadeConfiguration"
 import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"

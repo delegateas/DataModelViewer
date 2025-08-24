@@ -2,8 +2,8 @@
 
 import { EntityType, GroupType } from "@/lib/Types"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs"
-import { EntityHeader } from "../entity/EntityHeader"
-import { SecurityRoles } from "../entity/SecurityRoles"
+import { EntityHeader } from "./entity/EntityHeader"
+import { SecurityRoles } from "./entity/SecurityRoles"
 import Keys from "./Keys"
 import { KeyRound, Tags, Unplug } from "lucide-react"
 import { Attributes } from "./Attributes"
@@ -28,7 +28,7 @@ export const Section = React.memo(
         // Handle tab changes to notify parent component
         const handleTabChange = React.useCallback((value: string) => {
             if (onTabChange) {
-                onTabChange(true); // Signal that tab switching is starting
+                onTabChange(true);
             }
             setTab(value);
         }, [onTabChange]);

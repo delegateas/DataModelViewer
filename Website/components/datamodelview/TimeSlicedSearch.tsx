@@ -12,6 +12,7 @@ interface TimeSlicedSearchProps {
   onLoadingChange: (loading: boolean) => void;
   onNavigateNext?: () => void;
   onNavigatePrevious?: () => void;
+  initialLocalValue: string;
   currentIndex?: number;
   totalResults?: number;
   placeholder?: string;
@@ -23,11 +24,12 @@ export const TimeSlicedSearch = ({
   onLoadingChange,
   onNavigateNext,
   onNavigatePrevious,
+  initialLocalValue,
   currentIndex = 0,
   totalResults = 0,
   placeholder = "Search attributes...",
 }: TimeSlicedSearchProps) => {
-  const [localValue, setLocalValue] = useState('');
+  const [localValue, setLocalValue] = useState(initialLocalValue);
   const [isTyping, setIsTyping] = useState(false);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [lastValidSearch, setLastValidSearch] = useState('');

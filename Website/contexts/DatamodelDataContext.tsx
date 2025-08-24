@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from "react";
 import { GroupType } from "@/lib/Types";
+import { useSearchParams } from "next/navigation";
 
 interface DatamodelDataState {
   groups: GroupType[];
@@ -36,7 +37,13 @@ const datamodelDataReducer = (state: DatamodelDataState, action: any): Datamodel
 export const DatamodelDataProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(datamodelDataReducer, initialState);
 
+  const searchParams = useSearchParams();
+  const globalsearchParam = searchParams.get('globalsearch');
+
   React.useEffect(() => {
+
+    dispatch({ type: "SET_SEARCH", payload: globalsearchParam || "" });
+
     const worker = new Worker(new URL("../components/datamodelview/dataLoaderWorker.js", import.meta.url));
     worker.onmessage = (e) => {
       dispatch({ type: "SET_GROUPS", payload: e.data });

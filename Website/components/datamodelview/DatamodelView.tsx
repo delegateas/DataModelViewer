@@ -10,6 +10,8 @@ import { List } from "./List";
 import { TimeSlicedSearch } from "./TimeSlicedSearch";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/DatamodelDataContext";
+import { updateURL } from "@/lib/url-utils";
+import { useSearchParams } from "next/navigation";
 
 export function DatamodelView() {
     const dispatch = useSidebarDispatch();
@@ -38,6 +40,7 @@ function DatamodelViewContent() {
 
     // Calculate total search results
     const totalResults = filtered.length > 0 ? filtered.filter(item => item.type === 'entity').length : 0;
+    const initialLocalValue = useSearchParams().get('globalsearch') || "";
 
     // Isolated search handlers - these don't depend on component state
     const handleSearch = useCallback((searchValue: string) => {
@@ -49,6 +52,7 @@ function DatamodelViewContent() {
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
             }
         }
+        updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })
         datamodelDataDispatch({ type: "SET_SEARCH", payload: searchValue.length >= 3 ? searchValue : "" });
         setCurrentSearchIndex(searchValue.length >= 3 ? 1 : 0); // Reset to first result when searching, 0 when cleared
     }, [groups, datamodelDataDispatch]);
@@ -207,6 +211,7 @@ function DatamodelViewContent() {
                         onLoadingChange={handleLoadingChange}
                         onNavigateNext={handleNavigateNext}
                         onNavigatePrevious={handleNavigatePrevious}
+                        initialLocalValue={initialLocalValue}
                         currentIndex={currentSearchIndex}
                         totalResults={totalResults}
                     />
