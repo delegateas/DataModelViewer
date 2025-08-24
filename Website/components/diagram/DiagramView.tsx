@@ -784,7 +784,7 @@ const DiagramContent = () => {
                             <span className="text-white text-xs font-bold">β</span>
                         </div>
                         <p className="text-sm text-amber-800">
-                            <strong>Open Beta Feature:</strong> This ER Diagram feature is currently in beta. Some functionality may not work fully.
+                            <strong>Open Beta Feature:</strong> This ER Diagram feature is currently in beta. Some functionality may not work fully. <b>we do not recommend more than 20 entities</b>
                         </p>
                     </div>
                 </div>
