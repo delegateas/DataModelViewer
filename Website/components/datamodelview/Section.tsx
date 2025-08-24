@@ -28,7 +28,7 @@ export const Section = React.memo(
         // Handle tab changes to notify parent component
         const handleTabChange = React.useCallback((value: string) => {
             if (onTabChange) {
-                onTabChange(true); // Signal that tab switching is starting
+                onTabChange(true);
             }
             setTab(value);
         }, [onTabChange]);

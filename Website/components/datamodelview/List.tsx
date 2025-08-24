@@ -5,6 +5,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
+import { updateURL } from "@/lib/url-utils";
 
 interface IListProps {
 }
@@ -98,7 +99,6 @@ export const List = ({ }: IListProps) => {
             // Default scroll behavior for other cases
             const scrollElement = parentRef.current;
             if (scrollElement) {
-                console.log("setting scroll to: " + offset + " - " + options.adjustments)
                 scrollElement.scrollTop = offset;
             }
         },
@@ -235,6 +235,7 @@ export const List = ({ }: IListProps) => {
             const item = flatItems[firstVisibleItem.index];
             if (item?.type === 'entity') {
                 if (item.entity.SchemaName !== datamodelView.currentSection) {
+                    updateURL({ query: { group: item.group.Name, section: item.entity.SchemaName } });
                     dispatch({ type: "SET_CURRENT_GROUP", payload: item.group.Name });
                     dispatch({ type: "SET_CURRENT_SECTION", payload: item.entity.SchemaName });
                 }

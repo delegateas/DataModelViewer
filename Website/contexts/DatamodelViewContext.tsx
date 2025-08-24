@@ -46,11 +46,17 @@ export const DatamodelViewProvider = ({ children }: { children: ReactNode }) => 
     const [datamodelViewState, dispatch] = useReducer(datamodelViewReducer, initialState);
 
     const searchParams = useSearchParams();
-    const entityParam = searchParams.get('section');
+    const sectionParam = searchParams.get('section');
+    const groupParam = searchParams.get('group');
 
+    // on initial load set data from query params
     useEffect(() => {
-        dispatch({ type: "SET_CURRENT_GROUP", payload: entityParam });
-    }, [entityParam])
+        if (!sectionParam) return;
+        try { datamodelViewState.scrollToSection(""); } catch { return; }
+        dispatch({ type: "SET_CURRENT_GROUP", payload: groupParam });
+        dispatch({ type: "SET_CURRENT_SECTION", payload: sectionParam });
+        datamodelViewState.scrollToSection(sectionParam); 
+    }, [datamodelViewState.scrollToSection])
 
     return (
         <DatamodelViewContext.Provider value={{ ...datamodelViewState }}>
