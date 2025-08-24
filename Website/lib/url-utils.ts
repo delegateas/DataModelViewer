@@ -8,7 +8,7 @@ interface URLParts {
   /** e.g. "section-2" or "#section-2"; pass "" to clear; omit to leave unchanged */
   hash?: string;
   /** optional state object you want back on popstate */
-  state?: any;
+  state?: unknown;
   /** optional document title (mostly ignored by browsers) */
   title?: string;
 }
