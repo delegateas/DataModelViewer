@@ -1,7 +1,7 @@
 'use client'
 
-import { AppSidebar } from "../AppSidebar";
-import { TooltipProvider } from "../ui/tooltip";
+import { AppSidebar } from "../shared/AppSidebar";
+import { TooltipProvider } from "../shared/ui/tooltip";
 import { useSidebarDispatch } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { DatamodelViewProvider, useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";

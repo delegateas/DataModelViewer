@@ -1,6 +1,6 @@
 import { DatamodelView } from "@/components/datamodelview/DatamodelView";
-import { TouchProvider } from "@/components/ui/hybridtooltop";
-import { Loading } from "@/components/ui/loading";
+import { TouchProvider } from "@/components/shared/ui/hybridtooltop";
+import { Loading } from "@/components/shared/ui/loading";
 import { DatamodelDataProvider } from "@/contexts/DatamodelDataContext";
 import { Suspense } from "react";
 

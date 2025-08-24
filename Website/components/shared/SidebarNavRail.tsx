@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { LogOut, Info, Database, PencilRuler, PlugZap, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/shared/ui/button";
 import { useSidebarDispatch } from "@/contexts/SidebarContext";
 
 const navItems = [

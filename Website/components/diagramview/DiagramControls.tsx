@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/shared/ui/button';
+import { Separator } from '@/components/shared/ui/separator';
 import { 
     ZoomIn, 
     ZoomOut, 

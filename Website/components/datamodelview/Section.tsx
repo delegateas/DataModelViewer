@@ -1,7 +1,7 @@
 'use client'
 
 import { EntityType, GroupType } from "@/lib/Types"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../shared/ui/tabs"
 import { EntityHeader } from "./entity/EntityHeader"
 import { SecurityRoles } from "./entity/SecurityRoles"
 import Keys from "./Keys"

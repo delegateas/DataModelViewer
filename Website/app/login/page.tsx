@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/shared/ui/button";
+import { Input } from "@/components/shared/ui/input";
 import { createSession } from "@/lib/session";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useEffect } from "react";

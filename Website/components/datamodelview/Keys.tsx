@@ -1,11 +1,11 @@
 'use client'
 
 import { EntityType } from "@/lib/Types"
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../ui/table"
+import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../shared/ui/table"
 import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
-import { Input } from "../ui/input"
-import { Button } from "../ui/button"
+import { Input } from "../shared/ui/input"
+import { Button } from "../shared/ui/button"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
 

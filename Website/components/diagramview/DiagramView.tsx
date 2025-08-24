@@ -13,7 +13,7 @@ import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertie
 import { TextPropertiesPane } from '@/components/diagram/panes/TextPropertiesPane';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '@/components/diagram/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
-import { AppSidebar } from '../AppSidebar';
+import { AppSidebar } from '../shared/AppSidebar';
 import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
 import { SidebarDiagramView } from './SidebarDiagramView';
 import { useSidebarDispatch } from '@/contexts/SidebarContext';

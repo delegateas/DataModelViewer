@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/shared/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/shared/ui/collapsible';
+import { Button } from '@/components/shared/ui/button';
 import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
 import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagram/panes';
