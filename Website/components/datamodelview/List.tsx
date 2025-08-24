@@ -85,7 +85,7 @@ export const List = ({ }: IListProps) => {
             return item.type === 'group' ? 92 : 300;
         },
         // Override scroll behavior to prevent jumping during tab switches
-        scrollToFn: (offset, options) => { 
+        scrollToFn: (offset, _) => { 
             // When switching tabs during search, don't change scroll position
             if (isTabSwitching.current && !isIntentionalScroll.current) {
                 return;

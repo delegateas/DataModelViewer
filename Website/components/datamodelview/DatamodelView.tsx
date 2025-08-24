@@ -40,6 +40,7 @@ function DatamodelViewContent() {
 
     // Calculate total search results
     const totalResults = filtered.length > 0 ? filtered.filter(item => item.type === 'entity').length : 0;
+    const initialLocalValue = useSearchParams().get('globalsearch') || "";
 
     // Isolated search handlers - these don't depend on component state
     const handleSearch = useCallback((searchValue: string) => {
@@ -210,7 +211,7 @@ function DatamodelViewContent() {
                         onLoadingChange={handleLoadingChange}
                         onNavigateNext={handleNavigateNext}
                         onNavigatePrevious={handleNavigatePrevious}
-                        initialLocalValue={useSearchParams().get('globalsearch') || ""}
+                        initialLocalValue={initialLocalValue}
                         currentIndex={currentSearchIndex}
                         totalResults={totalResults}
                     />
