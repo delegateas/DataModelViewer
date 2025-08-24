@@ -70,7 +70,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
   const selectedElementsRef = useRef<string[]>([]);
   const cleanupRef = useRef<(() => void) | null>(null);
   const isAddingAttributeRef = useRef(false);
-  
+
   const [zoom, setZoomState] = useState(1);
   const [isPanning, setIsPanningState] = useState(false);
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
@@ -892,9 +892,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
             const bbox = element.getBBox();
             const elementType = element.get('type');
             
-            // Only select entity elements, not squares or text
-            if (elementType !== 'delegate.entity') return false;
-            
             // Check if element center is within selection bounds
             const elementCenterX = bbox.x + bbox.width / 2;
             const elementCenterY = bbox.y + bbox.height / 2;
@@ -925,9 +922,6 @@ export const useDiagram = (): DiagramState & DiagramActions => {
       const element = elementView.model;
       const elementType = element.get('type');
       
-      // Only handle entity elements for group dragging and selection
-      if (elementType !== 'delegate.entity') return;
-      
       const elementId = element.id.toString();
       const isCtrlPressed = evt.originalEvent?.ctrlKey || evt.originalEvent?.metaKey;
       const currentSelection = selectedElementsRef.current;
@@ -950,7 +944,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
         // Store initial positions for all selected elements
         currentSelection.forEach(id => {
           const elem = graphRef.current?.getCell(id);
-          if (elem && elem.get('type') === 'delegate.entity') {
+          if (elem) {
             const pos = elem.position();
             groupDragStartPositions[id] = { x: pos.x, y: pos.y };
           }
