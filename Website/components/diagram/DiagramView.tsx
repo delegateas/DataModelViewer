@@ -559,44 +559,50 @@ const DiagramContent = () => {
                 const deltaX = evt.clientX - startPointer.x;
                 const deltaY = evt.clientY - startPointer.y;
 
+                // Adjust deltas based on paper scaling and translation
+                const scale = paper.scale();
+                const translate = paper.translate();
+                const adjustedDeltaX = deltaX / scale.sx;
+                const adjustedDeltaY = deltaY / scale.sy;
+
                 const newSize = { width: startSize.width, height: startSize.height };
                 const newPosition = { x: startPosition.x, y: startPosition.y };
 
                 // Calculate new size and position based on resize handle
                 switch (handle) {
                     case 'resize-se': // Southeast
-                        newSize.width = Math.max(50, startSize.width + deltaX);
-                        newSize.height = Math.max(30, startSize.height + deltaY);
+                        newSize.width = Math.max(50, startSize.width + adjustedDeltaX);
+                        newSize.height = Math.max(30, startSize.height + adjustedDeltaY);
                         break;
                     case 'resize-sw': // Southwest
-                        newSize.width = Math.max(50, startSize.width - deltaX);
-                        newSize.height = Math.max(30, startSize.height + deltaY);
-                        newPosition.x = startPosition.x + deltaX;
+                        newSize.width = Math.max(50, startSize.width - adjustedDeltaX);
+                        newSize.height = Math.max(30, startSize.height + adjustedDeltaY);
+                        newPosition.x = startPosition.x + adjustedDeltaX;
                         break;
                     case 'resize-ne': // Northeast
-                        newSize.width = Math.max(50, startSize.width + deltaX);
-                        newSize.height = Math.max(30, startSize.height - deltaY);
-                        newPosition.y = startPosition.y + deltaY;
+                        newSize.width = Math.max(50, startSize.width + adjustedDeltaX);
+                        newSize.height = Math.max(30, startSize.height - adjustedDeltaY);
+                        newPosition.y = startPosition.y + adjustedDeltaY;
                         break;
                     case 'resize-nw': // Northwest
-                        newSize.width = Math.max(50, startSize.width - deltaX);
-                        newSize.height = Math.max(30, startSize.height - deltaY);
-                        newPosition.x = startPosition.x + deltaX;
-                        newPosition.y = startPosition.y + deltaY;
+                        newSize.width = Math.max(50, startSize.width - adjustedDeltaX);
+                        newSize.height = Math.max(30, startSize.height - adjustedDeltaY);
+                        newPosition.x = startPosition.x + adjustedDeltaX;
+                        newPosition.y = startPosition.y + adjustedDeltaY;
                         break;
                     case 'resize-e': // East
-                        newSize.width = Math.max(50, startSize.width + deltaX);
+                        newSize.width = Math.max(50, startSize.width + adjustedDeltaX);
                         break;
                     case 'resize-w': // West
-                        newSize.width = Math.max(50, startSize.width - deltaX);
-                        newPosition.x = startPosition.x + deltaX;
+                        newSize.width = Math.max(50, startSize.width - adjustedDeltaX);
+                        newPosition.x = startPosition.x + adjustedDeltaX;
                         break;
                     case 'resize-s': // South
-                        newSize.height = Math.max(30, startSize.height + deltaY);
+                        newSize.height = Math.max(30, startSize.height + adjustedDeltaY);
                         break;
                     case 'resize-n': // North
-                        newSize.height = Math.max(30, startSize.height - deltaY);
-                        newPosition.y = startPosition.y + deltaY;
+                        newSize.height = Math.max(30, startSize.height - adjustedDeltaY);
+                        newPosition.y = startPosition.y + adjustedDeltaY;
                         break;
                 }
 
