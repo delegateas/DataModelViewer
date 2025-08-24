@@ -788,24 +788,6 @@ const DiagramContent = () => {
                         </p>
                     </div>
                 </div>
-
-                {/* Interaction Help Banner */}
-                <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
-                    <div className="flex items-center gap-4 text-sm text-blue-700">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 border border-blue-500 rounded-sm"></div>
-                            <span><strong>Drag:</strong> Select area</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <kbd className="bg-blue-200 px-1 rounded text-xs">Ctrl</kbd>
-                            <span><strong>+ Drag:</strong> Pan diagram</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span>🖱️</span>
-                            <span><strong>Scroll:</strong> Zoom</span>
-                        </div>
-                    </div>
-                </div>
                 
                 {/* Diagram Area */}
                 <div className='flex-1 flex flex-col bg-slate-50 relative' style={{

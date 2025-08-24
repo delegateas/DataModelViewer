@@ -70,29 +70,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ children }) => {
         ref={canvasRef} 
         className={`w-full h-full ${getCursor()}`}
       />
-      
-      {/* Interaction mode indicators */}
-      {isPanning && (
-        <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-1 rounded-md text-sm font-medium flex items-center gap-2">
-          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-          Panning...
-        </div>
-      )}
-      
-      {isCtrlPressed && !isPanning && (
-        <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-md text-sm font-medium flex items-center gap-2">
-          <kbd className="bg-green-600 px-1 rounded text-xs">Ctrl</kbd>
-          Hold + Drag to Pan
-        </div>
-      )}
-      
-      {!isCtrlPressed && !isPanning && (
-        <div className="absolute top-4 left-4 bg-purple-500 text-white px-3 py-1 rounded-md text-sm font-medium flex items-center gap-2">
-          <div className="w-2 h-2 border border-white rounded-sm"></div>
-          Drag to Select Area
-        </div>
-      )}
-      
+     
       {children}
     </div>
   );
