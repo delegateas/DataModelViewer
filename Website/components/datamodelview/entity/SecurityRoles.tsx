@@ -2,7 +2,7 @@
 
 import { SecurityRole, PrivilegeDepth } from "@/lib/Types";
 import { Ban, User, Users, Boxes, Building2, Minus } from "lucide-react";
-import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../ui/hybridtooltop";
+import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../ui/hybridtooltop";
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (

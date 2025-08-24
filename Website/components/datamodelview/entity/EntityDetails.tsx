@@ -2,7 +2,7 @@
 
 import { EntityType, OwnershipType } from "@/lib/Types";
 import { Eye, ClipboardList, Paperclip, Building, Users } from "lucide-react";
-import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../ui/hybridtooltop";
+import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../ui/hybridtooltop";
 
 type EntityDetailType = {
     icon: JSX.Element;
