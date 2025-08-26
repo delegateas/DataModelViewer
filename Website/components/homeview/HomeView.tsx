@@ -20,8 +20,6 @@ export const HomeView = ({ }: IHomeViewProps) => {
             .then(data => setWikipage(data.fileContent));
     }, []);
 
-    console.log(wikipage)
-
     return (
         <div className="flex min-h-screen">
             <AppSidebar />
