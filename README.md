@@ -119,7 +119,7 @@ The `azure-pipelines-external.yml` file is a reusable Azure DevOps pipeline temp
 3. **Configure the Pipeline**  
    - Add a new "Azure Repos Git" pipeline in Azure DevOps and choose the `azure-pipelines-external.yml` file from your repository as the "Existing Azure Pipelines YAML file" to base the pipeline on.
    - Adjust the parameters in the YAML file as needed for your environment (usually only if you chose another name for the variable group than "Datamodel").
-   
+
 > [!NOTE]
 > YAML file contains two properties you may want to change:
 > 1. Name of your ADO wiki repository
@@ -129,6 +129,10 @@ The `azure-pipelines-external.yml` file is a reusable Azure DevOps pipeline temp
    - The first time the pipeline is run you will see a "This pipeline needs permission to access a resource..." click "View" and give it permission to access the variable group you have created.
    - The pipeline will clone the public DataModelViewer repository, build the application, and deploy it using the shared templates.
    - The pipeline is scheduled to run daily at 03:00 AM by default. You can adjust or remove the schedule as needed. You can of course also run the pipeline ad-hoc if you wish.
+
+5. **Possible Additional Steps**
+   - The Build Service needs at least READ-access to the repo (check at: Project Settings > Repositories > 'wiki-repo' > Security)
+     - In the same location also add the pipeline to the "Pipeline permissions" (this will stop any permission prompts on pipeline runs)
 
 ## Notes
 
