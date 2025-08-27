@@ -877,6 +877,7 @@ export default function DiagramView({ }: IDiagramView) {
 
     useEffect(() => {
         dispatch({ type: "SET_ELEMENT", payload: <SidebarDiagramView /> })
+        dispatch({ type: 'SET_SHOW_ELEMENT', payload: true });
     }, [])
 
     return (

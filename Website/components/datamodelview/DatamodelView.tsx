@@ -18,6 +18,7 @@ export function DatamodelView() {
 
     useEffect(() => {
         dispatch({ type: "SET_ELEMENT", payload: <SidebarDatamodelView /> });
+        dispatch({ type: 'SET_SHOW_ELEMENT', payload: true });
     }, []);
 
     return (

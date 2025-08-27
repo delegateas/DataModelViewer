@@ -14,7 +14,6 @@ const navItems = [
     active: true,
     disabled: false,
     new: true,
-    sidebarState: false
   },
   {
     label: "Insight viewer",
@@ -23,7 +22,6 @@ const navItems = [
     active: false,
     disabled: true,
     new: false,
-    sidebarState: false
   },
   {
     label: "Metadata viewer",
@@ -32,7 +30,6 @@ const navItems = [
     active: false,
     disabled: false,
     new: false,
-    sidebarState: true
   },
   {
     label: "Diagram viewer",
@@ -41,7 +38,6 @@ const navItems = [
     active: false,
     disabled: false,
     new: false,
-    sidebarState: true
   },
   {
     label: "Process viewer",
@@ -50,7 +46,6 @@ const navItems = [
     active: false,
     disabled: true,
     new: false,
-    sidebarState: true
   },
 ];
 
@@ -81,7 +76,7 @@ export default function SidebarNavRail() {
                   disabled={item.disabled}
                   className={`mb-1 ${pathname === item.href ? "bg-blue-100 text-blue-900" : ""}`}
                   onClick={() => {
-                    if (!item.disabled && item.href !== "#"){ dispatch({ type: 'SET_SHOW_ELEMENT', payload: item.sidebarState }); router.push(item.href); } 
+                    if (!item.disabled && item.href !== "#"){ router.push(item.href); } 
                   }}
                 >
                   {item.icon}
