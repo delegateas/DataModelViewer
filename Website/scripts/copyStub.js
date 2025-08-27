@@ -1,10 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
-const source = path.resolve(__dirname, '../stubs/Data.ts');
-const destination = path.resolve(__dirname, '../generated/Data.ts');
+const sourceDir = path.resolve(__dirname, '../stubs');
+const destinationDir = path.resolve(__dirname, '../generated');
 
-fs.mkdirSync(path.dirname(destination), { recursive: true });
-fs.copyFileSync(source, destination);
+fs.mkdirSync(destinationDir, { recursive: true });
 
-console.log(`Stub Data.ts copied to ${destination}`);
+const files = fs.readdirSync(sourceDir);
+files.forEach(file => {
+  const sourceFile = path.join(sourceDir, file);
+  const destFile = path.join(destinationDir, file);
+  fs.copyFileSync(sourceFile, destFile);
+  console.log(`Copied ${file} to ${destinationDir}`);
+});
