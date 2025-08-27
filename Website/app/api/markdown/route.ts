@@ -8,8 +8,9 @@ export async function GET() {
     let fileContent;
     try {
         fileContent = readFileSync(generatedPath, 'utf-8');
-    } catch (err) {
+    } catch (error) {
         fileContent = readFileSync(stubsPath, 'utf-8');
+        console.error('Error reading generated wiki file, falling back to stubs:', error);
     }
     return NextResponse.json({ fileContent })
 }
