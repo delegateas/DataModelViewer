@@ -1,12 +1,12 @@
 import { EntityType, GroupType } from "@/lib/Types";
-import { useTouch } from '../ui/hybridtooltop';
+import { useTouch } from '../shared/ui/hybridtooltop';
 import { useSidebarDispatch } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
 import { Slot } from "@radix-ui/react-slot";
 import { ExternalLink, Puzzle, Search, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/shared/ui/input";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 

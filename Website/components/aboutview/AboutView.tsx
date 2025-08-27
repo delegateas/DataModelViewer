@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { AppSidebar } from '../AppSidebar'
+import { AppSidebar } from '../shared/AppSidebar'
 import { useSidebarDispatch } from '@/contexts/SidebarContext'
 import { TooltipProvider } from '@radix-ui/react-tooltip'
 import { LastSynched } from '@/generated/Data'
@@ -14,6 +14,7 @@ export const AboutView = ({}: IAboutViewProps) => {
 
   useEffect(() => {
     dispatch({ type: 'SET_ELEMENT', payload: <></> })
+    dispatch({ type: 'SET_SHOW_ELEMENT', payload: false });
     fetch('/api/version')
       .then((res) => res.json())
       .then((data) => setVersion(data.version))

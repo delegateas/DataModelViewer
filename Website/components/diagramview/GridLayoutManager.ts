@@ -1,5 +1,5 @@
 import { EntityType } from '@/lib/Types';
-import { EntityElement } from '@/components/diagram/elements/EntityElement';
+import { EntityElement } from '@/components/diagramview/elements/EntityElement';
 
 export type DiagramType = 'simple' | 'detailed';
 

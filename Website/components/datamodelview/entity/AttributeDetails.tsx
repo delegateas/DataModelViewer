@@ -2,7 +2,7 @@
 
 import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
 import { Calculator, CircleAlert, CirclePlus, Eye, Lock, Sigma, Zap } from "lucide-react";
-import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../ui/hybridtooltop";
+import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../shared/ui/hybridtooltop";
 
 export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
     const details = [];

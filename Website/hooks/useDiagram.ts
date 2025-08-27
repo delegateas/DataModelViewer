@@ -1,14 +1,12 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { dia, routers, shapes } from '@joint/core';
 import { GroupType, EntityType, AttributeType } from '@/lib/Types';
-import { SquareElement } from '@/components/diagram/elements/SquareElement';
-import { SquareElementView } from '@/components/diagram/elements/SquareElementView';
-import { TextElement } from '@/components/diagram/elements/TextElement';
-import { AvoidRouter } from '@/components/diagram/avoid-router/avoidrouter';
-import { DiagramRenderer } from '@/components/diagram/DiagramRenderer';
-import { SimpleDiagramRenderer } from '@/components/diagram/renderers/SimpleDiagramRender';
-import { DetailedDiagramRender } from '@/components/diagram/renderers/DetailedDiagramRender';
-import { PRESET_COLORS } from '@/components/diagram/shared/DiagramConstants';
+import { SquareElement } from '@/components/diagramview/elements/SquareElement';
+import { SquareElementView } from '@/components/diagramview/elements/SquareElementView';
+import { TextElement } from '@/components/diagramview/elements/TextElement';
+import { AvoidRouter } from '@/components/diagramview/avoid-router/avoidrouter';
+import { DiagramRenderer } from '@/components/diagramview/DiagramRenderer';
+import { PRESET_COLORS } from '@/components/diagramview/shared/DiagramConstants';
 import { entityStyleManager } from '@/lib/entity-styling';
 
 export type DiagramType = 'simple' | 'detailed';

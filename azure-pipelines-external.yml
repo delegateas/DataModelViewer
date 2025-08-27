@@ -39,11 +39,20 @@ variables:
   - name: bicepTemplateFile
     value: "Infrastructure/main.bicep"
 
+resources:
+  repositories:
+  - repository: wiki
+    type: git
+    name: Documentation  # Change this to correct repo if needed
+
 stages:
   - stage: Build
     displayName: "Build Stage"
     jobs:
       - job: BuildApp
+        uses:
+          repositories:
+            - wiki
         displayName: "Build App"
         steps:
           - checkout: none
@@ -57,6 +66,8 @@ stages:
               azureClientId: $(AzureClientId)
               azureClientSecret: $(AzureClientSecret)
               dataverseUrl: $(DataverseUrl)
+              adoWikiName: $(AdoWikiName)
+              adoWikiPagePath: $(AdoWikiPagePath)
 
   - stage: Deploy
     displayName: "Deploy Stage"

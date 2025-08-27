@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Input } from '../ui/input';
+import { Input } from '../shared/ui/input';
 import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';

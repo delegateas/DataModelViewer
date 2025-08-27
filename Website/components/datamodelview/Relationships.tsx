@@ -1,13 +1,13 @@
 'use client'
 
 import { EntityType } from "@/lib/Types"
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../ui/table"
-import { Button } from "../ui/button"
+import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../shared/ui/table"
+import { Button } from "../shared/ui/button"
 import { CascadeConfiguration } from "./entity/CascadeConfiguration"
 import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { Input } from "../ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../shared/ui/select"
+import { Input } from "../shared/ui/input"
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";

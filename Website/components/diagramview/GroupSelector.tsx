@@ -1,7 +1,7 @@
 import React from 'react';
 import { GroupType } from '@/lib/Types';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/shared/ui/button';
+import { Separator } from '@/components/shared/ui/separator';
 import { FolderOpen, Folder } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

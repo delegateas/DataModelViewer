@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/shared/ui/button';
+import { Input } from '@/components/shared/ui/input';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/shared/ui/sheet';
+import { Checkbox } from '@/components/shared/ui/checkbox';
 import { Search } from 'lucide-react';
 import { Groups } from '@/generated/Data';
 import { EntityType, GroupType, AttributeType } from '@/lib/Types';

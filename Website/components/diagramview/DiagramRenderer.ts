@@ -1,6 +1,6 @@
 import { dia } from '@joint/core';
 import { AttributeType, EntityType } from '@/lib/Types';
-import { EntityElement } from '@/components/diagram/elements/EntityElement';
+import { EntityElement } from '@/components/diagramview/elements/EntityElement';
 
 export type IPortMap = Record<string, string>;
 

@@ -5,16 +5,16 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
+} from "@/components/shared/ui/sheet";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Button } from '@/components/ui/button';
+} from "@/components/shared/ui/select";
+import { Label } from "@/components/shared/ui/label";
+import { Button } from '@/components/shared/ui/button';
 import { RotateCcw } from 'lucide-react';
 import { Groups } from '../../../generated/Data';
 import { GroupType } from '@/lib/Types';

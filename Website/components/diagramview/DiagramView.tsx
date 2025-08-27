@@ -3,17 +3,17 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { dia, util } from '@joint/core'
 import { Groups } from "../../generated/Data"
-import { SquareElement } from '@/components/diagram/elements/SquareElement';
-import { TextElement } from '@/components/diagram/elements/TextElement';
-import { DiagramCanvas } from '@/components/diagram/DiagramCanvas';
-import { ZoomCoordinateIndicator } from '@/components/diagram/ZoomCoordinateIndicator';
-import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagram/panes';
+import { SquareElement } from '@/components/diagramview/elements/SquareElement';
+import { TextElement } from '@/components/diagramview/elements/TextElement';
+import { DiagramCanvas } from '@/components/diagramview/DiagramCanvas';
+import { ZoomCoordinateIndicator } from '@/components/diagramview/ZoomCoordinateIndicator';
+import { EntityActionsPane, LinkPropertiesPane, LinkProperties } from '@/components/diagramview/panes';
 import { entityStyleManager } from '@/lib/entity-styling';
-import { SquarePropertiesPane } from '@/components/diagram/panes/SquarePropertiesPane';
-import { TextPropertiesPane } from '@/components/diagram/panes/TextPropertiesPane';
-import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '@/components/diagram/GridLayoutManager';
+import { SquarePropertiesPane } from '@/components/diagramview/panes/SquarePropertiesPane';
+import { TextPropertiesPane } from '@/components/diagramview/panes/TextPropertiesPane';
+import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '@/components/diagramview/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
-import { AppSidebar } from '../AppSidebar';
+import { AppSidebar } from '../shared/AppSidebar';
 import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
 import { SidebarDiagramView } from './SidebarDiagramView';
 import { useSidebarDispatch } from '@/contexts/SidebarContext';
@@ -877,6 +877,7 @@ export default function DiagramView({ }: IDiagramView) {
 
     useEffect(() => {
         dispatch({ type: "SET_ELEMENT", payload: <SidebarDiagramView /> })
+        dispatch({ type: 'SET_SHOW_ELEMENT', payload: true });
     }, [])
 
     return (
