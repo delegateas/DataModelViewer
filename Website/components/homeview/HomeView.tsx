@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react';
 import { AppSidebar } from '../shared/AppSidebar'
 import { useSidebarDispatch } from '@/contexts/SidebarContext'
 import Markdown from 'react-markdown'
-import { Button } from '../shared/ui/button';
-import { Database } from 'lucide-react';
-import { Label } from '../shared/ui/label';
 
 interface IHomeViewProps { }
 
@@ -21,7 +18,7 @@ export const HomeView = ({ }: IHomeViewProps) => {
         dispatch({ type: 'SET_SHOW_ELEMENT', payload: false });
         fetch('/api/markdown')
             .then(res => res.json())
-            .then(data => setWikipage(data.fileContent));
+            .then(data => setWikipage(data.fileContent.replace(/\\n/g, '\n')));
     }, []);
 
     return (
@@ -36,14 +33,14 @@ export const HomeView = ({ }: IHomeViewProps) => {
                     {/* Add loading state */}
                     {wikipage ? (
                         <Markdown components={{
-                            h1: ({ node, ...props }) => <h1 className="text-4xl font-bold mb-4" {...props} />,
-                            h2: ({ node, ...props }) => <h2 className="text-3xl font-bold mb-4" {...props} />,
-                            h3: ({ node, ...props }) => <h3 className="text-2xl font-bold mb-4" {...props} />,
-                            h4: ({ node, ...props }) => <h4 className="text-xl font-bold mb-4" {...props} />,
-                            p: ({ node, ...props }) => <p className="mb-4" {...props} />,
-                            a: ({ node, ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
-                            li: ({ node, ...props }) => <li className="ml-6 list-disc" {...props} />,
-                            span: ({ node, ...props }) => <span className="font-semibold" {...props} />,
+                            h1: ({ ...props }) => <h1 className="text-4xl font-bold mb-4" {...props} />,
+                            h2: ({ ...props }) => <h2 className="text-3xl font-bold mb-4" {...props} />,
+                            h3: ({ ...props }) => <h3 className="text-2xl font-bold mb-4" {...props} />,
+                            h4: ({ ...props }) => <h4 className="text-xl font-bold mb-4" {...props} />,
+                            p: ({ ...props }) => <p className="mb-4" {...props} />,
+                            a: ({ ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
+                            li: ({ ...props }) => <li className="ml-6 list-disc" {...props} />,
+                            span: ({ ...props }) => <span className="font-semibold" {...props} />,
                         }}>{wikipage}</Markdown>
                     ) : (   
                         <div>Loading wiki...</div>
