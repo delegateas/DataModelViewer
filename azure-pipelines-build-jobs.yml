@@ -51,7 +51,7 @@ steps:
       API_VER="7.1"
 
       # Generated folder location in DMV
-      OUT_FILE="generated/IntroductionPage.md"
+      OUT_FILE="generated/Introduction.md"
 
       # The encoding removes all spaces, weird charachters etc. with encoded values like %20 for space.
       WIKI_NAME_ENCODED=$(python3 -c "import urllib.parse, os; print(urllib.parse.quote(os.environ['WIKI_NAME']))")
