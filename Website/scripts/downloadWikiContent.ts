@@ -156,7 +156,7 @@ class WikiContentDownloader {
       
       // Construct Git API URL to get the attachment file
       // Path in git repo is typically: .attachments/{filename}
-      const gitFilePath = `.attachments/${ref.filename}`;
+      const gitFilePath = `${repoInfo.mappedPath}/.attachments/${ref.filename}`;
       const gitApiUrl = `${this.config.orgUrl}${this.config.project}/_apis/git/repositories/${repoInfo.id}/items?path=${encodeURIComponent(gitFilePath)}&api-version=${this.config.apiVersion}`;
       
       console.log(`Git API URL: ${gitApiUrl}`);
@@ -194,7 +194,7 @@ class WikiContentDownloader {
     }
   }
 
-  private async getWikiRepository(wikiNameEncoded: string): Promise<{ id: string; name: string } | null> {
+  private async getWikiRepository(wikiNameEncoded: string): Promise<{ id: string; name: string, mappedPath: string } | null> {
     try {
       console.log(`Getting repository information for wiki: ${this.config.wikiName}`);
       
@@ -217,13 +217,15 @@ class WikiContentDownloader {
         if (wikiInfo.repository) {
           return {
             id: wikiInfo.repository.id,
-            name: wikiInfo.repository.name
+            name: wikiInfo.repository.name,
+            mappedPath: wikiInfo.repository.mappedPath || ''
           };
         } else if (wikiInfo.repositoryId) {
           // Sometimes the repo ID is at the root level
           return {
             id: wikiInfo.repositoryId,
-            name: wikiInfo.name || this.config.wikiName
+            name: wikiInfo.name || this.config.wikiName,
+            mappedPath: wikiInfo.repository.mappedPath || ''
           };
         } else {
           console.log('No repository information found in wiki response');
