@@ -46,63 +46,9 @@ steps:
       AZURE_CLIENT_SECRET: ${{ parameters.azureClientSecret }}
       DataverseUrl: ${{ parameters.dataverseUrl }}
 
-  - script: |
-      set -uo pipefail
-      API_VER="7.1"
-
-      # Generated folder location in DMV
-      OUT_FILE="generated/Introduction.md"
-
-      # The encoding removes all spaces, weird charachters etc. with encoded values like %20 for space.
-      WIKI_NAME_ENCODED=$(python3 -c "import urllib.parse, os; print(urllib.parse.quote(os.environ['WIKI_NAME']))")
-      ENCODED_PATH=$(python3 -c "import urllib.parse, os; print(urllib.parse.quote(os.environ['WIKI_PAGE_PATH']))")
-    
-      URL="${ORG_URL}${PROJECT}/_apis/wiki/wikis/${WIKI_NAME_ENCODED}/pages?path=${ENCODED_PATH}&includeContent=true&api-version=${API_VER}"
-  
-      # Debug: Print the constructed URL
-      echo "Constructed URL: $URL"
-      echo "ENCODED_PATH: $ENCODED_PATH"
-      echo "ORG_URL: $ORG_URL"
-      echo "PROJECT: $PROJECT"
-      echo "WIKI_NAME: $WIKI_NAME"
-      echo "ENCODED_WIKI_NAME: $WIKI_NAME_ENCODED"
-
-      mkdir -p "$(dirname "$OUT_FILE")"
-      # -w (wrap) 0 ensures the token is one line
-      BASE64=$(printf ":%s" "$SYSTEM_ACCESSTOKEN" | base64 --wrap 0)
-
-      # Headers are important https://learn.microsoft.com/en-us/rest/api/azure/devops/?view=azure-devops-rest-7.2
-      # HTTP 2.0 (default) does not work hence the older (1.1) version used
-      RESPONSE=$(curl \
-        --silent \
-        --show-error \
-        --http1.1 \
-        --header "Authorization: Basic ${BASE64}" \
-        --header "Accept: application/json" \
-        "$URL")
-
-      # Check if it's valid JSON
-      if echo "$RESPONSE" | jq . > /dev/null 2>&1; then
-        echo "Response is valid JSON"
-        
-        # Check if it has content field
-        if echo "$RESPONSE" | jq -e '.content' > /dev/null 2>&1; then
-          echo "Response has .content field"
-          echo "$RESPONSE" | jq -r '.content' > "$OUT_FILE"
-          echo "Saved wiki page to $OUT_FILE"
-        else
-          echo "Response does not have .content field"
-          echo "Available fields:"
-          echo "$RESPONSE" | jq 'keys'
-        fi
-      else
-        echo "Response is NOT valid JSON"
-        echo "This might be an error message or HTML response"
-      fi
-
-      echo "Saved wiki page to $OUT_FILE"
+  - script: npx tsx scripts/downloadWikiContent.ts
     workingDirectory: $(Build.SourcesDirectory)/Website
-    displayName: Download Introduction WiKi Page into TS project
+    displayName: Download Introduction Wiki Page and Attachments
     continueOnError: true
     env:
       ORG_URL: $(System.CollectionUri)
