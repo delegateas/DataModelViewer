@@ -225,7 +225,7 @@ class WikiContentDownloader {
           return {
             id: wikiInfo.repositoryId,
             name: wikiInfo.name || this.config.wikiName,
-            mappedPath: wikiInfo.repository.mappedPath || ''
+            mappedPath: wikiInfo.mappedPath || ''
           };
         } else {
           console.log('No repository information found in wiki response');
