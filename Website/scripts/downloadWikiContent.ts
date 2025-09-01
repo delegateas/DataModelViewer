@@ -241,11 +241,6 @@ class WikiContentDownloader {
       return null;
     }
   }
-
-  private async tryAlternativeAttachmentDownload(ref: AttachmentReference, wikiNameEncoded: string): Promise<void> {
-    // This method is no longer needed since we're using Git API
-    console.log('Alternative download method not needed with Git API approach');
-  }
 }
 
 // Main execution
@@ -258,7 +253,7 @@ async function main(): Promise<void> {
     accessToken: process.env.SYSTEM_ACCESSTOKEN || '',
     apiVersion: '7.1',
     outputFile: 'generated/Introduction.md',
-    attachmentsDir: 'generated/.attachments'
+    attachmentsDir: 'public/.attachments'
   };
 
   // Validate required environment variables
