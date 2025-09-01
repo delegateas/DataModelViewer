@@ -1,26 +1,16 @@
-## [1.4.0] - 2025-08-27
+## [1.4.1] - 2025-09-01
 
 ### Features
 
-* Merge pull request #55 from delegateas/features/home-page ([d4a3e51](https://github.com/delegateas/DataModelViewer/commit/d4a3e51))
-* newlines in markdown not being newlines fixed ([bfe78b0](https://github.com/delegateas/DataModelViewer/commit/bfe78b0))
-* added card to the wiki page ([170cb67](https://github.com/delegateas/DataModelViewer/commit/170cb67))
-* updated README with new variables ([a3cfd87](https://github.com/delegateas/DataModelViewer/commit/a3cfd87))
-
-### Bug Fixes
-
-* introduced ESLint error ([d49a704](https://github.com/delegateas/DataModelViewer/commit/d49a704))
-* fallback to stub ([4c0e9bc](https://github.com/delegateas/DataModelViewer/commit/4c0e9bc))
+* added mapped path ([d6f34c7](https://github.com/delegateas/DataModelViewer/commit/d6f34c7))
 
 ### Other Changes
 
-* updated copystub script to include all files in stubs ([283d626](https://github.com/delegateas/DataModelViewer/commit/283d626))
-* navbar changes ([5039239](https://github.com/delegateas/DataModelViewer/commit/5039239))
-* installation of markdown parser ([944987f](https://github.com/delegateas/DataModelViewer/commit/944987f))
-* Introduction stumb ([de30aee](https://github.com/delegateas/DataModelViewer/commit/de30aee))
-* pipeline changes to copy wiki page into Website project ([dab220a](https://github.com/delegateas/DataModelViewer/commit/dab220a))
-* inital homepage setup ([9a52836](https://github.com/delegateas/DataModelViewer/commit/9a52836))
-* imports wrong ([f2b46ac](https://github.com/delegateas/DataModelViewer/commit/f2b46ac))
-* folder renaming / reorder ([a104379](https://github.com/delegateas/DataModelViewer/commit/a104379))
+* updated stub introduction ([f25fb88](https://github.com/delegateas/DataModelViewer/commit/f25fb88))
+* gitignore update, and moved attachment folder to public for easier image src reference ([41ebbb2](https://github.com/delegateas/DataModelViewer/commit/41ebbb2))
+* handle no repository property in response ([305ebb0](https://github.com/delegateas/DataModelViewer/commit/305ebb0))
+* missing get endpoint meant change from wiki to git endpoint ([bbbeea1](https://github.com/delegateas/DataModelViewer/commit/bbbeea1))
+* initial attempt at downloading attachments ([ca2c030](https://github.com/delegateas/DataModelViewer/commit/ca2c030))
+* hotfix: yaml creates file with wrong name ([ae5b54a](https://github.com/delegateas/DataModelViewer/commit/ae5b54a))
 
 
