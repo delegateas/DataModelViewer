@@ -41,6 +41,7 @@ export const HomeView = ({ }: IHomeViewProps) => {
                             a: ({ ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
                             li: ({ ...props }) => <li className="ml-6 list-disc" {...props} />,
                             span: ({ ...props }) => <span className="font-semibold" {...props} />,
+                            img: ({ ...props }) => <img className="max-w-full h-auto my-4" {...props} />,
                         }}>{wikipage}</Markdown>
                     ) : (   
                         <div>Loading wiki...</div>
