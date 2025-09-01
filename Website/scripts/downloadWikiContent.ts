@@ -145,10 +145,23 @@ class WikiContentDownloader {
     try {
       console.log(`Downloading attachment: ${ref.filename}`);
       
-      // Construct attachment URL
-      const attachmentUrl = `${this.config.orgUrl}${this.config.project}/_apis/wiki/wikis/${wikiNameEncoded}/attachments?name=${encodeURIComponent(ref.filename)}&api-version=${this.config.apiVersion}`;
+      // Azure DevOps wikis are stored as Git repositories, so we use the Git API to get attachments
+      // First, we need to get the repository ID for the wiki
+      const repoInfo = await this.getWikiRepository(wikiNameEncoded);
       
-      const response = await fetch(attachmentUrl, {
+      if (!repoInfo) {
+        console.log(`Could not find repository information for wiki: ${this.config.wikiName}`);
+        return;
+      }
+      
+      // Construct Git API URL to get the attachment file
+      // Path in git repo is typically: .attachments/{filename}
+      const gitFilePath = `.attachments/${ref.filename}`;
+      const gitApiUrl = `${this.config.orgUrl}${this.config.project}/_apis/git/repositories/${repoInfo.id}/items?path=${encodeURIComponent(gitFilePath)}&api-version=${this.config.apiVersion}`;
+      
+      console.log(`Git API URL: ${gitApiUrl}`);
+      
+      const response = await fetch(gitApiUrl, {
         method: 'GET',
         headers: {
           'Authorization': this.authHeader
@@ -161,12 +174,75 @@ class WikiContentDownloader {
         await fs.writeFile(filePath, Buffer.from(buffer));
         console.log(`Successfully saved: ${filePath}`);
       } else {
-        console.log(`Failed to download ${ref.filename} (HTTP ${response.status})`);
+        console.log(`Failed to download ${ref.filename} via Git API (HTTP ${response.status})`);
+        console.log(`Response status text: ${response.statusText}`);
+        
+        // Log error details
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType?.includes('application/json')) {
+            const errorResponse = await response.json();
+            console.log(`Error response:`, JSON.stringify(errorResponse, null, 2));
+          }
+        } catch (e) {
+          console.log('Could not parse error response');
+        }
       }
       
     } catch (error) {
       console.error(`Error downloading attachment ${ref.filename}:`, error);
     }
+  }
+
+  private async getWikiRepository(wikiNameEncoded: string): Promise<{ id: string; name: string } | null> {
+    try {
+      console.log(`Getting repository information for wiki: ${this.config.wikiName}`);
+      
+      // Get wiki information which includes the repository ID
+      const wikiInfoUrl = `${this.config.orgUrl}${this.config.project}/_apis/wiki/wikis/${wikiNameEncoded}?api-version=${this.config.apiVersion}`;
+      
+      const response = await fetch(wikiInfoUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': this.authHeader,
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const wikiInfo = await response.json();
+        console.log(`Wiki info:`, JSON.stringify(wikiInfo, null, 2));
+        
+        // The wiki info should contain repository information
+        if (wikiInfo.repository) {
+          return {
+            id: wikiInfo.repository.id,
+            name: wikiInfo.repository.name
+          };
+        } else if (wikiInfo.repositoryId) {
+          // Sometimes the repo ID is at the root level
+          return {
+            id: wikiInfo.repositoryId,
+            name: wikiInfo.name || this.config.wikiName
+          };
+        } else {
+          console.log('No repository information found in wiki response');
+          return null;
+        }
+      } else {
+        console.log(`Failed to get wiki repository info (HTTP ${response.status})`);
+        return null;
+      }
+      
+    } catch (error) {
+      console.error('Error getting wiki repository information:', error);
+      return null;
+    }
+  }
+
+  private async tryAlternativeAttachmentDownload(ref: AttachmentReference, wikiNameEncoded: string): Promise<void> {
+    // This method is no longer needed since we're using Git API
+    console.log('Alternative download method not needed with Git API approach');
   }
 }
 
