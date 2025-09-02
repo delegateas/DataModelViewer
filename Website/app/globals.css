@@ -7,6 +7,19 @@ body {
 }
 
 @layer base {
+  @font-face {
+    font-family: "PP Neue Machina Inktrap";
+    font-style: normal;
+    src: url("/fonts/PPNeueMachina-InktrapRegular.otf") format("opentype");
+  }
+  @font-face {
+    font-family: "HassGrotesk";
+    font-style: normal;
+    src: url("/fonts/neuehaasgrotdispround-65medium-trial.otf") format("opentype");
+  }
+}
+
+@layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
@@ -75,20 +88,5 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-@layer utilities {
-  .striped tr:nth-child(even) {
-    @apply bg-gray-100
   }
 }
