@@ -6,7 +6,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import SidebarNavRail from './SidebarNavRail'
 import clsx from 'clsx'
 import { Logo } from '@/generated/Data'
-import { Separator } from './ui/separator'
+import { Divider } from '@mui/material'
 
 interface IAppSidebarProps {}
 
@@ -76,7 +76,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
               {Logo ? (
                 <div className='flex items-center align-center'>
                   <img src={Logo} alt="Logo" className="h-10 w-10" draggable={false} />
-                  <Separator orientation="vertical" className="mx-2 h-6" />
+                  <Divider orientation="vertical" sx={{ mx: 1, height: 24 }} />
                   <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
                 </div>
               ) : (
@@ -89,7 +89,7 @@ export const AppSidebar = ({}: IAppSidebarProps) => {
                 {Logo ? (
                   <div className='flex items-center align-center'>
                     <img src={Logo} alt="Logo" className="h-10 w-10" draggable={false} />
-                    <Separator orientation="vertical" className="mx-2 h-6" />
+                    <Divider orientation="vertical" sx={{ mx: 1, height: 24 }} />
                     <img src="/DMVLOGOHORZ.svg" alt="Logo" className="h-10" draggable={false} />
                   </div>
                 ) : (

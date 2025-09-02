@@ -1,8 +1,8 @@
 'use client'
 
 import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
+import { Tooltip } from "@mui/material";
 import { Calculator, CircleAlert, CirclePlus, Eye, Lock, Sigma, Zap } from "lucide-react";
-import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../shared/ui/hybridtooltop";
 
 export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
     const details = [];
@@ -44,10 +44,9 @@ export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
     return (
         <div className="flex flex-row gap-1">
             {details.map((detail, index) => (
-                <HybridTooltip key={index}>
-                    <HybridTooltipTrigger asChild>{detail.icon}</HybridTooltipTrigger>
-                    <HybridTooltipContent>{detail.tooltip}</HybridTooltipContent>
-                </HybridTooltip>
+                <Tooltip key={index} title={detail.tooltip}>
+                    {detail.icon}
+                </Tooltip>
             ))}
         </div>
     );

@@ -1,13 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/shared/ui/sheet';
-import { Button } from '@/components/shared/ui/button';
-import { Input } from '@/components/shared/ui/input';
-import { Label } from '@/components/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select';
-import { Separator } from '@/components/shared/ui/separator';
 import { dia } from '@joint/core';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogTitle, 
+    Button, 
+    TextField, 
+    Select, 
+    MenuItem, 
+    FormControl, 
+    InputLabel, 
+    Typography,
+    Box,
+    Divider
+} from '@mui/material';
 import { PRESET_COLORS, LINE_STYLES, STROKE_WIDTHS } from '../shared/DiagramConstants';
 
 interface LinkPropertiesPaneProps {
@@ -92,133 +100,138 @@ export const LinkPropertiesPane: React.FC<LinkPropertiesPaneProps> = ({
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent className="w-[400px] sm:w-[400px]">
-                <SheetHeader>
-                    <SheetTitle>Link Properties</SheetTitle>
-                    <SheetDescription>
-                        Customize the appearance and label of the relationship link.
-                    </SheetDescription>
-                </SheetHeader>
+        <Dialog open={isOpen} onClose={() => onOpenChange(false)} maxWidth="sm" fullWidth>
+            <DialogContent>
+                <DialogTitle>Link Properties</DialogTitle>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Customize the appearance and label of the relationship link.
+                </Typography>
 
-                <div className="mt-6 space-y-6">
+                <Box mt={2} display="flex" flexDirection="column" gap={3}>
                     {/* Label Section */}
-                    <div className="space-y-2">
-                        <Label htmlFor="label">Link Label</Label>
-                        <Input
-                            id="label"
+                    <Box>
+                        <Typography variant="subtitle2" gutterBottom>Link Label</Typography>
+                        <TextField
+                            fullWidth
+                            size="small"
                             placeholder="Enter relationship label..."
                             value={label}
-                            onChange={(e) => setLabel(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLabel(e.target.value)}
                         />
-                        <div className="flex gap-2">
+                        <Box display="flex" gap={1} mt={1}>
                             <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
+                                variant="outlined"
+                                size="small"
                                 onClick={handleClearLabel}
-                                className="flex-1"
+                                fullWidth
                             >
                                 Clear
                             </Button>
                             <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
+                                variant="outlined"
+                                size="small"
                                 onClick={handleUseRelationshipName}
                                 disabled={!getRelationshipName()}
-                                className="flex-1"
+                                fullWidth
                                 title={getRelationshipName() || 'No relationship name available'}
                             >
                                 Use Relationship Name
                             </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
                             Optional text to display on the link
-                        </p>
-                    </div>
+                        </Typography>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Color Section */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium">Link Color</Label>
-                        <div className="grid grid-cols-5 gap-2">
+                    <Box>
+                        <Typography variant="subtitle2" gutterBottom>Link Color</Typography>
+                        <Box display="grid" gridTemplateColumns="repeat(5, 1fr)" gap={1}>
                             {PRESET_COLORS.borders.map((presetColor) => (
                                 <Button
                                     key={presetColor.value}
-                                    variant="outline"
-                                    size="sm"
-                                    className={`h-8 p-1 transition-all hover:scale-105 ${
-                                        color === presetColor.value 
-                                            ? 'ring-2 ring-blue-500 border-blue-500' 
-                                            : ''
-                                    }`}
-                                    style={{ backgroundColor: presetColor.value }}
+                                    variant="outlined"
+                                    size="small"
                                     onClick={() => handleColorChange(presetColor.value)}
                                     title={presetColor.name}
+                                    sx={{
+                                        height: 32,
+                                        minWidth: 0,
+                                        p: 0.5,
+                                        backgroundColor: presetColor.value,
+                                        border: color === presetColor.value ? '2px solid' : '1px solid',
+                                        borderColor: color === presetColor.value ? 'primary.main' : 'grey.300',
+                                        '&:hover': {
+                                            transform: 'scale(1.05)',
+                                            backgroundColor: presetColor.value
+                                        }
+                                    }}
                                 >
-                                    <span className="sr-only">{presetColor.name}</span>
+                                    <span style={{ visibility: 'hidden' }}>{presetColor.name}</span>
                                 </Button>
                             ))}
-                        </div>
+                        </Box>
                         
-                        <div className="flex items-center space-x-2">
-                            <Input
+                        <Box display="flex" alignItems="center" gap={1} mt={2}>
+                            <TextField
                                 type="color"
                                 value={customColor}
-                                onChange={(e) => handleColorChange(e.target.value)}
-                                className="w-12 h-8 p-1 border-2"
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleColorChange(e.target.value)}
+                                sx={{ width: 48, '& .MuiInputBase-input': { p: 0.5 } }}
+                                size="small"
                             />
-                            <Input
+                            <TextField
+                                fullWidth
+                                size="small"
                                 type="text"
                                 value={color}
-                                onChange={(e) => handleColorChange(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleColorChange(e.target.value)}
                                 placeholder="#3b82f6"
-                                className="flex-1 text-sm"
                             />
-                        </div>
-                    </div>
+                        </Box>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Line Style Section */}
-                    <div className="space-y-2">
-                        <Label htmlFor="line-style">Line Style</Label>
-                        <Select value={lineStyle} onValueChange={setLineStyle}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select line style" />
-                            </SelectTrigger>
-                            <SelectContent>
+                    <Box>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Line Style</InputLabel>
+                            <Select
+                                value={lineStyle}
+                                onChange={(e) => setLineStyle(e.target.value)}
+                                label="Line Style"
+                            >
                                 {LINE_STYLES.map((style) => (
-                                    <SelectItem key={style.value} value={style.value}>
+                                    <MenuItem key={style.value} value={style.value}>
                                         {style.name}
-                                    </SelectItem>
+                                    </MenuItem>
                                 ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                            </Select>
+                        </FormControl>
+                    </Box>
 
                     {/* Stroke Width Section */}
-                    <div className="space-y-2">
-                        <Label htmlFor="stroke-width">Line Thickness</Label>
-                        <Select value={strokeWidth.toString()} onValueChange={(value) => setStrokeWidth(parseInt(value))}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select thickness" />
-                            </SelectTrigger>
-                            <SelectContent>
+                    <Box>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Line Thickness</InputLabel>
+                            <Select
+                                value={strokeWidth.toString()}
+                                onChange={(e) => setStrokeWidth(parseInt(e.target.value as string))}
+                                label="Line Thickness"
+                            >
                                 {STROKE_WIDTHS.map((width) => (
-                                    <SelectItem key={width.value} value={width.value.toString()}>
+                                    <MenuItem key={width.value} value={width.value.toString()}>
                                         {width.name} ({width.value}px)
-                                    </SelectItem>
+                                    </MenuItem>
                                 ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <Separator />
-                </div>
-            </SheetContent>
-        </Sheet>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Box>
+            </DialogContent>
+        </Dialog>
     );
 };

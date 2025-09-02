@@ -1,15 +1,11 @@
 import { HomeView } from "@/components/homeview/HomeView";
-import { TouchProvider } from "@/components/shared/ui/hybridtooltop";
-import { Loading } from "@/components/shared/ui/loading";
-import { TooltipProvider } from "@/components/shared/ui/tooltip";
 import { Suspense } from "react";
 
 export default function Data() {
-  return <Suspense fallback={<Loading />}>
-      <TouchProvider>
-        <TooltipProvider>
-            <HomeView />
-        </TooltipProvider>
-      </TouchProvider>
+  // TODO - loading component fallback={<Loading />}
+  return (
+    <Suspense>
+      <HomeView />
     </Suspense>
+  );
 }

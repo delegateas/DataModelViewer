@@ -1,13 +1,11 @@
 'use client'
 
 import { EntityType } from "@/lib/Types"
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../shared/ui/table"
 import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
-import { Input } from "../shared/ui/input"
-import { Button } from "../shared/ui/button"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
+import { Button, Input, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material"
 
 type SortColumn = 'name' | 'logicalName' | 'attributes' | null
 type SortDirection = 'asc' | 'desc' | null
@@ -126,11 +124,12 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                         />
                         {searchQuery && (
                             <Button
-                                variant="ghost"
-                                size="icon"
+                                variant="text"
+                                size="small"
                                 onClick={() => setSearchQuery("")}
                                 className="absolute right-1 top-1 h-6 w-6 text-gray-400 hover:text-gray-600 md:right-1 md:top-1.5 md:h-7 md:w-7"
                                 title="Clear search"
+                                sx={{ minWidth: 'auto', padding: 0 }}
                             >
                                 <X className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
@@ -138,11 +137,12 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                     </div>
                     {searchQuery && (
                         <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="text"
+                            size="small"
                             onClick={() => setSearchQuery("")}
                             className="h-8 w-8 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
                             title="Clear search"
+                            sx={{ minWidth: 'auto', padding: 0 }}
                         >
                             <X className="h-3 w-3 md:h-4 md:w-4" />
                         </Button>
@@ -162,7 +162,7 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                             <div className="flex flex-col items-center gap-2">
                                 <p>No keys found matching &quot;{searchQuery}&quot;</p>
                                 <Button
-                                    variant="ghost"
+                                    variant="text"
                                     onClick={() => setSearchQuery("")}
                                     className="text-blue-600 hover:text-blue-700"
                                 >
@@ -175,9 +175,9 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                     </div>
                 ) : (
                     <Table>
-                        <TableHeader>
+                        <TableHead>
                             <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
-                                <TableHead 
+                                <TableCell 
                                     className="w-[25%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                     onClick={() => handleSort('name')}
                                 >
@@ -185,8 +185,8 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                                         Name
                                         <SortIcon column="name" />
                                     </div>
-                                </TableHead>
-                                <TableHead 
+                                </TableCell>
+                                <TableCell 
                                     className="w-[25%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                     onClick={() => handleSort('logicalName')}
                                 >
@@ -194,8 +194,8 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                                         Logical Name
                                         <SortIcon column="logicalName" />
                                     </div>
-                                </TableHead>
-                                <TableHead 
+                                </TableCell>
+                                <TableCell 
                                     className="w-[50%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                     onClick={() => handleSort('attributes')}
                                 >
@@ -203,9 +203,9 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                                         Key Attributes
                                         <SortIcon column="attributes" />
                                     </div>
-                                </TableHead>
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
+                        </TableHead>
                         <TableBody>
                             {sortedKeys.map((key, index) => (
                                 <TableRow 

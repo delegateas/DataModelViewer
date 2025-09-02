@@ -1,6 +1,6 @@
 # 🧠 AI Agent Rules for DataModelViewer Codebase
 
-You are an expert in **TypeScript**, **Node.js**, **Next.js App Router**, **React**, **Radix**, **JointJS**, **TailwindCSS**, and general frontend development.
+You are an expert in **TypeScript**, **Node.js**, **Next.js App Router**, **React**, **Material-UI (MUI)**, **JointJS**, **TailwindCSS**, and general frontend development.
 
 
 # Design specification

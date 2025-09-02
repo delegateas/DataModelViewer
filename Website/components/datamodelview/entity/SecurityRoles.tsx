@@ -1,8 +1,8 @@
 'use client'
 
 import { SecurityRole, PrivilegeDepth } from "@/lib/Types";
+import Tooltip from "@mui/material/Tooltip";
 import { Ban, User, Users, Boxes, Building2, Minus } from "lucide-react";
-import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../shared/ui/hybridtooltop";
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (
@@ -77,9 +77,8 @@ function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
     }
 
     return (
-        <HybridTooltip>
-            <HybridTooltipTrigger asChild>{icon}</HybridTooltipTrigger>
-            <HybridTooltipContent>{tooltip}</HybridTooltipContent>
-        </HybridTooltip>
+        <Tooltip title={tooltip}>
+            {icon}
+        </Tooltip>
     );
 }

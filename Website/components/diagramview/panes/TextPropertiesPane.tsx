@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/shared/ui/sheet';
-import { Button } from '@/components/shared/ui/button';
-import { Input } from '@/components/shared/ui/input';
-import { Label } from '@/components/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select';
-import { Separator } from '@/components/shared/ui/separator';
 import { Type, Trash2 } from 'lucide-react';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogTitle, 
+    Button, 
+    TextField, 
+    Typography,
+    Box,
+    Divider
+} from '@mui/material';
 import { TextElement, TextElementData } from '../elements/TextElement';
 
 export interface TextPropertiesPaneProps {
@@ -88,192 +92,215 @@ export const TextPropertiesPane: React.FC<TextPropertiesPaneProps> = ({
     }
 
     return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="w-80 overflow-y-auto">
-                <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                        <Type className="w-5 h-5" />
-                        Text Properties
-                    </SheetTitle>
-                </SheetHeader>
-
-                <div className="space-y-6 mt-6">
+        <Dialog open={isOpen} onClose={() => onOpenChange(false)} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Type size={20} />
+                Text Properties
+            </DialogTitle>
+            <DialogContent sx={{ minHeight: '600px' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
                     {/* Text Content */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium">Text Content</Label>
-                        <Input
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                            Text Content
+                        </Typography>
+                        <TextField
                             placeholder="Enter your text..."
                             value={textData.text}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('text', e.target.value)}
+                            fullWidth
+                            size="small"
                         />
-                    </div>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Typography */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium">Typography</Label>
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                            Typography
+                        </Typography>
                         
                         {/* Font Family */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Font Family</Label>
-                            <Select 
-                                value={textData.fontFamily} 
-                                onValueChange={(value) => handleDataChange('fontFamily', value)}
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Font Family
+                            </Typography>
+                            <TextField
+                                select
+                                value={textData.fontFamily}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('fontFamily', e.target.value)}
+                                size="small"
+                                fullWidth
+                                SelectProps={{ native: true }}
                             >
-                                <SelectTrigger className="text-sm">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {FONT_FAMILIES.map((font) => (
-                                        <SelectItem key={font.value} value={font.value}>
-                                            {font.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                {FONT_FAMILIES.map((font) => (
+                                    <option key={font.value} value={font.value}>
+                                        {font.name}
+                                    </option>
+                                ))}
+                            </TextField>
+                        </Box>
 
                         {/* Font Size */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Font Size</Label>
-                            <Select 
-                                value={textData.fontSize.toString()} 
-                                onValueChange={(value) => handleDataChange('fontSize', parseInt(value))}
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Font Size
+                            </Typography>
+                            <TextField
+                                select
+                                value={textData.fontSize.toString()}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('fontSize', parseInt(e.target.value))}
+                                size="small"
+                                fullWidth
+                                SelectProps={{ native: true }}
                             >
-                                <SelectTrigger className="text-sm">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {FONT_SIZES.map((size) => (
-                                        <SelectItem key={size.value} value={size.value.toString()}>
-                                            {size.name} ({size.value}px)
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                {FONT_SIZES.map((size) => (
+                                    <option key={size.value} value={size.value.toString()}>
+                                        {size.name} ({size.value}px)
+                                    </option>
+                                ))}
+                            </TextField>
+                        </Box>
 
                         {/* Text Alignment */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Text Alignment</Label>
-                            <Select 
-                                value={textData.textAlign} 
-                                onValueChange={(value: 'left' | 'center' | 'right') => handleDataChange('textAlign', value)}
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Text Alignment
+                            </Typography>
+                            <TextField
+                                select
+                                value={textData.textAlign}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('textAlign', e.target.value as 'left' | 'center' | 'right')}
+                                size="small"
+                                fullWidth
+                                SelectProps={{ native: true }}
                             >
-                                <SelectTrigger className="text-sm">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="left">Left</SelectItem>
-                                    <SelectItem value="center">Center</SelectItem>
-                                    <SelectItem value="right">Right</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                                <option value="left">Left</option>
+                                <option value="center">Center</option>
+                                <option value="right">Right</option>
+                            </TextField>
+                        </Box>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Colors */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium">Colors</Label>
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                            Colors
+                        </Typography>
                         
                         {/* Text Color */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Text Color</Label>
-                            <div className="flex items-center space-x-2">
-                                <Input
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Text Color
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <TextField
                                     type="color"
                                     value={textData.color}
-                                    onChange={(e) => handleDataChange('color', e.target.value)}
-                                    className="w-12 h-8 p-1 border-2"
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('color', e.target.value)}
+                                    sx={{ width: 48, '& .MuiInputBase-input': { padding: 0.5, height: 32 } }}
+                                    size="small"
                                 />
-                                <Input
+                                <TextField
                                     type="text"
                                     value={textData.color}
-                                    onChange={(e) => handleDataChange('color', e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('color', e.target.value)}
                                     placeholder="#000000"
-                                    className="flex-1 text-sm"
+                                    sx={{ flex: 1 }}
+                                    size="small"
                                 />
-                            </div>
-                        </div>
+                            </Box>
+                        </Box>
 
                         {/* Background Color */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Background Color</Label>
-                            <div className="flex items-center space-x-2">
-                                <Input
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Background Color
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <TextField
                                     type="color"
                                     value={textData.backgroundColor === 'transparent' ? '#ffffff' : textData.backgroundColor}
-                                    onChange={(e) => handleDataChange('backgroundColor', e.target.value)}
-                                    className="w-12 h-8 p-1 border-2"
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('backgroundColor', e.target.value)}
+                                    sx={{ width: 48, '& .MuiInputBase-input': { padding: 0.5, height: 32 } }}
+                                    size="small"
                                 />
-                                <Input
+                                <TextField
                                     type="text"
                                     value={textData.backgroundColor}
-                                    onChange={(e) => handleDataChange('backgroundColor', e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('backgroundColor', e.target.value)}
                                     placeholder="transparent"
-                                    className="flex-1 text-sm"
+                                    sx={{ flex: 1 }}
+                                    size="small"
                                 />
-                            </div>
-                        </div>
-                    </div>
+                            </Box>
+                        </Box>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Layout */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium">Layout</Label>
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                            Layout
+                        </Typography>
                         
                         {/* Padding */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Padding</Label>
-                            <Input
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Padding
+                            </Typography>
+                            <TextField
                                 type="number"
-                                min="0"
-                                max="50"
-                                step="1"
+                                inputProps={{ min: 0, max: 50, step: 1 }}
                                 value={textData.padding}
-                                onChange={(e) => handleDataChange('padding', parseInt(e.target.value) || 0)}
-                                className="text-sm"
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('padding', parseInt(e.target.value) || 0)}
+                                size="small"
+                                fullWidth
                             />
-                        </div>
+                        </Box>
 
                         {/* Border Radius */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Border Radius</Label>
-                            <Input
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Border Radius
+                            </Typography>
+                            <TextField
                                 type="number"
-                                min="0"
-                                max="20"
-                                step="1"
+                                inputProps={{ min: 0, max: 20, step: 1 }}
                                 value={textData.borderRadius}
-                                onChange={(e) => handleDataChange('borderRadius', parseInt(e.target.value) || 0)}
-                                className="text-sm"
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('borderRadius', parseInt(e.target.value) || 0)}
+                                size="small"
+                                fullWidth
                             />
-                        </div>
-                    </div>
+                        </Box>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Delete Section */}
                     {onDeleteText && (
-                        <div className="space-y-3">
-                            <Label className="text-sm font-medium text-destructive">Danger Zone</Label>
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, color: 'error.main' }}>
+                                Danger Zone
+                            </Typography>
                             <Button
-                                variant="destructive"
-                                size="sm"
-                                className="w-full"
+                                variant="contained"
+                                color="error"
+                                size="small"
+                                fullWidth
                                 onClick={handleDeleteText}
+                                startIcon={<Trash2 size={16} />}
                             >
-                                <Trash2 className="w-4 h-4 mr-2" />
                                 Delete Text
                             </Button>
-                        </div>
+                        </Box>
                     )}
-                </div>
-            </SheetContent>
-        </Sheet>
+                </Box>
+            </DialogContent>
+        </Dialog>
     );
 };

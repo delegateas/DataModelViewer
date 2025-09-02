@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/shared/ui/tabs';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/shared/ui/collapsible';
-import { Button } from '@/components/shared/ui/button';
+import { 
+    Tabs, 
+    Tab, 
+    Box, 
+    Accordion, 
+    AccordionSummary, 
+    AccordionDetails, 
+    Button,
+    Collapse,
+    Typography,
+    Divider
+} from '@mui/material';
+import { ExpandMore } from '@mui/icons-material';
 import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
 import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagramview/panes';
@@ -58,199 +68,283 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
 
     return (
         <div className="flex flex-col h-full w-full">
-            <Tabs defaultValue="build" className="w-full">
-                <TabsList className="w-full grid-cols-3 flex">
-                    <TabsTrigger value="build" className="flex items-center gap-2 text-xs flex-1">
-                        <Hammer className="min-w-4 h-4" />
-                    </TabsTrigger>
-                    <TabsTrigger value="settings" className="flex items-center gap-2 text-xs flex-1">
-                        <Settings className="min-w-4 h-4" />
-                    </TabsTrigger>
-                </TabsList>
+            <Box sx={{ width: '100%' }}>
+                <Tabs value={0} indicatorColor="primary" textColor="primary">
+                    <Tab 
+                        label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Hammer size={16} />
+                                Build
+                            </Box>
+                        } 
+                        sx={{ minWidth: 0, flex: 1, fontSize: '0.75rem' }} 
+                    />
+                    <Tab 
+                        label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Settings size={16} />
+                                Settings
+                            </Box>
+                        } 
+                        sx={{ minWidth: 0, flex: 1, fontSize: '0.75rem' }} 
+                    />
+                </Tabs>
                 
-                <TabsContent value="build" className="p-4 space-y-4">
+                <Box sx={{ p: 2 }}>
                     {/* Mobile Notice */}
                     {isMobile && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                            <div className="flex items-center gap-2 text-amber-800">
-                                <Smartphone className="w-4 h-4 flex-shrink-0" />
-                                <div className="text-sm">
-                                    <p className="font-medium">Mobile Mode</p>
-                                    <p className="text-amber-700 mt-1">
-                                        Some advanced features may have limited functionality on mobile devices. 
-                                        For the best experience, use a desktop computer.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                        <Box sx={{ 
+                            backgroundColor: 'rgb(255 251 235)', 
+                            border: '1px solid rgb(252 211 77)', 
+                            borderRadius: 2, 
+                            p: 1.5, 
+                            mb: 2,
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 1
+                        }}>
+                            <Smartphone size={16} style={{ color: 'rgb(146 64 14)', flexShrink: 0, marginTop: 2 }} />
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500, color: 'rgb(146 64 14)', mb: 0.5 }}>
+                                    Mobile Mode
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'rgb(120 53 15)' }}>
+                                    Some advanced features may have limited functionality on mobile devices. 
+                                    For the best experience, use a desktop computer.
+                                </Typography>
+                            </Box>
+                        </Box>
                     )}
                     
                     {/* Data Section */}
-                    <Collapsible open={isDataExpanded} onOpenChange={setIsDataExpanded}>
-                        <CollapsibleTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                                <span className="font-medium">Data</span>
-                                {isDataExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                            </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-2 pl-4 pt-2">
-                            <Button 
-                                variant="ghost" 
-                                className="w-full justify-start gap-2 h-auto py-2"
-                                onClick={() => setIsEntitySheetOpen(true)}
-                            >
-                                <Database className="w-4 h-4" />
-                                Entity
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                className="w-full justify-start gap-2 h-auto py-2"
-                                onClick={() => setIsGroupSheetOpen(true)}
-                            >
-                                <Users className="w-4 h-4" />
-                                Group
-                            </Button>
-                        </CollapsibleContent>
-                    </Collapsible>
+                    <Box sx={{ mb: 2 }}>
+                        <Button 
+                            variant="text" 
+                            fullWidth
+                            onClick={() => setIsDataExpanded(!isDataExpanded)}
+                            sx={{ 
+                                justifyContent: 'space-between', 
+                                p: 1, 
+                                textTransform: 'none',
+                                fontWeight: 500
+                            }}
+                            endIcon={isDataExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        >
+                            Data
+                        </Button>
+                        <Collapse in={isDataExpanded}>
+                            <Box sx={{ pl: 2, pt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Button 
+                                    variant="text" 
+                                    fullWidth
+                                    startIcon={<Database size={16} />}
+                                    onClick={() => setIsEntitySheetOpen(true)}
+                                    sx={{ 
+                                        justifyContent: 'flex-start', 
+                                        py: 1,
+                                        textTransform: 'none'
+                                    }}
+                                >
+                                    Entity
+                                </Button>
+                                <Button 
+                                    variant="text" 
+                                    fullWidth
+                                    startIcon={<Users size={16} />}
+                                    onClick={() => setIsGroupSheetOpen(true)}
+                                    sx={{ 
+                                        justifyContent: 'flex-start', 
+                                        py: 1,
+                                        textTransform: 'none'
+                                    }}
+                                >
+                                    Group
+                                </Button>
+                            </Box>
+                        </Collapse>
+                    </Box>
 
                     {/* General Section */}
-                    <Collapsible open={isGeneralExpanded} onOpenChange={setIsGeneralExpanded}>
-                        <CollapsibleTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-between p-2 h-auto">
-                                <span className="font-medium">General</span>
-                                {isGeneralExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                            </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-2 pl-4 pt-2">
-                            <Button 
-                                variant="ghost" 
-                                className="w-full justify-start gap-2 h-auto py-2"
-                                onClick={addSquareToDiagram}
-                            >
-                                <Square className="w-4 h-4" />
-                                Square
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                className="w-full justify-start gap-2 h-auto py-2"
-                                onClick={addTextToDiagram}
-                            >
-                                <Type className="w-4 h-4" />
-                                Text
-                            </Button>
-                        </CollapsibleContent>
-                    </Collapsible>
-                </TabsContent>
-                
-                <TabsContent value="layers" className="p-4">
-                    <p className="text-sm text-muted-foreground">Layers functionality coming soon...</p>
-                </TabsContent>
-                
-                <TabsContent value="settings" className="p-4">
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <h3 className="font-medium text-sm">Diagram Type</h3>
-                            <p className="text-xs text-muted-foreground">
-                                Choose between simple or detailed entity view
-                            </p>
-                            <div className="flex flex-col space-y-2">
-                                <Button
-                                    variant={diagramType === 'simple' ? 'default' : 'outline'}
-                                    size="sm"
-                                    className="w-full justify-start"
-                                    onClick={() => updateDiagramType('simple')}
+                    <Box sx={{ mb: 2 }}>
+                        <Button 
+                            variant="text" 
+                            fullWidth
+                            onClick={() => setIsGeneralExpanded(!isGeneralExpanded)}
+                            sx={{ 
+                                justifyContent: 'space-between', 
+                                p: 1, 
+                                textTransform: 'none',
+                                fontWeight: 500
+                            }}
+                            endIcon={isGeneralExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        >
+                            General
+                        </Button>
+                        <Collapse in={isGeneralExpanded}>
+                            <Box sx={{ pl: 2, pt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Button 
+                                    variant="text" 
+                                    fullWidth
+                                    startIcon={<Square size={16} />}
+                                    onClick={addSquareToDiagram}
+                                    sx={{ 
+                                        justifyContent: 'flex-start', 
+                                        py: 1,
+                                        textTransform: 'none'
+                                    }}
                                 >
-                                    <Database className="w-4 h-4 mr-2" />
+                                    Square
+                                </Button>
+                                <Button 
+                                    variant="text" 
+                                    fullWidth
+                                    startIcon={<Type size={16} />}
+                                    onClick={addTextToDiagram}
+                                    sx={{ 
+                                        justifyContent: 'flex-start', 
+                                        py: 1,
+                                        textTransform: 'none'
+                                    }}
+                                >
+                                    Text
+                                </Button>
+                            </Box>
+                        </Collapse>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                Diagram Type
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                                Choose between simple or detailed entity view
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Button
+                                    variant={diagramType === 'simple' ? 'contained' : 'outlined'}
+                                    size="small"
+                                    fullWidth
+                                    startIcon={<Database size={16} />}
+                                    onClick={() => updateDiagramType('simple')}
+                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                                >
                                     Simple View
                                 </Button>
                                 <Button
-                                    variant={diagramType === 'detailed' ? 'default' : 'outline'}
-                                    size="sm"
-                                    className="w-full justify-start"
+                                    variant={diagramType === 'detailed' ? 'contained' : 'outlined'}
+                                    size="small"
+                                    fullWidth
+                                    startIcon={<Square size={16} />}
                                     onClick={() => updateDiagramType('detailed')}
+                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                                 >
-                                    <Square className="w-4 h-4 mr-2" />
                                     Detailed View
                                 </Button>
-                            </div>
-                        </div>
+                            </Box>
+                        </Box>
                         
-                        <div className="border-t pt-4">
-                            <div className="space-y-2">
-                                <h3 className="font-medium text-sm">Save & Load</h3>
-                                <p className="text-xs text-muted-foreground">
-                                    Save your diagram or load an existing one
-                                </p>
-                                <div className="flex flex-col space-y-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full justify-start"
-                                        onClick={saveDiagram}
-                                    >
-                                        <Save className="w-4 h-4 mr-2" />
-                                        Save Diagram
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full justify-start relative overflow-hidden cursor-pointer"
-                                    >
-                                        <Upload className="w-4 h-4 mr-2 cursor-pointer" />
-                                        Load Diagram
-                                        <input
-                                            type="file"
-                                            accept=".json"
-                                            onChange={handleLoadDiagram}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                            id="load-diagram"
-                                        />
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
+                        <Divider />
                         
-                        <div className="border-t pt-4">
-                            <div className="space-y-2">
-                                <h3 className="font-medium text-sm">Current Settings</h3>
-                                <div className="text-xs text-muted-foreground space-y-1">
-                                    <p>Diagram Type: <span className="font-medium capitalize">{diagramType}</span></p>
-                                    <p>Entities in Diagram: <span className="font-medium">{currentEntities.length}</span></p>
-                                </div>
-                            </div>
-                        </div>
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                Save & Load
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                                Save your diagram or load an existing one
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    fullWidth
+                                    startIcon={<Save size={16} />}
+                                    onClick={saveDiagram}
+                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                                >
+                                    Save Diagram
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    fullWidth
+                                    component="label"
+                                    startIcon={<Upload size={16} />}
+                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                                >
+                                    Load Diagram
+                                    <input
+                                        type="file"
+                                        accept=".json"
+                                        onChange={handleLoadDiagram}
+                                        style={{ 
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            opacity: 0,
+                                            cursor: 'pointer'
+                                        }}
+                                        id="load-diagram"
+                                    />
+                                </Button>
+                            </Box>
+                        </Box>
                         
-                        <div className="border-t pt-4">
-                            <div className="space-y-2">
-                                <h3 className="font-medium text-sm">Diagram Actions</h3>
-                                <p className="text-xs text-muted-foreground">
-                                    Reset or clear your diagram
-                                </p>
-                                <div className="flex flex-col space-y-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full justify-start"
-                                        onClick={() => setIsResetSheetOpen(true)}
-                                    >
-                                        <RotateCcw className="w-4 h-4 mr-2" />
-                                        Reset to Group
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full justify-start"
-                                        onClick={clearDiagram}
-                                    >
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Clear All
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </TabsContent>
-            </Tabs>
+                        <Divider />
+                        
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                Current Settings
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                    Diagram Type: <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{diagramType}</span>
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Entities in Diagram: <span style={{ fontWeight: 500 }}>{currentEntities.length}</span>
+                                </Typography>
+                            </Box>
+                        </Box>
+                        
+                        <Divider />
+                        
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                Diagram Actions
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                                Reset or clear your diagram
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    fullWidth
+                                    startIcon={<RotateCcw size={16} />}
+                                    onClick={() => setIsResetSheetOpen(true)}
+                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                                >
+                                    Reset to Group
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    fullWidth
+                                    startIcon={<Trash2 size={16} />}
+                                    onClick={clearDiagram}
+                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                                >
+                                    Clear All
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
+            </Box>
 
             {/* Add Entity Pane */}
             <AddEntityPane

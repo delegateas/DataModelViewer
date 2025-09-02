@@ -1,6 +1,6 @@
 # Introduction
 This document provides guidelines how to design components for the project.
-The project uses Tailwind CSS for styling. And Radix UI (primitives) for elements.
+The project uses Tailwind CSS for styling. And MUI UI for elements.
 You must always follow the design specifications outlined in this document.
 
 # Styling
@@ -18,8 +18,7 @@ The default font must be `font-context`.
 
 # New components
 If you are creating a new component, make sure to follow these guidelines:
-- Use Radix UI components where applicable.
+- Use MUI components where applicable.
 - Use Tailwind CSS classes for styling.
-- New Radix UI components should be placed inside `components/shared/ui`
 - New TSX components should be placed in the related component folder. E.g. a diagram component should be placed in `components/diagramview`
 

@@ -1,7 +1,6 @@
 'use client'
 
 import { AppSidebar } from "../shared/AppSidebar";
-import { TooltipProvider } from "../shared/ui/tooltip";
 import { useSidebarDispatch } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { DatamodelViewProvider, useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
@@ -216,9 +215,7 @@ function DatamodelViewContent() {
                         currentIndex={currentSearchIndex}
                         totalResults={totalResults}
                     />
-                    <TooltipProvider delayDuration={0}>
-                        <List />
-                    </TooltipProvider>
+                    <List />
                 </div>
             </div>
         </div>

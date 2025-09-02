@@ -1,8 +1,8 @@
 'use client'
 
 import { EntityType, OwnershipType } from "@/lib/Types";
+import { Tooltip } from "@mui/material";
 import { Eye, ClipboardList, Paperclip, Building, Users } from "lucide-react";
-import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../shared/ui/hybridtooltop";
 
 type EntityDetailType = {
     icon: JSX.Element;
@@ -14,19 +14,16 @@ export function EntityDetails({ entity }: { entity: EntityType }) {
     const details = getEntityDetails(entity);
 
     if (details.length === 0) return null;
-
+    
     return (
         <div className="flex flex-wrap gap-2">
             {details.map((detail, index) => (
-                <HybridTooltip key={index}>
-                    <HybridTooltipTrigger asChild>
-                        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm ${detail.color || 'bg-blue-50 text-blue-700'}`}>
-                            {detail.icon}
-                            <span>{detail.tooltip}</span>
-                        </div>
-                    </HybridTooltipTrigger>
-                    <HybridTooltipContent>{detail.tooltip}</HybridTooltipContent>
-                </HybridTooltip>
+                <Tooltip key={index} title={detail.tooltip}>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm ${detail.color || 'bg-blue-50 text-blue-700'}`}>
+                        {detail.icon}
+                        <span>{detail.tooltip}</span>
+                    </div>
+                </Tooltip>
             ))}
         </div>
     );

@@ -1,10 +1,9 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { LogOut, Info, Database, PencilRuler, PlugZap, Sparkles, Home, ChartPie } from "lucide-react";
-import { Button } from "@/components/shared/ui/button";
+import { Button } from "@mui/material";
 import { useSidebarDispatch } from "@/contexts/SidebarContext";
-import { Tooltip, TooltipContent } from "./ui/tooltip";
-import { TooltipTrigger } from "@radix-ui/react-tooltip";
+import { Tooltip } from '@mui/material';
 
 const navItems = [
   {
@@ -64,24 +63,19 @@ export default function SidebarNavRail() {
       <div className="flex flex-col gap-2 flex-1 items-center mt-4">
         {navItems.map((item) => (
           <div key={item.label} className="relative">
-            <Tooltip>
-              <TooltipContent side="left" className="max-w-xs">
-                  <p className="text-sm">{item.label}</p>
-              </TooltipContent>
-              <TooltipTrigger>
+            <Tooltip title={item.label} placement="left">
                 <Button
-                  variant={pathname === item.href ? "secondary" : "ghost"}
-                  size="icon"
+                  variant={pathname === item.href ? "contained" : "text"}
+                  size="small"
                   aria-label={item.label}
                   disabled={item.disabled}
-                  className={`mb-1 ${pathname === item.href ? "bg-blue-100 text-blue-900" : ""}`}
+                  className={`mb-1 min-w-0 w-10 h-10 ${pathname === item.href ? "bg-blue-100 text-blue-900" : ""}`}
                   onClick={() => {
                     if (!item.disabled && item.href !== "#"){ router.push(item.href); } 
                   }}
                 >
                   {item.icon}
                 </Button>
-              </TooltipTrigger>
             </Tooltip>
             {item.new && (
               <div className="absolute -top-1 -right-1">
@@ -94,10 +88,10 @@ export default function SidebarNavRail() {
       <div className="flex flex-col items-center mb-2">
         {/* About */}
         <Button
-          variant={pathname === "/about" ? "secondary" : "ghost"}
-          size="icon"
+          variant={pathname === "/about" ? "contained" : "text"}
+          size="small"
           aria-label={"About"}
-          className={`mb-1 ${pathname === "/about" ? "bg-blue-100 text-blue-900" : ""}`}
+          className={`mb-1 min-w-0 w-10 h-10 ${pathname === "/about" ? "bg-blue-100 text-blue-900" : ""}`}
           onClick={() => { dispatch({ type: 'SET_SHOW_ELEMENT', payload: false }); router.push("/about"); }}
         >
           <Info />
@@ -106,10 +100,10 @@ export default function SidebarNavRail() {
         <form action="/api/auth/logout" method="post">
           <Button
             type="submit"
-            variant="ghost"
-            size="icon"
+            variant="text"
+            size="small"
             aria-label="Sign out"
-            className="text-destructive"
+            className="text-destructive min-w-0 w-10 h-10"
           >
             <LogOut />
           </Button>

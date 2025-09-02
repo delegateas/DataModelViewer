@@ -1,12 +1,8 @@
 'use client'
 
 import { EntityType, AttributeType } from "@/lib/Types"
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../shared/ui/table"
-import { Button } from "../shared/ui/button"
 import { useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Eye, Search, X } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../shared/ui/select"
-import { Input } from "../shared/ui/input"
 import { AttributeDetails } from "./entity/AttributeDetails"
 import BooleanAttribute from "./attributes/BooleanAttribute"
 import ChoiceAttribute from "./attributes/ChoiceAttribute"
@@ -20,6 +16,7 @@ import StatusAttribute from "./attributes/StatusAttribute"
 import StringAttribute from "./attributes/StringAttribute"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
+import { Button, FormControl, Input, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
@@ -171,34 +168,34 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                     />
                     {searchQuery && (
                         <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="text"
+                            size="small"
                             onClick={() => setSearchQuery("")}
                             className="absolute right-1 top-1 h-6 w-6 text-gray-400 hover:text-gray-600 md:right-1 md:top-1.5 md:h-7 md:w-7"
                             title="Clear search"
+                            sx={{ minWidth: 'auto', padding: 0 }}
                         >
                             <X className="h-3 w-3 md:h-4 md:w-4" />
                         </Button>
                     )}
                 </div>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-[120px] h-8 text-xs md:w-[200px] md:h-10 md:text-sm">
-                        <SelectValue placeholder="Filter by type" />
-                    </SelectTrigger>
-                    <SelectContent>
+                <FormControl>
+                    <InputLabel id="type-filter-label" className="text-xs md:text-sm">Filter by type</InputLabel>
+                    <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
                         {attributeTypes.map(type => (
-                            <SelectItem key={type} value={type} className="text-xs md:text-sm">
-                                {type === "all" ? "All Types" : type.replace("Attribute", "")}
-                            </SelectItem>
+                        <MenuItem key={type} value={type} className="text-xs md:text-sm">
+                            {type === "all" ? "All Types" : type.replace("Attribute", "")}
+                        </MenuItem>
                         ))}
-                    </SelectContent>
-                </Select>
+                    </Select>
+                </FormControl>
                 <Button
-                    variant="destructive"
-                    size="icon"
+                    variant="outlined"
+                    size="small"
                     onClick={() => setHideStandardFields(!hideStandardFields)}
                     className="h-8 w-8 bg-gray-100 hover:bg-gray-300 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
                     title="Control customfields"
+                    sx={{ minWidth: 'auto', padding: 0 }}
                 >
                     {
                         hideStandardFields ? <EyeOff className="w-3 h-3 md:w-4 md:h-4" /> : <Eye className="w-3 h-3 md:w-4 md:h-4" />
@@ -206,14 +203,15 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                 </Button>
                 {(searchQuery || typeFilter !== "all") && (
                     <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="text"
+                        size="small"
                         onClick={() => {
                             setSearchQuery("")
                             setTypeFilter("all")
                         }}
                         className="h-8 w-8 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
                         title="Clear filters"
+                        sx={{ minWidth: 'auto', padding: 0 }}
                     >
                         <X className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
@@ -239,7 +237,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                             }
                         </p>
                         <Button
-                            variant="ghost"
+                            variant="text"
                             onClick={() => {
                                 setSearchQuery("")
                                 setTypeFilter("all")
@@ -255,9 +253,9 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
             </div>
         ) : (
             <Table>
-                <TableHeader>
+                <TableHead>
                     <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
-                        <TableHead 
+                        <TableCell 
                             className="w-[15%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                             onClick={() => handleSort('displayName')}
                         >
@@ -265,8 +263,8 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                                 Display Name
                                 <SortIcon column="displayName" />
                             </div>
-                        </TableHead>
-                        <TableHead 
+                        </TableCell>
+                        <TableCell 
                             className="w-[15%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                             onClick={() => handleSort('schemaName')}
                         >
@@ -274,8 +272,8 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                                 Schema Name
                                 <SortIcon column="schemaName" />
                             </div>
-                        </TableHead>
-                        <TableHead 
+                        </TableCell>
+                        <TableCell 
                             className="w-[30%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                             onClick={() => handleSort('type')}
                         >
@@ -283,9 +281,9 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                                 Type
                                 <SortIcon column="type" />
                             </div>
-                        </TableHead>
-                        <TableHead className="w-[5%] text-black font-semibold py-2 text-xs md:font-bold md:py-3 md:text-sm">Details</TableHead>
-                        <TableHead 
+                        </TableCell>
+                        <TableCell className="w-[5%] text-black font-semibold py-2 text-xs md:font-bold md:py-3 md:text-sm">Details</TableCell>
+                        <TableCell 
                             className="w-[35%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                             onClick={() => handleSort('description')}
                         >
@@ -293,9 +291,10 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                                 Description
                                 <SortIcon column="description" />
                             </div>
-                        </TableHead>
+                        </TableCell>
+
                     </TableRow>
-                </TableHeader>
+                </TableHead>
                 <TableBody>
                     {sortedAttributes.map((attribute, index) => (
                         <TableRow 

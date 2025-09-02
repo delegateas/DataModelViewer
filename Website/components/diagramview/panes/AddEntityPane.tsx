@@ -1,11 +1,17 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/shared/ui/button';
-import { Input } from '@/components/shared/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/shared/ui/sheet';
-import { Checkbox } from '@/components/shared/ui/checkbox';
 import { Search } from 'lucide-react';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogTitle, 
+    Button, 
+    TextField, 
+    Checkbox,
+    Typography,
+    FormControlLabel
+} from '@mui/material';
 import { Groups } from '@/generated/Data';
 import { EntityType, GroupType, AttributeType } from '@/lib/Types';
 import { useAttributeSelection } from '@/hooks/useAttributeSelection';
@@ -81,12 +87,10 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="left" className="w-96 sm:w-[540px]">
-                <SheetHeader>
-                    <SheetTitle>Add Entity to Diagram</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6 space-y-4">
+        <Dialog open={isOpen} onClose={() => onOpenChange(false)} maxWidth="md" fullWidth>
+            <DialogContent>
+                <DialogTitle>Add Entity to Diagram</DialogTitle>
+                <div className="space-y-4">
                     {/* Attribute Selection Options */}
                     <AttributeSelectionPanel
                         attributeMode={attributeMode}
@@ -99,11 +103,14 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                     {/* Search Input */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                        <Input
+                        <TextField
+                            fullWidth
+                            size="small"
                             placeholder="Search groups and entities..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10"
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                            sx={{ pl: '40px' }}
+                            InputProps={{ style: { paddingLeft: '40px' } }}
                         />
                     </div>
 
@@ -112,16 +119,16 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                         <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                             {filteredData.map((group: GroupType) => (
                                 <div key={group.Name} className="space-y-2">
-                                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                                    <Typography variant="overline" color="text.secondary" className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                                         {group.Name}
-                                    </h3>
+                                    </Typography>
                                     <div className="space-y-1">
                                         {group.Entities.map((entity: EntityType) => {
                                             const isAlreadyInDiagram = currentEntities.some(e => e.SchemaName === entity.SchemaName);
                                             return (
                                                 <Button
                                                     key={entity.SchemaName}
-                                                    variant="ghost"
+                                                    variant="text"
                                                     className={`w-full justify-start text-left h-auto py-3 px-3 ${isAlreadyInDiagram ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     onClick={() => {
                                                         if (!isAlreadyInDiagram) {
@@ -129,6 +136,14 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                                                         }
                                                     }}
                                                     disabled={isAlreadyInDiagram}
+                                                    sx={{
+                                                        justifyContent: 'flex-start',
+                                                        textAlign: 'left',
+                                                        width: '100%',
+                                                        py: 1.5,
+                                                        px: 1.5,
+                                                        textTransform: 'none'
+                                                    }}
                                                 >
                                                     <div className="flex flex-col items-start space-y-1">
                                                         <div className="flex items-center space-x-2">
@@ -168,12 +183,12 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="font-medium">Configure {selectedEntity.DisplayName}</h3>
-                                    <p className="text-sm text-muted-foreground">Select attributes to include</p>
+                                    <Typography variant="subtitle1" className="font-medium">Configure {selectedEntity.DisplayName}</Typography>
+                                    <Typography variant="body2" color="text.secondary">Select attributes to include</Typography>
                                 </div>
                                 <Button 
-                                    variant="outline" 
-                                    size="sm"
+                                    variant="outlined" 
+                                    size="small"
                                     onClick={() => setSelectedEntity(null)}
                                 >
                                     Back
@@ -190,12 +205,17 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                                             key={attribute.SchemaName}
                                             className={`flex items-center space-x-3 p-2 rounded border ${isPrimaryKey ? 'bg-muted/50 border-muted' : 'hover:bg-muted/30'}`}
                                         >
-                                            <Checkbox
-                                                checked={isPrimaryKey || isChecked}
-                                                disabled={isPrimaryKey}
-                                                onCheckedChange={(checked: boolean) => 
-                                                    handleCustomAttributeToggle(attribute.SchemaName, checked)
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={isPrimaryKey || isChecked}
+                                                        disabled={isPrimaryKey}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                                                            handleCustomAttributeToggle(attribute.SchemaName, e.target.checked)
+                                                        }
+                                                    />
                                                 }
+                                                label=""
                                             />
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center space-x-2">
@@ -224,7 +244,8 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                             <div className="flex space-x-2">
                                 <Button 
                                     onClick={() => handleAddEntity(selectedEntity)}
-                                    className="flex-1"
+                                    variant="contained"
+                                    fullWidth
                                 >
                                     Add Entity with {customSelectedAttributes.length + 1} Attributes
                                 </Button>
@@ -232,7 +253,7 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
                         </div>
                     )}
                 </div>
-            </SheetContent>
-        </Sheet>
+            </DialogContent>
+        </Dialog>
     );
 };

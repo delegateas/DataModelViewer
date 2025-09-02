@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react'
 import { AppSidebar } from '../shared/AppSidebar'
 import { useSidebarDispatch } from '@/contexts/SidebarContext'
-import { TooltipProvider } from '@radix-ui/react-tooltip'
 import { LastSynched } from '@/generated/Data'
 
 interface IAboutViewProps {}
@@ -25,8 +24,7 @@ export const AboutView = ({}: IAboutViewProps) => {
       <AppSidebar />
 
       <div className="flex-1 bg-stone-50 overflow-auto">
-        <TooltipProvider delayDuration={0}>
-          <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-12">
+        <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-12">
             {/* Logo */}
             <div className="flex justify-center mb-10">
               <img
@@ -103,8 +101,7 @@ export const AboutView = ({}: IAboutViewProps) => {
               }) : '...'}</b>
             </div>
           </div>
-        </TooltipProvider>
+        </div>
       </div>
-    </div>
   )
 }

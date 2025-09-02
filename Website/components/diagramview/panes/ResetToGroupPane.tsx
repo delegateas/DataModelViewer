@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/shared/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/shared/ui/select";
-import { Label } from "@/components/shared/ui/label";
-import { Button } from '@/components/shared/ui/button';
 import { RotateCcw } from 'lucide-react';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogTitle, 
+    DialogActions, 
+    Button, 
+    Select, 
+    MenuItem, 
+    FormControl, 
+    InputLabel, 
+    Typography,
+    Box
+} from '@mui/material';
 import { Groups } from '../../../generated/Data';
 import { GroupType } from '@/lib/Types';
 
@@ -45,64 +42,59 @@ export const ResetToGroupPane = ({ isOpen, onOpenChange, onResetToGroup }: IRese
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="left" className="w-[400px] sm:w-[540px]">
-                <SheetHeader>
-                    <SheetTitle>Reset Diagram to Group</SheetTitle>
-                    <SheetDescription>
-                        Choose a group to reset the diagram and show only entities from that group.
-                        This will clear the current diagram and add all entities from the selected group.
-                    </SheetDescription>
-                </SheetHeader>
+        <Dialog open={isOpen} onClose={() => onOpenChange(false)} maxWidth="sm" fullWidth>
+            <DialogContent>
+                <DialogTitle>Reset Diagram to Group</DialogTitle>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Choose a group to reset the diagram and show only entities from that group.
+                    This will clear the current diagram and add all entities from the selected group.
+                </Typography>
                 
-                <div className="mt-6 space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="group-select">Select Group</Label>
-                        <Select 
-                            value={selectedGroupForReset} 
-                            onValueChange={setSelectedGroupForReset}
+                <Box mt={3} display="flex" flexDirection="column" gap={3}>
+                    <FormControl fullWidth>
+                        <InputLabel>Select Group</InputLabel>
+                        <Select
+                            value={selectedGroupForReset}
+                            onChange={(e) => setSelectedGroupForReset(e.target.value)}
+                            label="Select Group"
                         >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Choose a group..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Groups.map((group) => (
-                                    <SelectItem key={group.Name} value={group.Name}>
-                                        {group.Name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
+                            {Groups.map((group) => (
+                                <MenuItem key={group.Name} value={group.Name}>
+                                    {group.Name}
+                                </MenuItem>
+                            ))}
                         </Select>
-                    </div>
+                    </FormControl>
                     
-                    <div className="space-y-3">
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                            <div className="text-sm text-amber-800">
-                                <p className="font-medium mb-1">Warning</p>
-                                <p>This will clear all current elements from your diagram and replace them with entities from the selected group.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="flex gap-2 pt-4">
-                        <Button 
-                            onClick={handleResetToGroup}
-                            disabled={!selectedGroupForReset}
-                            className="flex-1"
-                        >
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            Reset to Group
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            onClick={handleCancel}
-                            className="flex-1"
-                        >
-                            Cancel
-                        </Button>
-                    </div>
-                </div>
-            </SheetContent>
-        </Sheet>
+                    <Box sx={{ bgcolor: 'warning.light', border: 1, borderColor: 'warning.main', borderRadius: 1, p: 2 }}>
+                        <Typography variant="subtitle2" color="warning.dark" gutterBottom>
+                            Warning
+                        </Typography>
+                        <Typography variant="body2" color="warning.dark">
+                            This will clear all current elements from your diagram and replace them with entities from the selected group.
+                        </Typography>
+                    </Box>
+                </Box>
+
+                <DialogActions sx={{ mt: 2 }}>
+                    <Button
+                        variant="outlined"
+                        onClick={handleCancel}
+                        fullWidth
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained"
+                        onClick={handleResetToGroup}
+                        disabled={!selectedGroupForReset}
+                        fullWidth
+                        startIcon={<RotateCcw style={{ width: 16, height: 16 }} />}
+                    >
+                        Reset to Group
+                    </Button>
+                </DialogActions>
+            </DialogContent>
+        </Dialog>
     );
 };

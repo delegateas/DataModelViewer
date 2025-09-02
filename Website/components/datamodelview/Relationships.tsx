@@ -1,16 +1,13 @@
 'use client'
 
 import { EntityType } from "@/lib/Types"
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../shared/ui/table"
-import { Button } from "../shared/ui/button"
 import { CascadeConfiguration } from "./entity/CascadeConfiguration"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../shared/ui/select"
-import { Input } from "../shared/ui/input"
+import { ArrowUpDown, ArrowUp, ArrowDown, Search, X, TableIcon } from "lucide-react"
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
+import { Button, FormControl, Input, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
@@ -155,38 +152,38 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                     />
                     {searchQuery && (
                         <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="text"
+                            size="small"
                             onClick={() => setSearchQuery("")}
                             className="absolute right-1 top-1 h-6 w-6 text-gray-400 hover:text-gray-600 md:right-1 md:top-1.5 md:h-7 md:w-7"
                             title="Clear search"
+                            sx={{ minWidth: 'auto', padding: 0 }}
                         >
                             <X className="h-3 w-3 md:h-4 md:w-4" />
                         </Button>
                     )}
                 </div>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-[120px] h-8 text-xs md:w-[200px] md:h-10 md:text-sm">
-                        <SelectValue placeholder="Filter by type" />
-                    </SelectTrigger>
-                    <SelectContent>
+                <FormControl>
+                    <InputLabel id="relationship-type-filter-label" className="text-xs md:text-sm">Filter by type</InputLabel>
+                    <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
                         {relationshipTypes.map(type => (
-                            <SelectItem key={type.value} value={type.value} className="text-xs md:text-sm">
+                            <MenuItem key={type.value} value={type.value} className="text-xs md:text-sm">
                                 {type.label}
-                            </SelectItem>
+                            </MenuItem>
                         ))}
-                    </SelectContent>
-                </Select>
+                    </Select>
+                </FormControl>
                 {(searchQuery || typeFilter !== "all") && (
                     <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="text"
+                        size="small"
                         onClick={() => {
                             setSearchQuery("")
                             setTypeFilter("all")
                         }}
                         className="h-8 w-8 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
                         title="Clear filters"
+                        sx={{ minWidth: 'auto', padding: 0 }}
                     >
                         <X className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
@@ -213,7 +210,7 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                 }
                             </p>
                             <Button
-                                variant="ghost"
+                                variant="text"
                                 onClick={() => {
                                     setSearchQuery("")
                                     setTypeFilter("all")
@@ -229,9 +226,9 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                 </div>
             ) : (
                 <Table className="w-full">
-                    <TableHeader>
+                    <TableHead>
                         <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
-                            <TableHead 
+                            <TableCell 
                                 className="w-[15%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                 onClick={() => handleSort('name')}
                             >
@@ -239,8 +236,8 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                     Name
                                     <SortIcon column="name" />
                                 </div>
-                            </TableHead>
-                            <TableHead 
+                            </TableCell>
+                            <TableCell 
                                 className="w-[15%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                 onClick={() => handleSort('tableSchema')}
                             >
@@ -248,8 +245,8 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                     Related Table
                                     <SortIcon column="tableSchema" />
                                 </div>
-                            </TableHead>
-                            <TableHead 
+                            </TableCell>
+                            <TableCell 
                                 className="w-[15%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                 onClick={() => handleSort('lookupField')}
                             >
@@ -257,8 +254,8 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                     Lookup Field
                                     <SortIcon column="lookupField" />
                                 </div>
-                            </TableHead>
-                            <TableHead 
+                            </TableCell>
+                            <TableCell 
                                 className="w-[10%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                 onClick={() => handleSort('type')}
                             >
@@ -266,9 +263,9 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                     Type
                                     <SortIcon column="type" />
                                 </div>
-                            </TableHead>
-                            <TableHead className="w-[25%] text-black font-semibold py-2 text-xs md:font-bold md:py-3 md:text-sm">Behavior</TableHead>
-                            <TableHead 
+                            </TableCell>
+                            <TableCell className="w-[25%] text-black font-semibold py-2 text-xs md:font-bold md:py-3 md:text-sm">Behavior</TableCell>
+                            <TableCell 
                                 className="w-[20%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
                                 onClick={() => handleSort('schemaName')}
                             >
@@ -276,9 +273,9 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                     Schema Name
                                     <SortIcon column="schemaName" />
                                 </div>
-                            </TableHead>
+                            </TableCell>
                         </TableRow>
-                    </TableHeader>
+                    </TableHead>
                     <TableBody>
                         {sortedRelationships.map((relationship, index) =>
                             <TableRow 
@@ -293,7 +290,7 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                 <TableCell className="py-2 md:py-3">
                                     <Button
                                         key={relationship.TableSchema}
-                                        variant="ghost"
+                                        variant="text"
                                         className="p-0 text-xs text-blue-600 underline dark:text-blue-500 hover:no-underline break-words md:text-base"
                                         onClick={() => {
                                             dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema })
