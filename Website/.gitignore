@@ -41,3 +41,6 @@ next-env.d.ts
 
 # attachments
 /public/.attachments
+
+# VS Settings
+/.vscode

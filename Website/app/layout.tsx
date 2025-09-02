@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-+           <ThemeProvider theme={theme}>
+            <ThemeProvider theme={theme}>
               <SidebarProvider>
                 {children}
               </SidebarProvider>

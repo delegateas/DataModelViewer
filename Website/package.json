@@ -16,9 +16,9 @@
     "@emotion/styled": "^11.14.1",
     "@joint/core": "^4.1.3",
     "@mui/icons-material": "^7.3.2",
-    "@mui/material": "^7.3.2", 
+    "@mui/material": "^7.3.2",
     "@mui/material-nextjs": "^7.3.2",
-    "@tailwindcss/postcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.1.12",
     "@tanstack/react-virtual": "^3.13.12",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -26,12 +26,13 @@
     "libavoid-js": "^0.4.5",
     "lucide-react": "^0.462.0",
     "next": "^15.3.4",
+    "postcss": "^8.5.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
     "react-window": "^1.8.11",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.1.12"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.19",
