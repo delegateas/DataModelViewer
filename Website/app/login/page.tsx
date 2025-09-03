@@ -1,12 +1,11 @@
 'use client';
 
-import { Button } from "@/components/shared/ui/button";
-import { Input } from "@/components/shared/ui/input";
 import { createSession } from "@/lib/session";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { LastSynched } from "@/generated/Data";
+import { Button, Input } from "@mui/material";
 
 export default function LoginPage() {
     const router = useRouter();
