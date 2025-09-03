@@ -2,11 +2,11 @@ import { useLoading } from '@/hooks/useLoading';
 import { AppBar, Toolbar, Box, LinearProgress } from '@mui/material';
 
 interface HeaderProps {
-  className?: string;
-  loading?: boolean;
+    showLogo?: boolean;
+    loading?: boolean;
 }
 
-const Header = ({ className }: HeaderProps) => {
+const Header = ({ showLogo, loading }: HeaderProps) => {
 
     const { 
         isAuthenticating, 
@@ -15,22 +15,24 @@ const Header = ({ className }: HeaderProps) => {
 
     return (
         <AppBar 
-        position="fixed" 
-        color="transparent" 
-        elevation={0}
-        className={className}
+            position="sticky" 
+            color="transparent" 
+            elevation={0}
+            className="w-full top-0 z-0 border-b border-gray-200 h-header max-h-header"
         >
         <Box className="mx-4">
             <Toolbar disableGutters className="justify-between">
                 {/* Logo section */}
-                <Box className="flex items-center">
-                    <Box
-                        component="img"
-                        src="/DMVLOGO.svg"
-                        alt="DMV Logo"
-                        className='mr-1 h-12 p-1'
-                    />
-                </Box>
+                {showLogo && (
+                    <Box className="flex items-center">
+                        <Box
+                            component="img"
+                            src="/DMVLOGO.svg"
+                            alt="DMV Logo"
+                            className='mr-1 h-12 p-1'
+                        />
+                    </Box>
+                )}
 
                 {/* Right side - placeholder for future navigation */}
                 <Box>

@@ -442,6 +442,18 @@
     height: var(--layout-header-desktop-height);
   }
 
+  .max-h-header {
+    max-height: var(--layout-header-desktop-height);
+  }
+
+  .min-h-header {
+    min-height: var(--layout-header-desktop-height);
+  }
+
+  .mt-header {
+    margin-top: var(--layout-header-desktop-height);
+  }
+
   .w-sidebar {
     width: var(--layout-sidebar-desktop-width);
   }

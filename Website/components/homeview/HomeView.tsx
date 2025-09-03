@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useSidebarDispatch } from '@/contexts/SidebarContext'
 import Markdown from 'react-markdown'
-import Sidebar from '../shared/Sidebar';
 
 interface IHomeViewProps { }
 
@@ -23,8 +22,6 @@ export const HomeView = ({ }: IHomeViewProps) => {
 
     return (
         <div className="flex min-h-screen">
-            <Sidebar />
-
             <div className="flex-1 bg-stone-50 overflow-auto p-16">
                 <div className='rounded-lg border bg-white shadow-md p-6 flex items-center justify-between mb-8'>
                     <div className="flex-1">
