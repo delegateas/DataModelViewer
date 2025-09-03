@@ -1,7 +1,7 @@
 import React, { FormEvent, useEffect, useState } from 'react'
 import LoginHeader from '../shared/LoginHeader'
 import { Alert, Box, Button, Container, FormControl, IconButton, Input, InputAdornment, InputLabel, OutlinedInput, Paper, TextField, Typography } from '@mui/material'
-import { Info, Visibility, VisibilityOff } from '@mui/icons-material'
+import { Info, Visibility, VisibilityOff, Warning } from '@mui/icons-material'
 import { createSession } from '@/lib/session'
 import { LastSynched } from '@/stubs/Data'
 import { useRouter } from 'next/navigation'
@@ -16,7 +16,8 @@ const LoginView = ({ }: LoginViewProps) => {
 
     const [showPassword, setShowPassword] = useState(false);
     const [version, setVersion] = useState<string | null>(null);
-    
+    const [showIncorrectPassword, setShowIncorrectPassword] = useState<boolean>(false);
+
     useEffect(() => {
         fetch('/api/version')
             .then((res) => res.json())
@@ -44,7 +45,7 @@ const LoginView = ({ }: LoginViewProps) => {
             await createSession(password?.valueOf() as string);
             router.push("/");
         } else {
-            alert("Failed to login");
+            setShowIncorrectPassword(true);
         }
     }
 
@@ -75,6 +76,11 @@ const LoginView = ({ }: LoginViewProps) => {
                             minute: '2-digit'
                         }) : '...'}</b>
                     </Alert>
+                    {showIncorrectPassword && (
+                        <Alert icon={<Warning />} severity="warning" className='w-full rounded-lg mt-4'>
+                            The <b>password</b> is incorrect.
+                        </Alert>
+                    )}
                     <form onSubmit={handleSubmit} className="w-full">
                         <FormControl className='w-full my-4' variant="outlined">
                             <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>

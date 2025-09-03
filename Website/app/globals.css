@@ -425,6 +425,12 @@
   body {
     font-family: "HassGrotesk", ui-sans-serif, system-ui, sans-serif;
   }
+
+  /* Disable uppercase text transformation for all buttons */
+  button,
+  .MuiButton-root {
+    text-transform: none !important;
+  }
 }
 
 @layer utilities {
