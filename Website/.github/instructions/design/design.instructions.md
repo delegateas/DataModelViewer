@@ -8,6 +8,8 @@ Always use Tailwind classes for styling. Always implement both for light and dar
 Always implement responsive design using Tailwind's responsive utilities.
 Always add `aria-label` attributes to interactive elements.
 Always use tailwind classes over the `sx` prop.
+Always use MUI elements where possible.
+- Replace `div` with `Box` from MUI.
 
 ## Colors
 Always use the colors from the Tailwind CSS color palette, and ensure that they are applied consistently across both light and dark themes.

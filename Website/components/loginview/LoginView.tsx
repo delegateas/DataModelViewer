@@ -1,7 +1,7 @@
 import React, { FormEvent, useEffect, useState } from 'react'
-import LoginHeader from '../shared/LoginHeader'
+import Header from '../shared/Header'
 import LoadingOverlay from '../shared/LoadingOverlay'
-import { useAuthLoading } from '@/hooks/useAuthLoading'
+import { useLoading } from '@/hooks/useLoading'
 import { Alert, Box, Button, Container, FormControl, IconButton, Input, InputAdornment, InputLabel, OutlinedInput, Paper, TextField, Typography, CircularProgress } from '@mui/material'
 import { Info, Visibility, VisibilityOff, Warning } from '@mui/icons-material'
 import { createSession } from '@/lib/session'
@@ -22,7 +22,7 @@ const LoginView = ({ }: LoginViewProps) => {
         startRedirection, 
         stopAuthentication, 
         resetAuthState 
-    } = useAuthLoading();
+    } = useLoading();
 
     const [showPassword, setShowPassword] = useState(false);
     const [version, setVersion] = useState<string | null>(null);
@@ -80,7 +80,7 @@ const LoginView = ({ }: LoginViewProps) => {
                 open={isRedirecting} 
                 message="Redirecting to dashboard..." 
             />
-            <LoginHeader loading={isAuthenticating || isRedirecting} />
+            <Header />
             <Box className="flex w-screen h-screen">
                 <Box gap={2} className="hidden w-full max-w-[480px] md:flex flex-col p-4 h-full bg-gray-50 items-center justify-center">
                     <Typography variant='h4' fontWeight={700}>Hi, Welcome back</Typography>

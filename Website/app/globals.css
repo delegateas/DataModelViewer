@@ -10,6 +10,10 @@
     --font-family-hass-grotesk-text-round: "HassGrotesk Text Round", sans-serif;
     --font-family-neue-machina: "PP Neue Machina Inktrap", monospace;
     --font-family-neue-machina-plain: "PP Neue Machina Plain", monospace;
+
+    --layout-sidebar-desktop-width: 72px;
+    --layout-sidebar-desktop-expanded-width: 256px;
+    --layout-header-desktop-height: 72px;
   }
 }
 
@@ -434,6 +438,18 @@
 }
 
 @layer utilities {
+  .h-header {
+    height: var(--layout-header-desktop-height);
+  }
+
+  .w-sidebar {
+    width: var(--layout-sidebar-desktop-width);
+  }
+
+  .w-sidebar-expanded {
+    width: var(--layout-sidebar-desktop-expanded-width);
+  }
+
   .font-neue-machina {
     font-family: var(--font-family-neue-machina);
   }

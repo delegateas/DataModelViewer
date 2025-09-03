@@ -1,7 +1,36 @@
 'use client';
 import { createTheme } from '@mui/material/styles';
 
+// Augment the theme to add custom IconButton sizes
+declare module '@mui/material/IconButton' {
+  interface IconButtonPropsSizeOverrides {
+    xsmall: true;
+  }
+}
+
 const theme = createTheme({
+  components: {
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          // Base styles for all IconButton variants
+        },
+      },
+      variants: [
+        {
+          props: { size: 'xsmall' },
+          style: {
+            padding: '2px',
+            fontSize: '0.75rem',
+            '& svg': {
+              width: '16px',
+              height: '16px',
+            },
+          },
+        },
+      ],
+    },
+  },
   palette: {
     primary: {
       main: '#2563eb', // Blue-600 - change this to your desired primary color

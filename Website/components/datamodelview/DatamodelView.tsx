@@ -1,6 +1,5 @@
 'use client'
 
-import { AppSidebar } from "../shared/AppSidebar";
 import { useSidebarDispatch } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { DatamodelViewProvider, useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
@@ -11,6 +10,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/DatamodelDataContext";
 import { updateURL } from "@/lib/url-utils";
 import { useSearchParams } from "next/navigation";
+import Sidebar from "../shared/Sidebar";
 
 export function DatamodelView() {
     const dispatch = useSidebarDispatch();
@@ -193,7 +193,7 @@ function DatamodelViewContent() {
 
     return (
         <div className="flex">
-            <AppSidebar />
+            <Sidebar />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50">
                 <div className="relative">
                     {/* LOADING BAR - currently deprecated */}

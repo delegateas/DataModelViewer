@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-interface UseAuthLoadingReturn {
+interface UseLoadingReturn {
   isAuthenticating: boolean;
   isRedirecting: boolean;
   startAuthentication: () => void;
@@ -10,7 +10,7 @@ interface UseAuthLoadingReturn {
   resetAuthState: () => void;
 }
 
-export const useAuthLoading = (): UseAuthLoadingReturn => {
+export const useLoading = (): UseLoadingReturn => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
