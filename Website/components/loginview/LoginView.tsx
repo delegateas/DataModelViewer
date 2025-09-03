@@ -1,6 +1,8 @@
 import React, { FormEvent, useEffect, useState } from 'react'
 import LoginHeader from '../shared/LoginHeader'
-import { Alert, Box, Button, Container, FormControl, IconButton, Input, InputAdornment, InputLabel, OutlinedInput, Paper, TextField, Typography } from '@mui/material'
+import LoadingOverlay from '../shared/LoadingOverlay'
+import { useAuthLoading } from '@/hooks/useAuthLoading'
+import { Alert, Box, Button, Container, FormControl, IconButton, Input, InputAdornment, InputLabel, OutlinedInput, Paper, TextField, Typography, CircularProgress } from '@mui/material'
 import { Info, Visibility, VisibilityOff, Warning } from '@mui/icons-material'
 import { createSession } from '@/lib/session'
 import { LastSynched } from '@/stubs/Data'
@@ -13,10 +15,19 @@ interface LoginViewProps {
 const LoginView = ({ }: LoginViewProps) => {
 
     const router = useRouter();
+    const { 
+        isAuthenticating, 
+        isRedirecting, 
+        startAuthentication, 
+        startRedirection, 
+        stopAuthentication, 
+        resetAuthState 
+    } = useAuthLoading();
 
     const [showPassword, setShowPassword] = useState(false);
     const [version, setVersion] = useState<string | null>(null);
     const [showIncorrectPassword, setShowIncorrectPassword] = useState<boolean>(false);
+    const [animateError, setAnimateError] = useState<boolean>(false);
 
     useEffect(() => {
         fetch('/api/version')
@@ -29,29 +40,47 @@ const LoginView = ({ }: LoginViewProps) => {
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        
+        startAuthentication();
+        setShowIncorrectPassword(false);
+        setAnimateError(false);
 
         const formData = new FormData(event.currentTarget);
         const password = formData.get("password")
 
-        const response = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ password }),
-        });
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ password }),
+            });
 
-        if (response.ok) {
-            await createSession(password?.valueOf() as string);
-            router.push("/");
-        } else {
+            if (response.ok) {
+                await createSession(password?.valueOf() as string);
+                startRedirection();
+                router.push("/");
+            } else {
+                setShowIncorrectPassword(true);
+                setTimeout(() => setAnimateError(true), 10);
+                stopAuthentication();
+            }
+        } catch (error) {
+            console.error('Login error:', error);
             setShowIncorrectPassword(true);
+            setTimeout(() => setAnimateError(true), 10);
+            resetAuthState();
         }
     }
 
     return (
         <Box>
-            <LoginHeader />
+            <LoadingOverlay 
+                open={isRedirecting} 
+                message="Redirecting to dashboard..." 
+            />
+            <LoginHeader loading={isAuthenticating || isRedirecting} />
             <Box className="flex w-screen h-screen">
                 <Box gap={2} className="hidden w-full max-w-[480px] md:flex flex-col p-4 h-full bg-gray-50 items-center justify-center">
                     <Typography variant='h4' fontWeight={700}>Hi, Welcome back</Typography>
@@ -77,7 +106,15 @@ const LoginView = ({ }: LoginViewProps) => {
                         }) : '...'}</b>
                     </Alert>
                     {showIncorrectPassword && (
-                        <Alert icon={<Warning />} severity="warning" className='w-full rounded-lg mt-4'>
+                        <Alert 
+                            icon={<Warning />} 
+                            severity="warning" 
+                            className={`w-full rounded-lg mt-4 transition-all duration-300 ease-out ${
+                                animateError 
+                                    ? 'translate-x-0 opacity-100' 
+                                    : 'translate-x-4 opacity-0'
+                            }`}
+                        >
                             The <b>password</b> is incorrect.
                         </Alert>
                     )}
@@ -90,6 +127,7 @@ const LoginView = ({ }: LoginViewProps) => {
                                 name="password"
                                 type={showPassword ? 'text' : 'password'}
                                 autoComplete='current-password'
+                                disabled={isAuthenticating}
                                 endAdornment={
                                     <InputAdornment position="end">
                                         <IconButton
@@ -97,6 +135,7 @@ const LoginView = ({ }: LoginViewProps) => {
                                                 showPassword ? 'hide the password' : 'display the password'
                                             }
                                             onClick={handleClickShowPassword}
+                                            disabled={isAuthenticating}
                                             edge="end"
                                             >
                                             {showPassword ? <VisibilityOff /> : <Visibility />}
@@ -106,12 +145,20 @@ const LoginView = ({ }: LoginViewProps) => {
                                 label="Password"
                             />
                         </FormControl>
-                        <Button fullWidth variant="contained" color="primary" type="submit" className='rounded-lg'>
-                            Sign In
+                        <Button 
+                            fullWidth 
+                            variant="contained" 
+                            color="primary" 
+                            type="submit" 
+                            disabled={isAuthenticating}
+                            className='rounded-lg'
+                            startIcon={isAuthenticating ? <CircularProgress size={16} color="inherit" /> : undefined}
+                        >
+                            {isAuthenticating ? 'Signing In...' : 'Sign In'}
                         </Button>
                     </form>
 
-                    <Typography variant="caption" color="textSecondary" className="mt-4">
+                    <Typography variant="caption" color="textSecondary" className="mt-4 w-full text-end">
                         Version: <b>{version ?? '...'}</b>
                     </Typography>
                 </Container>
