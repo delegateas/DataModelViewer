@@ -8,6 +8,19 @@ declare module '@mui/material/IconButton' {
   }
 }
 
+// Augment the palette to add custom colors
+declare module '@mui/material/styles' {
+  interface Palette {
+    delegate: Palette['primary'];
+    accent: Palette['primary'];
+  }
+
+  interface PaletteOptions {
+    delegate?: PaletteOptions['primary'];
+    accent?: PaletteOptions['primary'];
+  }
+}
+
 const theme = createTheme({
   components: {
     MuiIconButton: {
@@ -42,6 +55,18 @@ const theme = createTheme({
       main: '#7c3aed', // Violet-600 - change this to your desired secondary color  
       light: '#8b5cf6', // Violet-500
       dark: '#6d28d9', // Violet-700
+      contrastText: '#ffffff',
+    },
+    delegate: {
+      main: '#f59e0b', // Amber-500
+      light: '#fbbf24', // Amber-400
+      dark: '#b45309', // Amber-700
+    },
+    // Add your new custom color here
+    accent: {
+      main: '#a78bfa', // Purple-500
+      light: '#a78bfa', // Purple-400
+      dark: '#7c3aed', // Purple-600
       contrastText: '#ffffff',
     },
     error: {

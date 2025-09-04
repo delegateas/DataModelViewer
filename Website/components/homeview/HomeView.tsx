@@ -5,6 +5,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import Markdown from 'react-markdown'
 import { Box, Button, Grid, IconButton, Paper, Typography } from '@mui/material';
 import NotchedBox from '@/components/shared/elements/NotchedBox';
+import Carousel, { CarouselItem } from '@/components/shared/elements/Carousel';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface IHomeViewProps { }
@@ -14,6 +15,43 @@ export const HomeView = ({ }: IHomeViewProps) => {
     const { setElement, dispatch } = useSidebar();
 
     const [wikipage, setWikipage] = useState<string>('');
+    const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+    const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+
+    // Carousel data
+    const carouselItems: CarouselItem[] = [
+        {
+            image: '/DMV2.png',
+            title: 'Data Model Viewer 2.0.0!',
+            text: "The UI has been refreshed for an even cleaner, more modern look with enhanced functionality. And we've upgraded the tech stack to ensure easier maintainability.",
+            type: '(v2.0.0) Announcement'
+        },
+        {
+            image: '/DMV3.png',
+            title: 'Home WIKI ADO Page',
+            text: 'Display your own wiki page from your ADO, to introduce your data. Now also supports images!',
+            type: '(v1.4.1) Feature'
+        },
+        {
+            title: 'Getting Started',
+            text: 'New to Data Model Viewer? Check out our comprehensive documentation and tutorials to get up to speed quickly.',
+            type: '(v1.0.0) Guide'
+        }
+    ];
+
+    const goToPrevious = () => {
+        setSlideDirection('left');
+        setCurrentCarouselIndex((prevIndex) => 
+            prevIndex === 0 ? carouselItems.length - 1 : prevIndex - 1
+        );
+    };
+
+    const goToNext = () => {
+        setSlideDirection('right');
+        setCurrentCarouselIndex((prevIndex) => 
+            prevIndex === carouselItems.length - 1 ? 0 : prevIndex + 1
+        );
+    };
 
     useEffect(() => {
         setElement(<></>);
@@ -44,22 +82,24 @@ export const HomeView = ({ }: IHomeViewProps) => {
             <Grid size={{ xs: 12, md: 4 }}>
                 <NotchedBox 
                     notchContent={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: "transparent" }}>
-                            <IconButton size="small"><ChevronLeft size={16} /></IconButton>
-                            <IconButton size="small"><ChevronRight size={16} /></IconButton>
+                        <Box className="flex items-center gap-1 bg-transparent">
+                            <IconButton size="medium" onClick={goToPrevious}>
+                                <ChevronLeft size={16} />
+                            </IconButton>
+                            <IconButton size="medium" onClick={goToNext}>
+                                <ChevronRight size={16} />
+                            </IconButton>
                         </Box>
                     }
+                    backgroundImage={carouselItems[currentCarouselIndex]?.image}
                     className='h-96'
                 >
-                    <Box sx={{ p: 3 }}>
-                        <Typography variant='h6' className='font-bold mb-2 text-gray-800'>
-                            Did you know?
-                        </Typography>
-                        <Typography variant='body2' className='text-gray-600'>
-                            You can use keyboard shortcuts to navigate faster through your data model. 
-                            Press 'Ctrl+K' to open the quick search menu.
-                        </Typography>
-                    </Box>
+                    <Carousel 
+                        items={carouselItems}
+                        currentIndex={currentCarouselIndex}
+                        slideDirection={slideDirection}
+                        className='w-full h-full'
+                    />
                 </NotchedBox>
             </Grid>
             <Grid size={12}>

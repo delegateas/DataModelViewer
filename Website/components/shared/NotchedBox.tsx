@@ -7,34 +7,17 @@ interface NotchedBoxProps extends Omit<BoxProps, 'component'> {
   notchContent?: React.ReactNode;
   className?: string;
   children?: React.ReactNode;
-  backgroundImage?: string;
 }
 
 const NotchedBox = ({
   notchContent,
   className,
-  children,
-  backgroundImage
+  children
 }: NotchedBoxProps) => {
 
   const contentRef = React.useRef<HTMLDivElement>(null);
   const [notchWidth, setNotchWidth] = React.useState(0); // as a fraction of width (0..1)
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const [prevBackgroundImage, setPrevBackgroundImage] = React.useState<string | undefined>(backgroundImage);
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
-
-  React.useEffect(() => {
-    if (backgroundImage !== prevBackgroundImage) {
-      setIsTransitioning(true);
-      setPrevBackgroundImage(backgroundImage);
-      
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 500); // Match transition duration
-      
-      return () => clearTimeout(timer);
-    }
-  }, [backgroundImage, prevBackgroundImage]);
 
   React.useEffect(() => {
     const updateNotchWidth = () => {
@@ -102,53 +85,14 @@ const NotchedBox = ({
 
   return (
     <Box className="relative">
-      {/* Background container with clipPath applied */}
       <Box
         ref={containerRef}
-        className={`${className} rounded-2xl overflow-hidden relative`}
+        component="img"
+        src="/welcomeback-data-stockimage.webp"
+        alt="Notched Background Image"
+        className={`${className} rounded-2xl object-center object-cover`}
         sx={{ clipPath: "url(#notch-clip)" }}
-      >
-        {/* Previous background for crossfade effect */}
-        {isTransitioning && prevBackgroundImage && prevBackgroundImage !== backgroundImage && (
-          prevBackgroundImage ? (
-            <Box
-              component="img"
-              src={prevBackgroundImage}
-              alt="Previous Background"
-              className="absolute inset-0 w-full h-full object-center object-cover"
-              sx={{ opacity: 1, zIndex: 1 }}
-            />
-          ) : (
-            <Box
-              className="absolute inset-0 w-full h-full bg-indigo-600"
-              sx={{ opacity: 1, zIndex: 1 }}
-            />
-          )
-        )}
-        
-        {/* Current background */}
-        {backgroundImage ? (
-          <Box
-            component="img"
-            src={backgroundImage}
-            alt="Notched Background Image"
-            className="absolute inset-0 w-full h-full object-center object-cover transition-opacity duration-500 ease-in-out"
-            sx={{
-              opacity: isTransitioning ? 0 : 1,
-              zIndex: 2
-            }}
-            onLoad={() => setIsTransitioning(false)}
-          />
-        ) : (
-          <Box
-            className="absolute inset-0 w-full h-full bg-indigo-600 transition-opacity duration-500 ease-in-out"
-            sx={{
-              opacity: isTransitioning ? 0 : 1,
-              zIndex: 2
-            }}
-          />
-        )}
-      </Box>
+      />
       <svg width={0} height={0} aria-hidden>
         <defs>
           <clipPath id="notch-clip" clipPathUnits="objectBoundingBox">
@@ -158,18 +102,12 @@ const NotchedBox = ({
       </svg>
 
       {/* Hidden content ref to measure width */}
-      <Box ref={contentRef} className="absolute top-0 right-0 w-auto mr-2 mt-1 z-30">
+      <Box ref={contentRef} className="absolute top-0 right-0 w-auto mr-2 mt-1">
         {notchContent}
       </Box>
 
-
-      <Box
-        className={`${className} rounded-2xl overflow-hidden absolute w-full h-96 inset-0`}
-        sx={{ clipPath: "url(#notch-clip)" }}
-      >
-        <Box className="absolute flex w-full h-full z-10">
-            {children}
-        </Box>
+      <Box className="absolute flex w-full h-full inset-0">
+        {children}
       </Box>
     </Box>
   );

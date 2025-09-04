@@ -430,6 +430,10 @@
     font-family: "HassGrotesk", ui-sans-serif, system-ui, sans-serif;
   }
 
+  b {
+    font-family: var(--font-family-neue-machina);
+  }
+
   /* Disable uppercase text transformation for all buttons */
   button,
   .MuiButton-root {
@@ -504,5 +508,36 @@
     input:-webkit-autofill:active {
       -webkit-box-shadow: 0 0 0 30px #1a1a1a inset !important;
     }
+  }
+
+  /* Carousel slide animations */
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slideInRight {
+    animation: slideInRight 0.5s ease-out forwards;
+  }
+
+  .animate-slideInLeft {
+    animation: slideInLeft 0.5s ease-out forwards;
   }
 }
