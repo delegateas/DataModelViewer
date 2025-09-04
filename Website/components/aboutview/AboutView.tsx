@@ -1,27 +1,25 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { AppSidebar } from '../shared/AppSidebar'
-import { useSidebarDispatch } from '@/contexts/SidebarContext'
+import { useSidebar } from '@/contexts/SidebarContext'
 import { LastSynched } from '@/generated/Data'
 
 interface IAboutViewProps {}
 
 export const AboutView = ({}: IAboutViewProps) => {
-  const dispatch = useSidebarDispatch()
+  const { setElement, dispatch } = useSidebar()
   const [version, setVersion] = useState<string | null>(null)
 
   useEffect(() => {
-    dispatch({ type: 'SET_ELEMENT', payload: <></> })
+    setElement(<></>);
     dispatch({ type: 'SET_SHOW_ELEMENT', payload: false });
     fetch('/api/version')
       .then((res) => res.json())
       .then((data) => setVersion(data.version))
-  }, [])
+  }, [setElement, dispatch])
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar />
 
       <div className="flex-1 bg-stone-50 overflow-auto">
         <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-12">

@@ -1,10 +1,10 @@
 import React from 'react';
-import { IconButton, Box, Typography } from '@mui/material';
+import { IconButton, Box, Typography, Button } from '@mui/material';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
-import { useSidebar } from '@/hooks/useSidebar';
+import { useSidebar } from '@/contexts/SidebarContext';
 
 interface SidebarProps {
 
@@ -23,7 +23,8 @@ interface NavItem {
 }
 
 const Sidebar = ({ }: SidebarProps) => {
-    const { isOpen, toggleSidebar } = useSidebar();
+    const { isOpen, element, toggleExpansion } = useSidebar();
+    
     const pathname = usePathname();
 
     const navItems: NavItem[] = [
@@ -65,9 +66,11 @@ const Sidebar = ({ }: SidebarProps) => {
   return (
     <Box className={`relative flex flex-col items-start h-screen border-r border-gray-200 bg-gray-50 transition-all duration-300 ${isOpen ? 'w-sidebar-expanded' : 'w-sidebar'}`}>
         <Box className='w-full min-h-header h-header flex items-center justify-center relative border-b border-gray-200'>
-            <IconButton size='xsmall' onClick={toggleSidebar} className='absolute -right-3 border border-gray-200 bg-white z-50'>
+          {element !== null && (
+            <IconButton size='xsmall' onClick={toggleExpansion} className='absolute -right-3 border border-gray-200 bg-white z-50'>
                 {isOpen ? <ChevronLeft /> : <ChevronRight />}
             </IconButton>
+            )}
             <Box
                 component="img"
                 src="/DMVLOGO.svg"
@@ -75,12 +78,13 @@ const Sidebar = ({ }: SidebarProps) => {
                 className='h-12 p-1'
             />
         </Box>
-        <Box className="flex flex-col items-center pt-4 w-sidebar border-r border-gray-200 h-full" gap={2}>
+        <Box className="flex">
+          <Box className="flex flex-col items-center pt-4 w-sidebar border-r border-gray-200 h-full" gap={2}>
             {navItems.map((item, itemIndex) => (
-                <Box key={itemIndex} className="relative">
+                <Box key={itemIndex} className="relative w-full">
                     <Link
                         className={clsx(
-                            'flex flex-col items-center px-4 py-1.5 rounded-lg',
+                            'flex flex-col items-center px-4 py-1.5 mx-1 rounded-lg',
                             {
                                 'text-blue-500 bg-blue-100': item.active,
                                 'text-gray-300': item.disabled,
@@ -98,6 +102,8 @@ const Sidebar = ({ }: SidebarProps) => {
                 </Box>
             ))}
         </Box>
+        {isOpen && element != null && element}
+      </Box>
     </Box>
   )
 };

@@ -1,5 +1,5 @@
 import { EntityType, GroupType } from "@/lib/Types";
-import { useSidebarDispatch } from '@/contexts/SidebarContext';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
@@ -21,7 +21,7 @@ interface INavItemProps {
 
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const isMobile = useIsMobile();
-    const dispatch = useSidebarDispatch();
+    const { close, dispatch } = useSidebar();
     const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
 
     const dataModelDispatch = useDatamodelViewDispatch();

@@ -1,19 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { useSidebarDispatch } from '@/contexts/SidebarContext'
+import { useSidebar } from '@/contexts/SidebarContext'
 import Markdown from 'react-markdown'
 
 interface IHomeViewProps { }
 
 export const HomeView = ({ }: IHomeViewProps) => {
 
-    const dispatch = useSidebarDispatch();
+    const { setElement, dispatch } = useSidebar();
 
     const [wikipage, setWikipage] = useState<string>('');
 
     useEffect(() => {
-        dispatch({ type: 'SET_ELEMENT', payload: <></> });
+        setElement(<></>);
         dispatch({ type: 'SET_SHOW_ELEMENT', payload: false });
         fetch('/api/markdown')
             .then(res => res.json())

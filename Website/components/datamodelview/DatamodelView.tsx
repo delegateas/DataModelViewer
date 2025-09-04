@@ -1,6 +1,6 @@
 'use client'
 
-import { useSidebarDispatch } from "@/contexts/SidebarContext";
+import { useSidebar } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { DatamodelViewProvider, useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { SearchPerformanceProvider } from "@/contexts/SearchPerformanceContext";
@@ -10,15 +10,13 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/DatamodelDataContext";
 import { updateURL } from "@/lib/url-utils";
 import { useSearchParams } from "next/navigation";
-import Sidebar from "../shared/Sidebar";
 
 export function DatamodelView() {
-    const dispatch = useSidebarDispatch();
+    const { setElement } = useSidebar();
 
     useEffect(() => {
-        dispatch({ type: "SET_ELEMENT", payload: <SidebarDatamodelView /> });
-        dispatch({ type: 'SET_SHOW_ELEMENT', payload: true });
-    }, []);
+        setElement(<SidebarDatamodelView />);
+    }, [setElement]);
 
     return (
         <SearchPerformanceProvider>
@@ -192,31 +190,28 @@ function DatamodelViewContent() {
     }
 
     return (
-        <div className="flex">
-            <Sidebar />
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50">
-                <div className="relative">
-                    {/* LOADING BAR - currently deprecated */}
-                    {/* {loading && (
-                        <div className="absolute top-0 left-0 w-full h-1.5 z-50 overflow-hidden">
-                            <div className="absolute left-0 top-0 h-full w-full bg-blue-100 opacity-40" />
-                            <div 
-                                className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-400 to-blue-600" 
-                                style={{ width: `${searchProgress}%`, transition: 'width 200ms ease-out' }}
-                            />
-                        </div>
-                    )} */}
-                    <TimeSlicedSearch 
-                        onSearch={handleSearch} 
-                        onLoadingChange={handleLoadingChange}
-                        onNavigateNext={handleNavigateNext}
-                        onNavigatePrevious={handleNavigatePrevious}
-                        initialLocalValue={initialLocalValue}
-                        currentIndex={currentSearchIndex}
-                        totalResults={totalResults}
-                    />
-                    <List />
-                </div>
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50">
+            <div className="relative">
+                {/* LOADING BAR - currently deprecated */}
+                {/* {loading && (
+                    <div className="absolute top-0 left-0 w-full h-1.5 z-50 overflow-hidden">
+                        <div className="absolute left-0 top-0 h-full w-full bg-blue-100 opacity-40" />
+                        <div 
+                            className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-400 to-blue-600" 
+                            style={{ width: `${searchProgress}%`, transition: 'width 200ms ease-out' }}
+                        />
+                    </div>
+                )} */}
+                <TimeSlicedSearch 
+                    onSearch={handleSearch} 
+                    onLoadingChange={handleLoadingChange}
+                    onNavigateNext={handleNavigateNext}
+                    onNavigatePrevious={handleNavigatePrevious}
+                    initialLocalValue={initialLocalValue}
+                    currentIndex={currentSearchIndex}
+                    totalResults={totalResults}
+                />
+                <List />
             </div>
         </div>
     );

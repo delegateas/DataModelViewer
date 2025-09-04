@@ -4,7 +4,7 @@ import React, { ReactNode } from 'react';
 import { Box } from '@mui/material';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { useSidebar } from '@/hooks/useSidebar';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import clsx from 'clsx';
 
@@ -14,22 +14,13 @@ interface LayoutProps {
   showSidebarContent?: boolean;
 }
 
-const Layout = ({ children, className, showSidebarContent = false }: LayoutProps) => {
-  const { isOpen: sidebarOpen, element: sidebarElement } = useSidebar();
+const Layout = ({ children, className }: LayoutProps) => {
+  const { isOpen: sidebarOpen } = useSidebar();
   const isMobile = useIsMobile();
 
   return (
     <Box className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <Sidebar />
-      
-      {/* Sidebar Content Area (when expanded and has content) */}
-      {sidebarOpen && sidebarElement && showSidebarContent && (
-        <Box className="w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-          <Box className="p-4">
-            {sidebarElement}
-          </Box>
-        </Box>
-      )}
 
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (

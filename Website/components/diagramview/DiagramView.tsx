@@ -15,10 +15,9 @@ import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, es
 import { AttributeType } from '@/lib/Types';
 import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
 import { SidebarDiagramView } from './SidebarDiagramView';
-import { useSidebarDispatch } from '@/contexts/SidebarContext';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { SimpleDiagramRenderer } from './renderers/SimpleDiagramRender';
 import { DetailedDiagramRender } from './renderers/DetailedDiagramRender';
-import Sidebar from '../shared/Sidebar';
 
 interface IDiagramView {}
 
@@ -873,19 +872,16 @@ const DiagramContent = () => {
 };
 
 export default function DiagramView({ }: IDiagramView) {
-    const dispatch = useSidebarDispatch();
+    const { setElement, dispatch } = useSidebar();
 
     useEffect(() => {
-        dispatch({ type: "SET_ELEMENT", payload: <SidebarDiagramView /> })
+        setElement(<SidebarDiagramView />);
         dispatch({ type: 'SET_SHOW_ELEMENT', payload: true });
-    }, [])
+    }, [setElement, dispatch])
 
     return (
         <DiagramViewProvider>
-            <div className="flex">
-                <Sidebar />
-                <DiagramContent />
-            </div>
+            <DiagramContent />
         </DiagramViewProvider>
     );
 }
