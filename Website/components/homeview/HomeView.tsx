@@ -62,66 +62,68 @@ export const HomeView = ({ }: IHomeViewProps) => {
     }, []);
 
     return (
-        <Grid container className="flex min-h-screen" spacing={2}>
-            <Grid size={{ xs: 12, md: 8 }}>
-                <Box 
-                    className='rounded-2xl flex w-full h-96 bg-cover bg-center bg-no-repeat'
-                    sx={{
-                        backgroundImage: `
-                            linear-gradient(to right, rgba(17, 24, 39, 0.35) 0%, rgba(17, 24, 39, 0.85) 75%), 
-                            url(/welcomeback-data-stockimage.webp)
-                        `
-                    }}>
-                        <Box className="relative z-10 flex flex-col justify-center h-full p-8 text-white w-1/2">
-                            <Typography variant='h1' className="text-4xl font-bold mb-4">Welcome back!</Typography>
-                            <Typography variant='body1' className="text-md text-gray-300">Explore your data with ease. If this is your first time using Data Model Viewer, make sure to check out the documentation.</Typography>
-                            <Button href='/metadata' size='small' variant='contained' color='primary' className='text-white py-2 mt-4 rounded-lg font-medium transition-colors shadow-sm w-32'>Explore Now</Button>
-                        </Box>
-                </Box>
+        <Box className="min-h-screen p-4">
+            <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 8 }}>
+                    <Box 
+                        className='rounded-2xl flex w-full h-96 bg-cover bg-center bg-no-repeat'
+                        sx={{
+                            backgroundImage: `
+                                linear-gradient(to right, rgba(17, 24, 39, 0.35) 0%, rgba(17, 24, 39, 0.85) 75%), 
+                                url(/welcomeback-data-stockimage.webp)
+                            `
+                        }}>
+                            <Box className="relative z-10 flex flex-col justify-center h-full p-8 text-white w-1/2">
+                                <Typography variant='h1' className="text-4xl font-bold mb-4">Welcome back!</Typography>
+                                <Typography variant='body1' className="text-md text-gray-300">Explore your data with ease. If this is your first time using Data Model Viewer, make sure to check out the documentation.</Typography>
+                                <Button href='/metadata' size='small' variant='contained' color='primary' className='text-white py-2 mt-4 rounded-lg font-medium transition-colors shadow-sm w-32'>Explore Now</Button>
+                            </Box>
+                    </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                    <NotchedBox 
+                        notchContent={
+                            <Box className="flex items-center gap-1 bg-transparent">
+                                <IconButton size="medium" onClick={goToPrevious}>
+                                    <ChevronLeft size={16} />
+                                </IconButton>
+                                <IconButton size="medium" onClick={goToNext}>
+                                    <ChevronRight size={16} />
+                                </IconButton>
+                            </Box>
+                        }
+                        backgroundImage={carouselItems[currentCarouselIndex]?.image}
+                        className='h-96'
+                    >
+                        <Carousel 
+                            items={carouselItems}
+                            currentIndex={currentCarouselIndex}
+                            slideDirection={slideDirection}
+                            className='w-full h-full'
+                        />
+                    </NotchedBox>
+                </Grid>
+                <Grid size={12}>
+                    <Paper elevation={2} className='rounded-2xl p-8'>
+                        {wikipage ? (
+                            <Markdown components={{
+                                h1: ({ ...props }) => <h1 className="text-4xl font-bold mb-4" {...props} />,
+                                h2: ({ ...props }) => <h2 className="text-3xl font-bold mb-4" {...props} />,
+                                h3: ({ ...props }) => <h3 className="text-2xl font-bold mb-4" {...props} />,
+                                h4: ({ ...props }) => <h4 className="text-xl font-bold mb-4" {...props} />,
+                                p: ({ ...props }) => <p className="mb-4" {...props} />,
+                                a: ({ ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
+                                li: ({ ...props }) => <li className="ml-6 list-disc" {...props} />,
+                                span: ({ ...props }) => <span className="font-semibold" {...props} />,
+                                img: ({ ...props }) => <img className="max-w-full h-auto my-4" {...props} />,
+                            }}>{wikipage}</Markdown>
+                        ) : (   
+                            <div>Loading wiki...</div>
+                        )}
+                    </Paper>
+                </Grid>
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-                <NotchedBox 
-                    notchContent={
-                        <Box className="flex items-center gap-1 bg-transparent">
-                            <IconButton size="medium" onClick={goToPrevious}>
-                                <ChevronLeft size={16} />
-                            </IconButton>
-                            <IconButton size="medium" onClick={goToNext}>
-                                <ChevronRight size={16} />
-                            </IconButton>
-                        </Box>
-                    }
-                    backgroundImage={carouselItems[currentCarouselIndex]?.image}
-                    className='h-96'
-                >
-                    <Carousel 
-                        items={carouselItems}
-                        currentIndex={currentCarouselIndex}
-                        slideDirection={slideDirection}
-                        className='w-full h-full'
-                    />
-                </NotchedBox>
-            </Grid>
-            <Grid size={12}>
-                <Paper elevation={2} className='rounded-2xl p-8'>
-                    {wikipage ? (
-                        <Markdown components={{
-                            h1: ({ ...props }) => <h1 className="text-4xl font-bold mb-4" {...props} />,
-                            h2: ({ ...props }) => <h2 className="text-3xl font-bold mb-4" {...props} />,
-                            h3: ({ ...props }) => <h3 className="text-2xl font-bold mb-4" {...props} />,
-                            h4: ({ ...props }) => <h4 className="text-xl font-bold mb-4" {...props} />,
-                            p: ({ ...props }) => <p className="mb-4" {...props} />,
-                            a: ({ ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
-                            li: ({ ...props }) => <li className="ml-6 list-disc" {...props} />,
-                            span: ({ ...props }) => <span className="font-semibold" {...props} />,
-                            img: ({ ...props }) => <img className="max-w-full h-auto my-4" {...props} />,
-                        }}>{wikipage}</Markdown>
-                    ) : (   
-                        <div>Loading wiki...</div>
-                    )}
-                </Paper>
-            </Grid>
-        </Grid>
+        </Box>
     )
 
     return (

@@ -19,7 +19,7 @@ const Layout = ({ children, className }: LayoutProps) => {
   const isMobile = useIsMobile();
 
   return (
-    <Box className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <Box className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
 
       {/* Mobile overlay */}
@@ -30,11 +30,13 @@ const Layout = ({ children, className }: LayoutProps) => {
         />
       )}
 
-      <Box className="flex flex-col flex-1 min-w-0 relative">
+      <Box className="flex flex-col flex-1 min-w-0 relative h-screen">
         <Header />
-        <Container maxWidth="xl" className='mt-8'>
-          {children}
-        </Container>
+        <Box className="flex-1 overflow-y-auto">
+          <Container maxWidth="xl" className='mt-8 pb-8'>
+            {children}
+          </Container>
+        </Box>
       </Box>
     </Box>
   );
