@@ -1,7 +1,7 @@
 'use client'
 
 import React, { ReactNode } from 'react';
-import { Box } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -32,20 +32,9 @@ const Layout = ({ children, className }: LayoutProps) => {
 
       <Box className="flex flex-col flex-1 min-w-0 relative">
         <Header />
-        
-        <Box 
-          component="main"
-          className={clsx(
-            'flex-1 overflow-auto bg-white dark:bg-gray-900',
-            'p-6',
-            className
-          )}
-          aria-label="Main content"
-        >
-          <Box className="h-full max-w-full">
-            {children}
-          </Box>
-        </Box>
+        <Container maxWidth="xl" className='mt-8'>
+          {children}
+        </Container>
       </Box>
     </Box>
   );
