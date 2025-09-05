@@ -23,6 +23,9 @@ parameters:
   - name: websiteName
     type: string
     default: ''
+  - name: azurePublicNetworkAccess
+    type: string
+  default: 'Enabled'
 
 steps:
   - task: AzureCLI@2
@@ -33,7 +36,7 @@ steps:
       scriptLocation: "inlineScript"
       inlineScript: |
         az group create --name ${{ parameters.azureResourceGroupName }} --location ${{ parameters.azureLocation }}
-        $jsonResult = az deployment group create --resource-group ${{ parameters.azureResourceGroupName }} --template-file ${{ parameters.bicepTemplateFile }} --parameters websitePassword=${{ parameters.websitePassword }} --parameters sessionSecret=${{ parameters.websiteSessionSecret }} --parameters solutionId=${{ parameters.websiteName }} | ConvertFrom-Json
+        $jsonResult = az deployment group create --resource-group ${{ parameters.azureResourceGroupName }} --template-file ${{ parameters.bicepTemplateFile }} --parameters azurePublicNetworkAccess=${{ parameters.azurePublicNetworkAccess }} --parameters websitePassword=${{ parameters.websitePassword }} --parameters sessionSecret=${{ parameters.websiteSessionSecret }} --parameters solutionId=${{ parameters.websiteName }} | ConvertFrom-Json
         $webAppName = $jsonResult.properties.outputs.webAppName.value
         Write-Host "##vso[task.setvariable variable=webAppName]$webAppName"
 

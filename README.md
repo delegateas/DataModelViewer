@@ -86,6 +86,7 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * AzureServiceConnectionName: Name of the Azure Resource Manager service connection created from ADO to Azure.
 * AzureLocation: Name of the location for the resource group in Azure (e.g. "westeurope" - not the display name which is "West Europe").
 * AzureResourceGroupName: Name of the Resource Group in Azure. If this matches an existing group in the location above that will be used for the DMV resources, if not a new resource group will be created.
+* AzurePublicNetworkAccess: Defaults to `Enabled`.
 * DataverseUrl: URL for the Dataverse environment which the data model will be based on (e.g. "https://mySystem-dev.crm4.dynamics.com/").
 * DataverseSolutionNames: Comma-seperated list of solutions to based DMV on. Use the logical names (not display names).
 * WebsiteName: Used for the url of the web app presenting the data model to the user. The full URL will be in the format "https://wa-{WebsiteName}.azurewebsites.net/" and must be globally unique. 

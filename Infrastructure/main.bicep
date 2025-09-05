@@ -1,4 +1,9 @@
 param solutionId string
+@allowed([
+  'Enabled'
+  'Disabled'
+])
+param azurePublicNetworkAccess string = 'Enabled'
 @secure()
 param websitePassword string
 @secure()
@@ -26,6 +31,7 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
   properties: {
     serverFarmId: appServicePlan.id
     httpsOnly: true
+    publicNetworkAccess: azurePublicNetworkAccess
     siteConfig: {
       linuxFxVersion: 'NODE|20-lts'
 

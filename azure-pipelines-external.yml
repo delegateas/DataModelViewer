@@ -20,6 +20,9 @@
 #   - AzureClientId
 #   - AzureClientSecret
 #   - DataverseUrl
+#   - AdoWikiName
+#   - AdoWikiPagePath
+#   - PublicNetworkAccess
 
 trigger: none
 pr: none
@@ -86,6 +89,7 @@ stages:
               azureServiceConnectionName: $(AzureServiceConnectionName)
               azureResourceGroupName: $(AzureResourceGroupName)
               azureLocation: $(AzureLocation)
+              azurePublicNetworkAccess: $(AzurePublicNetworkAccess)
               websitePassword: $(WebsitePassword)
               websiteSessionSecret: $(WebsiteSessionSecret)
               websiteName: $(WebsiteName)
