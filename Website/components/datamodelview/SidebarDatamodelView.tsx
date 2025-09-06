@@ -3,7 +3,7 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionSummary, AccordionDetails, Stack, Box, InputAdornment, Paper, Typography, IconButton, Button } from '@mui/material';
 import { ExpandMore, ExtensionRounded, OpenInNewRounded, SearchRounded } from '@mui/icons-material';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { TextField } from "@mui/material";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
@@ -30,11 +30,33 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const { groups } = useDatamodelData();
 
     const [searchTerm, setSearchTerm] = useState("");
+    const [displaySearchTerm, setDisplaySearchTerm] = useState("");
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     
+    // Memoize search results to prevent recalculation on every render
+    const filteredGroups = useMemo(() => {
+        if (!searchTerm.trim()) return groups;
+        
+        return groups.map(group => ({
+            ...group,
+            Entities: group.Entities.filter(entity => 
+                entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+        })).filter(group => group.Entities.length > 0);
+    }, [groups, searchTerm]);
+    
+    // Debounced search to reduce performance impact
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setSearchTerm(displaySearchTerm);
+        }, 150);
+        return () => clearTimeout(timeoutId);
+    }, [displaySearchTerm]);
+    
     // Search functionality
-    const handleSearch = (term: string) => {
-        setSearchTerm(term);
+    const handleSearch = useCallback((term: string) => {
+        setDisplaySearchTerm(term);
         if (term.trim()) {
             const newExpandedGroups = new Set<string>();
             groups.forEach(group => {
@@ -50,20 +72,21 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
         } else {
             setExpandedGroups(new Set());
         }
-    };
+    }, [groups]);
 
-    const clearSearch = () => {
+    const clearSearch = useCallback(() => {
         setSearchTerm("");
+        setDisplaySearchTerm("");
         setExpandedGroups(new Set());
-    };
+    }, []);
 
-    const isEntityMatch = (entity: EntityType) => {
+    const isEntityMatch = useCallback((entity: EntityType) => {
         if (!searchTerm.trim()) return false;
         return entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase());
-    };
+    }, [searchTerm]);
 
-    const highlightText = (text: string, searchTerm: string) => {
+    const highlightText = useCallback((text: string, searchTerm: string) => {
         if (!searchTerm.trim()) return text;
         const regex = new RegExp(`(${searchTerm})`, 'gi');
         const parts = text.split(regex);
@@ -72,22 +95,29 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 <mark key={index} className="bg-yellow-200 text-yellow-900 px-0.5 rounded">{part}</mark> : 
                 part
         );
-    };
+    }, []);
 
-    const handleGroupClick = (groupName: string) => {
+    const handleGroupClick = useCallback((groupName: string) => {
         dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
-    };
+    }, [dataModelDispatch]);
 
-    const handleSectionClick = (sectionId: string) => {
-        dataModelDispatch({ type: 'SET_LOADING', payload: true });
-        dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: sectionId });
-        if (scrollToSection) {
-            scrollToSection(sectionId);
-        }
-        clearSearch();
-    };
+    const handleSectionClick = useCallback((sectionId: string) => {
+        // Use requestAnimationFrame to defer heavy operations
+        requestAnimationFrame(() => {
+            dataModelDispatch({ type: 'SET_LOADING', payload: true });
+            dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: sectionId });
+            
+            // Defer scroll operation to next frame to prevent blocking
+            requestAnimationFrame(() => {
+                if (scrollToSection) {
+                    scrollToSection(sectionId);
+                }
+                clearSearch();
+            });
+        });
+    }, [dataModelDispatch, scrollToSection, clearSearch]);
 
-    const NavItem = ({ group }: INavItemProps) => {
+    const NavItem = useCallback(({ group }: INavItemProps) => {
         const isCurrentGroup = currentGroup?.toLowerCase() === group.Name.toLowerCase();
     
         return (
@@ -119,19 +149,19 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 >
                     <Typography className={`flex-1 text-sm text-left truncate ${isCurrentGroup ? 'font-semibold' : ''}`} sx={{ color: isCurrentGroup ? 'primary.main' : 'text.primary' }}>{group.Name}</Typography>
                     <Typography className={`ml-auto text-xs mr-2 ${isCurrentGroup ? 'font-semibold' : ''}`} sx={{ opacity: 0.7, color: isCurrentGroup ? 'primary.main' : 'text.primary' }}>{group.Entities.length}</Typography>
-                    <IconButton
-                        size="xsmall"
+                    
+                    <OpenInNewRounded 
                         onClick={(e) => {
                             e.stopPropagation();
                             handleGroupClick(group.Name);
                             if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName);
                         }}
                         aria-label={`Link to first entity in ${group.Name}`}
-                        tabIndex={0}
-                        color={isCurrentGroup ? "primary" : "default"}
-                    >
-                        <OpenInNewRounded />
-                    </IconButton>
+                        className="w-4 h-4"
+                        sx={{
+                            color: isCurrentGroup ? "primary.main" : "default"
+                        }}
+                    />
                 </AccordionSummary>
                 <AccordionDetails className="p-0">
                     <Box className="flex flex-col w-full gap-1 py-1">
@@ -148,9 +178,10 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                 <Button
                                     className={cn(
                                         "flex items-center gap-2 rounded-lg px-3 py-1 cursor-pointer transition-colors text-xs font-medium mx-1 justify-start",
-                                        isMatch ? "ring-1 ring-yellow-300" : ""
+                                        isMatch ? "ring-1" : ""
                                     )}
                                     sx={{ 
+                                        borderColor: 'accent.main',
                                         backgroundColor: isCurrentSection ? alpha(theme.palette.primary.main, 0.1) : 'transparent' 
                                     }}
                                     key={entity.SchemaName}
@@ -198,7 +229,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 </AccordionDetails>
             </Accordion>
         )
-    }
+    }, [currentGroup, currentSection, theme, handleGroupClick, handleSectionClick, isEntityMatch, searchTerm, highlightText]);
 
     return (
         <Box className="flex flex-col w-full p-2">
@@ -206,7 +237,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 type="text"
                 placeholder="Search tables..."
                 aria-label="Search tables"
-                value={searchTerm}
+                value={displaySearchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 size="small"
                 variant="outlined"
@@ -220,7 +251,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
             />
             <Paper className="mt-4 border rounded-lg" sx={{ borderColor: 'border.main' }} variant="outlined">
                 {
-                    groups.map((group) => 
+                    filteredGroups.map((group) => 
                         <NavItem key={group.Name} group={group} />
                     )
                 }
