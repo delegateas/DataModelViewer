@@ -64,10 +64,37 @@ const Sidebar = ({ }: SidebarProps) => {
     ];
 
   return (
-    <Box className={`relative flex flex-col items-start h-screen border-r border-gray-200 bg-gray-50 transition-all duration-300 ${isOpen ? 'w-sidebar-expanded' : 'w-sidebar'}`}>
-        <Box className='w-full min-h-header h-header flex items-center justify-center relative border-b border-gray-200'>
+    <Box 
+      className={`relative flex flex-col items-start h-screen transition-all duration-300 ${isOpen ? 'w-sidebar-expanded' : 'w-sidebar'}`}
+      sx={{
+        borderRight: 1,
+        borderColor: 'border.main',
+        bgcolor: 'background.paper'
+      }}
+    >
+        <Box 
+          className='w-full min-h-header h-header flex items-center justify-center relative'
+          sx={{
+            borderBottom: 1,
+            borderColor: 'border.main'
+          }}
+        >
           {element !== null && (
-            <IconButton size='xsmall' onClick={toggleExpansion} className='absolute -right-3 border border-gray-200 bg-white z-50'>
+            <IconButton 
+              size='xsmall' 
+              onClick={toggleExpansion} 
+              sx={{
+                position: 'absolute',
+                right: '-12px',
+                border: 1,
+                borderColor: 'border.main',
+                bgcolor: 'background.paper',
+                zIndex: 50,
+                '&:hover': {
+                  bgcolor: 'background.paper',
+                }
+              }}
+            >
                 {isOpen ? <ChevronLeft /> : <ChevronRight />}
             </IconButton>
             )}
@@ -78,8 +105,15 @@ const Sidebar = ({ }: SidebarProps) => {
                 className='h-12 p-1'
             />
         </Box>
-        <Box className="flex">
-          <Box className="flex flex-col items-center pt-4 w-sidebar border-r border-gray-200 h-full" gap={2}>
+        <Box className="flex h-full">
+          <Box 
+            className="flex flex-col items-center pt-4 w-sidebar h-full" 
+            gap={2}
+            sx={{
+              borderRight: 1,
+              borderColor: 'border.main'
+            }}
+          >
             {navItems.map((item, itemIndex) => (
                 <Box key={itemIndex} className="relative w-full">
                     <Link

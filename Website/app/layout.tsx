@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider } from "@mui/material/styles";
-import theme from "@/theme";
 
 export const metadata: Metadata = {
   title: "Data Model Viewer",
@@ -15,15 +14,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="en">
       <body>
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-            <ThemeProvider theme={theme}>
-              <SidebarProvider>
-                {children}
-              </SidebarProvider>
-            </ThemeProvider>
+          <SettingsProvider>
+            <SidebarProvider>
+              {children}
+            </SidebarProvider>
+          </SettingsProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

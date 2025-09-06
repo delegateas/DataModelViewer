@@ -19,7 +19,7 @@ const Layout = ({ children, className }: LayoutProps) => {
   const isMobile = useIsMobile();
 
   return (
-    <Box className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <Box className="flex h-screen bg-background">
       <Sidebar />
 
       {/* Mobile overlay */}

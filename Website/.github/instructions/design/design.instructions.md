@@ -4,7 +4,7 @@ The project uses Tailwind CSS for styling. And MUI UI for elements.
 You must always follow the design specifications outlined in this document.
 
 # Styling
-Always use Tailwind classes for styling. Always implement both for light and dark theme.
+Always use Tailwind classes for styling (EXPECT FOR COLORS USE SX FOR CORRECT MUI COLORING).
 Always implement responsive design using Tailwind's responsive utilities.
 Always add `aria-label` attributes to interactive elements.
 Always use tailwind classes over the `sx` prop.

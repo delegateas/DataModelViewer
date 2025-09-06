@@ -1,5 +1,5 @@
 'use client';
-import { createTheme } from '@mui/material/styles';
+import { createTheme, PaletteMode } from '@mui/material/styles';
 
 // Augment the theme to add custom IconButton sizes
 declare module '@mui/material/IconButton' {
@@ -11,17 +11,17 @@ declare module '@mui/material/IconButton' {
 // Augment the palette to add custom colors
 declare module '@mui/material/styles' {
   interface Palette {
-    delegate: Palette['primary'];
     accent: Palette['primary'];
+    border: Palette['primary'];
   }
 
   interface PaletteOptions {
-    delegate?: PaletteOptions['primary'];
     accent?: PaletteOptions['primary'];
+    border?: PaletteOptions['primary'];
   }
 }
 
-const theme = createTheme({
+export const createAppTheme = (mode: PaletteMode) => createTheme({
   components: {
     MuiIconButton: {
       styleOverrides: {
@@ -45,6 +45,7 @@ const theme = createTheme({
     },
   },
   palette: {
+    mode,
     primary: {
       main: '#2563eb', // Blue-600 - change this to your desired primary color
       light: '#3b82f6', // Blue-500
@@ -57,12 +58,6 @@ const theme = createTheme({
       dark: '#6d28d9', // Violet-700
       contrastText: '#ffffff',
     },
-    delegate: {
-      main: '#f59e0b', // Amber-500
-      light: '#fbbf24', // Amber-400
-      dark: '#b45309', // Amber-700
-    },
-    // Add your new custom color here
     accent: {
       main: '#a78bfa', // Purple-500
       light: '#a78bfa', // Purple-400
@@ -90,14 +85,18 @@ const theme = createTheme({
       dark: '#15803d', // Green-700
     },
     text: {
-      primary: '#111827', // Grey-900 - Main text color
-      secondary: '#6b7280', // Grey-500 - Secondary text color
-      disabled: '#9ca3af', // Grey-400 - Disabled text color
+      primary: mode === 'dark' ? '#f9fafb' : '#111827', // Light text in dark mode, dark text in light mode
+      secondary: mode === 'dark' ? '#d1d5db' : '#6b7280', // Secondary text colors
+      disabled: mode === 'dark' ? '#6b7280' : '#9ca3af', // Disabled text colors
     },
     background: {
-      default: '#ffffff', // Main background color
-      paper: '#ffffff', // Card/paper background color
+      default: mode === 'dark' ? '#111827' : '#ffffff', // Dark background in dark mode
+      paper: mode === 'dark' ? '#1f2937' : '#ffffff', // Dark paper background in dark mode
     },
+    border: {
+      main: mode === 'dark' ? '#374151' : '#e5e7eb', // Gray-700 in dark mode, Gray-200 in light mode
+      dark: mode === 'dark' ? '#4b5563' : '#d1d5db', // Gray-600 in dark mode, Gray-300 in light mode
+    }
   },
   typography: {
     fontFamily: '"HassGrotesk", "Helvetica", "Arial", sans-serif',
@@ -107,5 +106,8 @@ const theme = createTheme({
   },
   cssVariables: true,
 });
+
+// Default theme for backwards compatibility
+const theme = createAppTheme('light');
 
 export default theme;
