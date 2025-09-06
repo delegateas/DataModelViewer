@@ -86,7 +86,7 @@ const LoginView = ({ }: LoginViewProps) => {
             <Box className="flex w-full h-full">
                 <Box gap={2} className="hidden w-full max-w-[480px] md:flex flex-col p-4 h-full items-center justify-center">
                     <Typography variant='h4' fontWeight={700}>Hi, Welcome back</Typography>
-                    <Typography variant='subtitle1' fontWeight={400}>More <span className='font-neue-machina font-semibold'>effective</span> with <span className='font-neue-machina font-semibold'>transparency</span></Typography>
+                    <Typography variant='subtitle1' fontWeight={400}>More <span className='font-semibold'>effective</span> with <span className='font-semibold'>transparency</span></Typography>
                     <Box
                         component="img"
                         src="/4716572.svg"

@@ -24,7 +24,7 @@ const LoadingOverlay = ({ open, message = 'Loading...' }: LoadingOverlayProps) =
         <Typography 
           variant="body1" 
           color="inherit"
-          className="font-context text-white dark:text-white"
+          className="text-white dark:text-white"
         >
           {message}
         </Typography>

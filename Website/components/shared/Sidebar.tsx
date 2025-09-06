@@ -180,7 +180,7 @@ const Sidebar = ({ }: SidebarProps) => {
                             }}
                         >
                             {item.icon}
-                            <Typography variant="body2" className="font-context text-xs text-center">
+                            <Typography variant="body2" className="text-xs text-center">
                                 {item.label}
                             </Typography>
                         </Box>

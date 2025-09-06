@@ -28,6 +28,7 @@ const FONT_SIZES = [
 ];
 
 const FONT_FAMILIES = [
+    { name: 'Roboto', value: 'Roboto, sans-serif' },
     { name: 'System Font', value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
     { name: 'Arial', value: 'Arial, sans-serif' },
     { name: 'Helvetica', value: 'Helvetica, Arial, sans-serif' },
