@@ -215,7 +215,7 @@ export const TimeSlicedSearch = ({
   }, []);
 
   const searchInput = (
-    <Box className={`fixed top-20 right-0 z-50 w-[320px] transition-opacity duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+    <Box className={`fixed top-20 right-0 z-50 w-[320px] transition-opacity bg-transparent duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       <TextField
         type="text"
         placeholder={placeholder}
@@ -229,31 +229,38 @@ export const TimeSlicedSearch = ({
         autoCapitalize="off"
         size="small"
         fullWidth
-        sx={{
-          backgroundColor: 'background.paper',
-        }}
         slotProps={{
           input: {
+              sx: { backgroundColor: 'background.paper' },
               startAdornment: <InputAdornment position="start"><SearchRounded /></InputAdornment>,
+              endAdornment: (
+                <InputAdornment position="end">
+                  {isTyping && localValue.length >= 3 ? (
+                    <Box className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></Box>
+                  ) : localValue ? (
+                    <IconButton
+                      onClick={handleClear}
+                      size="small"
+                      sx={{ 
+                        width: '20px', 
+                        height: '20px',
+                        color: 'text.secondary',
+                        '&:hover': {
+                          color: 'text.primary',
+                          backgroundColor: 'action.hover'
+                        }
+                      }}
+                      title="Clear search"
+                      aria-label="Clear search"
+                    >
+                      <X size={16} />
+                    </IconButton>
+                  ) : null}
+                </InputAdornment>
+              )
           }
         }}
       />
-      
-      {/* Clear button or loading indicator */}
-      <Box className="absolute right-3 top-1/2 transform -translate-y-1/2 flex justify-center items-center">
-        {isTyping && localValue.length >= 3 ? (
-          <Box className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></Box>
-        ) : localValue ? (
-          <IconButton
-            onClick={handleClear}
-            className="w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
-            title="Clear search"
-            aria-label="Clear search"
-          >
-            <X className="w-4 h-4" />
-          </IconButton>
-        ) : null}
-      </Box>
     </Box>
   );
 

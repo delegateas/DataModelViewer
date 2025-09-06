@@ -10,15 +10,15 @@ export default function BooleanAttribute({ attribute }: { attribute: BooleanAttr
     return (
         <Box className="flex flex-col gap-1">
             <Box className="flex items-center gap-2">
-                <Typography className="font-semibold text-xs md:font-bold md:text-sm">Boolean</Typography>
+                <Typography className="font-semibold text-xs md:text-sm md:font-bold">Boolean</Typography>
                 {attribute.DefaultValue !== null && !isMobile && (
                     <Chip 
                         icon={<CheckCircle className="w-2 h-2 md:w-3 md:h-3" />}
                         label={`Default: ${attribute.DefaultValue === true ? attribute.TrueLabel : attribute.FalseLabel}`}
                         size="small"
                         sx={{ 
-                            fontSize: { xs: '0.75rem', md: '0.875rem' },
-                            height: { xs: '20px', md: '24px' },
+                            fontSize: { xs: '0.625rem', md: '0.875rem' },
+                            height: { xs: '16px', md: '24px' },
                             backgroundColor: 'success.light',
                             color: 'success.dark',
                             '& .MuiChip-icon': { 
@@ -43,9 +43,9 @@ export default function BooleanAttribute({ attribute }: { attribute: BooleanAttr
                             label="True"
                             size="small"
                             sx={{ 
-                                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                fontSize: { xs: '0.625rem', md: '0.875rem' },
                                 fontFamily: 'monospace',
-                                height: { xs: '20px', md: '24px' },
+                                height: { xs: '16px', md: '24px' },
                                 backgroundColor: 'grey.200',
                                 color: 'grey.700'
                             }}
@@ -66,9 +66,9 @@ export default function BooleanAttribute({ attribute }: { attribute: BooleanAttr
                             label="False"
                             size="small"
                             sx={{ 
-                                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                fontSize: { xs: '0.625rem', md: '0.875rem' },
                                 fontFamily: 'monospace',
-                                height: { xs: '20px', md: '24px' },
+                                height: { xs: '16px', md: '24px' },
                                 backgroundColor: 'grey.200',
                                 color: 'grey.700'
                             }}

@@ -20,8 +20,8 @@ export default function LookupAttribute({ attribute }: { attribute: LookupAttrib
                             startIcon={<FileSearch className="w-2 h-2 md:w-3 md:h-3" />}
                             onClick={() => scrollToSection(target.Name)}
                             sx={{
-                                fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                height: { xs: '20px', md: '24px' },
+                                fontSize: { xs: '0.625rem', md: '0.875rem' },
+                                height: { xs: '16px', md: '24px' },
                                 minWidth: 'auto',
                                 px: { xs: 0.75, md: 1 },
                                 '& .MuiButton-startIcon': {
@@ -39,8 +39,8 @@ export default function LookupAttribute({ attribute }: { attribute: LookupAttrib
                             size="small"
                             disabled
                             sx={{
-                                fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                height: { xs: '20px', md: '24px' },
+                                fontSize: { xs: '0.625rem', md: '0.875rem' },
+                                height: { xs: '16px', md: '24px' },
                                 backgroundColor: 'grey.100',
                                 color: 'grey.600',
                                 '& .MuiChip-icon': {

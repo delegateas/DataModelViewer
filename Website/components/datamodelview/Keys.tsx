@@ -210,7 +210,36 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                         )}
                     </Box>
                 ) : (
-                    <Table sx={{ width: '100%', borderTop: 1, borderColor: 'border.main' }}>
+                    <Box 
+                        className="overflow-x-auto md:overflow-x-visible"
+                        sx={{ 
+                            borderTop: 1, 
+                            borderColor: 'border.main',
+                            // Mobile: allow horizontal scrolling within the component
+                            maxWidth: '100%',
+                            '@media (max-width: 768px)': {
+                                overflowX: 'auto',
+                                '&::-webkit-scrollbar': {
+                                    height: '8px',
+                                },
+                                '&::-webkit-scrollbar-track': {
+                                    backgroundColor: 'rgba(0,0,0,0.1)',
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                    backgroundColor: 'rgba(0,0,0,0.3)',
+                                    borderRadius: '4px',
+                                },
+                            }
+                        }}
+                    >
+                        <Table 
+                            sx={{ 
+                                width: '100%', 
+                                borderColor: 'border.main',
+                                // Ensure minimum width on mobile to enable horizontal scrolling
+                                minWidth: { xs: '700px', md: 'auto' }
+                            }}
+                        >
                         <TableHead sx={{ backgroundColor: 'background.paper' }}>
                             <TableRow sx={{ borderBottom: 2, borderColor: 'border.main' }}>
                                 <TableCell 
@@ -323,6 +352,7 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                             ))}
                         </TableBody>
                     </Table>
+                    </Box>
                 )}
             </Box>
         </>

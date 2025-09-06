@@ -11,15 +11,15 @@ export default function ChoiceAttribute({ attribute, highlightMatch, highlightTe
     return (
         <Box className="flex flex-col gap-1">
             <Box className="flex items-center gap-2">
-                <Typography className="font-semibold text-xs md:font-bold md:text-sm">{attribute.Type}-select</Typography>
+                <Typography className="font-semibold text-xs md:text-sm md:font-bold">{attribute.Type}-select</Typography>
                 {attribute.DefaultValue !== null && attribute.DefaultValue !== -1 && !isMobile && (
                     <Chip 
                         icon={<CheckCircle className="w-2 h-2 md:w-3 md:h-3" />}
                         label={`Default: ${attribute.Options.find(o => o.Value === attribute.DefaultValue)?.Name}`}
                         size="small"
                         sx={{ 
-                            fontSize: { xs: '0.75rem', md: '0.875rem' },
-                            height: { xs: '20px', md: '24px' },
+                            fontSize: { xs: '0.625rem', md: '0.875rem' },
+                            height: { xs: '16px', md: '24px' },
                             backgroundColor: 'success.light',
                             color: 'success.dark',
                             '& .MuiChip-icon': { 
@@ -69,9 +69,9 @@ export default function ChoiceAttribute({ attribute, highlightMatch, highlightTe
                                     label={formatNumberSeperator(option.Value)}
                                     size="small"
                                     sx={{ 
-                                        fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                        fontSize: { xs: '0.625rem', md: '0.875rem' },
                                         fontFamily: 'monospace',
-                                        height: { xs: '20px', md: '24px' },
+                                        height: { xs: '16px', md: '24px' },
                                         backgroundColor: 'grey.200',
                                         color: 'grey.700'
                                     }}

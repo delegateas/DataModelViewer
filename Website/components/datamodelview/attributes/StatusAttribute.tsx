@@ -37,9 +37,9 @@ export default function StatusAttribute({ attribute }: { attribute: StatusAttrib
                                             label={formatNumberSeperator(option.Value)}
                                             size="small"
                                             sx={{ 
-                                                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                                fontSize: { xs: '0.625rem', md: '0.875rem' },
                                                 fontFamily: 'monospace',
-                                                height: { xs: '20px', md: '24px' },
+                                                height: { xs: '16px', md: '24px' },
                                                 backgroundColor: 'grey.200',
                                                 color: 'grey.700'
                                             }}

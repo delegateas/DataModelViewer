@@ -32,7 +32,6 @@ function SecurityRoleRow({ role }: { role: SecurityRole }) {
                     : 'rgba(0, 0, 0, 0.02)',
                 borderColor: 'border.main',
                 width: '100%',
-                minWidth: '320px'
             }}
         >
             <Typography 

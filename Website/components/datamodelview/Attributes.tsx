@@ -264,40 +264,69 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                 )}
             </div>
         ) : (
-            <Table color="background.paper" className="border-t" sx={{ borderColor: 'border.main' }}>
-                <TableHead sx={{ backgroundColor: 'background.paper', color: 'text.secondary' }}>
-                    <TableRow className="border-b-2">
-                        <TableCell 
-                            className="w-[15%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
-                            onClick={() => handleSort('displayName')}
-                        >
-                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
-                                Display Name
-                                <SortIcon column="displayName" />
-                            </Typography>
-                        </TableCell>
-                        <TableCell 
-                            className="w-[15%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
-                            onClick={() => handleSort('schemaName')}
-                        >
-                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
-                                Schema Name
-                                <SortIcon column="schemaName" />
-                            </Typography>
-                        </TableCell>
-                        <TableCell 
-                            className="w-[30%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
-                            onClick={() => handleSort('type')}
-                        >
-                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
-                                Type
-                                <SortIcon column="type" />
-                            </Typography>
-                        </TableCell>
-                        <TableCell className="w-[5%] font-semibold py-2 text-xs md:font-bold md:py-3 md:text-sm">
-                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
-                                Details
-                            </Typography>
+            <Box 
+                className="overflow-x-auto md:overflow-x-visible"
+                sx={{ 
+                    borderTop: 1, 
+                    borderColor: 'border.main',
+                    // Mobile: allow horizontal scrolling within the component
+                    maxWidth: '100%',
+                    '@media (max-width: 768px)': {
+                        overflowX: 'auto',
+                        '&::-webkit-scrollbar': {
+                            height: '8px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            backgroundColor: 'rgba(0,0,0,0.1)',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: 'rgba(0,0,0,0.3)',
+                            borderRadius: '4px',
+                        },
+                    }
+                }}
+            >
+                <Table 
+                    color="background.paper" 
+                    sx={{ 
+                        borderColor: 'border.main',
+                        // Ensure minimum width on mobile to enable horizontal scrolling
+                        minWidth: { xs: '800px', md: 'auto' }
+                    }}
+                >
+                    <TableHead sx={{ backgroundColor: 'background.paper', color: 'text.secondary' }}>
+                        <TableRow className="border-b-2">
+                            <TableCell 
+                                className="w-[15%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
+                                onClick={() => handleSort('displayName')}
+                            >
+                                <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
+                                    Display Name
+                                    <SortIcon column="displayName" />
+                                </Typography>
+                            </TableCell>
+                            <TableCell 
+                                className="w-[15%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
+                                onClick={() => handleSort('schemaName')}
+                            >
+                                <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
+                                    Schema Name
+                                    <SortIcon column="schemaName" />
+                                </Typography>
+                            </TableCell>
+                            <TableCell 
+                                className="w-[30%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
+                                onClick={() => handleSort('type')}
+                            >
+                                <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
+                                    Type
+                                    <SortIcon column="type" />
+                                </Typography>
+                            </TableCell>
+                            <TableCell className="w-[5%] font-semibold py-2 text-xs md:font-bold md:py-3 md:text-sm">
+                                <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
+                                    Details
+                                </Typography>
                         </TableCell>
                         <TableCell 
                             className="w-[35%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
@@ -341,6 +370,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                     ))}
                 </TableBody>
             </Table>
+            </Box>
         )}
     </>
 }
