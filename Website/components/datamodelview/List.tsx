@@ -235,9 +235,9 @@ export const List = ({ }: IListProps) => {
         const virtualItems = rowVirtualizer.getVirtualItems();
         
         // Find the first visible item
-        const padding = 0;
+        const padding = 32;
         const firstVisibleItem = virtualItems.find(v => {
-            return v.start <= scrollOffset && (v.end - padding) >= scrollOffset;
+            return (v.start - padding) <= scrollOffset && v.end >= (scrollOffset + padding);
         });
         
         if (firstVisibleItem) {

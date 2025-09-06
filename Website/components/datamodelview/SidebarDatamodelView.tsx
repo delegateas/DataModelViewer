@@ -1,7 +1,7 @@
 import { EntityType, GroupType } from "@/lib/Types";
 import { useSidebar } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
-import { Accordion, AccordionSummary, AccordionDetails, Stack, Box, InputAdornment, Paper, Typography, IconButton, Button } from '@mui/material';
+import { Accordion, AccordionSummary, AccordionDetails, Stack, Box, InputAdornment, Paper, Typography, IconButton, Button, CircularProgress } from '@mui/material';
 import { ExpandMore, ExtensionRounded, OpenInNewRounded, SearchRounded } from '@mui/icons-material';
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { TextField } from "@mui/material";
@@ -20,7 +20,7 @@ interface INavItemProps {
 
 
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
-    const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
+    const { currentSection, currentGroup, scrollToSection, loadingSection } = useDatamodelView();
     const theme = useTheme();
 
     const dataModelDispatch = useDatamodelViewDispatch();
@@ -103,6 +103,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
         // Use requestAnimationFrame to defer heavy operations
         requestAnimationFrame(() => {
             dataModelDispatch({ type: 'SET_LOADING', payload: true });
+            dataModelDispatch({ type: 'SET_LOADING_SECTION', payload: sectionId });
             dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
             dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: sectionId });
             
@@ -112,6 +113,11 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     scrollToSection(sectionId);
                 }
                 clearSearch();
+                
+                // Clear loading section after a short delay to show the loading state
+                setTimeout(() => {
+                    dataModelDispatch({ type: 'SET_LOADING_SECTION', payload: null });
+                }, 500);
             });
         });
     }, [dataModelDispatch, scrollToSection, clearSearch]);
@@ -124,7 +130,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 disableGutters 
                 expanded={isCurrentGroup}
                 onClick={() => handleGroupClick(group.Name)}
-                className={`group/accordion transition-all duration-300 w-full border-b first:rounded-t-lg last:rounded-b-lg last:border-b-0 shadow-none`}
+                className={`group/accordion transition-all duration-300 w-full first:rounded-t-lg last:rounded-b-lg shadow-none p-1`}
                 sx={{
                     backgroundColor: "background.paper",
                     borderColor: 'border.main',
@@ -133,7 +139,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 <AccordionSummary
                     expandIcon={<ExpandMore className="w-4 h-4" sx={{ color: isCurrentGroup ? "primary.main" : "default" }} />}
                     className={cn(
-                        "duration-200 flex h-8 shrink-0 items-center rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full",
+                        "p-2 duration-200 flex shrink-0 items-center rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full",
                         isCurrentGroup ? "font-semibold" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
                     )}
                     sx={{
@@ -162,10 +168,11 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     />
                 </AccordionSummary>
                 <AccordionDetails className="p-0">
-                    <Box className="flex flex-col w-full gap-1 py-1">
+                    <Box className="flex flex-col w-full gap-1 pt-1">
                         {group.Entities.map(entity => {
                             const isCurrentSection = currentSection?.toLowerCase() === entity.SchemaName.toLowerCase()
                             const isMatch = isEntityMatch(entity);
+                            const isLoading = loadingSection === entity.SchemaName;
                             
                             // If searching and this entity doesn't match, don't render it
                             if (searchTerm.trim() && !isMatch) {
@@ -186,6 +193,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                     onClick={() => {
                                         handleSectionClick(entity.SchemaName, group.Name)
                                     }}
+                                    disabled={isLoading}
                                 >
                                     {entity.IconBase64 ? (
                                         isCurrentSection ? (
@@ -217,11 +225,20 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                             sx={{ color: isCurrentSection ? 'primary.main' : 'text.secondary' }}
                                         />
                                     )}
-                                    <Typography className="truncate text-xs" variant="body2" sx={{
+                                    <Typography className="truncate text-xs flex-1" variant="body2" sx={{
                                         color: isCurrentSection ? 'primary' : 'text.secondary',
                                     }}>
                                         {isMatch ? highlightText(entity.DisplayName, searchTerm) : entity.DisplayName}
                                     </Typography>
+                                    {isLoading && (
+                                        <CircularProgress 
+                                            size={12} 
+                                            sx={{ 
+                                                color: 'primary.main',
+                                                ml: 'auto'
+                                            }}
+                                        />
+                                    )}
                                 </Button>
                             )
                         })}

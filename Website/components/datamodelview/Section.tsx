@@ -74,7 +74,7 @@ export const Section = React.memo(
 
         return (
             <div id={entity.SchemaName} data-group={group.Name} className="mb-10">
-                <Paper className="rounded-lg" sx={{ backgroundColor: 'background.paper' }}>
+                <Paper className="rounded-lg" sx={{ backgroundColor: 'background.paper' }} variant="outlined">
                     <Box className="flex flex-col xl:flex-row min-w-0 p-6">
                         <EntityHeader entity={entity} />
                         {entity.SecurityRoles.length > 0 && (
@@ -85,7 +85,7 @@ export const Section = React.memo(
                     </Box>
 
                     <Box className="px-6 pb-6">
-                        <Paper className="rounded-lg shadow-sm" variant="outlined">
+                        <Paper className="rounded-lg" variant="outlined">
                             <Tabs 
                                 value={tab} 
                                 onChange={handleTabChange}
