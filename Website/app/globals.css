@@ -442,6 +442,16 @@
 }
 
 @layer utilities {
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .h-header {
     height: var(--layout-header-desktop-height);
   }

@@ -289,7 +289,7 @@ export const List = ({ }: IListProps) => {
     }, [datamodelView.currentSection, flatItems, rowVirtualizer, dispatch]);
 
     return (
-        <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }} className="p-6 relative">
+        <div ref={parentRef} style={{ height: 'calc(100vh - var(--layout-header-desktop-height))', overflow: 'auto' }} className="p-6 relative no-scrollbar">
 
             {/* Show skeleton loading state only when initially loading */}
             {flatItems.length === 0 && datamodelView.loading && (!search || search.length < 3) && (

@@ -6,11 +6,11 @@ import { Suspense } from "react";
 export default function Data() {
   return (
     <Suspense>
-      <Layout>
-        <DatamodelDataProvider>
-          <DatamodelView />
-        </DatamodelDataProvider>
-      </Layout>
+      <DatamodelDataProvider>
+        <Layout>
+            <DatamodelView />
+        </Layout>
+      </DatamodelDataProvider>
     </Suspense>
   )
 }

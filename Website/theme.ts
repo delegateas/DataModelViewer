@@ -47,9 +47,9 @@ export const createAppTheme = (mode: PaletteMode) => createTheme({
   palette: {
     mode,
     primary: {
-      main: '#2563eb', // Blue-600 - change this to your desired primary color
-      light: '#3b82f6', // Blue-500
-      dark: '#1d4ed8', // Blue-700
+      main: '#3949ab', 
+      light: '#3f51b5', 
+      dark: '#5c6bc0',
       contrastText: '#ffffff',
     },
     secondary: {

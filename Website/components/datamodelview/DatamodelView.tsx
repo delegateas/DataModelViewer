@@ -12,17 +12,16 @@ import { updateURL } from "@/lib/url-utils";
 import { useSearchParams } from "next/navigation";
 
 export function DatamodelView() {
-    const { setElement } = useSidebar();
+    const { setElement, expand } = useSidebar();
 
     useEffect(() => {
         setElement(<SidebarDatamodelView />);
+        expand();
     }, [setElement]);
 
     return (
         <SearchPerformanceProvider>
-            <DatamodelViewProvider>
-                <DatamodelViewContent />
-            </DatamodelViewProvider>
+            <DatamodelViewContent />
         </SearchPerformanceProvider>
     );
 }
@@ -190,7 +189,7 @@ function DatamodelViewContent() {
     }
 
     return (
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-stone-50">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <div className="relative">
                 {/* LOADING BAR - currently deprecated */}
                 {/* {loading && (

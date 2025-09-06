@@ -135,7 +135,7 @@ const Sidebar = ({ }: SidebarProps) => {
                 className='h-12 p-1'
             />
         </Box>
-        <Box className="flex h-full">
+        <Box className="flex h-full w-full">
           <Box 
             className="flex flex-col items-center pt-4 w-sidebar h-full" 
             gap={2}

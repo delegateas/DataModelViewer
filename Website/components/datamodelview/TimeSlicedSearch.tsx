@@ -212,7 +212,7 @@ export const TimeSlicedSearch = ({
   }, []);
 
   const searchInput = (
-    <div className={`fixed top-4 right-8 z-50 w-[280px] transition-opacity duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+    <div className={`fixed top-4 right-32 z-50 w-[280px] transition-opacity duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       {/* Search Input Container */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
