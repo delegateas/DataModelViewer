@@ -7,6 +7,8 @@ import { createAppTheme } from "../theme";
 interface SettingsContextType {
   mode: PaletteMode;
   toggleColorMode: () => void;
+  isSettingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
 }
 
 export const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -27,6 +29,7 @@ interface SettingsProviderProps {
 export const SettingsProvider = ({ children }: SettingsProviderProps) => {
   const [mode, setMode] = useState<PaletteMode>('light');
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
 
   // Load theme preference from localStorage on mount
   useEffect(() => {
@@ -52,7 +55,9 @@ export const SettingsProvider = ({ children }: SettingsProviderProps) => {
           prevMode === 'light' ? 'dark' : 'light',
         );
       },
-    }), [mode]);
+      isSettingsOpen,
+      setSettingsOpen,
+    }), [mode, isSettingsOpen]);
 
   const theme = useMemo(() => createAppTheme(mode), [mode]);
 

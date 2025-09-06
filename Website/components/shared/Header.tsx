@@ -1,5 +1,6 @@
 import { useLoading } from '@/hooks/useLoading';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useRouter } from 'next/navigation';
 import { AppBar, Toolbar, Box, LinearProgress, Link, Button, Badge, Stack } from '@mui/material';
 import clsx from 'clsx';
@@ -13,7 +14,7 @@ interface HeaderProps {
 }
 
 const Header = ({ }: HeaderProps) => {
-    const [settingsOpen, setSettingsOpen] = useState(false);
+    const { isSettingsOpen, setSettingsOpen } = useSettings();
     const { isAuthenticated, isLoading, logout } = useAuth();
     const { isOpen: sidebarOpen, expand } = useSidebar();
     const isMobile = useIsMobile();
@@ -138,7 +139,7 @@ const Header = ({ }: HeaderProps) => {
             
             {/* Settings Pane */}
             <SettingsPane 
-                open={settingsOpen} 
+                open={isSettingsOpen} 
                 onClose={handleSettingsClose} 
             />
         </AppBar>
