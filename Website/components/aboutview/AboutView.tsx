@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { LastSynched } from '@/generated/Data'
+import { Box, Typography, Link, Paper } from '@mui/material'
 
 interface IAboutViewProps {}
 
@@ -19,87 +20,131 @@ export const AboutView = ({}: IAboutViewProps) => {
   }, [setElement, dispatch])
 
   return (
-    <div className="flex min-h-screen">
-
-      <div className="flex-1 bg-stone-50 overflow-auto">
-        <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-12">
+    <Box className="flex min-h-screen">
+      <Box className="flex-1 overflow-auto" sx={{ backgroundColor: 'background.default' }}>
+        <Box className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-12">
             {/* Logo */}
-            <div className="flex justify-center mb-10">
-              <img
+            <Box className="flex justify-center mb-10">
+              <Box
+                component="img"
                 className="h-20 sm:h-28 md:h-32 object-contain"
                 src="/DMVLOGOHORZ.svg"
                 alt="Data Model Viewer logo"
               />
-            </div>
+            </Box>
 
             {/* What is DMV */}
-            <div className="bg-white shadow-md rounded-2xl p-6 sm:p-8 mb-10 flex flex-col lg:flex-row items-center gap-8">
-              <div className="flex-1 text-center lg:text-left">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+            <Paper 
+              className="p-6 sm:p-8 mb-10 flex flex-col lg:flex-row items-center gap-8"
+              elevation={2}
+              sx={{ 
+                borderRadius: 4,
+                backgroundColor: 'background.paper'
+              }}
+            >
+              <Box className="flex-1 text-center lg:text-left">
+                <Typography 
+                  variant="h4" 
+                  component="h2" 
+                  className="text-2xl sm:text-3xl font-semibold mb-4"
+                  sx={{ color: 'text.primary' }}
+                >
                   What is Data Model Viewer?
-                </h2>
-                <p className="text-gray-700 mb-4">
-                  <strong>Data Model Viewer</strong> is your centralized tool for exploring and understanding your Dataverse metadata. Designed with clarity and efficiency in mind, it gives you a single, streamlined access point to view and navigate your data tables.
-                </p>
-                <p className="text-gray-700">
-                  Developed by <strong>Delegate</strong>, it helps organizations save time, reduce complexity, and gain insights into their Dataverse environments—even without full access. It’s a powerful tool for developers, analysts, and administrators alike.
-                </p>
-              </div>
-              <div className="w-full max-w-xs sm:max-w-sm lg:max-w-md">
-                <img
+                </Typography>
+                <Typography 
+                  className="mb-4"
+                  sx={{ color: 'text.secondary' }}
+                >
+                  <Typography component="strong" sx={{ color: 'text.primary' }}>Data Model Viewer</Typography> is your centralized tool for exploring and understanding your Dataverse metadata. Designed with clarity and efficiency in mind, it gives you a single, streamlined access point to view and navigate your data tables.
+                </Typography>
+                <Typography sx={{ color: 'text.secondary' }}>
+                  Developed by <Typography component="strong" sx={{ color: 'text.primary' }}>Delegate</Typography>, it helps organizations save time, reduce complexity, and gain insights into their Dataverse environments—even without full access. It's a powerful tool for developers, analysts, and administrators alike.
+                </Typography>
+              </Box>
+              <Box className="w-full max-w-xs sm:max-w-sm lg:max-w-md">
+                <Box
+                  component="img"
                   src="/dataviewer.svg"
                   alt="Data model viewer interface"
                   className="w-full h-auto object-contain"
                 />
-              </div>
-            </div>
+              </Box>
+            </Paper>
 
             {/* Setup and Features */}
-            <div className="bg-white shadow-md rounded-2xl p-6 sm:p-8 mb-10 flex flex-col lg:flex-row-reverse items-center gap-8">
-              <div className="flex-1 text-center lg:text-left">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+            <Paper 
+              className="p-6 sm:p-8 mb-10 flex flex-col lg:flex-row-reverse items-center gap-8"
+              elevation={2}
+              sx={{ 
+                borderRadius: 4,
+                backgroundColor: 'background.paper'
+              }}
+            >
+              <Box className="flex-1 text-center lg:text-left">
+                <Typography 
+                  variant="h4" 
+                  component="h2" 
+                  className="text-2xl sm:text-3xl font-semibold mb-4"
+                  sx={{ color: 'text.primary' }}
+                >
                   Setup and Features
-                </h2>
-                <p className="text-gray-700 mb-4">
-                  All setup instructions, feature details, and known issues for Data Model Viewer are available on GitHub. Whether you’re just getting started or tracking updates, GitHub serves as the central hub for all project information.
-                </p>
-                <a
-                  className="text-blue-600 hover:text-blue-800 font-medium text-lg break-words"
+                </Typography>
+                <Typography 
+                  className="mb-4"
+                  sx={{ color: 'text.secondary' }}
+                >
+                  All setup instructions, feature details, and known issues for Data Model Viewer are available on GitHub. Whether you're just getting started or tracking updates, GitHub serves as the central hub for all project information.
+                </Typography>
+                <Link
+                  className="font-medium text-lg break-words"
                   href="https://github.com/delegateas/DataModelViewer"
                   target="_blank"
                   rel="noopener noreferrer"
+                  sx={{ 
+                    color: 'primary.main',
+                    '&:hover': {
+                      color: 'primary.dark'
+                    }
+                  }}
                 >
                   github.com/delegateas/DataModelViewer
-                </a>
-              </div>
-              <div className="w-full max-w-xs sm:max-w-sm lg:max-w-md">
-                <img
+                </Link>
+              </Box>
+              <Box className="w-full max-w-xs sm:max-w-sm lg:max-w-md">
+                <Box
+                  component="img"
                   src="/datasetup.svg"
                   alt="Setup instructions illustration"
                   className="w-full h-auto object-contain"
                 />
-              </div>
-            </div>
+              </Box>
+            </Paper>
 
             {/* Version */}
-            <div className="text-center text-sm text-gray-500 mt-8">
-              Version {version ?? '...'}
-            </div>
+            <Box className="text-center text-sm mt-8">
+              <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                Version {version ?? '...'}
+              </Typography>
+            </Box>
 
             {/* Data Sync */}
-            <div className="text-center text-sm text-gray-500 mt-8">
-              Last synchronization: <b>{LastSynched ? LastSynched.toLocaleString('en-DK', { 
-                  timeZone: 'Europe/Copenhagen',
-                  timeZoneName: 'short',
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-              }) : '...'}</b>
-            </div>
-          </div>
-        </div>
-      </div>
+            <Box className="text-center text-sm mt-8">
+              <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                Last synchronization: <Typography component="strong" sx={{ color: 'text.secondary' }}>
+                  {LastSynched ? LastSynched.toLocaleString('en-DK', { 
+                      timeZone: 'Europe/Copenhagen',
+                      timeZoneName: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                  }) : '...'}
+                </Typography>
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
   )
 }
