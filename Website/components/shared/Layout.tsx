@@ -7,6 +7,7 @@ import Header from './Header';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import clsx from 'clsx';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LayoutProps {
   children: ReactNode;
@@ -17,10 +18,13 @@ interface LayoutProps {
 const Layout = ({ children, className }: LayoutProps) => {
   const { isOpen: sidebarOpen } = useSidebar();
   const isMobile = useIsMobile();
+  const { isAuthenticated } = useAuth();
 
   return (
     <Box className="flex h-screen bg-background">
-      <Sidebar />
+      {isAuthenticated && (
+        <Sidebar />
+      )}
 
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
@@ -33,7 +37,7 @@ const Layout = ({ children, className }: LayoutProps) => {
       <Box className="flex flex-col flex-1 min-w-0 relative h-screen">
         <Header />
         <Box className="flex-1 overflow-y-auto">
-          <Container maxWidth="xl" className='mt-8 pb-8'>
+          <Container maxWidth="xl" className='mt-8 pb-8 h-full'>
             {children}
           </Container>
         </Box>

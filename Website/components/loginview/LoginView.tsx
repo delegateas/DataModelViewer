@@ -75,24 +75,23 @@ const LoginView = ({ }: LoginViewProps) => {
     }
 
     return (
-        <Box>
+        <Box className="h-full">
             <LoadingOverlay 
                 open={isRedirecting} 
                 message="Redirecting to dashboard..." 
             />
-            <Header />
-            <Box className="flex w-screen h-screen">
-                <Box gap={2} className="hidden w-full max-w-[480px] md:flex flex-col p-4 h-full bg-gray-50 items-center justify-center">
+            <Box className="flex w-full h-full">
+                <Box gap={2} className="hidden w-full max-w-[480px] md:flex flex-col p-4 h-full items-center justify-center">
                     <Typography variant='h4' fontWeight={700}>Hi, Welcome back</Typography>
                     <Typography variant='subtitle1' fontWeight={400}>More <span className='font-neue-machina font-semibold'>effective</span> with <span className='font-neue-machina font-semibold'>transparency</span></Typography>
                     <Box
                         component="img"
-                        src="/dataviewer.svg"
+                        src="/4716572.svg"
                         alt="Data model viewer interface"
                         className="w-full h-auto object-contain p-8"
                     />
                 </Box>
-                <Container className="flex flex-col flex-1 items-start justify-center max-w-[420px]">
+                <Container className="flex flex-col flex-1 items-start justify-center max-w-[480px]">
                     <Typography variant="h6" fontWeight={600} className="mt-20 mb-4 text-center">Sign in to your organization</Typography>
                     <Alert icon={<Info />} severity="info" className='w-full rounded-lg'>
                         Last synchronization: <b>{LastSynched ? LastSynched.toLocaleString('en-DK', { 

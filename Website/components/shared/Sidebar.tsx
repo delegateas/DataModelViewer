@@ -1,9 +1,8 @@
 import React from 'react';
-import { IconButton, Box, Typography, Button } from '@mui/material';
+import { IconButton, Box, Typography, Button, alpha } from '@mui/material';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import clsx from 'clsx';
 import { useSidebar } from '@/contexts/SidebarContext';
 
 interface SidebarProps {
@@ -117,21 +116,36 @@ const Sidebar = ({ }: SidebarProps) => {
             {navItems.map((item, itemIndex) => (
                 <Box key={itemIndex} className="relative w-full">
                     <Link
-                        className={clsx(
-                            'flex flex-col items-center px-4 py-1.5 mx-1 rounded-lg',
-                            {
-                                'text-blue-500 bg-blue-100': item.active,
-                                'text-gray-300': item.disabled,
-                                'text-gray-500': !item.disabled && !item.active
-                            }
-                        )}
                         href={!item.disabled ? item.href || '#' : '#'}
                         onClick={item.action}
                     >
-                        {item.icon}
-                        <Typography variant="body2" className="font-context text-xs text-center">
-                            {item.label}
-                        </Typography>
+                        <Box
+                            className="flex flex-col items-center px-4 py-1.5 mx-1 rounded-lg"
+                            sx={{
+                                color: item.active 
+                                    ? 'primary.main' 
+                                    : item.disabled 
+                                        ? 'text.disabled' 
+                                        : 'text.secondary',
+                                backgroundColor: item.active 
+                                    ? (theme) => alpha(theme.palette.primary.main, 0.12)
+                                    : 'transparent',
+                                transition: 'all 0.2s ease-in-out',
+                                '&:hover': {
+                                    backgroundColor: item.disabled 
+                                        ? 'transparent' 
+                                        : item.active 
+                                            ? (theme) => alpha(theme.palette.primary.main, 0.16)
+                                            : 'action.hover',
+                                    color: item.disabled ? 'text.disabled' : 'text.primary',
+                                }
+                            }}
+                        >
+                            {item.icon}
+                            <Typography variant="body2" className="font-context text-xs text-center">
+                                {item.label}
+                            </Typography>
+                        </Box>
                     </Link>
                 </Box>
             ))}
