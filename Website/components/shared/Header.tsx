@@ -5,15 +5,18 @@ import { AppBar, Toolbar, Box, LinearProgress, Link, Button, Badge, Stack } from
 import clsx from 'clsx';
 import { useState } from 'react';
 import SettingsPane from './elements/SettingsPane';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useSidebar } from '@/contexts/SidebarContext';
 
 interface HeaderProps {
-    showLogo?: boolean;
-    loading?: boolean;
+
 }
 
-const Header = ({ showLogo, loading }: HeaderProps) => {
+const Header = ({ }: HeaderProps) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const { isAuthenticated, isLoading, logout } = useAuth();
+    const { isOpen: sidebarOpen, expand } = useSidebar();
+    const isMobile = useIsMobile();
     const router = useRouter();
 
     const { 
@@ -57,13 +60,25 @@ const Header = ({ showLogo, loading }: HeaderProps) => {
             <Toolbar disableGutters className="justify-between w-full h-full">
                 {/* Logo section */}
                 <Box className="flex items-center">
-                    {(showLogo || !isAuthenticated) && (
+                    {!isAuthenticated && (
                         <Box
                             component="img"
                             src="/DMVLOGO.svg"
                             alt="DMV Logo"
                             className='mr-1 h-12 p-1'
                         />
+                    )}
+                    {isMobile && !sidebarOpen && isAuthenticated && (
+                        <Button
+                            className='flex flex-col items-center p-1.5 rounded-lg text-gray-400 min-w-0'
+                            onClick={expand}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24">
+                                <path fill="currentColor" fillRule="evenodd" d="M3.25 7A.75.75 0 0 1 4 6.25h16a.75.75 0 0 1 0 1.5H4A.75.75 0 0 1 3.25 7" clipRule="evenodd"></path>
+                                <path fill="currentColor" d="M3.25 12a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5H4a.75.75 0 0 1-.75-.75" opacity={0.7}></path>
+                                <path fill="currentColor" d="M3.25 17a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5H4a.75.75 0 0 1-.75-.75" opacity={0.4}></path>
+                            </svg>
+                        </Button>
                     )}
                 </Box>
 
@@ -114,8 +129,8 @@ const Header = ({ showLogo, loading }: HeaderProps) => {
                     aria-label="Loading progress"
                 >
                     <LinearProgress 
-                    className="h-1 bg-black/10 dark:bg-white/10 [&_.MuiLinearProgress-bar]:bg-blue-600 dark:[&_.MuiLinearProgress-bar]:bg-blue-400"
-                    aria-label="Loading indicator"
+                        className="h-1 bg-black/10 dark:bg-white/10 [&_.MuiLinearProgress-bar]:bg-blue-600 dark:[&_.MuiLinearProgress-bar]:bg-blue-400"
+                        aria-label="Loading indicator"
                     />
                 </Box>
                 )}

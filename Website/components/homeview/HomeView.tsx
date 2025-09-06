@@ -12,7 +12,7 @@ interface IHomeViewProps { }
 
 export const HomeView = ({ }: IHomeViewProps) => {
 
-    const { setElement, dispatch } = useSidebar();
+    const { setElement, close } = useSidebar();
 
     const [wikipage, setWikipage] = useState<string>('');
     const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
@@ -54,8 +54,8 @@ export const HomeView = ({ }: IHomeViewProps) => {
     };
 
     useEffect(() => {
-        setElement(<></>);
-        dispatch({ type: 'SET_SHOW_ELEMENT', payload: false });
+        setElement(null);
+        close();
         fetch('/api/markdown')
             .then(res => res.json())
             .then(data => setWikipage(data.fileContent.replace(/\\n/g, '\n')));
@@ -73,7 +73,7 @@ export const HomeView = ({ }: IHomeViewProps) => {
                                 url(/welcomeback-data-stockimage.webp)
                             `
                         }}>
-                            <Box className="relative z-10 flex flex-col justify-center h-full p-8 text-white w-1/2">
+                            <Box className="relative z-10 flex flex-col justify-center h-full p-8 text-white md:w-1/2 w-full">
                                 <Typography variant='h1' className="text-4xl font-bold mb-4">Welcome back!</Typography>
                                 <Typography variant='body1' className="text-md text-gray-300">Explore your data with ease. If this is your first time using Data Model Viewer, make sure to check out the documentation.</Typography>
                                 <Button href='/metadata' size='small' variant='contained' color='primary' className='text-white py-2 mt-4 rounded-lg font-medium transition-colors shadow-sm w-32'>Explore Now</Button>

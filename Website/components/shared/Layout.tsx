@@ -16,21 +16,35 @@ interface LayoutProps {
 }
 
 const Layout = ({ children, className }: LayoutProps) => {
-  const { isOpen: sidebarOpen } = useSidebar();
+  const { isOpen: sidebarOpen, close } = useSidebar();
   const isMobile = useIsMobile();
   const { isAuthenticated } = useAuth();
 
   return (
     <Box className="flex h-screen bg-background">
       {isAuthenticated && (
-        <Sidebar />
+        <Box 
+          className={`${
+            isMobile 
+              ? `fixed top-0 h-full z-50 transition-transform duration-300 ease-in-out ${
+                  sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }` 
+              : ''
+          }`}
+          style={isMobile ? { left: 0 } : {}}
+        >
+          <Sidebar />
+        </Box>
       )}
 
       {/* Mobile overlay */}
-      {isMobile && sidebarOpen && (
+      {isMobile && isAuthenticated && (
         <Box
-          className="fixed inset-0 bg-black bg-opacity-30 z-40"
+          className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-in-out ${
+            sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
           aria-label="Close sidebar overlay"
+          onClick={close}
         />
       )}
 

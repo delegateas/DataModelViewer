@@ -9,7 +9,7 @@ interface LoadingOverlayProps {
 const LoadingOverlay = ({ open, message = 'Loading...' }: LoadingOverlayProps) => {
   return (
     <Backdrop
-      className="text-white dark:text-white z-[1301] bg-black/70 dark:bg-black/70"
+      className="text-white dark:text-white z-[1301] bg-black/20"
       open={open}
     >
       <Box 

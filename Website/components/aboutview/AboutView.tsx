@@ -7,12 +7,12 @@ import { LastSynched } from '@/generated/Data'
 interface IAboutViewProps {}
 
 export const AboutView = ({}: IAboutViewProps) => {
-  const { setElement, dispatch } = useSidebar()
+  const { setElement, dispatch, close } = useSidebar()
   const [version, setVersion] = useState<string | null>(null)
 
   useEffect(() => {
-    setElement(<></>);
-    dispatch({ type: 'SET_SHOW_ELEMENT', payload: false });
+    setElement(null);
+    close();
     fetch('/api/version')
       .then((res) => res.json())
       .then((data) => setVersion(data.version))
