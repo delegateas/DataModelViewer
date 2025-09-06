@@ -573,7 +573,7 @@
 
   /* Custom slow spin animation */
   .animate-spin-slow {
-    animation: spin 2s linear infinite;
+    animation: spin 5s linear infinite;
   }
 
   @keyframes spin {

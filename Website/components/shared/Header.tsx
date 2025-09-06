@@ -30,7 +30,8 @@ const Header = ({ showLogo, loading }: HeaderProps) => {
             position="sticky" 
             color="transparent" 
             elevation={0}
-            className="w-full top-0 z-0 border-b border-border h-header max-h-header"
+            className="w-full top-0 z-0 border-b h-header max-h-header"
+            sx={{ bgcolor: 'background', borderColor: 'border.main' }}
         >
         <Box className="mx-4 h-full">
             <Toolbar disableGutters className="justify-between w-full h-full">
