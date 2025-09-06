@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 
 export const metadata: Metadata = {
@@ -19,11 +20,13 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-          <SettingsProvider>
-            <SidebarProvider>
-              {children}
-            </SidebarProvider>
-          </SettingsProvider>
+          <AuthProvider>
+            <SettingsProvider>
+              <SidebarProvider>
+                {children}
+              </SidebarProvider>
+            </SettingsProvider>
+          </AuthProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@ import React, { FormEvent, useEffect, useState } from 'react'
 import Header from '../shared/Header'
 import LoadingOverlay from '../shared/LoadingOverlay'
 import { useLoading } from '@/hooks/useLoading'
+import { useAuth } from '@/contexts/AuthContext'
 import { Alert, Box, Button, Container, FormControl, IconButton, Input, InputAdornment, InputLabel, OutlinedInput, Paper, TextField, Typography, CircularProgress } from '@mui/material'
 import { Info, Visibility, VisibilityOff, Warning } from '@mui/icons-material'
 import { createSession } from '@/lib/session'
@@ -15,6 +16,7 @@ interface LoginViewProps {
 const LoginView = ({ }: LoginViewProps) => {
 
     const router = useRouter();
+    const { setAuthenticated } = useAuth();
     const { 
         isAuthenticating, 
         isRedirecting, 
@@ -59,6 +61,7 @@ const LoginView = ({ }: LoginViewProps) => {
 
             if (response.ok) {
                 await createSession(password?.valueOf() as string);
+                setAuthenticated(true); // Update auth context immediately
                 startRedirection();
                 router.push("/");
             } else {

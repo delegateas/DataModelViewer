@@ -7,7 +7,7 @@ import Header from './Header';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import clsx from 'clsx';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LayoutProps {
   children: ReactNode;
