@@ -1,8 +1,15 @@
 import { IntegerAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
+import { Typography } from "@mui/material"
 
 export default function IntegerAttribute({ attribute } : { attribute: IntegerAttributeType }) {
-    return <><span className="font-semibold text-xs md:font-bold md:text-sm">{attribute.Format}</span> <span className="text-xs md:text-sm">({FormatNumber(attribute.MinValue)} to {FormatNumber(attribute.MaxValue)})</span></>
+    return (
+        <>
+            <Typography component="span" className="font-semibold text-xs md:font-bold md:text-sm">{attribute.Format}</Typography>
+            {" "}
+            <Typography component="span" className="text-xs md:text-sm">({FormatNumber(attribute.MinValue)} to {FormatNumber(attribute.MaxValue)})</Typography>
+        </>
+    )
 }
 
 function FormatNumber(number: number) {

@@ -8,7 +8,7 @@ import { KeyRound, Tags, Unplug } from "lucide-react"
 import { Attributes } from "./Attributes"
 import { Relationships } from "./Relationships"
 import React from "react"
-import { Box, Tab, Tabs } from "@mui/material"
+import { Box, Paper, Tab, Tabs } from "@mui/material"
 
 interface ISectionProps {
     entity: EntityType;
@@ -74,24 +74,27 @@ export const Section = React.memo(
 
         return (
             <div id={entity.SchemaName} data-group={group.Name} className="mb-10">
-                <div className="bg-white rounded-lg border border-gray-300 shadow-md">{/* Removed conditional styling and indicator */}
-                    <div className="flex flex-col xl:flex-row min-w-0 p-6">
+                <Paper className="rounded-lg" sx={{ backgroundColor: 'background.paper' }}>
+                    <Box className="flex flex-col xl:flex-row min-w-0 p-6">
                         <EntityHeader entity={entity} />
                         {entity.SecurityRoles.length > 0 && (
                             <div className="md:w-full xl:w-2/3 xl:pl-6 xl:border-l md:border-t xl:border-t-0 border-gray-100 mt-6 xl:mt-0 pt-6 xl:pt-0">
                                 <SecurityRoles roles={entity.SecurityRoles} />
                             </div>
                         )}
-                    </div>
+                    </Box>
 
                     <Box className="px-6 pb-6">
-                        <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
+                        <Paper className="rounded-lg shadow-sm" variant="outlined">
                             <Tabs 
                                 value={tab} 
                                 onChange={handleTabChange}
-                                className="border-b border-gray-200"
+                                className="border-b"
                                 variant="scrollable"
                                 scrollButtons="auto"
+                                sx={{
+                                    borderColor: 'border.main',
+                                }}
                             >
                                 <Tab 
                                     label={
@@ -140,9 +143,9 @@ export const Section = React.memo(
                                     <Keys entity={entity} search={search} />
                                 </CustomTabPanel>
                             )}
-                        </div>
+                        </Paper>
                     </Box>
-                </div>
+                </Paper>
             </div>
         )
     },

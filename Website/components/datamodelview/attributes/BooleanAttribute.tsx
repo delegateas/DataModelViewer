@@ -1,54 +1,81 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BooleanAttributeType } from "@/lib/Types"
 import { CheckCircle, Circle } from "lucide-react"
+import { Box, Typography, Chip, SvgIcon } from "@mui/material"
 
 export default function BooleanAttribute({ attribute }: { attribute: BooleanAttributeType }) {
 
     const isMobile = useIsMobile();
     
     return (
-        <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-                <span className="font-semibold text-xs md:font-bold md:text-sm">Boolean</span>
+        <Box className="flex flex-col gap-1">
+            <Box className="flex items-center gap-2">
+                <Typography className="font-semibold text-xs md:font-bold md:text-sm">Boolean</Typography>
                 {attribute.DefaultValue !== null && !isMobile && (
-                    <span className="text-xs bg-green-100 text-green-700 px-1 py-0.5 rounded-full flex items-center gap-1 md:px-1.5">
-                        <CheckCircle className="w-2 h-2 md:w-3 md:h-3" />
-                        Default: {attribute.DefaultValue === true ? attribute.TrueLabel : attribute.FalseLabel}
-                    </span>
+                    <Chip 
+                        icon={<CheckCircle className="w-2 h-2 md:w-3 md:h-3" />}
+                        label={`Default: ${attribute.DefaultValue === true ? attribute.TrueLabel : attribute.FalseLabel}`}
+                        size="small"
+                        sx={{ 
+                            fontSize: { xs: '0.75rem', md: '0.875rem' },
+                            height: { xs: '20px', md: '24px' },
+                            backgroundColor: 'success.light',
+                            color: 'success.dark',
+                            '& .MuiChip-icon': { 
+                                fontSize: { xs: '0.5rem', md: '0.75rem' } 
+                            }
+                        }}
+                    />
                 )}
-            </div>
-            <div className="space-y-1">
-                <div className="flex items-center justify-between py-0.5 md:py-1">
-                    <div className="flex items-center gap-1">
+            </Box>
+            <Box className="space-y-1">
+                <Box className="flex items-center justify-between py-0.5 md:py-1">
+                    <Box className="flex items-center gap-1">
                         {attribute.DefaultValue === true ? (
-                            <CheckCircle className="w-2 h-2 text-green-600 md:w-3 md:h-3" />
+                            <SvgIcon component={CheckCircle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                         ) : (
-                            <Circle className="w-2 h-2 text-gray-400 md:w-3 md:h-3" />
+                            <SvgIcon component={Circle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                         )}
-                        <span className="text-xs md:text-sm">{attribute.TrueLabel}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs bg-gray-200 text-gray-700 px-1 py-0.5 rounded font-mono md:px-1.5">
-                            True
-                        </span>
-                    </div>
-                </div>
-                <div className="flex items-center justify-between py-0.5 md:py-1">
-                    <div className="flex items-center gap-1">
+                        <Typography className="text-xs md:text-sm">{attribute.TrueLabel}</Typography>
+                    </Box>
+                    <Box className="flex items-center gap-2">
+                        <Chip 
+                            label="True"
+                            size="small"
+                            sx={{ 
+                                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                fontFamily: 'monospace',
+                                height: { xs: '20px', md: '24px' },
+                                backgroundColor: 'grey.200',
+                                color: 'grey.700'
+                            }}
+                        />
+                    </Box>
+                </Box>
+                <Box className="flex items-center justify-between py-0.5 md:py-1">
+                    <Box className="flex items-center gap-1">
                         {attribute.DefaultValue === false ? (
-                            <CheckCircle className="w-2 h-2 text-green-600 md:w-3 md:h-3" />
+                            <SvgIcon component={CheckCircle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                         ) : (
-                            <Circle className="w-2 h-2 text-gray-400 md:w-3 md:h-3" />
+                            <SvgIcon component={Circle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                         )}
-                        <span className="text-xs md:text-sm">{attribute.FalseLabel}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs bg-gray-200 text-gray-700 px-1 py-0.5 rounded font-mono md:px-1.5">
-                            False
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
+                        <Typography className="text-xs md:text-sm">{attribute.FalseLabel}</Typography>
+                    </Box>
+                    <Box className="flex items-center gap-2">
+                        <Chip 
+                            label="False"
+                            size="small"
+                            sx={{ 
+                                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                fontFamily: 'monospace',
+                                height: { xs: '20px', md: '24px' },
+                                backgroundColor: 'grey.200',
+                                color: 'grey.700'
+                            }}
+                        />
+                    </Box>
+                </Box>
+            </Box>
+        </Box>
     )
 }

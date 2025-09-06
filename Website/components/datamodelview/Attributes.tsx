@@ -16,7 +16,8 @@ import StatusAttribute from "./attributes/StatusAttribute"
 import StringAttribute from "./attributes/StringAttribute"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
-import { Button, FormControl, Input, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material"
+import { Alert, Box, Button, FormControl, Input, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, useTheme } from "@mui/material"
+import { SearchRounded } from "@mui/icons-material"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
@@ -32,6 +33,8 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [hideStandardFields, setHideStandardFields] = useState<boolean>(true)
     const [searchQuery, setSearchQuery] = useState("")
+
+    const theme = useTheme();
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -151,37 +154,47 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     ]
 
     return <>
-        <div className="p-2 gap-2 border-b flex flex-col md:p-4 md:gap-4">
-            <div className="flex gap-2 md:gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-1.5 top-2 h-3 w-3 text-muted-foreground md:left-2 md:top-2.5 md:h-4 md:w-4" />
-                    <Input
-                        placeholder="Search attributes..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                                setSearchQuery("")
-                            }
-                        }}
-                        className="pl-6 pr-8 h-8 text-xs md:pl-8 md:pr-10 md:h-10 md:text-sm"
-                    />
-                    {searchQuery && (
-                        <Button
-                            variant="text"
-                            size="small"
-                            onClick={() => setSearchQuery("")}
-                            className="absolute right-1 top-1 h-6 w-6 text-gray-400 hover:text-gray-600 md:right-1 md:top-1.5 md:h-7 md:w-7"
-                            title="Clear search"
-                            sx={{ minWidth: 'auto', padding: 0 }}
-                        >
-                            <X className="h-3 w-3 md:h-4 md:w-4" />
-                        </Button>
-                    )}
-                </div>
+        <Box className="p-2 gap-2 border-b flex flex-col md:p-4 md:gap-4" color="background.paper">
+            <Box className="flex gap-2 md:gap-4 items-center">
+                <TextField
+                    size="small"
+                    placeholder="Search attributes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                            setSearchQuery("")
+                        }
+                    }}
+                    className="p-2 text-xs md:text-sm flex-grow"
+                    slotProps={{
+                        input: {
+                            startAdornment: <InputAdornment position="start"><SearchRounded /></InputAdornment>,
+                            endAdornment: searchQuery && (
+                                <InputAdornment position="end">
+                                    <Button
+                                        variant="text"
+                                        size="small"
+                                        onClick={() => setSearchQuery("")}
+                                        className="absolute right-1 top-1 h-6 w-6 text-gray-400 hover:text-gray-600 md:right-1 md:top-1.5 md:h-7 md:w-7"
+                                        title="Clear search"
+                                        sx={{ minWidth: 'auto', padding: 0 }}
+                                    >
+                                        <X className="h-3 w-3 md:h-4 md:w-4" />
+                                    </Button>
+                                </InputAdornment>
+                            )
+                        }
+                    }}   
+                />
                 <FormControl>
                     <InputLabel id="type-filter-label" className="text-xs md:text-sm">Filter by type</InputLabel>
-                    <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+                    <Select 
+                        value={typeFilter} 
+                        onChange={(e) => setTypeFilter(e.target.value)} 
+                        size="small" 
+                        label="Filter by type"
+                        labelId="type-filter-label">
                         {attributeTypes.map(type => (
                         <MenuItem key={type} value={type} className="text-xs md:text-sm">
                             {type === "all" ? "All Types" : type.replace("Attribute", "")}
@@ -193,9 +206,9 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                     variant="outlined"
                     size="small"
                     onClick={() => setHideStandardFields(!hideStandardFields)}
-                    className="h-8 w-8 bg-gray-100 hover:bg-gray-300 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
+                    className="h-8 w-8 md:h-10 md:w-10"
                     title="Control customfields"
-                    sx={{ minWidth: 'auto', padding: 0 }}
+                    sx={{ minWidth: 'auto', padding: 0, borderColor: 'border.main' }}
                 >
                     {
                         hideStandardFields ? <EyeOff className="w-3 h-3 md:w-4 md:h-4" /> : <Eye className="w-3 h-3 md:w-4 md:h-4" />
@@ -216,14 +229,13 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                         <X className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                 )}
-            </div>
+            </Box>
             {search && search.length >= 3 && searchQuery && (
-                <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md md:text-sm">
-                    <Search className="h-3 w-3 md:h-4 md:w-4" />
-                    <span>Warning: Global search &quot;{search}&quot; is also active</span>
-                </div>
+                <Alert icon={<SearchRounded />} severity="warning" className="rounded-lg">
+                    Warning: Global search &quot;{search}&quot; is also active
+                </Alert>
             )}
-        </div>
+        </Box>
         {sortedAttributes.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
                 {searchQuery || typeFilter !== "all" ? (
@@ -252,45 +264,49 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                 )}
             </div>
         ) : (
-            <Table>
-                <TableHead>
-                    <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
+            <Table color="background.paper" className="border-t" sx={{ borderColor: 'border.main' }}>
+                <TableHead sx={{ backgroundColor: 'background.paper', color: 'text.secondary' }}>
+                    <TableRow className="border-b-2">
                         <TableCell 
-                            className="w-[15%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
+                            className="w-[15%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
                             onClick={() => handleSort('displayName')}
                         >
-                            <div className="flex items-center">
+                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
                                 Display Name
                                 <SortIcon column="displayName" />
-                            </div>
+                            </Typography>
                         </TableCell>
                         <TableCell 
-                            className="w-[15%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
+                            className="w-[15%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
                             onClick={() => handleSort('schemaName')}
                         >
-                            <div className="flex items-center">
+                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
                                 Schema Name
                                 <SortIcon column="schemaName" />
-                            </div>
+                            </Typography>
                         </TableCell>
                         <TableCell 
-                            className="w-[30%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
+                            className="w-[30%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
                             onClick={() => handleSort('type')}
                         >
-                            <div className="flex items-center">
+                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
                                 Type
                                 <SortIcon column="type" />
-                            </div>
+                            </Typography>
                         </TableCell>
-                        <TableCell className="w-[5%] text-black font-semibold py-2 text-xs md:font-bold md:py-3 md:text-sm">Details</TableCell>
+                        <TableCell className="w-[5%] font-semibold py-2 text-xs md:font-bold md:py-3 md:text-sm">
+                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
+                                Details
+                            </Typography>
+                        </TableCell>
                         <TableCell 
-                            className="w-[35%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
+                            className="w-[35%] font-semibold py-2 text-xs cursor-pointer md:font-bold md:py-3 md:text-sm"
                             onClick={() => handleSort('description')}
                         >
-                            <div className="flex items-center">
+                            <Typography className="flex items-center font-semibold" variant="body2" sx={{ color: 'text.secondary' }}>
                                 Description
                                 <SortIcon column="description" />
-                            </div>
+                            </Typography>
                         </TableCell>
 
                     </TableRow>
@@ -299,20 +315,27 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                     {sortedAttributes.map((attribute, index) => (
                         <TableRow 
                             key={attribute.SchemaName} 
-                            className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
-                                index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                            }`}
+                            className={`transition-colors duration-150 border-b`}
+                            sx={{
+                                color: 'text.secondary',
+                                borderColor: 'border.main',
+                                backgroundColor: index % 2 === 0 
+                                    ? 'background.paper' 
+                                    : theme.palette.mode === 'dark' 
+                                        ? 'rgba(255, 255, 255, 0.02)' 
+                                        : 'rgba(0, 0, 0, 0.02)'
+                            }}
                         >
-                            <TableCell className="break-words font-medium py-2 text-xs md:py-3 md:text-sm">
-                                {highlightMatch(attribute.DisplayName, highlightTerm)}
+                            <TableCell className="break-words py-2 text-xs md:py-3 md:text-sm">
+                                <Typography className="text-sm" color="text.secondary">{highlightMatch(attribute.DisplayName, highlightTerm)}</Typography>
                             </TableCell>
-                            <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
-                                {highlightMatch(attribute.SchemaName, highlightTerm)}
+                            <TableCell className="break-words py-2 text-xs md:py-3 md:text-sm">
+                                <Typography className="text-sm" color="text.secondary">{highlightMatch(attribute.SchemaName, highlightTerm)}</Typography>
                             </TableCell>
                             <TableCell className="break-words py-2 md:py-3">{getAttributeComponent(entity, attribute, highlightMatch, highlightTerm)}</TableCell>
                             <TableCell className="py-2 md:py-3"><AttributeDetails attribute={attribute} /></TableCell>
-                            <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
-                                {highlightMatch(attribute.Description ?? "", highlightTerm)}
+                            <TableCell className="break-words py-2 text-xs md:py-3 md:text-sm">
+                                <Typography className="text-sm" color="text.secondary">{highlightMatch(attribute.Description ?? "", highlightTerm)}</Typography>
                             </TableCell>
                         </TableRow>
                     ))}

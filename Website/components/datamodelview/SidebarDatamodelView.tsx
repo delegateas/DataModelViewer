@@ -20,8 +20,6 @@ interface INavItemProps {
 
 
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
-    const isMobile = useIsMobile();
-    const { dispatch } = useSidebar();
     const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
     const theme = useTheme();
 
@@ -133,7 +131,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 }}
             >
                 <AccordionSummary
-                    expandIcon={<ExpandMore className="mr-1 w-4 h-4" sx={{ color: isCurrentGroup ? "primary.main" : "default" }} />}
+                    expandIcon={<ExpandMore className="w-4 h-4" sx={{ color: isCurrentGroup ? "primary.main" : "default" }} />}
                     className={cn(
                         "duration-200 flex h-8 shrink-0 items-center rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full",
                         isCurrentGroup ? "font-semibold" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
@@ -191,7 +189,6 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                 >
                                     {entity.IconBase64 ? (
                                         isCurrentSection ? (
-                                            // Use CSS mask for reliable color change
                                             <div 
                                                 className="h-4 w-4"
                                                 style={{
@@ -203,21 +200,25 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                                 }}
                                             />
                                         ) : (
-                                            // Use original SVG for non-selected items
-                                            <img 
-                                                className="h-4 w-4" 
-                                                src={`data:image/svg+xml;base64,${entity.IconBase64}`} 
-                                                alt="icon" 
+                                            <div 
+                                                className="h-4 w-4"
+                                                style={{
+                                                    mask: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                                    maskSize: 'contain',
+                                                    maskRepeat: 'no-repeat',
+                                                    maskPosition: 'center',
+                                                    backgroundColor: theme.palette.text.primary
+                                                }}
                                             />
                                         )
                                     ) : (
                                         <ExtensionRounded 
                                             className="w-4 h-4" 
-                                            sx={{ color: isCurrentSection ? 'primary.main' : 'text.primary' }}
+                                            sx={{ color: isCurrentSection ? 'primary.main' : 'text.secondary' }}
                                         />
                                     )}
-                                    <Typography className="truncate" variant="body2" sx={{
-                                        color: isCurrentSection ? 'primary.main' : 'text.primary',
+                                    <Typography className="truncate text-xs" variant="body2" sx={{
+                                        color: isCurrentSection ? 'primary' : 'text.secondary',
                                     }}>
                                         {isMatch ? highlightText(entity.DisplayName, searchTerm) : entity.DisplayName}
                                     </Typography>

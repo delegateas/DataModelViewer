@@ -47,42 +47,28 @@ export const createAppTheme = (mode: PaletteMode) => createTheme({
   palette: {
     mode,
     primary: {
-      main: '#3949ab', 
-      light: '#3f51b5', 
-      dark: '#5c6bc0',
+      main: mode === 'dark' ? '#9fa8da' : '#3949ab', // Automatically adapts based on mode
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#7c3aed', // Violet-600 - change this to your desired secondary color  
-      light: '#8b5cf6', // Violet-500
-      dark: '#6d28d9', // Violet-700
+      main: mode === 'dark' ? '#8b5cf6' : '#7c3aed', // Violet-500 in dark, Violet-600 in light
       contrastText: '#ffffff',
     },
     accent: {
-      main: '#a78bfa', // Purple-500
-      light: '#a78bfa', // Purple-400
-      dark: '#7c3aed', // Purple-600
+      main: mode === 'dark' ? '#c4b5fd' : '#a78bfa', // Purple-300 in dark, Purple-400 in light
       contrastText: '#ffffff',
     },
     error: {
-      main: '#dc2626', // Red-600
-      light: '#ef4444', // Red-500
-      dark: '#b91c1c', // Red-700
+      main: mode === 'dark' ? '#ef4444' : '#dc2626', // Red-500 in dark, Red-600 in light
     },
     warning: {
-      main: '#d97706', // Amber-600
-      light: '#f59e0b', // Amber-500
-      dark: '#b45309', // Amber-700
+      main: mode === 'dark' ? '#f59e0b' : '#d97706', // Amber-500 in dark, Amber-600 in light
     },
     info: {
-      main: '#0ea5e9', // Sky-500
-      light: '#38bdf8', // Sky-400
-      dark: '#0284c7', // Sky-600
+      main: mode === 'dark' ? '#38bdf8' : '#0ea5e9', // Sky-400 in dark, Sky-500 in light
     },
     success: {
-      main: '#16a34a', // Green-600
-      light: '#22c55e', // Green-500
-      dark: '#15803d', // Green-700
+      main: mode === 'dark' ? '#22c55e' : '#16a34a', // Green-500 in dark, Green-600 in light
     },
     text: {
       primary: mode === 'dark' ? '#f9fafb' : '#111827', // Light text in dark mode, dark text in light mode
@@ -92,6 +78,13 @@ export const createAppTheme = (mode: PaletteMode) => createTheme({
     background: {
       default: mode === 'dark' ? '#111827' : '#ffffff', // Dark background in dark mode
       paper: mode === 'dark' ? '#1f2937' : '#ffffff', // Dark paper background in dark mode
+    },
+    divider: mode === 'dark' ? '#374151' : '#e5e7eb', // Same as border.main for consistency
+    grey: {
+      100: mode === 'dark' ? '#374151' : '#f3f4f6',
+      200: mode === 'dark' ? '#4b5563' : '#e5e7eb',
+      600: mode === 'dark' ? '#9ca3af' : '#4b5563',
+      700: mode === 'dark' ? '#d1d5db' : '#374151',
     },
     border: {
       main: mode === 'dark' ? '#374151' : '#e5e7eb', // Gray-700 in dark mode, Gray-200 in light mode
