@@ -101,10 +101,11 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
         dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
     }, [dataModelDispatch]);
 
-    const handleSectionClick = useCallback((sectionId: string) => {
+    const handleSectionClick = useCallback((sectionId: string, groupName: string) => {
         // Use requestAnimationFrame to defer heavy operations
         requestAnimationFrame(() => {
             dataModelDispatch({ type: 'SET_LOADING', payload: true });
+            dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
             dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: sectionId });
             
             // Defer scroll operation to next frame to prevent blocking
@@ -153,8 +154,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     <OpenInNewRounded 
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleGroupClick(group.Name);
-                            if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName);
+                            if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName, group.Name);
                         }}
                         aria-label={`Link to first entity in ${group.Name}`}
                         className="w-4 h-4"
@@ -186,8 +186,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                     }}
                                     key={entity.SchemaName}
                                     onClick={() => {
-                                        handleGroupClick(group.Name)
-                                        handleSectionClick(entity.SchemaName)
+                                        handleSectionClick(entity.SchemaName, group.Name)
                                     }}
                                 >
                                     {entity.IconBase64 ? (
