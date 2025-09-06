@@ -87,46 +87,13 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
         clearSearch();
     };
 
-    const getColoredSvgIcon = (iconBase64: string, color: string) => {
-        try {
-            // Decode base64 to get SVG content
-            const svgContent = atob(iconBase64);
-            
-            // Replace fill and stroke attributes with the desired color
-            const coloredSvg = svgContent
-                .replace(/fill="[^"]*"/g, `fill="${color}"`)
-                .replace(/stroke="[^"]*"/g, `stroke="${color}"`)
-                .replace(/<svg([^>]*)>/g, `<svg$1 fill="${color}">`);
-            
-            // Re-encode to base64
-            return btoa(coloredSvg);
-        } catch (error) {
-            console.warn('Failed to modify SVG color:', error);
-            return iconBase64; // Return original if modification fails
-        }
-    };
-
     const NavItem = ({ group }: INavItemProps) => {
         const isCurrentGroup = currentGroup?.toLowerCase() === group.Name.toLowerCase();
-        const shouldExpand = expandedGroups.has(group.Name);
-
-        console.log(isCurrentGroup, currentGroup, group);
-
-        const [isExpanded, setIsExpanded] = useState(false)
-    
-        useEffect(() => {
-            if (searchTerm.trim()) {
-                setIsExpanded(shouldExpand);
-            } else {
-                setIsExpanded(isCurrentGroup);
-            }
-        }, [isCurrentGroup, shouldExpand, searchTerm])
     
         return (
             <Accordion
                 disableGutters 
-                expanded={isExpanded}
-                onChange={(_, expanded) => setIsExpanded(expanded)}
+                expanded={isCurrentGroup}
                 className={`group/accordion transition-all duration-300 w-full border-b first:rounded-t-lg last:rounded-b-lg last:border-b-0`}
                 sx={{
                     backgroundColor: "background.paper",
@@ -191,21 +158,33 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                         handleSectionClick(entity.SchemaName)
                                     }}
                                 >
-                                    {entity.IconBase64 ? 
-                                        <img 
-                                            className="h-4 w-4" 
-                                            src={`data:image/svg+xml;base64,${
-                                                isCurrentSection ? 
-                                                    getColoredSvgIcon(entity.IconBase64, theme.palette.primary.main) : 
-                                                    entity.IconBase64
-                                            }`} 
-                                            alt="icon" 
-                                        /> : 
+                                    {entity.IconBase64 ? (
+                                        isCurrentSection ? (
+                                            // Use CSS mask for reliable color change
+                                            <div 
+                                                className="h-4 w-4"
+                                                style={{
+                                                    mask: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                                    maskSize: 'contain',
+                                                    maskRepeat: 'no-repeat',
+                                                    maskPosition: 'center',
+                                                    backgroundColor: theme.palette.primary.main
+                                                }}
+                                            />
+                                        ) : (
+                                            // Use original SVG for non-selected items
+                                            <img 
+                                                className="h-4 w-4" 
+                                                src={`data:image/svg+xml;base64,${entity.IconBase64}`} 
+                                                alt="icon" 
+                                            />
+                                        )
+                                    ) : (
                                         <ExtensionRounded 
                                             className="w-4 h-4" 
-                                            sx={{ color: isCurrentSection ? 'primary.main' : 'currentColor' }}
+                                            sx={{ color: isCurrentSection ? 'primary.main' : 'text.primary' }}
                                         />
-                                    }
+                                    )}
                                     <Typography className="truncate" variant="body2" sx={{
                                         color: isCurrentSection ? 'primary.main' : 'text.primary',
                                     }}>
