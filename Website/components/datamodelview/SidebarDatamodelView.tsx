@@ -94,6 +94,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
             <Accordion
                 disableGutters 
                 expanded={isCurrentGroup}
+                onClick={() => handleGroupClick(group.Name)}
                 className={`group/accordion transition-all duration-300 w-full border-b first:rounded-t-lg last:rounded-b-lg last:border-b-0`}
                 sx={{
                     backgroundColor: "background.paper",

@@ -111,42 +111,42 @@
     font-family: "HassGrotesk";
     font-style: normal;
     font-weight: 100;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-15xxthin-trial.otf") format("opentype");
   }
   @font-face {
     font-family: "HassGrotesk";
     font-style: italic;
     font-weight: 100;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-16xxthinitalic-trial.otf") format("opentype");
   }
   @font-face {
     font-family: "HassGrotesk";
     font-style: normal;
     font-weight: 200;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-25xthin-trial.otf") format("opentype");
   }
   @font-face {
     font-family: "HassGrotesk";
     font-style: italic;
     font-weight: 200;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-26xthinitalic-trial.otf") format("opentype");
   }
   @font-face {
     font-family: "HassGrotesk";
     font-style: normal;
     font-weight: 300;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-35thin-trial.otf") format("opentype");
   }
   @font-face {
     font-family: "HassGrotesk";
     font-style: italic;
     font-weight: 300;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-36thinitalic-trial.otf") format("opentype");
   }
   @font-face {
@@ -160,7 +160,7 @@
     font-family: "HassGrotesk";
     font-style: italic;
     font-weight: 400;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-46lightitalic-trial.otf") format("opentype");
   }
   @font-face {
@@ -174,7 +174,7 @@
     font-family: "HassGrotesk";
     font-style: italic;
     font-weight: 500;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-56italic-trial.otf") format("opentype");
   }
   @font-face {
@@ -188,7 +188,7 @@
     font-family: "HassGrotesk";
     font-style: italic;
     font-weight: 600;
-    font-display: swap;
+    font-display: optional;
     src: url("/fonts/neuehaasgrotdisp-66mediumitalic-trial.otf") format("opentype");
   }
   @font-face {
@@ -446,7 +446,7 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
