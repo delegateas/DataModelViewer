@@ -20,14 +20,17 @@ interface CarouselProps {
 const Carousel = ({ items, currentIndex = 0, slideDirection = null, className }: CarouselProps) => {
   const [animationState, setAnimationState] = useState<'idle' | 'sliding'>('idle');
   const [prevIndex, setPrevIndex] = useState(currentIndex);
+  const [showPrevious, setShowPrevious] = useState(false);
 
   useEffect(() => {
     if (currentIndex !== prevIndex && slideDirection) {
       setAnimationState('sliding');
+      setShowPrevious(true);
       
       const timer = setTimeout(() => {
         setPrevIndex(currentIndex);
         setAnimationState('idle');
+        setShowPrevious(false);
       }, 500);
       
       return () => clearTimeout(timer);
@@ -37,6 +40,7 @@ const Carousel = ({ items, currentIndex = 0, slideDirection = null, className }:
   }, [currentIndex, prevIndex, slideDirection]);
 
   const currentItem = items[currentIndex] || { title: '', text: '' };
+  const previousItem = items[prevIndex] || { title: '', text: '' };
 
   return (
     <Box className={`relative w-full h-full overflow-hidden ${className || ''}`}>
@@ -44,10 +48,29 @@ const Carousel = ({ items, currentIndex = 0, slideDirection = null, className }:
       <Box className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 to-black/90" />
       
       {/* Content container */}
-      <Box 
-        className="absolute inset-0 z-20 flex flex-col justify-end p-6 text-white"
-        key={currentIndex} // This will trigger re-render with new content
-      >
+      <Box className="absolute inset-0 z-20 flex flex-col justify-end p-6 text-white">
+        {/* Previous item - animating out */}
+        {showPrevious && animationState === 'sliding' && (
+          <Box
+            className={`absolute inset-0 flex flex-col justify-end p-6 transform transition-all duration-500 ease-out ${
+              slideDirection === 'right'
+                ? 'animate-slideOutRight'
+                : 'animate-slideOutLeft'
+            }`}
+          >
+            <Typography variant='subtitle1' className='text-sm font-semibold mb-2' color='accent'>
+              {previousItem.type}
+            </Typography>
+            <Typography variant='h6' className='font-bold mb-2'>
+              {previousItem.title}
+            </Typography>
+            <Typography variant='body2' className='text-gray-200 mb-8'>
+              {previousItem.text}
+            </Typography>
+          </Box>
+        )}
+        
+        {/* Current item - animating in or static */}
         <Box
           className={`transform transition-all duration-500 ease-out ${
             animationState === 'sliding'
