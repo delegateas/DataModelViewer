@@ -2,17 +2,6 @@
 
 import React, { useState } from 'react';
 import { 
-    Type, 
-    Calendar, 
-    Hash, 
-    Search, 
-    DollarSign, 
-    ToggleLeft, 
-    FileText, 
-    List, 
-    Activity,
-} from 'lucide-react';
-import { 
     Dialog, 
     DialogContent, 
     DialogTitle, 
@@ -25,6 +14,7 @@ import {
     Tooltip
 } from '@mui/material';
 import { AttributeType } from '@/lib/Types';
+import { AssignmentRounded, AttachmentRounded, AttachMoneyRounded, CalendarMonthRounded, ListRounded, NumbersRounded, RttRounded, SearchRounded, ToggleOffRounded } from '@mui/icons-material';
 
 export interface AddAttributePaneProps {
     isOpen: boolean;
@@ -37,16 +27,16 @@ export interface AddAttributePaneProps {
 
 const getAttributeIcon = (attributeType: string) => {
     switch (attributeType) {
-        case 'StringAttribute': return Type;
-        case 'IntegerAttribute': return Hash;
-        case 'DecimalAttribute': return DollarSign;
-        case 'DateTimeAttribute': return Calendar;
-        case 'BooleanAttribute': return ToggleLeft;
-        case 'ChoiceAttribute': return List;
-        case 'LookupAttribute': return Search;
-        case 'FileAttribute': return FileText;
-        case 'StatusAttribute': return Activity;
-        default: return Type;
+        case 'StringAttribute': return RttRounded;
+        case 'IntegerAttribute': return NumbersRounded;
+        case 'DecimalAttribute': return AttachMoneyRounded;
+        case 'DateTimeAttribute': return CalendarMonthRounded;
+        case 'BooleanAttribute': return ToggleOffRounded;
+        case 'ChoiceAttribute': return ListRounded;
+        case 'LookupAttribute': return SearchRounded;
+        case 'FileAttribute': return AttachmentRounded;
+        case 'StatusAttribute': return AssignmentRounded;
+        default: return RttRounded;
     }
 };
 

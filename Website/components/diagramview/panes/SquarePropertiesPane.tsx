@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Square, Trash2 } from 'lucide-react';
 import { 
     Dialog, 
     DialogContent, 
@@ -12,6 +11,7 @@ import {
 } from '@mui/material';
 import { SquareElement, SquareElementData } from '../elements/SquareElement';
 import { PRESET_COLORS } from '../shared/DiagramConstants';
+import { DeleteRounded, SquareRounded } from '@mui/icons-material';
 
 export interface SquarePropertiesPaneProps {
     isOpen: boolean;
@@ -80,7 +80,7 @@ export const SquarePropertiesPane: React.FC<SquarePropertiesPaneProps> = ({
     return (
         <Dialog open={isOpen} onClose={() => onOpenChange(false)} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Square size={20} />
+                <SquareRounded />
                 Square Properties
             </DialogTitle>
             <DialogContent sx={{ minHeight: '500px' }}>
@@ -251,7 +251,7 @@ export const SquarePropertiesPane: React.FC<SquarePropertiesPaneProps> = ({
                             size="small"
                             fullWidth
                             onClick={handleDeleteSquare}
-                            startIcon={<Trash2 size={16} />}
+                            startIcon={<DeleteRounded />}
                         >
                             Delete Square
                         </Button>

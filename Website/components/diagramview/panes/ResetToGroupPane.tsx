@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { RotateCcw } from 'lucide-react';
 import { 
     Dialog, 
     DialogContent, 
@@ -15,6 +14,7 @@ import {
 } from '@mui/material';
 import { Groups } from '../../../generated/Data';
 import { GroupType } from '@/lib/Types';
+import { RefreshRounded } from '@mui/icons-material';
 
 interface IResetToGroupPaneProps {
     isOpen: boolean;
@@ -89,7 +89,7 @@ export const ResetToGroupPane = ({ isOpen, onOpenChange, onResetToGroup }: IRese
                         onClick={handleResetToGroup}
                         disabled={!selectedGroupForReset}
                         fullWidth
-                        startIcon={<RotateCcw style={{ width: 16, height: 16 }} />}
+                        startIcon={<RefreshRounded style={{ width: 16, height: 16 }} />}
                     >
                         Reset to Group
                     </Button>

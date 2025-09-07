@@ -10,6 +10,13 @@ Always add `aria-label` attributes to interactive elements.
 Always use tailwind classes over the `sx` prop.
 Always use MUI elements where possible.
 - Replace `div` with `Box` from MUI.
+Always use `Paper` from MUI for card-like components.
+Always use `Typography` from MUI for text elements.
+Always use MUI Icons for icons.
+Never use custom CSS unless absolutely necessary.
+- Prioritize Tailwind CSS classes for all styling needs.
+- For colors u must use the `sx` prop to ensure correct theming in MUI.
+- If you need to add custom CSS, it must be approved first.
 
 ## Colors
 Always use the colors from the Tailwind CSS color palette, and ensure that they are applied consistently across both light and dark themes.

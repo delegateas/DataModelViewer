@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@mui/material';
-import { RotateCcw } from 'lucide-react';
+import { RefreshRounded } from '@mui/icons-material';
 
 interface DiagramResetButtonProps {
   onReset: () => void;
@@ -19,7 +19,7 @@ export const DiagramResetButton: React.FC<DiagramResetButtonProps> = ({
       disabled={disabled}
       className="w-full"
     >
-      <RotateCcw className="h-4 w-4 mr-2" />
+      <RefreshRounded className="h-4 w-4 mr-2" />
       Reset View
     </Button>
   );

@@ -1,5 +1,5 @@
+import { MouseRounded, ZoomInRounded } from '@mui/icons-material';
 import React from 'react';
-import { ZoomIn, MousePointer } from 'lucide-react';
 
 interface ZoomCoordinateIndicatorProps {
   zoom: number;
@@ -16,7 +16,7 @@ export const ZoomCoordinateIndicator: React.FC<ZoomCoordinateIndicatorProps> = (
     <div className="fixed bottom-4 right-4 bg-background/80 backdrop-blur-sm border rounded-lg p-3 shadow-lg">
       <div className="flex items-center space-x-4 text-sm">
         <div className="flex items-center space-x-2">
-          <ZoomIn className="h-4 w-4 text-muted-foreground" />
+          <ZoomInRounded className="h-4 w-4 text-muted-foreground" />
           <span className="font-mono font-medium">
             {zoomPercentage}%
           </span>
@@ -26,7 +26,7 @@ export const ZoomCoordinateIndicator: React.FC<ZoomCoordinateIndicatorProps> = (
           <>
             <div className="w-px h-4 bg-border" />
             <div className="flex items-center space-x-2">
-              <MousePointer className="h-4 w-4 text-muted-foreground" />
+              <MouseRounded className="h-4 w-4 text-muted-foreground" />
               <span className="font-mono text-xs">
                 X: {mousePosition.x}, Y: {mousePosition.y}
               </span>

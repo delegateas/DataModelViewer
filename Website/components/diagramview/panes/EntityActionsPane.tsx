@@ -14,22 +14,8 @@ import {
     CardContent,
     Tooltip 
 } from '@mui/material';
-import { 
-    Trash2, 
-    Plus, 
-    ChevronDown, 
-    ChevronRight,
-    Type, 
-    Calendar, 
-    Hash, 
-    Search, 
-    DollarSign, 
-    ToggleLeft, 
-    FileText, 
-    List, 
-    Activity
-} from 'lucide-react';
 import { EntityType, AttributeType } from '@/lib/Types';
+import { RttRounded, NumbersRounded, AttachMoneyRounded, CalendarMonthRounded, ToggleOffRounded, ListRounded, SearchRounded, AttachmentRounded, AssignmentRounded, ChevronRight, AddRounded, ExpandRounded, DeleteRounded } from '@mui/icons-material';
 
 export interface EntityActionsPaneProps {
     isOpen: boolean;
@@ -44,16 +30,16 @@ export interface EntityActionsPaneProps {
 
 const getAttributeIcon = (attributeType: string) => {
     switch (attributeType) {
-        case 'StringAttribute': return Type;
-        case 'IntegerAttribute': return Hash;
-        case 'DecimalAttribute': return DollarSign;
-        case 'DateTimeAttribute': return Calendar;
-        case 'BooleanAttribute': return ToggleLeft;
-        case 'ChoiceAttribute': return List;
-        case 'LookupAttribute': return Search;
-        case 'FileAttribute': return FileText;
-        case 'StatusAttribute': return Activity;
-        default: return Type;
+        case 'StringAttribute': return RttRounded;
+        case 'IntegerAttribute': return NumbersRounded;
+        case 'DecimalAttribute': return AttachMoneyRounded;
+        case 'DateTimeAttribute': return CalendarMonthRounded;
+        case 'BooleanAttribute': return ToggleOffRounded;
+        case 'ChoiceAttribute': return ListRounded;
+        case 'LookupAttribute': return SearchRounded;
+        case 'FileAttribute': return AttachmentRounded;
+        case 'StatusAttribute': return AssignmentRounded;
+        default: return RttRounded;
     }
 };
 
@@ -146,10 +132,10 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
                                                 sx={{ justifyContent: 'space-between', textTransform: 'none' }}
                                             >
                                                 <Box display="flex" alignItems="center">
-                                                    <Plus style={{ width: 16, height: 16, marginRight: 8 }} />
+                                                    <AddRounded style={{ width: 16, height: 16, marginRight: 8 }} />
                                                     Add Attribute
                                                 </Box>
-                                                {isAttributesExpanded ? <ChevronDown style={{ width: 16, height: 16 }} /> : <ChevronRight style={{ width: 16, height: 16 }} />}
+                                                {isAttributesExpanded ? <ExpandRounded style={{ width: 16, height: 16 }} /> : <ChevronRight style={{ width: 16, height: 16 }} />}
                                             </Button>
                                             
                                             <Collapse in={isAttributesExpanded}>
@@ -241,10 +227,10 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
                                                 sx={{ justifyContent: 'space-between', textTransform: 'none' }}
                                             >
                                                 <Box display="flex" alignItems="center">
-                                                    <Trash2 style={{ width: 16, height: 16, marginRight: 8 }} />
+                                                    <DeleteRounded style={{ width: 16, height: 16, marginRight: 8 }} />
                                                     Remove Attribute
                                                 </Box>
-                                                {isRemoveAttributesExpanded ? <ChevronDown style={{ width: 16, height: 16 }} /> : <ChevronRight style={{ width: 16, height: 16 }} />}
+                                                {isRemoveAttributesExpanded ? <ExpandRounded style={{ width: 16, height: 16 }} /> : <ChevronRight style={{ width: 16, height: 16 }} />}
                                             </Button>
                                             
                                             <Collapse in={isRemoveAttributesExpanded}>
@@ -276,7 +262,7 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
                                                                                     {typeLabel}
                                                                                 </Typography>
                                                                             </Box>
-                                                                            <Trash2 style={{ width: 16, height: 16, color: 'error.main' }} />
+                                                                            <DeleteRounded style={{ width: 16, height: 16, color: 'error.main' }} />
                                                                         </Box>
                                                                     </CardContent>
                                                                 </Card>
@@ -299,7 +285,7 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
                                         onClick={onDeleteEntity}
                                         sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                                     >
-                                        <Trash2 style={{ width: 16, height: 16, marginRight: 8 }} />
+                                        <DeleteRounded style={{ width: 16, height: 16, marginRight: 8 }} />
                                         Remove from Diagram
                                     </Button>
                                 </div>

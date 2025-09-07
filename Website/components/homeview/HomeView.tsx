@@ -6,7 +6,7 @@ import Markdown from 'react-markdown'
 import { Box, Button, Grid, IconButton, Paper, Typography } from '@mui/material';
 import NotchedBox from '@/components/shared/elements/NotchedBox';
 import Carousel, { CarouselItem } from '@/components/shared/elements/Carousel';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 
 interface IHomeViewProps { }
 
@@ -85,10 +85,10 @@ export const HomeView = ({ }: IHomeViewProps) => {
                         notchContent={
                             <Box className="flex items-center gap-1 bg-transparent">
                                 <IconButton size="medium" onClick={goToPrevious}>
-                                    <ChevronLeft size={16} />
+                                    <ChevronLeftRounded/>
                                 </IconButton>
                                 <IconButton size="medium" onClick={goToNext}>
-                                    <ChevronRight size={16} />
+                                    <ChevronRightRounded />
                                 </IconButton>
                             </Box>
                         }

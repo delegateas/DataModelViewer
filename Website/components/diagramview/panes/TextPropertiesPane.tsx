@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Type, Trash2 } from 'lucide-react';
 import { 
     Dialog, 
     DialogContent, 
@@ -11,6 +10,7 @@ import {
     Divider
 } from '@mui/material';
 import { TextElement, TextElementData } from '../elements/TextElement';
+import { DeleteRounded, RttRounded } from '@mui/icons-material';
 
 export interface TextPropertiesPaneProps {
     isOpen: boolean;
@@ -95,7 +95,7 @@ export const TextPropertiesPane: React.FC<TextPropertiesPaneProps> = ({
     return (
         <Dialog open={isOpen} onClose={() => onOpenChange(false)} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Type size={20} />
+                <RttRounded />
                 Text Properties
             </DialogTitle>
             <DialogContent sx={{ minHeight: '600px' }}>
@@ -294,7 +294,7 @@ export const TextPropertiesPane: React.FC<TextPropertiesPaneProps> = ({
                                 size="small"
                                 fullWidth
                                 onClick={handleDeleteText}
-                                startIcon={<Trash2 size={16} />}
+                                startIcon={<DeleteRounded />}
                             >
                                 Delete Text
                             </Button>

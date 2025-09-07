@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search } from 'lucide-react';
 import { 
     Dialog, 
     DialogContent, 
@@ -16,6 +15,7 @@ import { Groups } from '@/generated/Data';
 import { EntityType, GroupType, AttributeType } from '@/lib/Types';
 import { useAttributeSelection } from '@/hooks/useAttributeSelection';
 import { AttributeSelectionPanel } from './AttributeSelectionPanel';
+import { SearchRounded } from '@mui/icons-material';
 
 export interface AddEntityPaneProps {
     isOpen: boolean;
@@ -102,7 +102,7 @@ export const AddEntityPane: React.FC<AddEntityPaneProps> = ({
 
                     {/* Search Input */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                        <SearchRounded className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                         <TextField
                             fullWidth
                             size="small"

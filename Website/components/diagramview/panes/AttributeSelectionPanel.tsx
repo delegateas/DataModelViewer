@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { ChevronDown, ChevronRight, Settings } from 'lucide-react';
 import { 
     Button, 
     Collapse, 
@@ -12,6 +11,7 @@ import {
     Box 
 } from '@mui/material';
 import { AttributeSelectionMode } from '@/hooks/useAttributeSelection';
+import { ChevronRightRounded, ExpandRounded, SettingsRounded } from '@mui/icons-material';
 
 export interface AttributeSelectionPanelProps {
     attributeMode: AttributeSelectionMode;
@@ -37,10 +37,10 @@ export const AttributeSelectionPanel: React.FC<AttributeSelectionPanelProps> = (
                 sx={{ justifyContent: 'space-between', textTransform: 'none' }}
             >
                 <Box display="flex" alignItems="center">
-                    <Settings style={{ width: 16, height: 16, marginRight: 8 }} />
+                    <SettingsRounded style={{ width: 16, height: 16, marginRight: 8 }} />
                     Attribute Selection
                 </Box>
-                {isExpanded ? <ChevronDown style={{ width: 16, height: 16 }} /> : <ChevronRight style={{ width: 16, height: 16 }} />}
+                {isExpanded ? <ExpandRounded style={{ width: 16, height: 16 }} /> : <ChevronRightRounded style={{ width: 16, height: 16 }} />}
             </Button>
             
             <Collapse in={isExpanded}>

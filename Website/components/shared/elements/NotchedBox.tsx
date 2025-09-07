@@ -8,13 +8,15 @@ interface NotchedBoxProps extends Omit<BoxProps, 'component'> {
   className?: string;
   children?: React.ReactNode;
   backgroundImage?: string;
+  variant?: 'default' | 'outlined';
 }
 
 const NotchedBox = ({
   notchContent,
   className,
   children,
-  backgroundImage
+  backgroundImage,
+  variant = 'default'
 }: NotchedBoxProps) => {
 
   const contentRef = React.useRef<HTMLDivElement>(null);
@@ -22,6 +24,9 @@ const NotchedBox = ({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [prevBackgroundImage, setPrevBackgroundImage] = React.useState<string | undefined>(backgroundImage);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
+  
+  // Generate unique ID for this component instance
+  const uniqueId = React.useMemo(() => `notch-${Math.random().toString(36).substr(2, 9)}`, []);
 
   React.useEffect(() => {
     if (backgroundImage !== prevBackgroundImage) {
@@ -59,7 +64,7 @@ const NotchedBox = ({
   const ry = Math.min(16 / ch, 0.49);
 
   // Notch size: width is based on content; height fixed to 40px (normalized)
-  const notchH = Math.min(40 / ch, 1); // normalize 40px
+  const notchH = Math.min(48 / ch, 1); // normalize 40px
   const notchW = Math.min(notchWidth, 1);
 
   // Inner notch radii cannot exceed half the notch dimensions
@@ -72,11 +77,7 @@ const NotchedBox = ({
   // Helpful guard so top edge before the notch never goes negative
   const preNotchTopX = Math.max(startX - irx, rx);
 
-  // Build a single path:
-  // - Start near top-left outer corner
-  // - Go right to the notch, round into the notch (concave),
-  //   across the notch bottom, round back out to the right edge (concave),
-  //   then down/right/bottom/left with outer rounded corners.
+  // Build the notched path
   const d = [
     `M ${rx},0`,
     `H ${preNotchTopX}`,
@@ -100,76 +101,124 @@ const NotchedBox = ({
     `Z`
   ].join(' ');
 
+  // Build inset stroke path (slightly smaller for inward stroke)
+  const strokeInset = 0.003; // Inset amount
+  const strokeRx = Math.max(rx - strokeInset, 0.001);
+  const strokeRy = Math.max(ry - strokeInset, 0.001);
+  const strokeNotchH = Math.max(notchH - strokeInset, strokeInset);
+  const strokeNotchW = Math.max(notchW - strokeInset * 2, strokeInset);
+  const strokeStartX = 1 - strokeNotchW;
+  const strokeIrx = Math.min(strokeRx, Math.max(0, strokeNotchW / 2 - 0.001));
+  const strokeIry = Math.min(strokeRy, Math.max(0, strokeNotchH / 2 - 0.001));
+  const strokePreNotchTopX = Math.max(strokeStartX - strokeIrx, strokeRx);
+
+  const strokePath = [
+    `M ${strokeRx},${strokeInset}`,
+    `H ${strokePreNotchTopX}`,
+    // Inner top-left corner of notch (concave)
+    `A ${strokeIrx} ${strokeIry} 0 0 1 ${strokeStartX} ${strokeIry}`,
+    `V ${Math.max(strokeNotchH - strokeIry, strokeIry)}`,
+    // Inner bottom-left corner of notch (concave)
+    `A ${strokeIrx} ${strokeIry} 0 0 0 ${strokeStartX + strokeIrx} ${strokeNotchH + strokeInset}`,
+    `H ${1 - strokeRx}`,
+    // Inner bottom-right corner of notch (concave back to right wall)
+    `A ${strokeIrx} ${strokeIry} 0 0 1 ${1 - strokeInset} ${strokeNotchH + strokeIry + strokeInset}`,
+    `V ${1 - strokeRy}`,
+    // Outer bottom-right (convex)
+    `A ${strokeRx} ${strokeRy} 0 0 1 ${1 - strokeRx} ${1 - strokeInset}`,
+    `H ${strokeRx}`,
+    // Outer bottom-left (convex)
+    `A ${strokeRx} ${strokeRy} 0 0 1 ${strokeInset} ${1 - strokeRy}`,
+    `V ${strokeRy + strokeInset}`,
+    // Outer top-left (convex)
+    `A ${strokeRx} ${strokeRy} 0 0 1 ${strokeRx} ${strokeInset}`,
+    `Z`
+  ].join(' ');
+
   return (
-    <Box className="relative">
-      {/* Background container with clipPath applied */}
+    <Box className="relative h-96">
+      {/* SVG-based NotchedBox */}
       <Box
         ref={containerRef}
-        className={`${className} rounded-2xl overflow-hidden relative`}
-        sx={{ clipPath: "url(#notch-clip)" }}
+        className={`absolute inset-0 ${className}`}
       >
-        {/* Previous background for crossfade effect */}
-        {isTransitioning && prevBackgroundImage && prevBackgroundImage !== backgroundImage && (
-          prevBackgroundImage ? (
+        <svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 1 1"
+          preserveAspectRatio="none"
+          className="absolute inset-0"
+        >
+          <defs>
+            <clipPath id={`${uniqueId}-clip`} clipPathUnits="objectBoundingBox">
+              <path d={d} />
+            </clipPath>
+          </defs>
+          
+          {/* Main shape */}
+          <path
+            d={d}
+            fill={variant === 'outlined' ? 'var(--mui-palette-background-paper)' : (backgroundImage ? 'none' : '#4F46E5')}
+            stroke="none"
+          />
+          
+          {/* Separate stroke for outlined variant */}
+          {variant === 'outlined' && (
+            <path
+              d={strokePath}
+              fill="none"
+              stroke="var(--mui-palette-border-main)"
+              strokeWidth="0.0025"
+            />
+          )}
+        </svg>
+
+        {/* Background image for default variant */}
+        {variant === 'default' && backgroundImage && (
+          <>
+            {/* Previous background for crossfade effect */}
+            {isTransitioning && prevBackgroundImage && prevBackgroundImage !== backgroundImage && (
+              <Box
+                component="img"
+                src={prevBackgroundImage}
+                alt="Previous Background"
+                className="absolute inset-0 w-full h-full object-center object-cover"
+                sx={{ 
+                  opacity: 1, 
+                  zIndex: 1,
+                  clipPath: `url(#${uniqueId}-clip)`
+                }}
+              />
+            )}
+            
+            {/* Current background */}
             <Box
               component="img"
-              src={prevBackgroundImage}
-              alt="Previous Background"
-              className="absolute inset-0 w-full h-full object-center object-cover"
-              sx={{ opacity: 1, zIndex: 1 }}
+              src={backgroundImage}
+              alt="Notched Background Image"
+              className="absolute inset-0 w-full h-full object-center object-cover transition-opacity duration-500 ease-in-out"
+              sx={{
+                opacity: isTransitioning ? 0 : 1,
+                zIndex: 2,
+                clipPath: `url(#${uniqueId}-clip)`
+              }}
+              onLoad={() => setIsTransitioning(false)}
             />
-          ) : (
-            <Box
-              className="absolute inset-0 w-full h-full bg-indigo-600"
-              sx={{ opacity: 1, zIndex: 1 }}
-            />
-          )
-        )}
-        
-        {/* Current background */}
-        {backgroundImage ? (
-          <Box
-            component="img"
-            src={backgroundImage}
-            alt="Notched Background Image"
-            className="absolute inset-0 w-full h-full object-center object-cover transition-opacity duration-500 ease-in-out"
-            sx={{
-              opacity: isTransitioning ? 0 : 1,
-              zIndex: 2
-            }}
-            onLoad={() => setIsTransitioning(false)}
-          />
-        ) : (
-          <Box
-            className="absolute inset-0 w-full h-full bg-indigo-600 transition-opacity duration-500 ease-in-out"
-            sx={{
-              opacity: isTransitioning ? 0 : 1,
-              zIndex: 2
-            }}
-          />
+          </>
         )}
       </Box>
-      <svg width={0} height={0} aria-hidden>
-        <defs>
-          <clipPath id="notch-clip" clipPathUnits="objectBoundingBox">
-            <path d={d} />
-          </clipPath>
-        </defs>
-      </svg>
 
       {/* Hidden content ref to measure width */}
       <Box ref={contentRef} className="absolute top-0 right-0 w-auto mr-2 mt-1 z-30">
         {notchContent}
       </Box>
 
-
-      <Box
-        className={`${className} rounded-2xl overflow-hidden absolute w-full h-96 inset-0`}
-        sx={{ clipPath: "url(#notch-clip)" }}
+      {/* Content container - clipped to shape */}
+      <Box 
+        className="absolute inset-0 z-10 p-0"
+        sx={{ clipPath: `url(#${uniqueId}-clip)` }}
       >
-        <Box className="absolute flex w-full h-full z-10">
-            {children}
-        </Box>
+        {children}
       </Box>
     </Box>
   );

@@ -1,15 +1,7 @@
 import React from 'react';
 import { Button, Divider, Typography, Box } from '@mui/material';
-import { 
-    ZoomIn, 
-    ZoomOut, 
-    RotateCcw, 
-    Maximize, 
-    Settings,
-    Layers,
-    Search
-} from 'lucide-react';
 import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
+import { AspectRatioRounded, LayersRounded, RefreshRounded, SearchRounded, SettingsRounded, ZoomInRounded, ZoomOutRounded } from '@mui/icons-material';
 
 export const DiagramControls: React.FC = () => {
   const { 
@@ -29,7 +21,7 @@ export const DiagramControls: React.FC = () => {
             size="small" 
             fullWidth
             onClick={resetView}
-            startIcon={<RotateCcw size={16} />}
+            startIcon={<RefreshRounded />}
             sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
             Reset View
@@ -39,7 +31,7 @@ export const DiagramControls: React.FC = () => {
             size="small" 
             fullWidth
             onClick={fitToScreen}
-            startIcon={<Maximize size={16} />}
+            startIcon={<AspectRatioRounded />}
             sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
             Fit to Screen
@@ -58,7 +50,7 @@ export const DiagramControls: React.FC = () => {
             variant="outlined" 
             size="small" 
             fullWidth
-            startIcon={<Search size={16} />}
+            startIcon={<SearchRounded />}
             sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
             Search Entities
@@ -67,7 +59,7 @@ export const DiagramControls: React.FC = () => {
             variant="outlined" 
             size="small" 
             fullWidth
-            startIcon={<Layers size={16} />}
+            startIcon={<LayersRounded />}
             sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
             Layer Manager
@@ -76,7 +68,7 @@ export const DiagramControls: React.FC = () => {
             variant="outlined" 
             size="small" 
             fullWidth
-            startIcon={<Settings size={16} />}
+            startIcon={<SettingsRounded />}
             sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
             Diagram Settings
@@ -107,14 +99,14 @@ export const DiagramZoomControls: React.FC = () => {
         onClick={zoomIn}
         sx={{ minWidth: 32, height: 32, padding: 0 }}
       >
-        <ZoomIn size={16} />
+        <ZoomInRounded />
       </Button>
       <Button 
         variant="contained" 
         onClick={zoomOut}
         sx={{ minWidth: 32, height: 32, padding: 0 }}
       >
-        <ZoomOut size={16} />
+        <ZoomOutRounded />
       </Button>
     </Box>
   );
