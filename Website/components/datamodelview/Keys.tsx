@@ -2,7 +2,6 @@
 
 import { EntityType } from "@/lib/Types"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
 import { 
@@ -20,6 +19,7 @@ import {
     InputAdornment,
     useTheme
 } from "@mui/material"
+import { ArrowDownwardRounded, ArrowUpwardRounded, CloseRounded, SearchRounded } from "@mui/icons-material";
 
 type SortColumn = 'name' | 'logicalName' | 'attributes' | null
 type SortDirection = 'asc' | 'desc' | null
@@ -114,10 +114,10 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
     }, [onVisibleCountChange, sortedKeys.length]);
 
     const SortIcon = ({ column }: { column: SortColumn }) => {
-        if (sortColumn !== column) return <ArrowUpDown className="ml-2 h-4 w-4" />
-        if (sortDirection === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />
-        if (sortDirection === 'desc') return <ArrowDown className="ml-2 h-4 w-4" />
-        return <ArrowUpDown className="ml-2 h-4 w-4" />
+        if (sortColumn !== column) return <ArrowDownwardRounded className="ml-2 h-4 w-4" />
+        if (sortDirection === 'asc') return <ArrowUpwardRounded className="ml-2 h-4 w-4" />
+        if (sortDirection === 'desc') return <ArrowDownwardRounded className="ml-2 h-4 w-4" />
+        return <ArrowUpwardRounded className="ml-2 h-4 w-4" />
     }
 
     return (
@@ -151,7 +151,7 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <Search className="h-3 w-3 md:h-4 md:w-4" style={{ color: theme.palette.text.secondary }} />
+                                    <SearchRounded className="h-3 w-3 md:h-4 md:w-4" style={{ color: theme.palette.text.secondary }} />
                                 </InputAdornment>
                             ),
                             endAdornment: searchQuery && (
@@ -167,7 +167,7 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                                         }}
                                         title="Clear search"
                                     >
-                                        <X className="h-3 w-3 md:h-4 md:w-4" />
+                                        <CloseRounded className="h-3 w-3 md:h-4 md:w-4" />
                                     </Button>
                                 </InputAdornment>
                             )

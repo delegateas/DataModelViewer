@@ -1,8 +1,8 @@
 'use client'
 
 import { AttributeType, CalculationMethods, ComponentType, RequiredLevel } from "@/lib/Types";
+import { AddCircleOutlineRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
 import { Tooltip } from "@mui/material";
-import { Calculator, CircleAlert, CirclePlus, Eye, Lock, Sigma, Zap } from "lucide-react";
 
 export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
     const details = [];
@@ -10,33 +10,33 @@ export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
     switch (attribute.RequiredLevel) {
         case RequiredLevel.SystemRequired:
         case RequiredLevel.ApplicationRequired:
-            details.push({ icon: <CircleAlert className="h-4 w-4" />, tooltip: "Required" });
+            details.push({ icon: <ErrorRounded className="h-4 w-4" />, tooltip: "Required" });
             break;
         case RequiredLevel.Recommended:
-            details.push({ icon: <CirclePlus className="h-4 w-4" />, tooltip: "Recommended" });
+            details.push({ icon: <AddCircleOutlineRounded className="h-4 w-4" />, tooltip: "Recommended" });
             break;
     }
 
     switch (attribute.CalculationMethod) {
         case CalculationMethods.Calculated:
-            details.push({ icon: <Calculator className="h-4 w-4" />, tooltip: "Calculated" });
+            details.push({ icon: <CalculateRounded className="h-4 w-4" />, tooltip: "Calculated" });
             break;
         case CalculationMethods.Rollup:
-            details.push({ icon: <Sigma className="h-4 w-4" />, tooltip: "Rollup" });
+            details.push({ icon: <FunctionsRounded className="h-4 w-4" />, tooltip: "Rollup" });
             break;
     }
 
     if (attribute.IsAuditEnabled) {
-        details.push({ icon: <Eye className="h-4 w-4" />, tooltip: "Audit Enabled" });
+        details.push({ icon: <VisibilityRounded className="h-4 w-4" />, tooltip: "Audit Enabled" });
     }
 
     if (attribute.IsColumnSecured) {
-        details.push({ icon: <Lock className="h-4 w-4" />, tooltip: "Field Security" });
+        details.push({ icon: <LockRounded className="h-4 w-4" />, tooltip: "Field Security" });
     }
 
     if (attribute.AttributeUsages.some(a => a.ComponentType == ComponentType.Plugin)) {
         const tooltip = `Plugins ${attribute.AttributeUsages.map(au => au.Name).join(", ")}`;
-        details.push({ icon: <Zap className="h-4 w-4" />, tooltip });
+        details.push({ icon: <ElectricBoltRounded className="h-4 w-4" />, tooltip });
     }
 
     return (

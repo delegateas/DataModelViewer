@@ -3,12 +3,11 @@
 import { EntityType } from "@/lib/Types"
 import { CascadeConfiguration } from "./entity/CascadeConfiguration"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Search, X, TableIcon } from "lucide-react"
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
 import { Button, FormControl, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, InputAdornment, Box, Typography, useTheme } from "@mui/material"
-import { SearchRounded, ClearRounded } from "@mui/icons-material"
+import { SearchRounded, ClearRounded, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
@@ -116,10 +115,10 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
     }
 
     const SortIcon = ({ column }: { column: SortColumn }) => {
-        if (sortColumn !== column) return <ArrowUpDown className="ml-2 h-4 w-4" />
-        if (sortDirection === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />
-        if (sortDirection === 'desc') return <ArrowDown className="ml-2 h-4 w-4" />
-        return <ArrowUpDown className="ml-2 h-4 w-4" />
+        if (sortColumn !== column) return <ArrowUpwardRounded className="ml-2 h-4 w-4" />
+        if (sortDirection === 'asc') return <ArrowDownwardRounded className="ml-2 h-4 w-4" />
+        if (sortDirection === 'desc') return <ArrowUpwardRounded className="ml-2 h-4 w-4" />
+        return <ArrowDownwardRounded className="ml-2 h-4 w-4" />
     }
 
     const relationshipTypes = [

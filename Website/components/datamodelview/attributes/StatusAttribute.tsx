@@ -1,6 +1,6 @@
 import { StatusAttributeType, StatusOption } from "@/lib/Types";
 import { formatNumberSeperator } from "@/lib/utils";
-import { Circle } from "lucide-react";
+import { CircleRounded } from "@mui/icons-material";
 import { Box, Typography, Chip, SvgIcon } from "@mui/material";
 
 export default function StatusAttribute({ attribute }: { attribute: StatusAttributeType }) {
@@ -28,7 +28,7 @@ export default function StatusAttribute({ attribute }: { attribute: StatusAttrib
                                     <Box className="flex items-center gap-2">
                                         <Box className="flex items-center gap-1">
                                             {/* No DefaultValue, so always show Circle icon */}
-                                            <SvgIcon component={Circle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
+                                            <CircleRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                                             <Typography className="text-xs md:text-sm">{option.Name}</Typography>
                                         </Box>
                                     </Box>

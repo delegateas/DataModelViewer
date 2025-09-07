@@ -4,12 +4,12 @@ import { EntityType, GroupType } from "@/lib/Types"
 import { EntityHeader } from "./entity/EntityHeader"
 import { SecurityRoles } from "./entity/SecurityRoles"
 import Keys from "./Keys"
-import { KeyRound, Tags, Unplug } from "lucide-react"
 import { Attributes } from "./Attributes"
 import { Relationships } from "./Relationships"
 import React from "react"
 import { Box, Paper, Tab, Tabs } from "@mui/material"
 import CustomTabPanel from "../shared/elements/TabPanel"
+import { KeyRounded, SellRounded, ShareRounded } from "@mui/icons-material"
 
 interface ISectionProps {
     entity: EntityType;
@@ -76,7 +76,7 @@ export const Section = React.memo(
                                 <Tab 
                                     label={
                                         <div className="flex items-center min-w-[120px] sm:min-w-[140px] px-2 py-1 text-xs sm:text-sm">
-                                            <Tags className="mr-2 h-4 w-4 shrink-0" />
+                                            <SellRounded className="mr-2 h-4 w-4 shrink-0" />
                                             <span className="truncate">Attributes [{visibleAttributeCount}]</span>
                                         </div>
                                     }
@@ -85,7 +85,7 @@ export const Section = React.memo(
                                     <Tab 
                                         label={
                                             <div className="flex items-center min-w-[140px] sm:min-w-[160px] px-2 py-1 text-xs sm:text-sm">
-                                                <Unplug className="mr-2 h-4 w-4 shrink-0" />
+                                                <ShareRounded className="mr-2 h-4 w-4 shrink-0" />
                                                 <span className="truncate">Relationships [{visibleRelationshipCount}]</span>
                                             </div>
                                         }
@@ -95,7 +95,7 @@ export const Section = React.memo(
                                     <Tab 
                                         label={
                                             <div className="flex items-center min-w-[100px] sm:min-w-[120px] px-2 py-1 text-xs sm:text-sm">
-                                                <KeyRound className="mr-2 h-4 w-4 shrink-0" />
+                                                <KeyRounded className="mr-2 h-4 w-4 shrink-0" />
                                                 <span className="truncate">Keys [{visibleKeyCount}]</span>
                                             </div>
                                         }

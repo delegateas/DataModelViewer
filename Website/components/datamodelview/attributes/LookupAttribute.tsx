@@ -1,7 +1,7 @@
 import { LookupAttributeType } from "@/lib/Types"
-import { FileSearch, FileX2 } from "lucide-react"
 import { useDatamodelView } from "@/contexts/DatamodelViewContext"
 import { Box, Typography, Button, Chip } from "@mui/material"
+import { ContentPasteOffRounded, ContentPasteSearchRounded } from "@mui/icons-material";
 
 export default function LookupAttribute({ attribute }: { attribute: LookupAttributeType }) {
 
@@ -17,7 +17,7 @@ export default function LookupAttribute({ attribute }: { attribute: LookupAttrib
                             key={target.Name}
                             variant="outlined"
                             size="small"
-                            startIcon={<FileSearch className="w-2 h-2 md:w-3 md:h-3" />}
+                            startIcon={<ContentPasteSearchRounded className="w-2 h-2 md:w-3 md:h-3" />}
                             onClick={() => scrollToSection(target.Name)}
                             sx={{
                                 fontSize: { xs: '0.625rem', md: '0.875rem' },
@@ -34,7 +34,7 @@ export default function LookupAttribute({ attribute }: { attribute: LookupAttrib
                         </Button> : 
                         <Chip 
                             key={target.Name}
-                            icon={<FileX2 className="w-2 h-2 md:w-3 md:h-3" />}
+                            icon={<ContentPasteOffRounded className="w-2 h-2 md:w-3 md:h-3" />}
                             label={target.Name}
                             size="small"
                             disabled

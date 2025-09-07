@@ -12,8 +12,7 @@ import {
     Divider,
     Container
 } from '@mui/material';
-import { ExpandMore } from '@mui/icons-material';
-import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
+import { CheckBoxOutlineBlankRounded, ChevronRightRounded, DeleteRounded, DriveFolderUploadRounded, ExpandMore, ExpandMoreRounded, FolderRounded, HardwareRounded, PeopleRounded, RttRounded, SaveRounded, SettingsRounded, SmartphoneRounded, SyncRounded } from '@mui/icons-material';
 import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagramview/panes';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -39,7 +38,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         return (
             <div className="flex flex-col h-full w-full p-4">
                 <div className="text-center text-muted-foreground">
-                    <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <FolderRounded className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Diagram tools are only available on the diagram page.</p>
                 </div>
             </div>
@@ -76,7 +75,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                     <Tab 
                         label={
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Hammer size={16} />
+                                <HardwareRounded />
                                 Build
                             </Box>
                         } 
@@ -85,7 +84,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                     <Tab 
                         label={
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Settings size={16} />
+                                <SettingsRounded />
                                 Settings
                             </Box>
                         } 
@@ -106,7 +105,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                             alignItems: 'flex-start',
                             gap: 1
                         }}>
-                            <Smartphone size={16} style={{ color: 'rgb(146 64 14)', flexShrink: 0, marginTop: 2 }} />
+                            <SmartphoneRounded style={{ color: 'rgb(146 64 14)', flexShrink: 0, marginTop: 2 }} />
                             <Box>
                                 <Typography variant="body2" sx={{ fontWeight: 500, color: 'rgb(146 64 14)', mb: 0.5 }}>
                                     Mobile Mode
@@ -131,7 +130,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 textTransform: 'none',
                                 fontWeight: 500
                             }}
-                            endIcon={isDataExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            endIcon={isDataExpanded ? <ExpandMoreRounded /> : <ChevronRightRounded />}
                         >
                             Data
                         </Button>
@@ -140,7 +139,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 <Button 
                                     variant="text" 
                                     fullWidth
-                                    startIcon={<Database size={16} />}
+                                    startIcon={<FolderRounded />}
                                     onClick={() => setIsEntitySheetOpen(true)}
                                     sx={{ 
                                         justifyContent: 'flex-start', 
@@ -153,7 +152,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 <Button 
                                     variant="text" 
                                     fullWidth
-                                    startIcon={<Users size={16} />}
+                                    startIcon={<PeopleRounded />}
                                     onClick={() => setIsGroupSheetOpen(true)}
                                     sx={{ 
                                         justifyContent: 'flex-start', 
@@ -179,7 +178,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 textTransform: 'none',
                                 fontWeight: 500
                             }}
-                            endIcon={isGeneralExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            endIcon={isGeneralExpanded ? <ExpandMoreRounded /> : <ChevronRightRounded />}
                         >
                             General
                         </Button>
@@ -188,7 +187,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 <Button 
                                     variant="text" 
                                     fullWidth
-                                    startIcon={<Square size={16} />}
+                                    startIcon={<CheckBoxOutlineBlankRounded />}
                                     onClick={addSquareToDiagram}
                                     sx={{ 
                                         justifyContent: 'flex-start', 
@@ -201,7 +200,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 <Button 
                                     variant="text" 
                                     fullWidth
-                                    startIcon={<Type size={16} />}
+                                    startIcon={<RttRounded />}
                                     onClick={addTextToDiagram}
                                     sx={{ 
                                         justifyContent: 'flex-start', 
@@ -229,7 +228,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 variant={diagramType === 'simple' ? 'contained' : 'outlined'}
                                 size="small"
                                 fullWidth
-                                startIcon={<Database size={16} />}
+                                startIcon={<FolderRounded />}
                                 onClick={() => updateDiagramType('simple')}
                                 sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                             >
@@ -239,7 +238,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 variant={diagramType === 'detailed' ? 'contained' : 'outlined'}
                                 size="small"
                                 fullWidth
-                                startIcon={<Square size={16} />}
+                                startIcon={<CheckBoxOutlineBlankRounded/>}
                                 onClick={() => updateDiagramType('detailed')}
                                 sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                             >
@@ -262,7 +261,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 variant="outlined"
                                 size="small"
                                 fullWidth
-                                startIcon={<Save size={16} />}
+                                startIcon={<SaveRounded />}
                                 onClick={saveDiagram}
                                 sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                             >
@@ -273,7 +272,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 size="small"
                                 fullWidth
                                 component="label"
-                                startIcon={<Upload size={16} />}
+                                startIcon={<DriveFolderUploadRounded />}
                                 sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                             >
                                 Load Diagram
@@ -326,7 +325,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 variant="outlined"
                                 size="small"
                                 fullWidth
-                                startIcon={<RotateCcw size={16} />}
+                                startIcon={<SyncRounded />}
                                 onClick={() => setIsResetSheetOpen(true)}
                                 sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                             >
@@ -336,7 +335,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                                 variant="outlined"
                                 size="small"
                                 fullWidth
-                                startIcon={<Trash2 size={16} />}
+                                startIcon={<DeleteRounded />}
                                 onClick={clearDiagram}
                                 sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                             >

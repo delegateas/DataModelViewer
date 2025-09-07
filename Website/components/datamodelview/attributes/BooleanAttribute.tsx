@@ -1,8 +1,7 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BooleanAttributeType } from "@/lib/Types"
-import { CheckCircle, Circle } from "lucide-react"
-import { Box, Typography, Chip, SvgIcon } from "@mui/material"
-import { CheckRounded } from "@mui/icons-material";
+import { Box, Typography, Chip } from "@mui/material"
+import { CheckCircleOutlineRounded, CheckRounded, RadioButtonCheckedRounded, RadioButtonUncheckedRounded } from "@mui/icons-material";
 
 export default function BooleanAttribute({ attribute }: { attribute: BooleanAttributeType }) {
 
@@ -26,9 +25,9 @@ export default function BooleanAttribute({ attribute }: { attribute: BooleanAttr
                 <Box className="flex items-center justify-between py-0.5 md:py-1">
                     <Box className="flex items-center gap-1">
                         {attribute.DefaultValue === true ? (
-                            <SvgIcon component={CheckCircle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
+                            <RadioButtonCheckedRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                         ) : (
-                            <SvgIcon component={Circle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
+                            <RadioButtonUncheckedRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                         )}
                         <Typography className="text-xs md:text-sm">{attribute.TrueLabel}</Typography>
                     </Box>
@@ -49,9 +48,9 @@ export default function BooleanAttribute({ attribute }: { attribute: BooleanAttr
                 <Box className="flex items-center justify-between py-0.5 md:py-1">
                     <Box className="flex items-center gap-1">
                         {attribute.DefaultValue === false ? (
-                            <SvgIcon component={CheckCircle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
+                            <RadioButtonCheckedRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                         ) : (
-                            <SvgIcon component={Circle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
+                            <RadioButtonUncheckedRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                         )}
                         <Typography className="text-xs md:text-sm">{attribute.FalseLabel}</Typography>
                     </Box>

@@ -1,9 +1,8 @@
 import { useIsMobile } from "@/hooks/use-mobile"
 import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
-import { CheckCircle, Circle, Square, CheckSquare } from "lucide-react"
-import { Box, Typography, Chip, SvgIcon } from "@mui/material"
-import { CheckRounded } from "@mui/icons-material"
+import { Box, Typography, Chip } from "@mui/material"
+import { CheckBoxOutlineBlankRounded, CheckBoxRounded, CheckRounded } from "@mui/icons-material"
 
 export default function ChoiceAttribute({ attribute, highlightMatch, highlightTerm }: { attribute: ChoiceAttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string }) {
 
@@ -32,16 +31,16 @@ export default function ChoiceAttribute({ attribute, highlightMatch, highlightTe
                                     {attribute.Type === "Multi" ? (
                                         // For multi-select, show checkboxes
                                         option.Value === attribute.DefaultValue ? (
-                                            <SvgIcon component={CheckSquare} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
+                                            <CheckBoxRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                                         ) : (
-                                            <SvgIcon component={Square} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
+                                            <CheckBoxOutlineBlankRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                                         )
                                     ) : (
                                         // For single-select, show radio buttons
                                         option.Value === attribute.DefaultValue ? (
-                                            <SvgIcon component={CheckCircle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
+                                            <CheckBoxRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                                         ) : (
-                                            <SvgIcon component={Circle} className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
+                                            <CheckBoxOutlineBlankRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                                         )
                                     )}
                                     <Typography className="text-xs md:text-sm">{highlightMatch(option.Name, highlightTerm)}</Typography>

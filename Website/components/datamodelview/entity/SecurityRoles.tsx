@@ -1,8 +1,8 @@
 'use client'
 
 import { SecurityRole, PrivilegeDepth } from "@/lib/Types";
+import { AccountTreeRounded, BlockRounded, BusinessRounded, PeopleRounded, PersonRounded, RemoveRounded } from "@mui/icons-material";
 import { Tooltip, Box, Typography, Paper, useTheme } from "@mui/material";
-import { Ban, User, Users, Boxes, Building2, Minus } from "lucide-react";
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (
@@ -103,28 +103,28 @@ function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
     let tooltip = "";
 
     if (depth === null || depth === undefined) {
-        icon = <Minus style={{ height: '16px', width: '16px', color: theme.palette.text.primary }} />;
+        icon = <RemoveRounded style={{ height: '16px', width: '16px', color: theme.palette.text.primary }} />;
         tooltip = "Unavailable";
     } else {
         switch (depth) {
             case PrivilegeDepth.None:
-                icon = <Ban style={{ height: '16px', width: '16px', color: theme.palette.error.main }} />;
+                icon = <BlockRounded style={{ height: '16px', width: '16px', color: theme.palette.error.main }} />;
                 tooltip = "None";
                 break;
             case PrivilegeDepth.Basic:
-                icon = <User style={{ height: '16px', width: '16px', color: theme.palette.text.secondary }} />;
+                icon = <PersonRounded style={{ height: '16px', width: '16px', color: theme.palette.text.secondary }} />;
                 tooltip = "User";
                 break;
             case PrivilegeDepth.Local:
-                icon = <Users style={{ height: '16px', width: '16px', color: theme.palette.text.secondary }} />;
+                icon = <PeopleRounded style={{ height: '16px', width: '16px', color: theme.palette.text.secondary }} />;
                 tooltip = "Business Unit";
                 break;
             case PrivilegeDepth.Deep:
-                icon = <Boxes style={{ height: '16px', width: '16px', color: theme.palette.info.main }} />;
+                icon = <AccountTreeRounded style={{ height: '16px', width: '16px', color: theme.palette.info.main }} />;
                 tooltip = "Parent: Child Business Units";
                 break;
             case PrivilegeDepth.Global:
-                icon = <Building2 style={{ height: '16px', width: '16px', color: theme.palette.success.main }} />;
+                icon = <BusinessRounded style={{ height: '16px', width: '16px', color: theme.palette.success.main }} />;
                 tooltip = "Organization";
                 break;
             default:

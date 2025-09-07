@@ -2,7 +2,6 @@
 
 import { EntityType, AttributeType } from "@/lib/Types"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Eye, Search, X } from "lucide-react"
 import { AttributeDetails } from "./entity/AttributeDetails"
 import BooleanAttribute from "./attributes/BooleanAttribute"
 import ChoiceAttribute from "./attributes/ChoiceAttribute"
@@ -17,7 +16,7 @@ import StringAttribute from "./attributes/StringAttribute"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
 import { Alert, Box, Button, FormControl, Input, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, useTheme } from "@mui/material"
-import { SearchRounded } from "@mui/icons-material"
+import { CloseRounded, NorthRounded, SearchRounded, SouthRounded, Visibility, VisibilityOff } from "@mui/icons-material"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
@@ -133,10 +132,10 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     }, [onVisibleCountChange, sortedAttributes.length]);
 
     const SortIcon = ({ column }: { column: SortColumn }) => {
-        if (sortColumn !== column) return <ArrowUpDown className="ml-2 h-4 w-4" />
-        if (sortDirection === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />
-        if (sortDirection === 'desc') return <ArrowDown className="ml-2 h-4 w-4" />
-        return <ArrowUpDown className="ml-2 h-4 w-4" />
+        if (sortColumn !== column) return <SouthRounded className="ml-2 h-4 w-4" />
+        if (sortDirection === 'asc') return <NorthRounded className="ml-2 h-4 w-4" />
+        if (sortDirection === 'desc') return <SouthRounded className="ml-2 h-4 w-4" />
+        return <NorthRounded className="ml-2 h-4 w-4" />
     }
 
     const attributeTypes = [
@@ -180,7 +179,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                                         title="Clear search"
                                         sx={{ minWidth: 'auto', padding: 0 }}
                                     >
-                                        <X className="h-3 w-3 md:h-4 md:w-4" />
+                                        <CloseRounded className="h-3 w-3 md:h-4 md:w-4" />
                                     </Button>
                                 </InputAdornment>
                             )
@@ -211,7 +210,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                     sx={{ minWidth: 'auto', padding: 0, borderColor: 'border.main' }}
                 >
                     {
-                        hideStandardFields ? <EyeOff className="w-3 h-3 md:w-4 md:h-4" /> : <Eye className="w-3 h-3 md:w-4 md:h-4" />
+                        hideStandardFields ? <VisibilityOff className="w-3 h-3 md:w-4 md:h-4" /> : <Visibility className="w-3 h-3 md:w-4 md:h-4" />
                     }
                 </Button>
                 {(searchQuery || typeFilter !== "all") && (
@@ -226,7 +225,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                         title="Clear filters"
                         sx={{ minWidth: 'auto', padding: 0 }}
                     >
-                        <X className="h-3 w-3 md:h-4 md:w-4" />
+                        <CloseRounded className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                 )}
             </Box>

@@ -1,9 +1,9 @@
 'use client'
 
 import { EntityType } from "@/lib/Types";
-import { Link } from "lucide-react";
 import { EntityDetails } from "./EntityDetails";
 import { Box, Typography, Paper, useTheme } from '@mui/material';
+import { LinkRounded } from "@mui/icons-material";
 
 export function EntityHeader({ entity }: { entity: EntityType }) {
     const theme = useTheme();
@@ -19,7 +19,7 @@ export function EntityHeader({ entity }: { entity: EntityType }) {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                 <Box sx={{ flexShrink: 0 }}>
                     {entity.IconBase64 == null ? 
-                        <Link 
+                        <LinkRounded 
                             style={{ 
                                 height: '24px', 
                                 width: '24px', 

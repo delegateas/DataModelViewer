@@ -1,10 +1,10 @@
 import React from 'react';
 import { IconButton, Box, Typography, Button, alpha } from '@mui/material';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 
 interface SidebarProps {
 
@@ -104,7 +104,7 @@ const Sidebar = ({ }: SidebarProps) => {
                 }
               }}
             >
-                {isOpen ? <ChevronLeft /> : <ChevronRight />}
+                {isOpen ? <ChevronLeftRounded /> : <ChevronRightRounded />}
             </IconButton>
             )}
             

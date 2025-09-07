@@ -2,12 +2,11 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Box, IconButton, Input, InputAdornment, TextField } from '@mui/material';
-import { SearchRounded } from '@mui/icons-material';
+import { CloseRounded, SearchRounded } from '@mui/icons-material';
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;
@@ -253,7 +252,7 @@ export const TimeSlicedSearch = ({
                       title="Clear search"
                       aria-label="Clear search"
                     >
-                      <X size={16} />
+                      <CloseRounded />
                     </IconButton>
                   ) : null}
                 </InputAdornment>
