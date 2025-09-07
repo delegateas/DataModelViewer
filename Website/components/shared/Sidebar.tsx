@@ -134,9 +134,9 @@ const Sidebar = ({ }: SidebarProps) => {
                 className='h-12 p-1'
             />
         </Box>
-        <Box className="flex h-full w-full">
+        <Box className="flex flex-1 w-full min-h-0">
           <Box 
-            className="flex flex-col items-center pt-4 w-sidebar h-full" 
+            className="flex flex-col items-center pt-4 w-sidebar flex-shrink-0" 
             gap={2}
             sx={{
               borderRight: 1,
@@ -187,7 +187,11 @@ const Sidebar = ({ }: SidebarProps) => {
                 </Box>
             ))}
         </Box>
-        {isOpen && element != null && element}
+        {isOpen && element != null && (
+          <Box className="overflow-y-auto no-scrollbar flex-1 min-h-0">
+            {element}
+          </Box>
+        )}
       </Box>
     </Box>
   )
