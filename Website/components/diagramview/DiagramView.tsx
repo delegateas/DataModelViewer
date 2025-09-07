@@ -18,6 +18,21 @@ import { SidebarDiagramView } from './SidebarDiagramView';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { SimpleDiagramRenderer } from './renderers/SimpleDiagramRender';
 import { DetailedDiagramRender } from './renderers/DetailedDiagramRender';
+import { Alert, AlertTitle, Box, Chip } from '@mui/material';
+import { Science } from '@mui/icons-material';
+
+export default function DiagramView({ }: IDiagramView) {
+    const { setElement, expand } = useSidebar();
+
+    useEffect(() => {
+        setElement(<SidebarDiagramView />);
+        expand();
+    }, [])
+
+    return (
+        <DiagramContent />
+    );
+}
 
 interface IDiagramView {}
 
@@ -780,44 +795,73 @@ const DiagramContent = () => {
 
     return (
         <>
-            <div className="flex flex-col flex-1">
+            <div className="flex flex-col flex-1 h-full">
                 {/* Beta Disclaimer Banner */}
-                <div className="bg-amber-50 border-b border-amber-200 px-4 py-2">
-                    <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 rounded-full bg-amber-500 flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">β</span>
-                        </div>
-                        <p className="text-sm text-amber-800">
-                            <strong>Open Beta Feature:</strong> This ER Diagram feature is currently in beta. Some functionality may not work fully. <b>we do not recommend more than 20 entities</b>
-                        </p>
-                    </div>
-                </div>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <Alert 
+                        severity="warning" 
+                        icon={<Science />}
+                        sx={{ 
+                            borderRadius: 0,
+                            '& .MuiAlert-message': {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                flexWrap: 'wrap'
+                            }
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Box component="span">
+                                <Box component="strong" sx={{ fontWeight: 'bold' }}>Open Beta Feature:</Box>
+                                {' '}This ER Diagram feature is currently in beta. Some functionality may not work fully.
+                                {' '}<Box component="strong" sx={{ fontWeight: 'bold' }}>We do not recommend more than 20 entities</Box>
+                            </Box>
+                        </Box>
+                    </Alert>
+                </Box>
                 
                 {/* Diagram Area */}
-                <div className='flex-1 flex flex-col bg-slate-50 relative' style={{
-                    backgroundSize: `${zoom * 10}%`,
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-                }}>
+                <Box
+                    className="flex-1 flex flex-col relative flex-grow"
+                    sx={{
+                        backgroundColor: 'background.default',
+                        backgroundSize: `${zoom * 10}%`,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                    }}
+                >
                     {isLoading && (
-                        <div className="absolute inset-0 bg-slate-50/50 backdrop-blur-sm z-50 flex items-center justify-center">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="flex gap-2">
+                        <Box 
+                            className="absolute inset-0 backdrop-blur-sm z-50 flex items-center justify-center"
+                            sx={{ 
+                                backgroundColor: (theme) => theme.palette.mode === 'dark' 
+                                    ? 'rgba(17, 24, 39, 0.5)' 
+                                    : 'rgba(248, 250, 252, 0.5)'
+                            }}
+                        >
+                            <Box className="flex flex-col items-center gap-4">
+                                <Box className="flex gap-2">
                                     {[...Array(3)].map((_, i) => (
-                                        <div
+                                        <Box
                                             key={i}
-                                            className="h-4 w-4 rounded-full bg-blue-500 animate-bounce"
-                                            style={{
+                                            className="h-4 w-4 rounded-full animate-bounce"
+                                            sx={{
+                                                backgroundColor: 'primary.main',
                                                 animationDelay: `${i * 0.1}s`,
                                                 animationDuration: "0.8s"
                                             }}
                                         />
                                     ))}
-                                </div>
-                                <p className="text-sm font-medium text-slate-600 animate-pulse">
+                                </Box>
+                                <Box 
+                                    component="p" 
+                                    className="text-sm font-medium animate-pulse"
+                                    sx={{ color: 'text.secondary' }}
+                                >
                                     Loading diagram...
-                                </p>
-                            </div>
-                        </div>
+                                </Box>
+                            </Box>
+                        </Box>
                     )}
                     <DiagramCanvas>
                         {/* Zoom and Coordinate Indicator */}
@@ -826,7 +870,7 @@ const DiagramContent = () => {
                             mousePosition={mousePosition}
                         />
                     </DiagramCanvas>
-                </div>
+                </Box>
             </div>
 
             {/* Entity Actions Pane */}
@@ -870,18 +914,3 @@ const DiagramContent = () => {
         </>
     )
 };
-
-export default function DiagramView({ }: IDiagramView) {
-    const { setElement, dispatch } = useSidebar();
-
-    useEffect(() => {
-        setElement(<SidebarDiagramView />);
-        dispatch({ type: 'SET_SHOW_ELEMENT', payload: true });
-    }, [setElement, dispatch])
-
-    return (
-        <DiagramViewProvider>
-            <DiagramContent />
-        </DiagramViewProvider>
-    );
-}

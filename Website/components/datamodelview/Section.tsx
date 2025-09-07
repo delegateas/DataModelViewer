@@ -9,6 +9,7 @@ import { Attributes } from "./Attributes"
 import { Relationships } from "./Relationships"
 import React from "react"
 import { Box, Paper, Tab, Tabs } from "@mui/material"
+import CustomTabPanel from "../shared/elements/TabPanel"
 
 interface ISectionProps {
     entity: EntityType;
@@ -16,30 +17,6 @@ interface ISectionProps {
     onContentChange?: () => void;
     onTabChange?: (isChanging: boolean) => void;
     search?: string;
-}
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-  className?: string;
-}
-
-function CustomTabPanel(props: TabPanelProps) {
-  const { children, value, index, className, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      className={className}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 0 }}>{children}</Box>}
-    </div>
-  );
 }
 
 export const Section = React.memo(

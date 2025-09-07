@@ -9,7 +9,8 @@ import {
     Button,
     Collapse,
     Typography,
-    Divider
+    Divider,
+    Container
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import { ChevronDown, ChevronRight, Database, Square, Type, Settings, Hammer, Users, Save, Upload, Smartphone, RotateCcw, Trash2 } from 'lucide-react';
@@ -17,6 +18,7 @@ import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagramview/panes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { GroupType } from '@/lib/Types';
+import CustomTabPanel from '../shared/elements/TabPanel';
 
 interface ISidebarDiagramViewProps { 
 
@@ -30,6 +32,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     const [isEntitySheetOpen, setIsEntitySheetOpen] = useState(false);
     const [isGroupSheetOpen, setIsGroupSheetOpen] = useState(false);
     const [isResetSheetOpen, setIsResetSheetOpen] = useState(false);
+    const [tab, setTab] = useState(0);
 
     // If not in diagram context, show a message or return null
     if (!diagramContext) {
@@ -68,8 +71,8 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
 
     return (
         <div className="flex flex-col h-full w-full">
-            <Box sx={{ width: '100%' }}>
-                <Tabs value={0} indicatorColor="primary" textColor="primary">
+            <Box className="w-full">
+                <Tabs value={tab} indicatorColor="primary" textColor="primary" onChange={(_, newValue) => setTab(newValue)} aria-label="Diagram view tabs" variant="fullWidth">
                     <Tab 
                         label={
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -89,8 +92,8 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                         sx={{ minWidth: 0, flex: 1, fontSize: '0.75rem' }} 
                     />
                 </Tabs>
-                
-                <Box sx={{ p: 2 }}>
+
+                <CustomTabPanel value={tab} index={0} className='p-4'>
                     {/* Mobile Notice */}
                     {isMobile && (
                         <Box sx={{ 
@@ -211,139 +214,137 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                             </Box>
                         </Collapse>
                     </Box>
+                </CustomTabPanel >
 
-                    <Divider sx={{ my: 2 }} />
-                    
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                Diagram Type
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                                Choose between simple or detailed entity view
-                            </Typography>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                <Button
-                                    variant={diagramType === 'simple' ? 'contained' : 'outlined'}
-                                    size="small"
-                                    fullWidth
-                                    startIcon={<Database size={16} />}
-                                    onClick={() => updateDiagramType('simple')}
-                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
-                                >
-                                    Simple View
-                                </Button>
-                                <Button
-                                    variant={diagramType === 'detailed' ? 'contained' : 'outlined'}
-                                    size="small"
-                                    fullWidth
-                                    startIcon={<Square size={16} />}
-                                    onClick={() => updateDiagramType('detailed')}
-                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
-                                >
-                                    Detailed View
-                                </Button>
-                            </Box>
-                        </Box>
-                        
-                        <Divider />
-                        
-                        <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                Save & Load
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                                Save your diagram or load an existing one
-                            </Typography>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    fullWidth
-                                    startIcon={<Save size={16} />}
-                                    onClick={saveDiagram}
-                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
-                                >
-                                    Save Diagram
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    fullWidth
-                                    component="label"
-                                    startIcon={<Upload size={16} />}
-                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
-                                >
-                                    Load Diagram
-                                    <input
-                                        type="file"
-                                        accept=".json"
-                                        onChange={handleLoadDiagram}
-                                        style={{ 
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            width: '100%',
-                                            height: '100%',
-                                            opacity: 0,
-                                            cursor: 'pointer'
-                                        }}
-                                        id="load-diagram"
-                                    />
-                                </Button>
-                            </Box>
-                        </Box>
-                        
-                        <Divider />
-                        
-                        <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                Current Settings
-                            </Typography>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                <Typography variant="caption" color="text.secondary">
-                                    Diagram Type: <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{diagramType}</span>
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Entities in Diagram: <span style={{ fontWeight: 500 }}>{currentEntities.length}</span>
-                                </Typography>
-                            </Box>
-                        </Box>
-                        
-                        <Divider />
-                        
-                        <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                Diagram Actions
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                                Reset or clear your diagram
-                            </Typography>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    fullWidth
-                                    startIcon={<RotateCcw size={16} />}
-                                    onClick={() => setIsResetSheetOpen(true)}
-                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
-                                >
-                                    Reset to Group
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    fullWidth
-                                    startIcon={<Trash2 size={16} />}
-                                    onClick={clearDiagram}
-                                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
-                                >
-                                    Clear All
-                                </Button>
-                            </Box>
+                <CustomTabPanel value={tab} index={1} className='flex flex-col p-4'>
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                            Diagram Type
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                            Choose between simple or detailed entity view
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Button
+                                variant={diagramType === 'simple' ? 'contained' : 'outlined'}
+                                size="small"
+                                fullWidth
+                                startIcon={<Database size={16} />}
+                                onClick={() => updateDiagramType('simple')}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                            >
+                                Simple View
+                            </Button>
+                            <Button
+                                variant={diagramType === 'detailed' ? 'contained' : 'outlined'}
+                                size="small"
+                                fullWidth
+                                startIcon={<Square size={16} />}
+                                onClick={() => updateDiagramType('detailed')}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                            >
+                                Detailed View
+                            </Button>
                         </Box>
                     </Box>
-                </Box>
+                
+                    <Divider className="my-4"/>
+                    
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                            Save & Load
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                            Save your diagram or load an existing one
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                fullWidth
+                                startIcon={<Save size={16} />}
+                                onClick={saveDiagram}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                            >
+                                Save Diagram
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                fullWidth
+                                component="label"
+                                startIcon={<Upload size={16} />}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                            >
+                                Load Diagram
+                                <input
+                                    type="file"
+                                    accept=".json"
+                                    onChange={handleLoadDiagram}
+                                    style={{ 
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        opacity: 0,
+                                        cursor: 'pointer'
+                                    }}
+                                    id="load-diagram"
+                                />
+                            </Button>
+                        </Box>
+                    </Box>
+                    
+                    <Divider className="my-4" />
+                
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                            Current Settings
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                                Diagram Type: <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{diagramType}</span>
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                Entities in Diagram: <span style={{ fontWeight: 500 }}>{currentEntities.length}</span>
+                            </Typography>
+                        </Box>
+                    </Box>
+                    
+                    <Divider className="my-4" />
+                    
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                            Diagram Actions
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                            Reset or clear your diagram
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                fullWidth
+                                startIcon={<RotateCcw size={16} />}
+                                onClick={() => setIsResetSheetOpen(true)}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                            >
+                                Reset to Group
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                fullWidth
+                                startIcon={<Trash2 size={16} />}
+                                onClick={clearDiagram}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                            >
+                                Clear All
+                            </Button>
+                        </Box>
+                    </Box>
+                </CustomTabPanel>
             </Box>
 
             {/* Add Entity Pane */}
