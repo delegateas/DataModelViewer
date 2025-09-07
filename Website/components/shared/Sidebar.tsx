@@ -1,10 +1,10 @@
 import React from 'react';
-import { IconButton, Box, Typography, Button, alpha } from '@mui/material';
+import { IconButton, Box, Typography, Button, alpha, Badge } from '@mui/material';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
+import { AutoAwesomeRounded, ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 
 interface SidebarProps {
 
@@ -60,6 +60,7 @@ const Sidebar = ({ }: SidebarProps) => {
           href: '/processes',
           icon: <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24"><path fill="currentColor" d="M16.443 7.328a.75.75 0 0 1 1.059-.056l1.737 1.564c.737.663 1.347 1.212 1.767 1.71c.44.525.754 1.088.754 1.784c0 .695-.313 1.258-.754 1.782c-.42.499-1.03 1.049-1.767 1.711l-1.737 1.564a.75.75 0 1 1-1.004-1.115l1.697-1.527c.788-.709 1.319-1.19 1.663-1.598c.33-.393.402-.622.402-.817c0-.196-.072-.425-.402-.818c-.344-.409-.875-.889-1.663-1.598l-1.697-1.527a.75.75 0 0 1-.056-1.06m-8.94 1.06a.75.75 0 0 0-1.004-1.115L4.761 8.836c-.737.663-1.347 1.212-1.767 1.71c-.44.525-.754 1.088-.754 1.784c0 .695.313 1.258.754 1.782c.42.499 1.03 1.049 1.767 1.711l1.737 1.564a.75.75 0 1 0 1.004-1.115l-1.697-1.527c-.788-.709-1.319-1.19-1.663-1.598c-.33-.393-.402-.622-.402-.817c0-.196.072-.425.402-.818c.344-.409.875-.889 1.663-1.598z"></path><path fill="currentColor" d="M14.182 4.276a.75.75 0 0 1 .53.918l-3.974 14.83a.75.75 0 1 1-1.449-.389l3.974-14.83a.75.75 0 0 1 .919-.53" opacity={0.5}></path></svg>,
           active: pathname === '/processes',
+          new: true,
         }
     ];
 
@@ -144,20 +145,22 @@ const Sidebar = ({ }: SidebarProps) => {
             }}
           >
             {navItems.map((item, itemIndex) => (
-                <Box key={itemIndex} className="relative w-full">
+                <Box key={itemIndex} className="relative w-full max-w-full">
+                  <Badge variant='dot' color='primary' className='w-full' invisible={!item.new} key={itemIndex} sx={{'& .MuiBadge-badge': {top: 8, right: 8}}}>
                     <Link
-                        href={!item.disabled ? item.href || '#' : '#'}
-                        onClick={(e) => {
-                            if (item.action) {
-                                item.action();
-                            }
-                            if (!item.disabled) {
-                                handleNavClick();
-                            }
-                        }}
+                      className="w-full"
+                      href={!item.disabled ? item.href || '#' : '#'}
+                      onClick={(e) => {
+                          if (item.action) {
+                              item.action();
+                          }
+                          if (!item.disabled) {
+                              handleNavClick();
+                          }
+                      }}
                     >
                         <Box
-                            className="flex flex-col items-center px-4 py-1.5 mx-1 rounded-lg"
+                            className="flex flex-col items-center px-4 py-1.5 mx-1 rounded-lg relative"
                             sx={{
                                 color: item.active 
                                     ? 'primary.main' 
@@ -184,6 +187,7 @@ const Sidebar = ({ }: SidebarProps) => {
                             </Typography>
                         </Box>
                     </Link>
+                  </Badge>
                 </Box>
             ))}
         </Box>
