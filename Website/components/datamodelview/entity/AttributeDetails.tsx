@@ -1,6 +1,6 @@
 'use client'
 
-import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
+import { AttributeType, CalculationMethods, ComponentType, RequiredLevel } from "@/lib/Types";
 import { Tooltip } from "@mui/material";
 import { Calculator, CircleAlert, CirclePlus, Eye, Lock, Sigma, Zap } from "lucide-react";
 
@@ -34,11 +34,9 @@ export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
         details.push({ icon: <Lock className="h-4 w-4" />, tooltip: "Field Security" });
     }
 
-    if (attribute.HasPluginStep) {
-        const pluginTypesTooltip = attribute.PluginTypeNames.length > 0 
-            ? `Plugin Steps: ${attribute.PluginTypeNames.join(', ')}`
-            : "Plugin Step";
-        details.push({ icon: <Zap className="h-4 w-4" />, tooltip: pluginTypesTooltip });
+    if (attribute.AttributeUsages.some(a => a.ComponentType == ComponentType.Plugin)) {
+        const tooltip = `Plugins ${attribute.AttributeUsages.map(au => au.Name).join(", ")}`;
+        details.push({ icon: <Zap className="h-4 w-4" />, tooltip });
     }
 
     return (

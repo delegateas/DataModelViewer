@@ -200,7 +200,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                             <div 
                                                 className="h-4 w-4"
                                                 style={{
-                                                    mask: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                                    maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
                                                     maskSize: 'contain',
                                                     maskRepeat: 'no-repeat',
                                                     maskPosition: 'center',
@@ -211,7 +211,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                                             <div 
                                                 className="h-4 w-4"
                                                 style={{
-                                                    mask: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                                    maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
                                                     maskSize: 'contain',
                                                     maskRepeat: 'no-repeat',
                                                     maskPosition: 'center',

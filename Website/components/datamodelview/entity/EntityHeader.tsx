@@ -29,7 +29,7 @@ export function EntityHeader({ entity }: { entity: EntityType }) {
                         <div 
                             className="h-6 w-6"
                             style={{
-                                mask: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
                                 maskSize: 'contain',
                                 maskRepeat: 'no-repeat',
                                 maskPosition: 'center',

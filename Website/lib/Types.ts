@@ -41,12 +41,41 @@ export const enum CalculationMethods {
     Rollup = 1,
 }
 
+export enum ComponentType
+{
+    PowerAutomateFlow,
+    Plugin,
+    WebResource,
+    WorkflowActivity,
+    CustomApi
+}
+export enum LocationType
+{
+    Trigger
+}
+
+export enum OperationType
+{
+    Create,
+    Read,
+    Update,
+    Delete,
+    List,
+    Other
+}
+
+export type UsageType = {
+    Name: string,
+    ComponentType: ComponentType,
+    LocationType: LocationType,
+    OperationType: OperationType
+}
+
 export type BaseAttribute = {
+    AttributeUsages: UsageType[];
     IsPrimaryId: boolean;
     IsCustomAttribute: boolean;
     IsStandardFieldModified: boolean;
-    HasPluginStep: boolean;
-    PluginTypeNames: string[];
     DisplayName: string,
     SchemaName: string,
     Description: string | null,
