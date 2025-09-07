@@ -50,7 +50,7 @@ const Layout = ({ children, className }: LayoutProps) => {
 
       <Box className="flex flex-col flex-1 min-w-0 relative h-screen">
         <Header />
-        <Box className="flex-1 overflow-y-auto">
+        <Box className="flex-1 overflow-y-auto" sx={{ backgroundColor: 'background.default' }}>
           <Container maxWidth="xl" className='h-full w-full'>
             {children}
           </Container>

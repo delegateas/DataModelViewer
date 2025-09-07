@@ -76,8 +76,8 @@ export const createAppTheme = (mode: PaletteMode) => createTheme({
       disabled: mode === 'dark' ? '#6b7280' : '#9ca3af', // Disabled text colors
     },
     background: {
-      default: mode === 'dark' ? '#111827' : '#ffffff', // Dark background in dark mode
-      paper: mode === 'dark' ? '#1f2937' : '#ffffff', // Dark paper background in dark mode
+      default: mode === 'dark' ? '#111827' : '#fafafa', 
+      paper: mode === 'dark' ? '#1f2937' : '#ffffff',
     },
     divider: mode === 'dark' ? '#374151' : '#e5e7eb', // Same as border.main for consistency
     grey: {

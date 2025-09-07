@@ -3,6 +3,7 @@ import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
 import { CheckCircle, Circle, Square, CheckSquare } from "lucide-react"
 import { Box, Typography, Chip, SvgIcon } from "@mui/material"
+import { CheckRounded } from "@mui/icons-material"
 
 export default function ChoiceAttribute({ attribute, highlightMatch, highlightTerm }: { attribute: ChoiceAttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string }) {
 
@@ -14,18 +15,11 @@ export default function ChoiceAttribute({ attribute, highlightMatch, highlightTe
                 <Typography className="font-semibold text-xs md:text-sm md:font-bold">{attribute.Type}-select</Typography>
                 {attribute.DefaultValue !== null && attribute.DefaultValue !== -1 && !isMobile && (
                     <Chip 
-                        icon={<CheckCircle className="w-2 h-2 md:w-3 md:h-3" />}
+                        icon={<CheckRounded className="w-2 h-2 md:w-3 md:h-3" />}
                         label={`Default: ${attribute.Options.find(o => o.Value === attribute.DefaultValue)?.Name}`}
                         size="small"
-                        sx={{ 
-                            fontSize: { xs: '0.625rem', md: '0.875rem' },
-                            height: { xs: '16px', md: '24px' },
-                            backgroundColor: 'success.light',
-                            color: 'success.dark',
-                            '& .MuiChip-icon': { 
-                                fontSize: { xs: '0.5rem', md: '0.75rem' } 
-                            }
-                        }}
+                        color="success"
+                        variant="outlined"
                     />
                 )}
             </Box>

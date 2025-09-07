@@ -2,6 +2,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { BooleanAttributeType } from "@/lib/Types"
 import { CheckCircle, Circle } from "lucide-react"
 import { Box, Typography, Chip, SvgIcon } from "@mui/material"
+import { CheckRounded } from "@mui/icons-material";
 
 export default function BooleanAttribute({ attribute }: { attribute: BooleanAttributeType }) {
 
@@ -13,18 +14,11 @@ export default function BooleanAttribute({ attribute }: { attribute: BooleanAttr
                 <Typography className="font-semibold text-xs md:text-sm md:font-bold">Boolean</Typography>
                 {attribute.DefaultValue !== null && !isMobile && (
                     <Chip 
-                        icon={<CheckCircle className="w-2 h-2 md:w-3 md:h-3" />}
+                        icon={<CheckRounded className="w-2 h-2 md:w-3 md:h-3" />}
                         label={`Default: ${attribute.DefaultValue === true ? attribute.TrueLabel : attribute.FalseLabel}`}
                         size="small"
-                        sx={{ 
-                            fontSize: { xs: '0.625rem', md: '0.875rem' },
-                            height: { xs: '16px', md: '24px' },
-                            backgroundColor: 'success.light',
-                            color: 'success.dark',
-                            '& .MuiChip-icon': { 
-                                fontSize: { xs: '0.5rem', md: '0.75rem' } 
-                            }
-                        }}
+                        color="success"
+                        variant="outlined"
                     />
                 )}
             </Box>
