@@ -604,7 +604,6 @@ namespace Generator
                 foreach (var step in stepResults.Entities)
                 {
                     var filteringAttributes = step.GetAttributeValue<string>("filteringattributes");
-                    var entityLogicalName = step.GetAttributeValue<AliasedValue>("filter.primaryobjecttypecode")?.Value as string;
                     var pluginTypeName = step.GetAttributeValue<AliasedValue>("plugintype.name")?.Value as string;
                     
                     if (string.IsNullOrEmpty(filteringAttributes) || string.IsNullOrEmpty(entityLogicalName) || string.IsNullOrEmpty(pluginTypeName))
