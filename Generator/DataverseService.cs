@@ -369,6 +369,138 @@ namespace Generator
                 .ToList();
         }
 
+        public async Task<DTO.SolutionOverview> GetSolutionOverview()
+        {
+            var solutionNameArg = configuration["DataverseSolutionNames"];
+            if (solutionNameArg == null)
+            {
+                throw new Exception("Specify one or more solutions");
+            }
+            var solutionNames = solutionNameArg.Split(",").Select(x => x.Trim()).ToList();
+
+            // Get solution details with display names
+            var solutionQuery = new QueryExpression("solution")
+            {
+                ColumnSet = new ColumnSet("solutionid", "uniquename", "friendlyname"),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression("uniquename", ConditionOperator.In, solutionNames.Select(x => x.ToLower()).ToList())
+                    }
+                }
+            };
+
+            var solutionEntities = (await client.RetrieveMultipleAsync(solutionQuery)).Entities;
+            var solutions = new List<DTO.Solution>();
+
+            foreach (var solutionEntity in solutionEntities)
+            {
+                var solutionId = solutionEntity.GetAttributeValue<Guid>("solutionid");
+                var uniqueName = solutionEntity.GetAttributeValue<string>("uniquename");
+                var displayName = solutionEntity.GetAttributeValue<string>("friendlyname");
+
+                // Get components for this specific solution
+                var componentQuery = new QueryExpression("solutioncomponent")
+                {
+                    ColumnSet = new ColumnSet("objectid", "componenttype", "rootcomponentbehavior"),
+                    Criteria = new FilterExpression(LogicalOperator.And)
+                    {
+                        Conditions =
+                        {
+                            new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20, 92 }),
+                            new ConditionExpression("solutionid", ConditionOperator.Equal, solutionId)
+                        }
+                    }
+                };
+
+                var componentEntities = (await client.RetrieveMultipleAsync(componentQuery)).Entities;
+                var components = componentEntities.Select(e => new DTO.SolutionComponent(
+                    e.GetAttributeValue<Guid>("objectid"),
+                    e.GetAttributeValue<OptionSetValue>("componenttype").Value,
+                    e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1,
+                    GetComponentTypeName(e.GetAttributeValue<OptionSetValue>("componenttype").Value),
+                    null // Component display name will be filled later if needed
+                )).ToList();
+
+                solutions.Add(new DTO.Solution(solutionId, uniqueName, displayName, components));
+            }
+
+            // Calculate overlaps
+            var overlaps = CalculateComponentOverlaps(solutions);
+
+            return new DTO.SolutionOverview(solutions, overlaps);
+        }
+
+        private static string GetComponentTypeName(int componentType)
+        {
+            return componentType switch
+            {
+                1 => "Entity",
+                2 => "Attribute", 
+                20 => "Security Role",
+                92 => "Plugin Step",
+                _ => "Unknown"
+            };
+        }
+
+        private static List<DTO.ComponentOverlap> CalculateComponentOverlaps(List<DTO.Solution> solutions)
+        {
+            var overlaps = new List<DTO.ComponentOverlap>();
+            
+            // Generate all possible combinations of solutions
+            for (int i = 1; i <= solutions.Count; i++)
+            {
+                var combinations = GetCombinations(solutions, i);
+                foreach (var combination in combinations)
+                {
+                    var solutionNames = combination.Select(s => s.UniqueName).ToList();
+                    var sharedComponents = GetSharedComponents(combination);
+                    
+                    if (sharedComponents.Any())
+                    {
+                        overlaps.Add(new DTO.ComponentOverlap(
+                            solutionNames,
+                            sharedComponents,
+                            sharedComponents.Count
+                        ));
+                    }
+                }
+            }
+
+            return overlaps;
+        }
+
+        private static IEnumerable<List<T>> GetCombinations<T>(List<T> list, int length)
+        {
+            if (length == 1) return list.Select(t => new List<T> { t });
+
+            return GetCombinations(list, length - 1)
+                .SelectMany(t => list.Where(e => list.IndexOf(e) > list.IndexOf(t.Last())), 
+                           (t1, t2) => t1.Concat(new List<T> { t2 }).ToList());
+        }
+
+        private static List<DTO.SolutionComponent> GetSharedComponents(List<DTO.Solution> solutions)
+        {
+            if (!solutions.Any()) return new List<DTO.SolutionComponent>();
+
+            var firstSolutionComponents = solutions.First().Components;
+            var sharedComponents = new List<DTO.SolutionComponent>();
+
+            foreach (var component in firstSolutionComponents)
+            {
+                var isSharedAcrossAll = solutions.Skip(1).All(s => 
+                    s.Components.Any(c => c.ObjectId == component.ObjectId && c.ComponentType == component.ComponentType));
+
+                if (isSharedAcrossAll)
+                {
+                    sharedComponents.Add(component);
+                }
+            }
+
+            return sharedComponents;
+        }
+
         private async Task<Dictionary<string, List<SecurityRole>>> GetSecurityRoles(List<Guid> rolesInSolution, Dictionary<string, SecurityPrivilegeMetadata[]> priviledges)
         {
             if (rolesInSolution.Count == 0) return [];

@@ -200,3 +200,29 @@ export type Key = {
     LogicalName: string,
     KeyAttributes: string[]
 }
+
+export type SolutionType = {
+    SolutionId: string,
+    UniqueName: string,
+    DisplayName: string,
+    Components: SolutionComponentType[]
+}
+
+export type SolutionComponentType = {
+    ObjectId: string,
+    ComponentType: number,
+    RootComponentBehavior: number,
+    ComponentTypeName: string | null,
+    ComponentDisplayName: string | null
+}
+
+export type ComponentOverlapType = {
+    SolutionNames: string[],
+    SharedComponents: SolutionComponentType[],
+    ComponentCount: number
+}
+
+export type SolutionOverviewType = {
+    Solutions: SolutionType[],
+    Overlaps: ComponentOverlapType[]
+}
