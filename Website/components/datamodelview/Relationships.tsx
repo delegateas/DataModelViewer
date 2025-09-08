@@ -138,17 +138,13 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
 
     return <>
         <Box 
+            className="p-1 md:p-2 gap-1 md:gap-2 border-b flex flex-col"
             sx={{ 
-                p: { xs: 1, md: 2 }, 
-                gap: { xs: 1, md: 2 }, 
-                borderBottom: 1, 
                 borderColor: 'border.main',
-                display: 'flex', 
-                flexDirection: 'column',
                 backgroundColor: 'background.paper'
             }}
         >
-            <Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'center' }}>
+            <Box className="flex gap-1 md:gap-2 items-center">
                 <TextField
                     size="small"
                     placeholder="Search relationships..."
@@ -159,8 +155,8 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                             setSearchQuery("")
                         }
                     }}
+                    className="flex-grow"
                     sx={{ 
-                        flexGrow: 1,
                         '& .MuiInputBase-input': {
                             fontSize: { xs: '0.75rem', md: '0.875rem' }
                         }
@@ -175,9 +171,9 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                         size="small"
                                         onClick={() => setSearchQuery("")}
                                         title="Clear search"
-                                        sx={{ minWidth: 'auto', padding: 0 }}
+                                        className="min-w-0 p-0"
                                     >
-                                        <ClearRounded sx={{ fontSize: { xs: '0.75rem', md: '1rem' } }} />
+                                        <ClearRounded className="text-xs md:text-base" />
                                     </Button>
                                 </InputAdornment>
                             )
@@ -185,7 +181,7 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                     }}   
                 />
                 <FormControl size="small">
-                    <InputLabel id="relationship-type-filter-label" sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
+                    <InputLabel id="relationship-type-filter-label" className="text-xs md:text-sm">
                         Filter by type
                     </InputLabel>
                     <Select 
@@ -193,10 +189,10 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                         onChange={(e) => setTypeFilter(e.target.value)}
                         label="Filter by type"
                         labelId="relationship-type-filter-label"
-                        sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+                        className="text-xs md:text-sm"
                     >
                         {relationshipTypes.map(type => (
-                            <MenuItem key={type.value} value={type.value} sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
+                            <MenuItem key={type.value} value={type.value} className="text-xs md:text-sm">
                                 {type.label}
                             </MenuItem>
                         ))}
@@ -211,46 +207,34 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                             setTypeFilter("all")
                         }}
                         title="Clear filters"
-                        sx={{ 
-                            minWidth: 'auto', 
-                            padding: 0,
-                            height: { xs: '32px', md: '40px' },
-                            width: { xs: '32px', md: '40px' }
-                        }}
+                        className="min-w-0 p-0 h-8 w-8 md:h-10 md:w-10"
                     >
-                        <ClearRounded sx={{ fontSize: { xs: '0.75rem', md: '1rem' } }} />
+                        <ClearRounded className="text-xs md:text-base" />
                     </Button>
                 )}
             </Box>
             {search && search.length >= 3 && searchQuery && (
                 <Box 
+                    className="flex items-center gap-1 text-xs md:text-sm px-1 py-0.5 rounded border"
                     sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 1, 
-                        fontSize: { xs: '0.75rem', md: '0.875rem' },
                         color: 'warning.dark',
                         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255, 243, 224, 1)',
-                        border: 1,
-                        borderColor: 'warning.main',
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 1
+                        borderColor: 'warning.main'
                     }}
                 >
-                    <SearchRounded sx={{ fontSize: { xs: '0.75rem', md: '1rem' } }} />
-                    <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
+                    <SearchRounded className="text-xs md:text-base" />
+                    <Typography variant="body2" className="text-xs md:text-sm">
                         Warning: Global search &quot;{search}&quot; is also active
                     </Typography>
                 </Box>
             )}
         </Box>
-        <Box sx={{ overflowX: 'auto' }}>
+        <Box className="overflow-x-auto">
             {getSortedRelationships().length === 0 ? (
-                <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>
+                <Box className="p-4 text-center" sx={{ color: 'text.secondary' }}>
                     {searchQuery || typeFilter !== "all" ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2">
+                        <Box className="flex flex-col items-center gap-1">
+                            <Typography variant="body2" className="text-xs md:text-sm">
                                 {searchQuery && typeFilter !== "all" 
                                     ? `No ${typeFilter === "many-to-many" ? "many-to-many" : "one-to-many"} relationships found matching "${searchQuery}"`
                                     : searchQuery 
@@ -264,25 +248,22 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                     setSearchQuery("")
                                     setTypeFilter("all")
                                 }}
+                                className="text-xs md:text-sm"
                                 sx={{ color: 'primary.main' }}
                             >
                                 Clear filters
                             </Button>
                         </Box>
                     ) : (
-                        <Typography variant="body2">No relationships available for this table</Typography>
+                        <Typography variant="body2" className="text-xs md:text-sm">No relationships available for this table</Typography>
                     )}
                 </Box>
             ) : (
                 <Box 
-                    className="overflow-x-auto md:overflow-x-visible"
+                    className="border-t max-w-full overflow-x-auto md:overflow-x-visible"
                     sx={{ 
-                        borderTop: 1, 
                         borderColor: 'border.main',
-                        // Mobile: allow horizontal scrolling within the component
-                        maxWidth: '100%',
                         '@media (max-width: 768px)': {
-                            overflowX: 'auto',
                             '&::-webkit-scrollbar': {
                                 height: '8px',
                             },
@@ -297,102 +278,63 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                     }}
                 >
                     <Table 
-                        sx={{ 
-                            width: '100%', 
-                            borderColor: 'border.main',
-                            // Ensure minimum width on mobile to enable horizontal scrolling
-                            minWidth: { xs: '900px', md: 'auto' }
-                        }}
+                        className="w-full min-w-[900px] md:min-w-0"
+                        sx={{ borderColor: 'border.main' }}
                     >
                     <TableHead sx={{ backgroundColor: 'background.paper' }}>
-                        <TableRow sx={{ borderBottom: 2, borderColor: 'border.main' }}>
+                        <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
                             <TableCell 
-                                sx={{ 
-                                    width: '15%', 
-                                    color: 'text.primary',
-                                    fontWeight: 600,
-                                    py: { xs: 1, md: 1.5 },
-                                    fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                    cursor: 'pointer'
-                                }}
+                                className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
                                 onClick={() => handleSort('name')}
+                                sx={{ color: 'text.primary' }}
                             >
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box className="flex items-center">
                                     Name
                                     <SortIcon column="name" />
                                 </Box>
                             </TableCell>
                             <TableCell 
-                                sx={{ 
-                                    width: '15%', 
-                                    color: 'text.primary',
-                                    fontWeight: 600,
-                                    py: { xs: 1, md: 1.5 },
-                                    fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                    cursor: 'pointer'
-                                }}
+                                className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
                                 onClick={() => handleSort('tableSchema')}
+                                sx={{ color: 'text.primary' }}
                             >
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box className="flex items-center">
                                     Related Table
                                     <SortIcon column="tableSchema" />
                                 </Box>
                             </TableCell>
                             <TableCell 
-                                sx={{ 
-                                    width: '15%', 
-                                    color: 'text.primary',
-                                    fontWeight: 600,
-                                    py: { xs: 1, md: 1.5 },
-                                    fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                    cursor: 'pointer'
-                                }}
+                                className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
                                 onClick={() => handleSort('lookupField')}
+                                sx={{ color: 'text.primary' }}
                             >
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box className="flex items-center">
                                     Lookup Field
                                     <SortIcon column="lookupField" />
                                 </Box>
                             </TableCell>
                             <TableCell 
-                                sx={{ 
-                                    width: '10%', 
-                                    color: 'text.primary',
-                                    fontWeight: 600,
-                                    py: { xs: 1, md: 1.5 },
-                                    fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                    cursor: 'pointer'
-                                }}
+                                className="w-[10%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
                                 onClick={() => handleSort('type')}
+                                sx={{ color: 'text.primary' }}
                             >
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box className="flex items-center">
                                     Type
                                     <SortIcon column="type" />
                                 </Box>
                             </TableCell>
                             <TableCell 
-                                sx={{ 
-                                    width: '25%', 
-                                    color: 'text.primary',
-                                    fontWeight: 600,
-                                    py: { xs: 1, md: 1.5 },
-                                    fontSize: { xs: '0.75rem', md: '0.875rem' }
-                                }}
+                                className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                sx={{ color: 'text.primary' }}
                             >
                                 Behavior
                             </TableCell>
                             <TableCell 
-                                sx={{ 
-                                    width: '20%', 
-                                    color: 'text.primary',
-                                    fontWeight: 600,
-                                    py: { xs: 1, md: 1.5 },
-                                    fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                    cursor: 'pointer'
-                                }}
+                                className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
                                 onClick={() => handleSort('schemaName')}
+                                sx={{ color: 'text.primary' }}
                             >
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box className="flex items-center">
                                     Schema Name
                                     <SortIcon column="schemaName" />
                                 </Box>
@@ -403,10 +345,9 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                         {sortedRelationships.map((relationship, index) =>
                             <TableRow 
                                 key={relationship.RelationshipSchema}
+                                className="transition-colors duration-150 border-b"
                                 sx={{
                                     '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
-                                    transition: 'background-color 0.15s',
-                                    borderBottom: 1,
                                     borderColor: 'border.main',
                                     backgroundColor: index % 2 === 0 
                                         ? 'background.paper' 
@@ -415,22 +356,16 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                             : 'rgba(0, 0, 0, 0.02)'
                                 }}
                             >
-                                <TableCell sx={{ wordBreak: 'break-word', py: { xs: 1, md: 1.5 }, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
+                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
                                     {highlightMatch(relationship.Name, highlightTerm)}
                                 </TableCell>
-                                <TableCell sx={{ py: { xs: 1, md: 1.5 } }}>
+                                <TableCell className="py-1 md:py-1.5">
                                     <Button
                                         key={relationship.TableSchema}
                                         variant="text"
+                                        className="p-0 text-xs md:text-base break-words text-left justify-start underline hover:no-underline"
                                         sx={{ 
-                                            p: 0, 
-                                            fontSize: { xs: '0.75rem', md: '1rem' },
-                                            color: 'primary.main',
-                                            textDecoration: 'underline',
-                                            '&:hover': { textDecoration: 'none' },
-                                            wordBreak: 'break-word',
-                                            textAlign: 'left',
-                                            justifyContent: 'flex-start'
+                                            color: 'primary.main'
                                         }}
                                         onClick={() => {
                                             dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema })
@@ -440,16 +375,16 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                         {highlightMatch(relationship.TableSchema, highlightTerm)}
                                     </Button>
                                 </TableCell>
-                                <TableCell sx={{ wordBreak: 'break-word', py: { xs: 1, md: 1.5 }, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
+                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
                                     {relationship.LookupDisplayName}
                                 </TableCell>
-                                <TableCell sx={{ py: { xs: 1, md: 1.5 }, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
+                                <TableCell className="py-1 md:py-1.5 text-xs md:text-sm">
                                     {relationship.IsManyToMany ? "N:N" : "1:N"}
                                 </TableCell>
-                                <TableCell sx={{ py: { xs: 1, md: 1.5 } }}>
+                                <TableCell className="py-1 md:py-1.5">
                                     <CascadeConfiguration config={relationship.CascadeConfiguration} />
                                 </TableCell>
-                                <TableCell sx={{ wordBreak: 'break-word', py: { xs: 1, md: 1.5 }, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
+                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
                                     {relationship.RelationshipSchema}
                                 </TableCell>
                             </TableRow>

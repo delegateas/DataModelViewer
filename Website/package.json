@@ -20,7 +20,7 @@
     "@mui/material-nextjs": "^7.3.2",
     "@nivo/core": "^0.99.0",
     "@nivo/pie": "^0.99.0",
-    "@tailwindcss/postcss": "^4.1.12",
+    "@tailwindcss/postcss": "^4.1.13",
     "@tanstack/react-virtual": "^3.13.12",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -33,7 +33,7 @@
     "react-markdown": "^10.1.0",
     "react-window": "^1.8.11",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.19",

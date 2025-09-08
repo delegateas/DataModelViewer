@@ -21,7 +21,7 @@ interface INavItemProps {
 
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const { currentSection, currentGroup, scrollToSection, loadingSection } = useDatamodelView();
-    const { close } = useSidebar();
+    const { close: closeSidebar } = useSidebar();
     const theme = useTheme();
     const isMobile = useIsMobile();
 
@@ -110,7 +110,9 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
             dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: sectionId });
 
             // On phone - close
-            if (isMobile) close();
+            if (!!isMobile) {
+                closeSidebar();
+            }
             
             // Defer scroll operation to next frame to prevent blocking
             requestAnimationFrame(() => {

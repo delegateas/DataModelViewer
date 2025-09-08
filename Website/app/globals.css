@@ -1,6 +1,10 @@
 @layer theme, base, mui, components, utilities;
 @import 'tailwindcss';
 
+@theme {
+  --breakpoint-md: 56.25rem; /* 900px to match use-mobile.tsx MOBILE_BREAKPOINT */
+}
+
 @layer theme {
   :root {
     --font-family-sans: "Roboto", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -30,7 +34,6 @@
 }
 
 @layer utilities {
-
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
