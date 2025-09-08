@@ -1,6 +1,6 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LogOut, Info, Database, PencilRuler, PlugZap, Sparkles, Home, ChartPie } from "lucide-react";
+import { LogOut, Info, Database, PencilRuler, PlugZap, Sparkles, Home, ChartPie, Target } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import { useSidebarDispatch } from "@/contexts/SidebarContext";
 import { Tooltip, TooltipContent } from "./ui/tooltip";
@@ -12,6 +12,14 @@ const navItems = [
     icon: <Home />,
     href: "/",
     active: true,
+    disabled: false,
+    new: true,
+  },
+  {
+    label: "Solution Overview",
+    icon: <Target />,
+    href: "/solution-overview",
+    active: false,
     disabled: false,
     new: true,
   },

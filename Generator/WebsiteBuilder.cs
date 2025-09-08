@@ -9,12 +9,14 @@ internal class WebsiteBuilder
 {
     private readonly IConfiguration configuration;
     private readonly List<Record> records;
+    private readonly DTO.SolutionOverview solutionOverview;
     private readonly string OutputFolder;
 
-    public WebsiteBuilder(IConfiguration configuration, List<Record> records)
+    public WebsiteBuilder(IConfiguration configuration, List<Record> records, DTO.SolutionOverview solutionOverview)
     {
         this.configuration = configuration;
         this.records = records;
+        this.solutionOverview = solutionOverview;
 
         // Assuming execution in bin/xxx/net8.0
         OutputFolder = configuration["OutputFolder"] ?? Path.Combine(System.Reflection.Assembly.GetExecutingAssembly().Location, "../../../../../Website/generated");
@@ -23,7 +25,7 @@ internal class WebsiteBuilder
     internal void AddData()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("import { GroupType } from \"@/lib/Types\";");
+        sb.AppendLine("import { GroupType, SolutionOverviewType } from \"@/lib/Types\";");
         sb.AppendLine("");
         sb.AppendLine($"export const LastSynched: Date = new Date('{DateTimeOffset.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}');");
         var logoUrl = configuration.GetValue<string?>("Logo", defaultValue: null);
@@ -48,7 +50,9 @@ internal class WebsiteBuilder
             sb.AppendLine("  },");
         }
 
-        sb.AppendLine("]");
+        sb.AppendLine("];");
+        sb.AppendLine("");
+        sb.AppendLine($"export const SolutionOverview: SolutionOverviewType = {JsonConvert.SerializeObject(solutionOverview)};");
 
         File.WriteAllText(Path.Combine(OutputFolder, "Data.ts"), sb.ToString());
     }
