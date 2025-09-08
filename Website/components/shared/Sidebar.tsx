@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconButton, Box, Typography, Button, alpha, Badge } from '@mui/material';
+import { IconButton, Box, Typography, Button, alpha, Badge, Tooltip } from '@mui/material';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -145,6 +145,7 @@ const Sidebar = ({ }: SidebarProps) => {
             }}
           >
             {navItems.map((item, itemIndex) => (
+              <Tooltip key={itemIndex} title={item.disabled ? `Coming soon... (${item.label})` : item.label} placement="right" arrow>
                 <Box key={itemIndex} className="relative w-full max-w-full">
                   <Badge variant='dot' color='primary' className='w-full' invisible={!item.new} key={itemIndex} sx={{'& .MuiBadge-badge': {top: 8, right: 8}}}>
                     <Link
@@ -189,6 +190,7 @@ const Sidebar = ({ }: SidebarProps) => {
                     </Link>
                   </Badge>
                 </Box>
+                </Tooltip>
             ))}
         </Box>
         {isOpen && element != null && (
