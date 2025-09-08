@@ -24,7 +24,7 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
         '#EC4899', // pink
     ];
 
-    // Helper function to get component type summary
+    // Helper function to get component type summary as array for vertical display
     const getComponentTypeSummary = (components: SolutionComponentType[]) => {
         const typeCounts = components.reduce((acc, component) => {
             const type = component.ComponentTypeName || 'Unknown';
@@ -33,8 +33,7 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
         }, {} as Record<string, number>);
 
         return Object.entries(typeCounts)
-            .map(([type, count]) => `${count} ${type}${count > 1 ? 's' : ''}`)
-            .join(', ');
+            .map(([type, count]) => `${count} ${type}${count > 1 ? 's' : ''}`);
     };
 
     // For simplicity, we'll render based on the number of solutions
@@ -51,7 +50,7 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
     function renderSingleSolution() {
         const solution = solutions[0];
         const overlap = overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution.UniqueName);
-        const typeSummary = overlap ? getComponentTypeSummary(overlap.SharedComponents) : '';
+        const typeSummary = overlap ? getComponentTypeSummary(overlap.SharedComponents) : [];
         
         return (
             <div className="flex items-center justify-center h-80">
@@ -67,17 +66,24 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
                         className="cursor-pointer hover:fillOpacity-0.8"
                         onClick={() => overlap && onOverlapClick(overlap.SolutionNames, overlap.SharedComponents)}
                     />
-                    <text x="200" y="140" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-lg">
+                    <text x="200" y="130" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-lg">
                         {solution.DisplayName}
                     </text>
-                    <text x="200" y="160" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
+                    <text x="200" y="150" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
                         {overlap?.ComponentCount || 0} components
                     </text>
-                    {typeSummary && (
-                        <text x="200" y="175" textAnchor="middle" dominantBaseline="middle" className="fill-white text-xs">
-                            {typeSummary}
+                    {typeSummary.map((typeText, index) => (
+                        <text 
+                            key={index}
+                            x="200" 
+                            y={165 + index * 12} 
+                            textAnchor="middle" 
+                            dominantBaseline="middle" 
+                            className="fill-white text-xs"
+                        >
+                            {typeText}
                         </text>
-                    )}
+                    ))}
                 </svg>
             </div>
         );
@@ -89,9 +95,9 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
         const overlap2 = overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution2.UniqueName);
         const overlapBoth = overlaps.find(o => o.SolutionNames.length === 2);
 
-        const typeSummary1 = overlap1 ? getComponentTypeSummary(overlap1.SharedComponents) : '';
-        const typeSummary2 = overlap2 ? getComponentTypeSummary(overlap2.SharedComponents) : '';
-        const typeSummaryBoth = overlapBoth ? getComponentTypeSummary(overlapBoth.SharedComponents) : '';
+        const typeSummary1 = overlap1 ? getComponentTypeSummary(overlap1.SharedComponents) : [];
+        const typeSummary2 = overlap2 ? getComponentTypeSummary(overlap2.SharedComponents) : [];
+        const typeSummaryBoth = overlapBoth ? getComponentTypeSummary(overlapBoth.SharedComponents) : [];
 
         return (
             <div className="flex items-center justify-center h-80">
@@ -134,43 +140,61 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
                     />
 
                     {/* Solution 1 Labels */}
-                    <text x="140" y="160" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
+                    <text x="140" y="145" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
                         {solution1.DisplayName}
                     </text>
-                    <text x="140" y="180" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
+                    <text x="140" y="165" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
                         {overlap1?.ComponentCount || 0} components
                     </text>
-                    {typeSummary1 && (
-                        <text x="140" y="195" textAnchor="middle" dominantBaseline="middle" className="fill-white text-xs">
-                            {typeSummary1}
+                    {typeSummary1.map((typeText, index) => (
+                        <text 
+                            key={index}
+                            x="140" 
+                            y={180 + index * 12} 
+                            textAnchor="middle" 
+                            dominantBaseline="middle" 
+                            className="fill-white text-xs"
+                        >
+                            {typeText}
                         </text>
-                    )}
+                    ))}
                     
                     {/* Solution 2 Labels */}
-                    <text x="460" y="160" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
+                    <text x="460" y="145" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
                         {solution2.DisplayName}
                     </text>
-                    <text x="460" y="180" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
+                    <text x="460" y="165" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
                         {overlap2?.ComponentCount || 0} components
                     </text>
-                    {typeSummary2 && (
-                        <text x="460" y="195" textAnchor="middle" dominantBaseline="middle" className="fill-white text-xs">
-                            {typeSummary2}
+                    {typeSummary2.map((typeText, index) => (
+                        <text 
+                            key={index}
+                            x="460" 
+                            y={180 + index * 12} 
+                            textAnchor="middle" 
+                            dominantBaseline="middle" 
+                            className="fill-white text-xs"
+                        >
+                            {typeText}
                         </text>
-                    )}
+                    ))}
                     
                     {/* Overlap Labels */}
-                    <text x="300" y="160" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
+                    <text x="300" y="155" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
                         {overlapBoth?.ComponentCount || 0}
                     </text>
-                    <text x="300" y="180" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
-                        shared
-                    </text>
-                    {typeSummaryBoth && (
-                        <text x="300" y="195" textAnchor="middle" dominantBaseline="middle" className="fill-white text-xs">
-                            {typeSummaryBoth}
+                    {typeSummaryBoth.map((typeText, index) => (
+                        <text 
+                            key={index}
+                            x="300" 
+                            y={175 + index * 12} 
+                            textAnchor="middle" 
+                            dominantBaseline="middle" 
+                            className="fill-white text-xs"
+                        >
+                            {typeText}
                         </text>
-                    )}
+                    ))}
                 </svg>
             </div>
         );
@@ -257,26 +281,74 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
                     })}
 
                     {/* Labels */}
-                    <text x="250" y="85" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
+                    <text x="250" y="80" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
                         {solution1.DisplayName}
                     </text>
-                    <text x="250" y="105" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
+                    <text x="250" y="100" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
                         {overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution1.UniqueName)?.ComponentCount || 0} components
                     </text>
+                    {(() => {
+                        const overlap = overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution1.UniqueName);
+                        const typeSummary = overlap ? getComponentTypeSummary(overlap.SharedComponents) : [];
+                        return typeSummary.map((typeText, index) => (
+                            <text 
+                                key={index}
+                                x="250" 
+                                y={115 + index * 12} 
+                                textAnchor="middle" 
+                                dominantBaseline="middle" 
+                                className="fill-white text-xs"
+                            >
+                                {typeText}
+                            </text>
+                        ));
+                    })()}
                     
-                    <text x="130" y="305" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
+                    <text x="130" y="300" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
                         {solution2.DisplayName}
                     </text>
-                    <text x="130" y="325" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
+                    <text x="130" y="320" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
                         {overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution2.UniqueName)?.ComponentCount || 0} components
                     </text>
+                    {(() => {
+                        const overlap = overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution2.UniqueName);
+                        const typeSummary = overlap ? getComponentTypeSummary(overlap.SharedComponents) : [];
+                        return typeSummary.map((typeText, index) => (
+                            <text 
+                                key={index}
+                                x="130" 
+                                y={335 + index * 12} 
+                                textAnchor="middle" 
+                                dominantBaseline="middle" 
+                                className="fill-white text-xs"
+                            >
+                                {typeText}
+                            </text>
+                        ));
+                    })()}
                     
-                    <text x="370" y="305" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
+                    <text x="370" y="300" textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-base">
                         {solution3.DisplayName}
                     </text>
-                    <text x="370" y="325" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
+                    <text x="370" y="320" textAnchor="middle" dominantBaseline="middle" className="fill-white text-sm font-semibold">
                         {overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution3.UniqueName)?.ComponentCount || 0} components
                     </text>
+                    {(() => {
+                        const overlap = overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution3.UniqueName);
+                        const typeSummary = overlap ? getComponentTypeSummary(overlap.SharedComponents) : [];
+                        return typeSummary.map((typeText, index) => (
+                            <text 
+                                key={index}
+                                x="370" 
+                                y={335 + index * 12} 
+                                textAnchor="middle" 
+                                dominantBaseline="middle" 
+                                className="fill-white text-xs"
+                            >
+                                {typeText}
+                            </text>
+                        ));
+                    })()}
 
                     {/* Overlap count labels */}
                     {overlaps.map((overlap, index) => {
@@ -293,17 +365,21 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
                             
                             return (
                                 <g key={index}>
-                                    <text x={centerX} y={centerY - 5} textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-sm">
+                                    <text x={centerX} y={centerY - 10} textAnchor="middle" dominantBaseline="middle" className="fill-white font-bold text-sm">
                                         {overlap.ComponentCount}
                                     </text>
-                                    <text x={centerX} y={centerY + 10} textAnchor="middle" dominantBaseline="middle" className="fill-white text-xs">
-                                        shared
-                                    </text>
-                                    {typeSummary && (
-                                        <text x={centerX} y={centerY + 25} textAnchor="middle" dominantBaseline="middle" className="fill-white text-xs">
-                                            {typeSummary}
+                                    {typeSummary.map((typeText, typeIndex) => (
+                                        <text 
+                                            key={typeIndex}
+                                            x={centerX} 
+                                            y={centerY + 5 + typeIndex * 12} 
+                                            textAnchor="middle" 
+                                            dominantBaseline="middle" 
+                                            className="fill-white text-xs"
+                                        >
+                                            {typeText}
                                         </text>
-                                    )}
+                                    ))}
                                 </g>
                             );
                         }
@@ -322,7 +398,7 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
                     <div className="grid grid-cols-2 gap-4">
                         {solutions.map((solution, index) => {
                             const overlap = overlaps.find(o => o.SolutionNames.length === 1 && o.SolutionNames[0] === solution.UniqueName);
-                            const typeSummary = overlap ? getComponentTypeSummary(overlap.SharedComponents) : '';
+                            const typeSummary = overlap ? getComponentTypeSummary(overlap.SharedComponents) : [];
                             return (
                                 <div 
                                     key={solution.SolutionId}
@@ -332,9 +408,9 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
                                 >
                                     <div className="font-bold text-lg">{solution.DisplayName}</div>
                                     <div className="text-sm text-gray-700 font-semibold">{overlap?.ComponentCount || 0} components</div>
-                                    {typeSummary && (
-                                        <div className="text-xs text-gray-600 mt-1">{typeSummary}</div>
-                                    )}
+                                    {typeSummary.map((typeText, typeIndex) => (
+                                        <div key={typeIndex} className="text-xs text-gray-600 mt-1">{typeText}</div>
+                                    ))}
                                 </div>
                             );
                         })}
@@ -353,10 +429,10 @@ export const SolutionVennDiagram = ({ solutionOverview, onOverlapClick }: ISolut
                                             onClick={() => onOverlapClick(overlap.SolutionNames, overlap.SharedComponents)}
                                         >
                                             <div className="font-semibold text-base">{overlap.SolutionNames.join(' + ')}</div>
-                                            <div className="text-sm text-gray-700 font-medium">{overlap.ComponentCount} shared components</div>
-                                            {typeSummary && (
-                                                <div className="text-xs text-gray-600 mt-1">{typeSummary}</div>
-                                            )}
+                                            <div className="text-sm text-gray-700 font-medium">{overlap.ComponentCount} components</div>
+                                            {typeSummary.map((typeText, typeIndex) => (
+                                                <div key={typeIndex} className="text-xs text-gray-600 mt-1">{typeText}</div>
+                                            ))}
                                         </div>
                                     );
                                 })}
