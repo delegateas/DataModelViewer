@@ -7,6 +7,7 @@ import { SolutionOverview } from '@/generated/Data'
 import { SolutionComponentType } from '@/lib/Types'
 import { SolutionVennDiagram } from './SolutionVennDiagram'
 import { ComponentDetailsPane } from './ComponentDetailsPane'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/shared/ui/sheet'
 
 interface ISolutionOverviewViewProps { }
 
@@ -16,6 +17,7 @@ export const SolutionOverviewView = ({}: ISolutionOverviewViewProps) => {
         solutionNames: string[];
         components: SolutionComponentType[];
     } | null>(null);
+    const [isDetailsPaneOpen, setIsDetailsPaneOpen] = useState(false);
 
     useEffect(() => {
         dispatch({ type: 'SET_ELEMENT', payload: <></> });
@@ -24,6 +26,7 @@ export const SolutionOverviewView = ({}: ISolutionOverviewViewProps) => {
 
     const handleOverlapClick = (solutionNames: string[], components: SolutionComponentType[]) => {
         setSelectedOverlap({ solutionNames, components });
+        setIsDetailsPaneOpen(true);
     };
 
     return (
@@ -35,37 +38,44 @@ export const SolutionOverviewView = ({}: ISolutionOverviewViewProps) => {
                     <h1 className='text-2xl font-bold'>Solution Overview</h1>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                    {/* Venn Diagram Section */}
-                    <div className='bg-white rounded-lg border border-gray-300 shadow-md p-6'>
-                        <h2 className="text-xl font-semibold mb-4">Solution Component Overlaps</h2>
-                        {SolutionOverview && SolutionOverview.Solutions.length > 0 ? (
-                            <SolutionVennDiagram 
-                                solutionOverview={SolutionOverview} 
-                                onOverlapClick={handleOverlapClick}
-                            />
-                        ) : (
-                            <div className="text-gray-500 text-center py-8">
-                                No solution data available. Please run the generator with multiple solutions configured.
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Component Details Section */}
-                    <div className='bg-white rounded-lg border border-gray-300 shadow-md p-6'>
-                        <h2 className="text-xl font-semibold mb-4">Component Details</h2>
-                        {selectedOverlap ? (
-                            <ComponentDetailsPane 
-                                solutionNames={selectedOverlap.solutionNames}
-                                components={selectedOverlap.components}
-                            />
-                        ) : (
-                            <div className="text-gray-500 text-center py-8">
-                                Click on a section in the diagram to view component details.
-                            </div>
-                        )}
-                    </div>
+                {/* Full width Venn Diagram Section */}
+                <div className='bg-white rounded-lg border border-gray-300 shadow-md p-6'>
+                    <h2 className="text-xl font-semibold mb-4">Solution Component Overlaps</h2>
+                    {SolutionOverview && SolutionOverview.Solutions.length > 0 ? (
+                        <SolutionVennDiagram 
+                            solutionOverview={SolutionOverview} 
+                            onOverlapClick={handleOverlapClick}
+                        />
+                    ) : (
+                        <div className="text-gray-500 text-center py-8">
+                            No solution data available. Please run the generator with multiple solutions configured.
+                        </div>
+                    )}
+                    
+                    {SolutionOverview && SolutionOverview.Solutions.length > 0 && (
+                        <div className="mt-4 text-sm text-gray-600 text-center">
+                            Click on any section of the diagram to view detailed component information
+                        </div>
+                    )}
                 </div>
+
+                {/* Component Details Flyout */}
+                <Sheet open={isDetailsPaneOpen} onOpenChange={setIsDetailsPaneOpen}>
+                    <SheetContent side="right" className="w-96 overflow-y-auto">
+                        <SheetHeader>
+                            <SheetTitle>Component Details</SheetTitle>
+                        </SheetHeader>
+                        
+                        {selectedOverlap && (
+                            <div className="mt-6">
+                                <ComponentDetailsPane 
+                                    solutionNames={selectedOverlap.solutionNames}
+                                    components={selectedOverlap.components}
+                                />
+                            </div>
+                        )}
+                    </SheetContent>
+                </Sheet>
             </div>
         </div>
     )
