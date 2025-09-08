@@ -38,48 +38,30 @@ export function EntityHeader({ entity }: { entity: EntityType }) {
                         />
                     }
                 </Box>
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Box
-                        component="a"
-                        href={`#${entity.SchemaName}`}
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            flexWrap: 'wrap',
-                            textDecoration: 'none',
-                            '&:hover': {
-                                textDecoration: 'none',
-                                '& .entity-title': {
-                                    color: 'primary.main',
-                                }
-                            }
+                <Box sx={{ minWidth: 0, flex: 1 }} className="flex items-center flex-wrap" gap={2}>
+                    <Typography 
+                        variant="h5" 
+                        component="h2"
+                        className="entity-title"
+                        sx={{ 
+                            fontWeight: 600,
+                            color: 'text.primary',
+                            transition: 'color 0.2s',
+                            minWidth: 0
                         }}
                     >
-                        <Typography 
-                            variant="h5" 
-                            component="h2"
-                            className="entity-title"
-                            sx={{ 
-                                fontWeight: 600,
-                                color: 'text.primary',
-                                transition: 'color 0.2s',
-                                minWidth: 0
-                            }}
-                        >
-                            {entity.DisplayName}
-                        </Typography>
-                        <Typography 
-                            variant="body2" 
-                            sx={{ 
-                                color: 'text.secondary',
-                                fontFamily: 'monospace',
-                                flexShrink: 0
-                            }}
-                        >
-                            {entity.SchemaName}
-                        </Typography>
-                    </Box>
+                        {entity.DisplayName}
+                    </Typography>
+                    <Typography 
+                        variant="body2" 
+                        sx={{ 
+                            color: 'text.secondary',
+                            fontFamily: 'monospace',
+                            flexShrink: 0
+                        }}
+                    >
+                        {entity.SchemaName}
+                    </Typography>
                 </Box>
             </Box>
             
