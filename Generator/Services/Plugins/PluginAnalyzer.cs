@@ -32,7 +32,7 @@ public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
 
                 // Add the usage information (assuming AttributeUsage is a defined class)
 
-                attributeUsages[logicalTableName][attribute].Add(new AttributeUsage(pluginName, $"Used in filterattributes", DetermineOperationTypeFromMessage(pluginName.Split(":").Last()), SupportedType));
+                attributeUsages[logicalTableName][attribute].Add(new AttributeUsage(pluginName, $"Used in filterattributes", OperationType.Other, SupportedType));
             }
         }
         catch (Exception ex)
@@ -40,19 +40,6 @@ public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
             // Log the exception (assuming a logging mechanism is in place)
             Console.WriteLine($"Error analyzing component: {ex.Message}");
         }
-    }
-
-    private OperationType DetermineOperationTypeFromMessage(string messageName)
-    {
-        return messageName?.ToLower() switch
-        {
-            "create" => OperationType.Create,
-            "update" => OperationType.Update,
-            "delete" => OperationType.Delete,
-            "retrieve" => OperationType.Read,
-            "retrievemultiple" => OperationType.Read,
-            _ => OperationType.Other
-        };
     }
 
     private async Task AnalyzePluginCode(Entity plugin, List<AttributeUsage> attributeUsages, string componentName)

@@ -26,7 +26,6 @@ export const TimeSlicedSearch = ({
   onNavigateNext,
   onNavigatePrevious,
   initialLocalValue,
-  totalResults = 0,
   placeholder = "Search attributes...",
 }: TimeSlicedSearchProps) => {
   const [localValue, setLocalValue] = useState(initialLocalValue);

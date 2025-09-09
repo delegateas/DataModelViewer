@@ -26,7 +26,7 @@ export const HomeView = ({ }: IHomeViewProps) => {
         {
             image: '/processes.jpg',
             title: 'Process Explorer!',
-            text: "Work has started on the process explorer! This will be a place to figure our the processes that are touching your fields. Everything from server- to client side.",
+            text: "Work has started on the process explorer! This will be a place to figure out what processes are touching your fields. Everything from server- to client side.",
             type: '(v2.0.0) Alpha Feature',
             actionlabel: 'Try it out',
             action: () => router.push('/processes')

@@ -25,8 +25,6 @@ export let Groups: GroupType[] = [
             "IsPrimaryId": false,
             "IsCustomAttribute": true,
             "IsStandardFieldModified": false,
-            "HasPluginStep": true,
-            "PluginTypeNames": ["Sample Plugin Type"],
             "DisplayName": "Account Name",
             "SchemaName": "name",
             "Description": "The name of the account",
@@ -35,15 +33,14 @@ export let Groups: GroupType[] = [
             "IsColumnSecured": false,
             "CalculationMethod": null,
             "Format": "Text",
-            "MaxLength": 160
+            "MaxLength": 160,
+            "AttributeUsages": []
           },
           {
             "AttributeType": "StringAttribute",
             "IsPrimaryId": false,
             "IsCustomAttribute": true,
             "IsStandardFieldModified": false,
-            "HasPluginStep": false,
-            "PluginTypeNames": [],
             "DisplayName": "Phone",
             "SchemaName": "telephone1",
             "Description": "The main phone number for the account",
@@ -52,15 +49,14 @@ export let Groups: GroupType[] = [
             "IsColumnSecured": false,
             "CalculationMethod": null,
             "Format": "Phone",
-            "MaxLength": 50
+            "MaxLength": 50,
+            "AttributeUsages": []
           },
           {
             "AttributeType": "LookupAttribute",
             "IsPrimaryId": false,
             "IsCustomAttribute": true,
             "IsStandardFieldModified": false,
-            "HasPluginStep": true,
-            "PluginTypeNames": ["Another Plugin Type"],
             "DisplayName": "Primary Contact",
             "SchemaName": "primarycontactid",
             "Description": "The primary contact for the account",
@@ -68,6 +64,7 @@ export let Groups: GroupType[] = [
             "IsAuditEnabled": true,
             "IsColumnSecured": false,
             "CalculationMethod": null,
+            "AttributeUsages": [],
             "Targets": [
               {
                 "Name": "Contact",
