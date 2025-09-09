@@ -41,7 +41,9 @@ export const HomeView = ({ }: IHomeViewProps) => {
             image: '/documentation.jpg',
             title: 'Home WIKI ADO Page',
             text: 'Display your own wiki page from your ADO instance. Use it, to give your organisation a special introduction to DMV. Now also supports images!',
-            type: '(v1.4.1) Feature'
+            type: '(v1.4.1) Feature',
+            actionlabel: 'Read how',
+            action: () => window.open("https://github.com/delegateas/DataModelViewer", '_blank')
         }
     ];
 
@@ -81,8 +83,8 @@ export const HomeView = ({ }: IHomeViewProps) => {
                         }}>
                             <Box className="relative z-10 flex flex-col justify-center h-full p-8 text-white md:w-1/2 w-full">
                                 <Typography variant='h1' className="text-4xl font-bold mb-4">Welcome back!</Typography>
-                                <Typography variant='body1' className="text-md text-gray-300">Explore your data with ease. If this is your first time using Data Model Viewer, make sure to check out the documentation.</Typography>
-                                <Button href='/metadata' size='small' variant='contained' color='primary' className='text-white py-2 mt-4 rounded-lg font-medium transition-colors shadow-sm w-32'>Explore Now</Button>
+                                <Typography variant='body1' className="text-md text-gray-300">Explore your metadata model with ease. If this is your first time using Data Model Viewer, make sure to check out the documentation on Git.</Typography>
+                                <Button href='/metadata' size='small' variant='contained' color='primary' className='text-white py-2 mt-4 rounded-lg transition-colors shadow-sm w-32'>Explore Now</Button>
                             </Box>
                     </Box>
                 </Grid>

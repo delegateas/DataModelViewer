@@ -92,7 +92,7 @@ const Carousel = ({ items, currentIndex = 0, slideDirection = null, className }:
             {currentItem.text}
           </Typography>
           {currentItem.actionlabel && currentItem.action && (
-            <Button onClick={currentItem.action} variant='contained' color='primary'>
+            <Button onClick={currentItem.action} variant='contained' color='primary' className='rounded-lg'>
               {currentItem.actionlabel}
             </Button>
           )}
