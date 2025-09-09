@@ -146,7 +146,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 <AccordionSummary
                     expandIcon={<ExpandMore className="w-4 h-4" sx={{ color: isCurrentGroup ? "primary.main" : "default" }} />}
                     className={cn(
-                        "p-2 duration-200 flex shrink-0 items-center rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full",
+                        "p-2 duration-200 flex items-center rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full min-w-0",
                         isCurrentGroup ? "font-semibold" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
                     )}
                     sx={{
@@ -156,11 +156,20 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                         '& .MuiAccordionSummary-content': {
                             margin: 0,
                             alignItems: 'center',
+                            minWidth: 0,
+                            overflow: 'hidden'
                         }
                     }}
                 >
-                    <Typography className={`flex-1 text-sm text-left truncate ${isCurrentGroup ? 'font-semibold' : ''}`} sx={{ color: isCurrentGroup ? 'primary.main' : 'text.primary' }}>{group.Name}</Typography>
-                    <Typography className={`ml-auto text-xs mr-2 ${isCurrentGroup ? 'font-semibold' : ''}`} sx={{ opacity: 0.7, color: isCurrentGroup ? 'primary.main' : 'text.primary' }}>{group.Entities.length}</Typography>
+                    <Typography 
+                        className={`flex-1 text-sm text-left truncate min-w-0 ${isCurrentGroup ? 'font-semibold' : ''}`} 
+                        sx={{ 
+                            color: isCurrentGroup ? 'primary.main' : 'text.primary'
+                        }}
+                    >
+                        {group.Name}
+                    </Typography>
+                    <Typography className={`flex-shrink-0 text-xs mr-2 ${isCurrentGroup ? 'font-semibold' : ''}`} sx={{ opacity: 0.7, color: isCurrentGroup ? 'primary.main' : 'text.primary' }}>{group.Entities.length}</Typography>
                     
                     <OpenInNewRounded 
                         onClick={(e) => {
@@ -168,7 +177,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                             if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName, group.Name);
                         }}
                         aria-label={`Link to first entity in ${group.Name}`}
-                        className="w-4 h-4"
+                        className="w-4 h-4 flex-shrink-0"
                         sx={{
                             color: isCurrentGroup ? "primary.main" : "default"
                         }}
