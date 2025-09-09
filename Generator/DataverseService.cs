@@ -3,6 +3,7 @@ using Azure.Identity;
 using Generator.DTO;
 using Generator.DTO.Attributes;
 using Generator.Queries;
+using Generator.Services;
 using Generator.Services.Plugins;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Extensions.Caching.Memory;
@@ -25,6 +26,7 @@ namespace Generator
         private readonly ILogger<DataverseService> logger;
 
         private readonly PluginAnalyzer pluginAnalyzer;
+        private readonly PowerAutomateFlowAnalyzer flowAnalyzer;
 
         public DataverseService(IConfiguration configuration, ILogger<DataverseService> logger)
         {
@@ -44,6 +46,7 @@ namespace Generator
                 tokenProviderFunction: url => TokenProviderFunction(url, cache, logger));
 
             pluginAnalyzer = new PluginAnalyzer(client);
+            flowAnalyzer = new PowerAutomateFlowAnalyzer(client);
         }
 
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
@@ -90,13 +93,18 @@ namespace Generator
             var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.UserLocalizedLabel?.Label ?? attr.SchemaName) ?? []);
 
             var entityIconMap = await GetEntityIconMap(allEntityMetadata);
-
             // Processes analysis
             var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
             // Plugins
-            var pluginCollection = await client.GetSDKMessageProcessingStepsAsync();
+            var pluginCollection = await client.GetSDKMessageProcessingStepsAsync(solutionIds);
+            logger.LogInformation($"There are {pluginCollection.Count()} plugin sdk steps in the environment.");
             foreach (var plugin in pluginCollection)
                 await pluginAnalyzer.AnalyzeComponentAsync(plugin, attributeUsages);
+            // Flows
+            var flowCollection = await client.GetPowerAutomateFlowsAsync(solutionIds);
+            logger.LogInformation($"There are {flowCollection.Count()} Power Automate flows in the environment.");
+            foreach (var flow in flowCollection)
+                await flowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
 
             var records =
                 entitiesInSolutionMetadata
@@ -249,15 +257,13 @@ namespace Generator
                 FileAttributeMetadata fileAttribute => new FileAttribute(fileAttribute),
                 _ => new GenericAttribute(metadata)
             };
-            attr.AttributeUsages = attributeUsages.GetValueOrDefault(entity.LogicalName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
-            return attr;
-        }
 
-        private static string ExtractPluginTypeName(AttributeUsage usage)
-        {
-            // This method can be expanded to extract meaningful plugin type names from the usage context
-            // For now, we'll return a placeholder since the actual plugin type name should be stored in the AttributeUsage
-            return usage.ComponentType.ToString();
+            var schemaname = attributeUsages.GetValueOrDefault(entity.LogicalName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
+            // also check the plural name, as some workflows like Power Automate use collectionname
+            var pluralname = attributeUsages.GetValueOrDefault(entity.LogicalCollectionName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
+
+            attr.AttributeUsages = [.. schemaname, .. pluralname];
+            return attr;
         }
 
         private static (string? Group, string? Description) GetGroupAndDescription(EntityMetadata entity, IDictionary<string, string> tableGroups)

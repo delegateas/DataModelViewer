@@ -49,10 +49,6 @@ export enum ComponentType
     WorkflowActivity,
     CustomApi
 }
-export enum LocationType
-{
-    Trigger
-}
 
 export enum OperationType
 {
@@ -67,7 +63,7 @@ export enum OperationType
 export type UsageType = {
     Name: string,
     ComponentType: ComponentType,
-    LocationType: LocationType,
+    Usage: string,
     OperationType: OperationType
 }
 

@@ -8,10 +8,6 @@ public enum ComponentType
     WorkflowActivity,
     CustomApi
 }
-public enum LocationType
-{
-    Trigger
-}
 
 public enum OperationType
 {
@@ -25,7 +21,7 @@ public enum OperationType
 
 public record AttributeUsage(
     string Name,
-    LocationType LocationType,
+    string Usage,
     OperationType OperationType,
     ComponentType ComponentType
 );

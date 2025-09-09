@@ -3,9 +3,9 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useDatamodelData } from '@/contexts/DatamodelDataContext'
-import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, ListItemText, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme } from '@mui/material'
+import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, ListItemText, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme, TableContainer, Alert } from '@mui/material'
 import { CloseRounded, SearchRounded } from '@mui/icons-material'
-import { AttributeType, EntityType, ComponentType } from '@/lib/Types'
+import { AttributeType, EntityType, ComponentType, OperationType } from '@/lib/Types'
 import LoadingOverlay from '@/components/shared/LoadingOverlay'
 import NotchedBox from '../shared/elements/NotchedBox'
 import { ResponsivePie } from '@nivo/pie'
@@ -51,7 +51,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
 
     const chartData = useMemo(() => {
         if (!selectedAttribute) return [];
-        
+
         const data = Object.values(
             selectedAttribute.attribute.AttributeUsages.reduce((acc, au) => {
                 const componentTypeName = ComponentType[au.ComponentType];
@@ -67,8 +67,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                 return acc;
             }, {} as Record<string, { id: string; label: string; value: number }>)
         );
-        
-        console.log('Chart data:', data); // Debug log
+
         return data;
     }, [selectedAttribute])
 
@@ -154,10 +153,10 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                 <Typography 
                 variant="h3" 
                 component="h1" 
-                className="text-3xl sm:text-4xl font-bold mb-8 text-center"
+                className="text-3xl sm:text-4xl font-bold mb-8"
                 sx={{ color: 'text.primary' }}
                 >
-                Processes
+                    Processes
                 </Typography>
 
                 {/* Search Bar */}
@@ -202,7 +201,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                 {searchTerm.trim() && searchTerm.length >= 2 && !isSearching && (
                 <Box className="mb-8">
                     <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                    Attribute Search Results ({searchResults.length})
+                        Attribute Search Results ({searchResults.length})
                     </Typography>
                     
                     {searchResults.length > 0 ? (
@@ -217,7 +216,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                     >
                         <List>
                         {searchResults.map((result, index) => (
-                            <ListItem key={`${result.entity.SchemaName}-${result.attribute.SchemaName}`} disablePadding>
+                            <ListItem key={`${result.entity.SchemaName}-${result.attribute.SchemaName}-${index}`} disablePadding>
                             <ListItemButton 
                                 onClick={() => handleAttributeSelect(result)}
                                 selected={selectedAttribute?.attribute.SchemaName === result.attribute.SchemaName && 
@@ -275,14 +274,21 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                 )}
 
                 {!selectedAttribute && (
-                    <Typography variant="h6" className='text-center'>
-                        Welcome to the processes search. Please select an attribute to see related processes.
+                    <Typography variant="h6" className=''>
+                        Welcome to the processes search. Please <b>search</b> and select an attribute to see related processes.
                     </Typography>
                 )}
+
+               <Alert severity="info" className="mb-8">
+                   <Typography variant="body2">
+                       Currently only supports <b>Plugin triggers</b> and <b>CDS Power Automate Actions</b>
+                   </Typography>
+               </Alert>
+
                 {/* GRID WITH SELECTED ATTRIBUTE */}
                 {selectedAttribute && (
                 <Grid container spacing={2}>
-                    <Grid size={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <NotchedBox 
                             variant="outlined"
                             notchContent={<IconButton onClick={() => setSelectedAttribute(null)}><CloseRounded /></IconButton>}
@@ -293,7 +299,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                     Selected Attribute
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                    [{selectedAttribute.group} ({selectedAttribute.entity.DisplayName})]: {selectedAttribute.attribute.DisplayName}
+                                    [{selectedAttribute.group} ({selectedAttribute.entity.DisplayName})]: <b>{selectedAttribute.attribute.DisplayName}</b>
                                 </Typography>
                             </Box>
                             <Box className='flex flex-grow' style={{ height: '300px', width: '100%' }}>
@@ -368,29 +374,134 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                             </Box>
                         </NotchedBox>
                     </Grid>
-                    <Grid size={8}>
-                        <Paper variant='outlined' className='rounded-2xl p-4 h-full'>
-                            <Typography variant='h6'>Processes</Typography>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Process</TableCell>
-                                        <TableCell>Name</TableCell>
-                                        <TableCell>Type</TableCell>
-                                        <TableCell>Location</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {selectedAttribute?.attribute.AttributeUsages.map(usage => (
-                                        <TableRow key={usage.Name}>
-                                            <TableCell>{usage.ComponentType}</TableCell>
-                                            <TableCell>{usage.Name}</TableCell>
-                                            <TableCell>{usage.OperationType}</TableCell>
-                                            <TableCell>{usage.LocationType}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                    <Grid size={{ xs: 12, md: 8 }}>
+                        <Paper variant='outlined' className='rounded-2xl h-full' sx={{ display: 'flex', flexDirection: 'column' }}>
+                            <Box className="p-4 border-b" sx={{ borderColor: 'border.main' }}>
+                                <Typography variant='h6'>Processes</Typography>
+                            </Box>
+                            <Box sx={{ flex: 1, overflowX: 'auto' }}>
+                                {selectedAttribute?.attribute.AttributeUsages.length === 0 ? (
+                                    <Box className="p-4 text-center" sx={{ color: 'text.secondary' }}>
+                                        <Typography variant="body2">No process usage data available for this attribute</Typography>
+                                    </Box>
+                                ) : (
+                                    <Box 
+                                        className="overflow-x-auto md:overflow-x-visible"
+                                        sx={{ 
+                                            borderTop: 1, 
+                                            borderColor: 'border.main',
+                                            maxHeight: '400px',
+                                            overflowY: 'auto',
+                                            // Mobile: allow horizontal scrolling within the component
+                                            maxWidth: '100%',
+                                            '@media (max-width: 768px)': {
+                                                overflowX: 'auto',
+                                                '&::-webkit-scrollbar': {
+                                                    height: '8px',
+                                                },
+                                                '&::-webkit-scrollbar-track': {
+                                                    backgroundColor: 'rgba(0,0,0,0.1)',
+                                                },
+                                                '&::-webkit-scrollbar-thumb': {
+                                                    backgroundColor: 'rgba(0,0,0,0.3)',
+                                                    borderRadius: '4px',
+                                                },
+                                            }
+                                        }}
+                                    >
+                                        <Table 
+                                            stickyHeader
+                                            className="w-full min-w-[600px] md:min-w-0"
+                                            sx={{ 
+                                                borderColor: 'border.main'
+                                            }}
+                                        >
+                                            <TableHead sx={{ backgroundColor: 'background.paper' }}>
+                                                <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
+                                                    <TableCell 
+                                                        className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                                        sx={{ 
+                                                            color: 'text.primary',
+                                                            backgroundColor: 'background.paper',
+                                                            position: 'sticky',
+                                                            top: 0,
+                                                            zIndex: 1
+                                                        }}
+                                                    >
+                                                        Process
+                                                    </TableCell>
+                                                    <TableCell 
+                                                        className="w-[35%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                                        sx={{ 
+                                                            color: 'text.primary',
+                                                            backgroundColor: 'background.paper',
+                                                            position: 'sticky',
+                                                            top: 0,
+                                                            zIndex: 1
+                                                        }}
+                                                    >
+                                                        Name
+                                                    </TableCell>
+                                                    <TableCell 
+                                                        className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                                        sx={{ 
+                                                            color: 'text.primary',
+                                                            backgroundColor: 'background.paper',
+                                                            position: 'sticky',
+                                                            top: 0,
+                                                            zIndex: 1
+                                                        }}
+                                                    >
+                                                        Type
+                                                    </TableCell>
+                                                    <TableCell 
+                                                        className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                                        sx={{ 
+                                                            color: 'text.primary',
+                                                            backgroundColor: 'background.paper',
+                                                            position: 'sticky',
+                                                            top: 0,
+                                                            zIndex: 1
+                                                        }}
+                                                    >
+                                                        Usage
+                                                    </TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {selectedAttribute?.attribute.AttributeUsages.map((usage, idx) => (
+                                                    <TableRow 
+                                                        key={usage.Name + idx}
+                                                        className="transition-colors duration-150 border-b"
+                                                        sx={{
+                                                            '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
+                                                            borderColor: 'border.main',
+                                                            backgroundColor: idx % 2 === 0 
+                                                                ? 'background.paper' 
+                                                                : theme.palette.mode === 'dark' 
+                                                                    ? 'rgba(255, 255, 255, 0.02)' 
+                                                                    : 'rgba(0, 0, 0, 0.02)'
+                                                        }}
+                                                    >
+                                                        <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                            {ComponentType[usage.ComponentType]}
+                                                        </TableCell>
+                                                        <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                            {usage.Name}
+                                                        </TableCell>
+                                                        <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                            {OperationType[usage.OperationType]}
+                                                        </TableCell>
+                                                        <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                            {usage.Usage}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </Box>
+                                )}
+                            </Box>
                         </Paper>
                     </Grid>
                 </Grid>)}

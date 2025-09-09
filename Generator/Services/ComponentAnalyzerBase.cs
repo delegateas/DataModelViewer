@@ -1,16 +1,15 @@
 ﻿using Generator.DTO;
 using Microsoft.PowerPlatform.Dataverse.Client;
-using Microsoft.Xrm.Sdk;
 using System.Text.RegularExpressions;
 
 namespace Generator.Services;
 
-public abstract class BaseComponentAnalyzer(ServiceClient service) : IComponentAnalyzer
+public abstract class BaseComponentAnalyzer<T>(ServiceClient service) : IComponentAnalyzer<T> where T : Analyzeable
 {
     protected readonly ServiceClient _service = service;
 
     public abstract ComponentType SupportedType { get; }
-    public abstract Task AnalyzeComponentAsync(Entity component, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages);
+    public abstract Task AnalyzeComponentAsync(T component, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages);
 
     protected List<string> ExtractFieldsFromODataFilter(string filter)
     {

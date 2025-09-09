@@ -4,22 +4,22 @@ using Microsoft.Xrm.Sdk;
 
 namespace Generator.Services.Plugins;
 
-public class PluginAnalyzer : BaseComponentAnalyzer
+public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
 {
     public PluginAnalyzer(ServiceClient service) : base(service) { }
 
     public override ComponentType SupportedType => ComponentType.Plugin;
 
-    public override async Task AnalyzeComponentAsync(Entity sdkStep, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+    public override async Task AnalyzeComponentAsync(SDKStep sdkStep, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
     {
         try
         {
             // Extract filtering attributes and plugin name
-            var filteringAttributes = sdkStep.GetAttributeValue<string>("filteringattributes")?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-            var pluginName = sdkStep.GetAttributeValue<string>("name");
+            var filteringAttributes = sdkStep.FilteringAttributes?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+            var pluginName = sdkStep.Name;
 
             // Retrieve the logical name of the entity from the linked SDK Message entity
-            var logicalTableName = sdkStep.GetAttributeValue<AliasedValue>("filter.primaryobjecttypecode")?.Value as string;
+            var logicalTableName = sdkStep.PrimaryObjectTypeCode;
 
             // Populate the attributeUsages dictionary
             foreach (var attribute in filteringAttributes)
@@ -31,7 +31,7 @@ public class PluginAnalyzer : BaseComponentAnalyzer
                     attributeUsages[logicalTableName][attribute] = new List<AttributeUsage>();
 
                 // Add the usage information (assuming AttributeUsage is a defined class)
-                attributeUsages[logicalTableName][attribute].Add(new AttributeUsage(pluginName, LocationType.Trigger, OperationType.Other, SupportedType));
+                attributeUsages[logicalTableName][attribute].Add(new AttributeUsage(pluginName, $"Used in filterattributes", OperationType.Other, SupportedType));
             }
         }
         catch (Exception ex)

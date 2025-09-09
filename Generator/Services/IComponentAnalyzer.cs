@@ -1,10 +1,9 @@
 ﻿using Generator.DTO;
-using Microsoft.Xrm.Sdk;
 
 namespace Generator.Services;
 
-public interface IComponentAnalyzer
+public interface IComponentAnalyzer<T> where T : Analyzeable
 {
     public ComponentType SupportedType { get; }
-    public Task AnalyzeComponentAsync(Entity component, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages);
+    public Task AnalyzeComponentAsync(T component, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages);
 }
