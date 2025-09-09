@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useDatamodelData } from '@/contexts/DatamodelDataContext'
 import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, ListItemText, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme, TableContainer, Alert } from '@mui/material'
-import { CloseRounded, SearchRounded } from '@mui/icons-material'
+import { AccountTreeRounded, CloseRounded, ExtensionRounded, SearchRounded } from '@mui/icons-material'
 import { AttributeType, EntityType, ComponentType, OperationType } from '@/lib/Types'
 import LoadingOverlay from '@/components/shared/LoadingOverlay'
 import NotchedBox from '../shared/elements/NotchedBox'
@@ -81,30 +81,31 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
         const query = searchTerm.toLowerCase()
 
         groups.forEach(group => {
-        group.Entities.forEach(entity => {
-            entity.Attributes.forEach(attribute => {
-            const basicMatch = 
-                attribute.DisplayName.toLowerCase().includes(query) ||
-                attribute.SchemaName.toLowerCase().includes(query) ||
-                (attribute.Description && attribute.Description.toLowerCase().includes(query))
+            group.Entities.forEach(entity => {
+                entity.Attributes.forEach(attribute => {
+                    if (attribute.AttributeUsages.length === 0) return; // Only search attributes with usages
+                    const basicMatch = 
+                        attribute.DisplayName.toLowerCase().includes(query) ||
+                        attribute.SchemaName.toLowerCase().includes(query) ||
+                        (attribute.Description && attribute.Description.toLowerCase().includes(query))
 
-            // Check options for ChoiceAttribute and StatusAttribute
-            let optionsMatch = false
-            if (attribute.AttributeType === 'ChoiceAttribute' || attribute.AttributeType === 'StatusAttribute') {
-                optionsMatch = attribute.Options.some(option => 
-                option.Name.toLowerCase().includes(query)
-                )
-            }
+                    // Check options for ChoiceAttribute and StatusAttribute
+                    let optionsMatch = false
+                    if (attribute.AttributeType === 'ChoiceAttribute' || attribute.AttributeType === 'StatusAttribute') {
+                        optionsMatch = attribute.Options.some(option => 
+                        option.Name.toLowerCase().includes(query)
+                        )
+                    }
 
-            if (basicMatch || optionsMatch) {
-                results.push({
-                attribute,
-                entity,
-                group: group.Name
+                    if (basicMatch || optionsMatch) {
+                        results.push({
+                        attribute,
+                        entity,
+                        group: group.Name
+                        })
+                    }
                 })
-            }
             })
-        })
         })
 
         return results.slice(0, 50) // Limit results for performance
@@ -140,6 +141,15 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
         case 'StatusAttribute': return 'Status'
         case 'FileAttribute': return 'File'
         default: return attributeType.replace('Attribute', '')
+        }
+    }
+
+    const getProcessChip = (componentType: ComponentType) => {
+        switch (componentType) {
+            case ComponentType.Plugin:
+                return <Chip variant="outlined" label="Plugin" color="success" icon={<ExtensionRounded color='success' />} />;
+            case ComponentType.PowerAutomateFlow:
+                return <Chip variant="outlined" label="Power Automate" color="info" icon={<AccountTreeRounded color='info' />} />;
         }
     }
 
@@ -273,17 +283,17 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                 </Typography>
                 )}
 
-                {!selectedAttribute && (
-                    <Typography variant="h6" className=''>
-                        Welcome to the processes search. Please <b>search</b> and select an attribute to see related processes.
-                    </Typography>
-                )}
-
                <Alert severity="info" className="mb-8">
                    <Typography variant="body2">
                        Currently only supports <b>Plugin triggers</b> and <b>CDS Power Automate Actions</b>
                    </Typography>
                </Alert>
+
+                {!selectedAttribute && (
+                    <Typography variant="h6" className=''>
+                        Welcome to the processes search. Please <b>search</b> and select an attribute to see related processes.
+                    </Typography>
+                )}
 
                 {/* GRID WITH SELECTED ATTRIBUTE */}
                 {selectedAttribute && (
@@ -484,7 +494,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                                         }}
                                                     >
                                                         <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                                            {ComponentType[usage.ComponentType]}
+                                                            {getProcessChip(usage.ComponentType)}
                                                         </TableCell>
                                                         <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
                                                             {usage.Name}
