@@ -3,16 +3,12 @@ import {
     Tabs, 
     Tab, 
     Box, 
-    Accordion, 
-    AccordionSummary, 
-    AccordionDetails, 
     Button,
     Collapse,
     Typography,
     Divider,
-    Container
 } from '@mui/material';
-import { CheckBoxOutlineBlankRounded, ChevronRightRounded, DeleteRounded, DriveFolderUploadRounded, ExpandMore, ExpandMoreRounded, FolderRounded, HardwareRounded, PeopleRounded, RttRounded, SaveRounded, SettingsRounded, SmartphoneRounded, SyncRounded } from '@mui/icons-material';
+import { CheckBoxOutlineBlankRounded, ChevronRightRounded, DeleteRounded, DriveFolderUploadRounded, ExpandMoreRounded, FolderRounded, HardwareRounded, PeopleRounded, RttRounded, SaveRounded, SettingsRounded, SmartphoneRounded, SyncRounded } from '@mui/icons-material';
 import { useDiagramViewContextSafe } from '@/contexts/DiagramViewContext';
 import { AddEntityPane, AddGroupPane, ResetToGroupPane } from '@/components/diagramview/panes';
 import { useIsMobile } from '@/hooks/use-mobile';

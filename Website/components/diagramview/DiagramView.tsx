@@ -13,12 +13,12 @@ import { SquarePropertiesPane } from '@/components/diagramview/panes/SquarePrope
 import { TextPropertiesPane } from '@/components/diagramview/panes/TextPropertiesPane';
 import { calculateGridLayout, getDefaultLayoutOptions, calculateEntityHeight, estimateEntityDimensions } from '@/components/diagramview/GridLayoutManager';
 import { AttributeType } from '@/lib/Types';
-import { DiagramViewProvider, useDiagramViewContext } from '@/contexts/DiagramViewContext';
+import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
 import { SidebarDiagramView } from './SidebarDiagramView';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { SimpleDiagramRenderer } from './renderers/SimpleDiagramRender';
 import { DetailedDiagramRender } from './renderers/DetailedDiagramRender';
-import { Alert, AlertTitle, Box, Chip } from '@mui/material';
+import { Alert, Box } from '@mui/material';
 import { Science } from '@mui/icons-material';
 
 export default function DiagramView({ }: IDiagramView) {

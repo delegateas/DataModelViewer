@@ -2,9 +2,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRouter } from 'next/navigation';
-import { AppBar, Toolbar, Box, LinearProgress, Link, Button, Badge, Stack } from '@mui/material';
-import clsx from 'clsx';
-import { useState } from 'react';
+import { AppBar, Toolbar, Box, LinearProgress, Button, Badge, Stack } from '@mui/material';
 import SettingsPane from './elements/SettingsPane';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -15,7 +13,7 @@ interface HeaderProps {
 
 const Header = ({ }: HeaderProps) => {
     const { isSettingsOpen, setSettingsOpen } = useSettings();
-    const { isAuthenticated, isLoading, logout } = useAuth();
+    const { isAuthenticated, logout } = useAuth();
     const { isOpen: sidebarOpen, expand } = useSidebar();
     const isMobile = useIsMobile();
     const router = useRouter();

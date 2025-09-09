@@ -1,7 +1,7 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BooleanAttributeType } from "@/lib/Types"
 import { Box, Typography, Chip } from "@mui/material"
-import { CheckCircleOutlineRounded, CheckRounded, RadioButtonCheckedRounded, RadioButtonUncheckedRounded } from "@mui/icons-material";
+import { CheckRounded, RadioButtonCheckedRounded, RadioButtonUncheckedRounded } from "@mui/icons-material";
 
 export default function BooleanAttribute({ attribute }: { attribute: BooleanAttributeType }) {
 

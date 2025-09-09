@@ -58,7 +58,7 @@ export const AboutView = ({}: IAboutViewProps) => {
                   <Typography component="strong" sx={{ color: 'text.primary' }}>Data Model Viewer</Typography> is your centralized tool for exploring and understanding your Dataverse metadata. Designed with clarity and efficiency in mind, it gives you a single, streamlined access point to view and navigate your data tables.
                 </Typography>
                 <Typography sx={{ color: 'text.secondary' }}>
-                  Developed by <Typography component="strong" sx={{ color: 'text.primary' }}>Delegate</Typography>, it helps organizations save time, reduce complexity, and gain insights into their Dataverse environments—even without full access. It's a powerful tool for developers, analysts, and administrators alike.
+                  Developed by <Typography component="strong" sx={{ color: 'text.primary' }}>Delegate</Typography>, it helps organizations save time, reduce complexity, and gain insights into their Dataverse environments—even without full access. It&apos;s a powerful tool for developers, analysts, and administrators alike.
                 </Typography>
               </Box>
               <Box className="w-full max-w-xs sm:max-w-sm lg:max-w-md">
@@ -93,7 +93,7 @@ export const AboutView = ({}: IAboutViewProps) => {
                   className="mb-4"
                   sx={{ color: 'text.secondary' }}
                 >
-                  All setup instructions, feature details, and known issues for Data Model Viewer are available on GitHub. Whether you're just getting started or tracking updates, GitHub serves as the central hub for all project information.
+                  All setup instructions, feature details, and known issues for Data Model Viewer are available on GitHub. Whether you&apos;re just getting started or tracking updates, GitHub serves as the central hub for all project information.
                 </Typography>
                 <Link
                   className="font-medium text-lg break-words"

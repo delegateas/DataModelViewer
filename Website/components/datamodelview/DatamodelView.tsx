@@ -2,7 +2,7 @@
 
 import { useSidebar } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
-import { DatamodelViewProvider, useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
+import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { SearchPerformanceProvider } from "@/contexts/SearchPerformanceContext";
 import { List } from "./List";
 import { TimeSlicedSearch } from "./TimeSlicedSearch";

@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import { deleteSession } from "@/lib/session";
 
-export async function POST(req: Request) {
+export async function POST() {
     try {
         await deleteSession();
         // Return success response instead of redirect since we handle navigation client-side

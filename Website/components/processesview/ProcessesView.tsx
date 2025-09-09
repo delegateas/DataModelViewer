@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useDatamodelData } from '@/contexts/DatamodelDataContext'
-import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, ListItemText, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme, TableContainer, Alert } from '@mui/material'
+import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, ListItemText, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme, Alert } from '@mui/material'
 import { AccountTreeRounded, CloseRounded, ExtensionRounded, SearchRounded } from '@mui/icons-material'
 import { AttributeType, EntityType, ComponentType, OperationType } from '@/lib/Types'
 import LoadingOverlay from '@/components/shared/LoadingOverlay'
@@ -25,24 +25,6 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [isSearching, setIsSearching] = useState<boolean>(false)
     const [selectedAttribute, setSelectedAttribute] = useState<AttributeSearchResult | null>(null)
-
-    // Custom tooltip component that uses MUI theme
-    const CustomTooltip = ({ datum }: any) => (
-        <Paper
-            elevation={3}
-            sx={{
-                backgroundColor: 'background.paper',
-                color: 'text.primary',
-                padding: 1,
-                borderRadius: 1,
-                border: `1px solid ${theme.palette.divider}`
-            }}
-        >
-            <Typography variant="body2" component="div">
-                <strong>{datum.label}</strong>: {datum.value}
-            </Typography>
-        </Paper>
-    )
 
     useEffect(() => {
         setElement(null);
@@ -271,7 +253,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                     </Paper>
                     ) : (
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                        No attributes found matching "{searchTerm}"
+                        No attributes found matching &quot;{searchTerm}&quot;
                     </Typography>
                     )}
                 </Box>

@@ -6,11 +6,7 @@ import {
   Box, 
   Typography, 
   IconButton, 
-  Card, 
-  CardContent, 
   Switch, 
-  FormControlLabel,
-  Divider, 
   Paper
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
@@ -24,7 +20,7 @@ interface SettingsPaneProps {
 const SettingsPane = ({ open, onClose }: SettingsPaneProps) => {
   const { mode, toggleColorMode } = useSettings();
 
-  const handleThemeToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThemeToggle = () => {
     toggleColorMode();
   };
 

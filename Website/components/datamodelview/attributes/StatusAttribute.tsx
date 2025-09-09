@@ -1,7 +1,7 @@
 import { StatusAttributeType, StatusOption } from "@/lib/Types";
 import { formatNumberSeperator } from "@/lib/utils";
 import { CircleRounded } from "@mui/icons-material";
-import { Box, Typography, Chip, SvgIcon } from "@mui/material";
+import { Box, Typography, Chip } from "@mui/material";
 
 export default function StatusAttribute({ attribute }: { attribute: StatusAttributeType }) {
     const groupedOptions = attribute.Options.reduce((acc, option) => {

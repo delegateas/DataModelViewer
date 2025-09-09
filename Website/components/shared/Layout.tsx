@@ -14,7 +14,7 @@ interface LayoutProps {
   showSidebarContent?: boolean;
 }
 
-const Layout = ({ children, className }: LayoutProps) => {
+const Layout = ({ children }: LayoutProps) => {
   const { isOpen: sidebarOpen, close } = useSidebar();
   const isMobile = useIsMobile();
   const { isAuthenticated } = useAuth();

@@ -15,8 +15,8 @@ import StatusAttribute from "./attributes/StatusAttribute"
 import StringAttribute from "./attributes/StringAttribute"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
-import { Alert, Box, Button, FormControl, Input, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, useTheme } from "@mui/material"
-import { ClearRounded, NorthRounded, SearchRounded, SouthRounded, Visibility, VisibilityOff, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
+import { Box, Button, FormControl, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, useTheme } from "@mui/material"
+import { ClearRounded, SearchRounded, Visibility, VisibilityOff, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null

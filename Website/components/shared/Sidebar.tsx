@@ -1,10 +1,10 @@
 import React from 'react';
-import { IconButton, Box, Typography, Button, alpha, Badge, Tooltip } from '@mui/material';
+import { IconButton, Box, Typography, alpha, Badge, Tooltip } from '@mui/material';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { AutoAwesomeRounded, ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
+import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 
 interface SidebarProps {
 
@@ -151,7 +151,7 @@ const Sidebar = ({ }: SidebarProps) => {
                     <Link
                       className="w-full"
                       href={!item.disabled ? item.href || '#' : '#'}
-                      onClick={(e) => {
+                      onClick={() => {
                           if (item.action) {
                               item.action();
                           }

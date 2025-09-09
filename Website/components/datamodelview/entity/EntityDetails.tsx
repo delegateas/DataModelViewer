@@ -2,7 +2,7 @@
 
 import { EntityType, OwnershipType } from "@/lib/Types";
 import { AssignmentRounded, AttachmentRounded, BusinessRounded, FaceRounded, VisibilityRounded } from "@mui/icons-material";
-import { Chip, ChipPropsColorOverrides, Tooltip, useTheme } from "@mui/material";
+import { Chip, ChipPropsColorOverrides, Tooltip } from "@mui/material";
 import { OverridableStringUnion } from "@mui/types";
 
 type EntityDetailType = {

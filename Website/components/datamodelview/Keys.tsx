@@ -179,7 +179,7 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                             }
                         }}
                     >
-                        Warning: Global search "{search}" is also active
+                        Warning: Global search &quot;{search}&quot; is also active
                     </Alert>
                 )}
             </Box>
@@ -189,7 +189,7 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
                         {searchQuery ? (
                             <Box className="flex flex-col items-center gap-1">
                                 <Typography variant="body2" className="text-xs md:text-sm">
-                                    No keys found matching "{searchQuery}"
+                                    No keys found matching &quot;{searchQuery}&quot;
                                 </Typography>
                                 <Button
                                     variant="text"

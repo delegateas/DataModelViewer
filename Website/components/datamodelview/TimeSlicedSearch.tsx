@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Box, IconButton, Input, InputAdornment, TextField } from '@mui/material';
+import { Box, IconButton, InputAdornment, TextField } from '@mui/material';
 import { CloseRounded, SearchRounded } from '@mui/icons-material';
 
 interface TimeSlicedSearchProps {
@@ -26,7 +26,6 @@ export const TimeSlicedSearch = ({
   onNavigateNext,
   onNavigatePrevious,
   initialLocalValue,
-  currentIndex = 0,
   totalResults = 0,
   placeholder = "Search attributes...",
 }: TimeSlicedSearchProps) => {
@@ -166,9 +165,6 @@ export const TimeSlicedSearch = ({
       onNavigatePrevious?.();
     }
   }, [onNavigateNext, onNavigatePrevious, onSearch, onLoadingChange]);
-
-  const hasResults = totalResults > 0;
-  const showNavigation = hasResults && localValue.length >= 3;
 
   // Cleanup
   useEffect(() => {

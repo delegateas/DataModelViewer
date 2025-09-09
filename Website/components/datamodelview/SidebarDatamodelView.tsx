@@ -1,7 +1,7 @@
 import { EntityType, GroupType } from "@/lib/Types";
 import { useSidebar } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
-import { Accordion, AccordionSummary, AccordionDetails, Stack, Box, InputAdornment, Paper, Typography, IconButton, Button, CircularProgress } from '@mui/material';
+import { Accordion, AccordionSummary, AccordionDetails, Box, InputAdornment, Paper, Typography, Button, CircularProgress } from '@mui/material';
 import { ExpandMore, ExtensionRounded, OpenInNewRounded, SearchRounded } from '@mui/icons-material';
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { TextField } from "@mui/material";
@@ -31,7 +31,6 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [displaySearchTerm, setDisplaySearchTerm] = useState("");
-    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     
     // Memoize search results to prevent recalculation on every render
     const filteredGroups = useMemo(() => {
@@ -68,16 +67,12 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     newExpandedGroups.add(group.Name);
                 }
             });
-            setExpandedGroups(newExpandedGroups);
-        } else {
-            setExpandedGroups(new Set());
         }
     }, [groups]);
 
     const clearSearch = useCallback(() => {
         setSearchTerm("");
         setDisplaySearchTerm("");
-        setExpandedGroups(new Set());
     }, []);
 
     const isEntityMatch = useCallback((entity: EntityType) => {
