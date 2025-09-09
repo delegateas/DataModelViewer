@@ -7,12 +7,15 @@ import { Box, Button, Grid, IconButton, Paper, Typography } from '@mui/material'
 import NotchedBox from '@/components/shared/elements/NotchedBox';
 import Carousel, { CarouselItem } from '@/components/shared/elements/Carousel';
 import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 
 interface IHomeViewProps { }
 
 export const HomeView = ({ }: IHomeViewProps) => {
 
     const { setElement, close } = useSidebar();
+
+    const router = useRouter();
 
     const [wikipage, setWikipage] = useState<string>('');
     const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
@@ -21,21 +24,24 @@ export const HomeView = ({ }: IHomeViewProps) => {
     // Carousel data
     const carouselItems: CarouselItem[] = [
         {
-            image: '/DMV2.png',
+            image: '/processes.jpg',
+            title: 'Process Explorer!',
+            text: "Work has started on the process explorer! This will be a place to figure our the processes that are touching your fields. Everything from server- to client side.",
+            type: '(v2.0.0) Alpha Feature',
+            actionlabel: 'Try it out',
+            action: () => router.push('/processes')
+        },
+        {
+            image: '/upgrade.jpg',
             title: 'Data Model Viewer 2.0.0!',
             text: "The UI has been refreshed for an even cleaner, more modern look with enhanced functionality. And we've upgraded the tech stack to ensure easier maintainability.",
             type: '(v2.0.0) Announcement'
         },
         {
-            image: '/DMV3.png',
+            image: '/documentation.jpg',
             title: 'Home WIKI ADO Page',
-            text: 'Display your own wiki page from your ADO, to introduce your data. Now also supports images!',
+            text: 'Display your own wiki page from your ADO instance. Use it, to give your organisation a special introduction to DMV. Now also supports images!',
             type: '(v1.4.1) Feature'
-        },
-        {
-            title: 'Getting Started',
-            text: 'New to Data Model Viewer? Check out our comprehensive documentation and tutorials to get up to speed quickly.',
-            type: '(v1.0.0) Guide'
         }
     ];
 

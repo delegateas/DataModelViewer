@@ -31,7 +31,8 @@ public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
                     attributeUsages[logicalTableName][attribute] = new List<AttributeUsage>();
 
                 // Add the usage information (assuming AttributeUsage is a defined class)
-                attributeUsages[logicalTableName][attribute].Add(new AttributeUsage(pluginName, $"Used in filterattributes", OperationType.Other, SupportedType));
+
+                attributeUsages[logicalTableName][attribute].Add(new AttributeUsage(pluginName, $"Used in filterattributes", DetermineOperationTypeFromMessage(pluginName.Split(":").Last()), SupportedType));
             }
         }
         catch (Exception ex)

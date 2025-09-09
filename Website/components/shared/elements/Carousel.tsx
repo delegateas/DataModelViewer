@@ -1,13 +1,15 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 
 export interface CarouselItem {
   image?: string;
   title: string;
   text: string;
   type: string;
+  actionlabel?: string;
+  action?: () => void;
 }
 
 interface CarouselProps {
@@ -89,6 +91,11 @@ const Carousel = ({ items, currentIndex = 0, slideDirection = null, className }:
           <Typography variant='body2' className='text-gray-200 mb-8'>
             {currentItem.text}
           </Typography>
+          {currentItem.actionlabel && currentItem.action && (
+            <Button onClick={currentItem.action} variant='contained' color='primary'>
+              {currentItem.actionlabel}
+            </Button>
+          )}
         </Box>
       </Box>
 
