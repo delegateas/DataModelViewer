@@ -506,7 +506,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
           text: 'Sample Text',
           fill: 'black',
           fontSize: 14,
-          fontFamily: 'Inter',
+          fontFamily: 'Roboto, sans-serif',
           textAnchor: 'start',
           textVerticalAnchor: 'top',
           x: 2,
@@ -519,7 +519,7 @@ export const useDiagram = (): DiagramState & DiagramActions => {
     textElement.set('data', {
       text: 'Text Element',
       fontSize: 14,
-      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontFamily: 'Roboto, sans-serif',
       color: 'black',
       backgroundColor: 'transparent',
       padding: 8,

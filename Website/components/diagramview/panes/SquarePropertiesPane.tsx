@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/shared/ui/sheet';
-import { Button } from '@/components/shared/ui/button';
-import { Input } from '@/components/shared/ui/input';
-import { Label } from '@/components/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shared/ui/select';
-import { Separator } from '@/components/shared/ui/separator';
-import { Square, Trash2 } from 'lucide-react';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogTitle, 
+    Button, 
+    TextField, 
+    Typography,
+    Box,
+    Divider
+} from '@mui/material';
 import { SquareElement, SquareElementData } from '../elements/SquareElement';
 import { PRESET_COLORS } from '../shared/DiagramConstants';
+import { DeleteRounded, SquareRounded } from '@mui/icons-material';
 
 export interface SquarePropertiesPaneProps {
     isOpen: boolean;
@@ -74,171 +78,186 @@ export const SquarePropertiesPane: React.FC<SquarePropertiesPaneProps> = ({
     }
 
     return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="w-80 overflow-y-auto">
-                <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                        <Square className="w-5 h-5" />
-                        Square Properties
-                    </SheetTitle>
-                </SheetHeader>
-
-                <div className="space-y-6 mt-6">
+        <Dialog open={isOpen} onClose={() => onOpenChange(false)} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SquareRounded />
+                Square Properties
+            </DialogTitle>
+            <DialogContent sx={{ minHeight: '500px' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
                     {/* Fill Color Section */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium">Fill Color</Label>
-                        <div className="grid grid-cols-5 gap-2">
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                            Fill Color
+                        </Typography>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, mb: 2 }}>
                             {PRESET_COLORS.fills.map((color) => (
                                 <Button
                                     key={color.value}
-                                    variant="outline"
-                                    size="sm"
-                                    className={`h-8 p-1 transition-all hover:scale-105 ${
-                                        squareData.fillColor === color.value
-                                            ? 'ring-2 ring-blue-500 border-blue-500' 
-                                            : ''
-                                    }`}
-                                    style={{ backgroundColor: color.value }}
+                                    variant="outlined"
+                                    size="small"
+                                    sx={{ 
+                                        minWidth: 0, 
+                                        height: 32, 
+                                        padding: 0.5, 
+                                        backgroundColor: color.value,
+                                        border: squareData.fillColor === color.value ? 2 : 1,
+                                        borderColor: squareData.fillColor === color.value ? 'primary.main' : 'divider',
+                                        '&:hover': { transform: 'scale(1.05)' }
+                                    }}
                                     onClick={() => handlePresetFillColor(color.value)}
                                     title={color.name}
-                                >
-                                    <span className="sr-only">{color.name}</span>
-                                </Button>
+                                />
                             ))}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Input
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <TextField
                                 type="color"
                                 value={squareData.fillColor}
-                                onChange={(e) => handleDataChange('fillColor', e.target.value)}
-                                className="w-12 h-8 p-1 border-2"
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('fillColor', e.target.value)}
+                                sx={{ width: 48, '& .MuiInputBase-input': { padding: 0.5, height: 32 } }}
+                                size="small"
                             />
-                            <Input
+                            <TextField
                                 type="text"
                                 value={squareData.fillColor}
-                                onChange={(e) => handleDataChange('fillColor', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('fillColor', e.target.value)}
                                 placeholder="#f1f5f9"
-                                className="flex-1 text-sm"
+                                sx={{ flex: 1 }}
+                                size="small"
                             />
-                        </div>
-                    </div>
+                        </Box>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Border Section */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium">Border</Label>
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                            Border
+                        </Typography>
                         
                         {/* Border Color */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Color</Label>
-                            <div className="grid grid-cols-5 gap-2">
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Color
+                            </Typography>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, mb: 2 }}>
                                 {PRESET_COLORS.borders.map((color) => (
                                     <Button
                                         key={color.value}
-                                        variant="outline"
-                                        size="sm"
-                                        className={`h-8 p-1 transition-all hover:scale-105 ${
-                                            squareData.borderColor === color.value
-                                                ? 'ring-2 ring-blue-500 border-blue-500' 
-                                                : ''
-                                        }`}
-                                        style={{ backgroundColor: color.value }}
+                                        variant="outlined"
+                                        size="small"
+                                        sx={{ 
+                                            minWidth: 0, 
+                                            height: 32, 
+                                            padding: 0.5, 
+                                            backgroundColor: color.value,
+                                            border: squareData.borderColor === color.value ? 2 : 1,
+                                            borderColor: squareData.borderColor === color.value ? 'primary.main' : 'divider',
+                                            '&:hover': { transform: 'scale(1.05)' }
+                                        }}
                                         onClick={() => handlePresetBorderColor(color.value)}
                                         title={color.name}
-                                    >
-                                        <span className="sr-only">{color.name}</span>
-                                    </Button>
+                                    />
                                 ))}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Input
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <TextField
                                     type="color"
                                     value={squareData.borderColor}
-                                    onChange={(e) => handleDataChange('borderColor', e.target.value)}
-                                    className="w-12 h-8 p-1 border-2"
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('borderColor', e.target.value)}
+                                    sx={{ width: 48, '& .MuiInputBase-input': { padding: 0.5, height: 32 } }}
+                                    size="small"
                                 />
-                                <Input
+                                <TextField
                                     type="text"
                                     value={squareData.borderColor}
-                                    onChange={(e) => handleDataChange('borderColor', e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('borderColor', e.target.value)}
                                     placeholder="#64748b"
-                                    className="flex-1 text-sm"
+                                    sx={{ flex: 1 }}
+                                    size="small"
                                 />
-                            </div>
-                        </div>
+                            </Box>
+                        </Box>
 
                         {/* Border Width */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Width</Label>
-                            <Input
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Width
+                            </Typography>
+                            <TextField
                                 type="number"
-                                min="0"
-                                max="10"
-                                step="1"
+                                inputProps={{ min: 0, max: 10, step: 1 }}
                                 value={squareData.borderWidth}
-                                onChange={(e) => handleDataChange('borderWidth', parseInt(e.target.value) || 0)}
-                                className="text-sm"
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('borderWidth', parseInt(e.target.value) || 0)}
+                                size="small"
+                                fullWidth
                             />
-                        </div>
+                        </Box>
 
                         {/* Border Type */}
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Style</Label>
-                            <Select 
-                                value={squareData.borderType} 
-                                onValueChange={(value) => handleDataChange('borderType', value)}
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                Style
+                            </Typography>
+                            <TextField
+                                select
+                                value={squareData.borderType}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('borderType', e.target.value)}
+                                size="small"
+                                fullWidth
+                                SelectProps={{ native: true }}
                             >
-                                <SelectTrigger className="text-sm">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="solid">Solid</SelectItem>
-                                    <SelectItem value="dashed">Dashed</SelectItem>
-                                    <SelectItem value="dotted">Dotted</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                                <option value="solid">Solid</option>
+                                <option value="dashed">Dashed</option>
+                                <option value="dotted">Dotted</option>
+                            </TextField>
+                        </Box>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Opacity Section */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium">Opacity</Label>
-                        <div className="space-y-2">
-                            <Input
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                            Opacity
+                        </Typography>
+                        <Box sx={{ mb: 1 }}>
+                            <TextField
                                 type="range"
-                                min="0"
-                                max="1"
-                                step="0.1"
+                                inputProps={{ min: 0, max: 1, step: 0.1 }}
                                 value={squareData.opacity}
-                                onChange={(e) => handleDataChange('opacity', parseFloat(e.target.value))}
-                                className="w-full"
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDataChange('opacity', parseFloat(e.target.value))}
+                                fullWidth
+                                size="small"
                             />
-                            <div className="text-xs text-muted-foreground text-center">
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 0.5 }}>
                                 {Math.round((squareData.opacity || 0.7) * 100)}%
-                            </div>
-                        </div>
-                    </div>
+                            </Typography>
+                        </Box>
+                    </Box>
 
-                    <Separator />
+                    <Divider />
 
                     {/* Delete Section */}
-                    <div className="space-y-3">
-                        <Label className="text-sm font-medium text-destructive">Danger Zone</Label>
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, color: 'error.main' }}>
+                            Danger Zone
+                        </Typography>
                         <Button
-                            variant="destructive"
-                            size="sm"
-                            className="w-full"
+                            variant="contained"
+                            color="error"
+                            size="small"
+                            fullWidth
                             onClick={handleDeleteSquare}
+                            startIcon={<DeleteRounded />}
                         >
-                            <Trash2 className="w-4 h-4 mr-2" />
                             Delete Square
                         </Button>
-                    </div>
-                </div>
-            </SheetContent>
-        </Sheet>
+                    </Box>
+                </Box>
+            </DialogContent>
+        </Dialog>
     );
 };

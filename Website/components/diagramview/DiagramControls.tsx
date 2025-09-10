@@ -1,16 +1,7 @@
 import React from 'react';
-import { Button } from '@/components/shared/ui/button';
-import { Separator } from '@/components/shared/ui/separator';
-import { 
-    ZoomIn, 
-    ZoomOut, 
-    RotateCcw, 
-    Maximize, 
-    Settings,
-    Layers,
-    Search
-} from 'lucide-react';
+import { Button, Divider, Typography, Box } from '@mui/material';
 import { useDiagramViewContext } from '@/contexts/DiagramViewContext';
+import { AspectRatioRounded, LayersRounded, RefreshRounded, SearchRounded, SettingsRounded, ZoomInRounded, ZoomOutRounded } from '@mui/icons-material';
 
 export const DiagramControls: React.FC = () => {
   const { 
@@ -19,63 +10,72 @@ export const DiagramControls: React.FC = () => {
   } = useDiagramViewContext();
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-medium mb-2">View Controls</h3>
-        <div className="space-y-2">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+          View Controls
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full justify-start"
+            variant="outlined" 
+            size="small" 
+            fullWidth
             onClick={resetView}
+            startIcon={<RefreshRounded />}
+            sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
-            <RotateCcw className="h-4 w-4" />
             Reset View
           </Button>
           <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full justify-start"
+            variant="outlined" 
+            size="small" 
+            fullWidth
             onClick={fitToScreen}
+            startIcon={<AspectRatioRounded />}
+            sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
-            <Maximize className="h-4 w-4" />
             Fit to Screen
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
       
-      <Separator />
+      <Divider />
       
-      <div>
-        <h3 className="text-sm font-medium mb-2">Tools</h3>
-        <div className="space-y-2">
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+          Tools
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full justify-start"
+            variant="outlined" 
+            size="small" 
+            fullWidth
+            startIcon={<SearchRounded />}
+            sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
-            <Search className="h-4 w-4" />
             Search Entities
           </Button>
           <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full justify-start"
+            variant="outlined" 
+            size="small" 
+            fullWidth
+            startIcon={<LayersRounded />}
+            sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
-            <Layers className="h-4 w-4" />
             Layer Manager
           </Button>
           <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full justify-start"
+            variant="outlined" 
+            size="small" 
+            fullWidth
+            startIcon={<SettingsRounded />}
+            sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
           >
-            <Settings className="h-4 w-4" />
             Diagram Settings
           </Button>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
@@ -83,9 +83,9 @@ export const DiagramZoomDisplay: React.FC = () => {
   const { zoom } = useDiagramViewContext();
 
   return (
-    <div className="text-xs text-muted-foreground">
+    <Typography variant="caption" color="text.secondary">
       Zoom: {Math.round(zoom * 100)}%
-    </div>
+    </Typography>
   );
 };
 
@@ -93,23 +93,21 @@ export const DiagramZoomControls: React.FC = () => {
   const { zoomIn, zoomOut } = useDiagramViewContext();
 
   return (
-    <div className="flex flex-col space-y-2">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
       <Button 
-        size="icon" 
-        variant="secondary"
+        variant="contained" 
         onClick={zoomIn}
-        className="h-8 w-8"
+        sx={{ minWidth: 32, height: 32, padding: 0 }}
       >
-        <ZoomIn className="h-4 w-4" />
+        <ZoomInRounded />
       </Button>
       <Button 
-        size="icon" 
-        variant="secondary"
+        variant="contained" 
         onClick={zoomOut}
-        className="h-8 w-8"
+        sx={{ minWidth: 32, height: 32, padding: 0 }}
       >
-        <ZoomOut className="h-4 w-4" />
+        <ZoomOutRounded />
       </Button>
-    </div>
+    </Box>
   );
 }; 

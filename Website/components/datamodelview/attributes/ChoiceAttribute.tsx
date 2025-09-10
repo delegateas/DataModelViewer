@@ -1,68 +1,87 @@
 import { useIsMobile } from "@/hooks/use-mobile"
 import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
-import { CheckCircle, Circle, Square, CheckSquare } from "lucide-react"
+import { Box, Typography, Chip } from "@mui/material"
+import { CheckBoxOutlineBlankRounded, CheckBoxRounded, CheckRounded } from "@mui/icons-material"
 
 export default function ChoiceAttribute({ attribute, highlightMatch, highlightTerm }: { attribute: ChoiceAttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string }) {
 
     const isMobile = useIsMobile();
 
     return (
-        <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-                <span className="font-semibold text-xs md:font-bold md:text-sm">{attribute.Type}-select</span>
+        <Box className="flex flex-col gap-1">
+            <Box className="flex items-center gap-2">
+                <Typography className="font-semibold text-xs md:text-sm md:font-bold">{attribute.Type}-select</Typography>
                 {attribute.DefaultValue !== null && attribute.DefaultValue !== -1 && !isMobile && (
-                    <span className="text-xs bg-green-100 text-green-700 px-1 py-0.5 rounded-full flex items-center gap-1 md:px-1.5">
-                        <CheckCircle className="w-2 h-2 md:w-3 md:h-3" />
-                        Default: {attribute.Options.find(o => o.Value === attribute.DefaultValue)?.Name}
-                    </span>
+                    <Chip 
+                        icon={<CheckRounded className="w-2 h-2 md:w-3 md:h-3" />}
+                        label={`Default: ${attribute.Options.find(o => o.Value === attribute.DefaultValue)?.Name}`}
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                    />
                 )}
-            </div>
-            <div className="space-y-1">
+            </Box>
+            <Box className="space-y-1">
                 {attribute.Options.map(option => (
-                    <div key={option.Value}>
-                        <div className="flex items-center justify-between py-0.5 md:py-1">
-                            <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1">
+                    <Box key={option.Value}>
+                        <Box className="flex items-center justify-between py-0.5 md:py-1">
+                            <Box className="flex items-center gap-2">
+                                <Box className="flex items-center gap-1">
                                     {attribute.Type === "Multi" ? (
                                         // For multi-select, show checkboxes
                                         option.Value === attribute.DefaultValue ? (
-                                            <CheckSquare className="w-2 h-2 text-green-600 md:w-3 md:h-3" />
+                                            <CheckBoxRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                                         ) : (
-                                            <Square className="w-2 h-2 text-gray-400 md:w-3 md:h-3" />
+                                            <CheckBoxOutlineBlankRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                                         )
                                     ) : (
                                         // For single-select, show radio buttons
                                         option.Value === attribute.DefaultValue ? (
-                                            <CheckCircle className="w-2 h-2 text-green-600 md:w-3 md:h-3" />
+                                            <CheckBoxRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                                         ) : (
-                                            <Circle className="w-2 h-2 text-gray-400 md:w-3 md:h-3" />
+                                            <CheckBoxOutlineBlankRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                                         )
                                     )}
-                                    <span className="text-xs md:text-sm">{highlightMatch(option.Name, highlightTerm)}</span>
-                                </div>
+                                    <Typography className="text-xs md:text-sm">{highlightMatch(option.Name, highlightTerm)}</Typography>
+                                </Box>
                                 {option.Color && (
-                                    <div 
-                                        className="w-2 h-2 rounded-full border border-gray-300 shadow-sm md:w-3 md:h-3" 
-                                        style={{ backgroundColor: option.Color }}
+                                    <Box 
+                                        className="w-2 h-2 rounded-full shadow-sm md:w-3 md:h-3" 
+                                        sx={{ 
+                                            backgroundColor: option.Color,
+                                            border: 1,
+                                            borderColor: 'divider'
+                                        }}
                                         title={`Color: ${option.Color}`}
                                     />
                                 )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs bg-gray-200 text-gray-700 px-1 py-0.5 rounded font-mono md:px-1.5">
-                                    {formatNumberSeperator(option.Value)}
-                                </span>
-                            </div>
-                        </div>
+                            </Box>
+                            <Box className="flex items-center gap-2">
+                                <Chip 
+                                    label={formatNumberSeperator(option.Value)}
+                                    size="small"
+                                    sx={{ 
+                                        fontSize: { xs: '0.625rem', md: '0.875rem' },
+                                        fontFamily: 'monospace',
+                                        height: { xs: '16px', md: '24px' },
+                                        backgroundColor: 'grey.200',
+                                        color: 'grey.700'
+                                    }}
+                                />
+                            </Box>
+                        </Box>
                         {option.Description && (
-                            <div className="text-xs text-gray-600 italic pl-4 break-words md:pl-6">
+                            <Typography 
+                                className="text-xs italic pl-4 break-words md:pl-6"
+                                sx={{ color: 'text.secondary' }}
+                            >
                                 {option.Description}
-                            </div>
+                            </Typography>
                         )}
-                    </div>
+                    </Box>
                 ))}
-            </div>
-        </div>
+            </Box>
+        </Box>
     )
 }

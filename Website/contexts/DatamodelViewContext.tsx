@@ -9,6 +9,7 @@ export interface DatamodelViewState {
     currentSection: string | null;
     scrollToSection: (sectionId: string) => void;
     loading: boolean;
+    loadingSection: string | null;
 }
 
 const initialState: DatamodelViewState = {
@@ -16,6 +17,7 @@ const initialState: DatamodelViewState = {
     currentSection: null,
     scrollToSection: () => { throw new Error("scrollToSection not initialized yet!"); },
     loading: true,
+    loadingSection: null,
 }
 
 type DatamodelViewAction = 
@@ -23,6 +25,7 @@ type DatamodelViewAction =
     | { type: 'SET_CURRENT_SECTION', payload: string | null }
     | { type: 'SET_SCROLL_TO_SECTION', payload: (sectionId: string) => void }
     | { type: 'SET_LOADING', payload: boolean }
+    | { type: 'SET_LOADING_SECTION', payload: string | null }
 
 
 const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAction): DatamodelViewState => {
@@ -35,6 +38,8 @@ const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAc
             return { ...state, scrollToSection: action.payload }
         case 'SET_LOADING':
             return { ...state, loading: action.payload }
+        case 'SET_LOADING_SECTION':
+            return { ...state, loadingSection: action.payload }
         default:
             return state;
     }

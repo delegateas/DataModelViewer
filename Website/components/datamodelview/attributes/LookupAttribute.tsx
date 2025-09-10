@@ -1,31 +1,55 @@
 import { LookupAttributeType } from "@/lib/Types"
-import { FileSearch, FileX2 } from "lucide-react"
 import { useDatamodelView } from "@/contexts/DatamodelViewContext"
+import { Box, Typography, Button, Chip } from "@mui/material"
+import { ContentPasteOffRounded, ContentPasteSearchRounded } from "@mui/icons-material";
 
 export default function LookupAttribute({ attribute }: { attribute: LookupAttributeType }) {
 
     const { scrollToSection } = useDatamodelView();
 
-    return <div className="flex flex-wrap items-center gap-1 md:gap-2">
-        <p className="font-semibold text-xs md:font-bold md:text-sm">Lookup</p>
-        <div className="flex flex-wrap gap-1">
-            {attribute.Targets
-                .map(target => target.IsInSolution ? 
-                    <button
-                        key={target.Name}
-                        className="h-5 px-1.5 text-xs flex items-center gap-1 hover:bg-blue-50 hover:border-blue-300 border border-gray-300 rounded-md bg-white shadow-sm md:h-6 md:px-2"
-                        onClick={() => scrollToSection(target.Name)}
-                    >
-                        <FileSearch className="w-2 h-2 md:w-3 md:h-3" />
-                        <span className="text-xs">{target.Name}</span>
-                    </button> : 
-                    <div 
-                        key={target.Name} 
-                        className="h-5 px-1.5 text-xs flex items-center gap-1 bg-gray-100 text-gray-600 rounded border md:h-6 md:px-2"
-                    >
-                        <FileX2 className="w-2 h-2 md:w-3 md:h-3" />
-                        <span className="text-xs">{target.Name}</span>
-                    </div>)}
-        </div>
-    </div>
+    return (
+        <Box className="flex flex-wrap items-center gap-1 md:gap-2">
+            <Typography className="font-semibold text-xs md:font-bold md:text-sm">Lookup</Typography>
+            <Box className="flex flex-wrap gap-1">
+                {attribute.Targets
+                    .map(target => target.IsInSolution ? 
+                        <Button
+                            key={target.Name}
+                            variant="outlined"
+                            size="small"
+                            startIcon={<ContentPasteSearchRounded className="w-2 h-2 md:w-3 md:h-3" />}
+                            onClick={() => scrollToSection(target.Name)}
+                            sx={{
+                                fontSize: { xs: '0.625rem', md: '0.875rem' },
+                                height: { xs: '16px', md: '24px' },
+                                minWidth: 'auto',
+                                px: { xs: 0.75, md: 1 },
+                                '& .MuiButton-startIcon': {
+                                    marginLeft: 0,
+                                    marginRight: { xs: '2px', md: '4px' }
+                                }
+                            }}
+                        >
+                            {target.Name}
+                        </Button> : 
+                        <Chip 
+                            key={target.Name}
+                            icon={<ContentPasteOffRounded className="w-2 h-2 md:w-3 md:h-3" />}
+                            label={target.Name}
+                            size="small"
+                            disabled
+                            sx={{
+                                fontSize: { xs: '0.625rem', md: '0.875rem' },
+                                height: { xs: '16px', md: '24px' },
+                                backgroundColor: 'grey.100',
+                                color: 'grey.600',
+                                '& .MuiChip-icon': {
+                                    fontSize: { xs: '0.5rem', md: '0.75rem' }
+                                }
+                            }}
+                        />
+                    )}
+            </Box>
+        </Box>
+    )
 }

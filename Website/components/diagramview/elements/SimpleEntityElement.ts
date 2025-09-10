@@ -21,7 +21,7 @@ export class SimpleEntityElement extends dia.Element {
                         circle: {
                             r: 6,
                             magnet: true,
-                            fill: '#fff',
+                            fill: 'var(--mui-palette-background-paper)',
                             stroke: '#42a5f5',
                             strokeWidth: 2,
                             visibility: 'hidden',
@@ -34,7 +34,7 @@ export class SimpleEntityElement extends dia.Element {
                         circle: {
                             r: 6,
                             magnet: true,
-                            fill: '#fff',
+                            fill: 'var(--mui-palette-background-paper)',
                             stroke: '#42a5f5',
                             strokeWidth: 2,
                             visibility: 'hidden',
@@ -47,7 +47,7 @@ export class SimpleEntityElement extends dia.Element {
                         circle: {
                             r: 6,
                             magnet: true,
-                            fill: '#fff',
+                            fill: 'var(--mui-palette-background-paper)',
                             stroke: '#42a5f5',
                             strokeWidth: 2,
                             visibility: 'hidden',
@@ -60,7 +60,7 @@ export class SimpleEntityElement extends dia.Element {
                         circle: {
                             r: 6,
                             magnet: true,
-                            fill: '#fff',
+                            fill: 'var(--mui-palette-background-paper)',
                             stroke: '#42a5f5',
                             strokeWidth: 2,
                             visibility: 'hidden',
@@ -97,7 +97,7 @@ export class SimpleEntityElement extends dia.Element {
             body: {
                 refWidth: '100%',
                 refHeight: '100%',
-                fill: '#fff',
+                fill: 'var(--mui-palette-background-paper)',
                 stroke: '#d1d5db',
                 rx: 12
             },

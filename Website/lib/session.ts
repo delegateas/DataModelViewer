@@ -2,7 +2,6 @@
 import 'server-only';
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { redirect } from 'next/navigation'
 
 const secretKey = process.env.WebsiteSessionSecret;
 const encodedKey = new TextEncoder().encode(secretKey);
@@ -51,7 +50,6 @@ export async function createSession(password: string) {
 export async function deleteSession() {
     const cookieStore = await cookies();
     cookieStore.delete("session");
-    redirect("/login");
 }
 
 export async function getSession() {

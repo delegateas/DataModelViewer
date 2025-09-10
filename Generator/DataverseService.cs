@@ -2,6 +2,9 @@
 using Azure.Identity;
 using Generator.DTO;
 using Generator.DTO.Attributes;
+using Generator.Queries;
+using Generator.Services;
+using Generator.Services.Plugins;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +25,9 @@ namespace Generator
         private readonly IConfiguration configuration;
         private readonly ILogger<DataverseService> logger;
 
+        private readonly PluginAnalyzer pluginAnalyzer;
+        private readonly PowerAutomateFlowAnalyzer flowAnalyzer;
+
         public DataverseService(IConfiguration configuration, ILogger<DataverseService> logger)
         {
             this.configuration = configuration;
@@ -38,6 +44,9 @@ namespace Generator
             client = new ServiceClient(
                 instanceUrl: new Uri(dataverseUrl),
                 tokenProviderFunction: url => TokenProviderFunction(url, cache, logger));
+
+            pluginAnalyzer = new PluginAnalyzer(client);
+            flowAnalyzer = new PowerAutomateFlowAnalyzer(client);
         }
 
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
@@ -84,7 +93,18 @@ namespace Generator
             var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.UserLocalizedLabel?.Label ?? attr.SchemaName) ?? []);
 
             var entityIconMap = await GetEntityIconMap(allEntityMetadata);
-            var pluginStepAttributeMap = await GetPluginStepAttributes(logicalToSchema.Keys.ToHashSet(), pluginStepsInSolution);
+            // Processes analysis
+            var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
+            // Plugins
+            var pluginCollection = await client.GetSDKMessageProcessingStepsAsync(solutionIds);
+            logger.LogInformation($"There are {pluginCollection.Count()} plugin sdk steps in the environment.");
+            foreach (var plugin in pluginCollection)
+                await pluginAnalyzer.AnalyzeComponentAsync(plugin, attributeUsages);
+            // Flows
+            var flowCollection = await client.GetPowerAutomateFlowsAsync(solutionIds);
+            logger.LogInformation($"There are {flowCollection.Count()} Power Automate flows in the environment.");
+            foreach (var flow in flowCollection)
+                await flowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
 
             var records =
                 entitiesInSolutionMetadata
@@ -120,7 +140,7 @@ namespace Generator
                         securityRoles ?? [],
                         keys ?? [],
                         entityIconMap,
-                        pluginStepAttributeMap,
+                        attributeUsages,
                         configuration);
                 });
         }
@@ -135,16 +155,14 @@ namespace Generator
             List<SecurityRole> securityRoles,
             List<Key> keys,
             Dictionary<string, string> entityIconMap,
-            Dictionary<string, Dictionary<string, HashSet<string>>> pluginStepAttributeMap,
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
             IConfiguration configuration)
         {
             var attributes =
                 relevantAttributes
                 .Select(metadata =>
                 {
-                    pluginStepAttributeMap.TryGetValue(entity.LogicalName, out var entityPluginAttributes);
-                    var pluginTypeNames = entityPluginAttributes?.GetValueOrDefault(metadata.LogicalName) ?? new HashSet<string>();
-                    var attr = GetAttribute(metadata, entity, logicalToSchema, pluginTypeNames, logger);
+                    var attr = GetAttribute(metadata, entity, logicalToSchema, attributeUsages, logger);
                     attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
                     return attr;
                 })
@@ -220,7 +238,7 @@ namespace Generator
                     iconBase64);
         }
 
-        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, ExtendedEntityInformation> logicalToSchema, HashSet<string> pluginTypeNames, ILogger<DataverseService> logger)
+        private static Attribute GetAttribute(AttributeMetadata metadata, EntityMetadata entity, Dictionary<string, ExtendedEntityInformation> logicalToSchema, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages, ILogger<DataverseService> logger)
         {
             Attribute attr = metadata switch
             {
@@ -239,7 +257,12 @@ namespace Generator
                 FileAttributeMetadata fileAttribute => new FileAttribute(fileAttribute),
                 _ => new GenericAttribute(metadata)
             };
-            attr.PluginTypeNames = pluginTypeNames;
+
+            var schemaname = attributeUsages.GetValueOrDefault(entity.LogicalName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
+            // also check the plural name, as some workflows like Power Automate use collectionname
+            var pluralname = attributeUsages.GetValueOrDefault(entity.LogicalCollectionName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
+
+            attr.AttributeUsages = [.. schemaname, .. pluralname];
             return attr;
         }
 
@@ -356,7 +379,7 @@ namespace Generator
                 {
                     Conditions =
                     {
-                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20, 92 }), // entity, attribute, role, pluginstep (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
+                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20, 92 }), // entity, attribute, role, sdkpluginstep (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
                         new ConditionExpression("solutionid", ConditionOperator.In, solutionIds)
                     }
                 }
@@ -546,101 +569,6 @@ namespace Generator
         {
             var uri = new Uri(url);
             return $"{uri.Scheme}://{uri.Host}";
-        }
-
-        private async Task<Dictionary<string, Dictionary<string, HashSet<string>>>> GetPluginStepAttributes(HashSet<string> relevantLogicalNames, List<Guid> pluginStepsInSolution)
-        {
-            logger.LogInformation("Retrieving plugin step attributes...");
-            
-            var pluginStepAttributeMap = new Dictionary<string, Dictionary<string, HashSet<string>>>();
-
-            try
-            {
-                // Query sdkmessageprocessingstep table for steps with filtering attributes
-                var stepQuery = new QueryExpression("sdkmessageprocessingstep")
-                {
-                    ColumnSet = new ColumnSet("filteringattributes", "sdkmessagefilterid", "sdkmessageprocessingstepid"),
-                    Criteria = new FilterExpression
-                    {
-                        Conditions =
-                        {
-                            new ConditionExpression("filteringattributes", ConditionOperator.NotNull),
-                            new ConditionExpression("filteringattributes", ConditionOperator.NotEqual, ""),
-                            new ConditionExpression("statecode", ConditionOperator.Equal, 0) // Only active steps
-                        }
-                    },
-                    LinkEntities =
-                    {
-                        new LinkEntity
-                        {
-                            LinkFromEntityName = "sdkmessageprocessingstep",
-                            LinkFromAttributeName = "sdkmessagefilterid",
-                            LinkToEntityName = "sdkmessagefilter",
-                            LinkToAttributeName = "sdkmessagefilterid",
-                            Columns = new ColumnSet("primaryobjecttypecode"),
-                            EntityAlias = "filter"
-                        },
-                        new LinkEntity
-                        {
-                            LinkFromEntityName = "sdkmessageprocessingstep",
-                            LinkFromAttributeName = "plugintypeid",
-                            LinkToEntityName = "plugintype",
-                            LinkToAttributeName = "plugintypeid",
-                            Columns = new ColumnSet("name"),
-                            EntityAlias = "plugintype"
-                        }
-                    }
-                };
-
-                // Add solution filtering if plugin steps in solution are specified
-                if (pluginStepsInSolution.Count > 0)
-                {
-                    stepQuery.Criteria.Conditions.Add(
-                        new ConditionExpression("sdkmessageprocessingstepid", ConditionOperator.In, pluginStepsInSolution));
-                }
-
-                var stepResults = await client.RetrieveMultipleAsync(stepQuery);
-                
-                foreach (var step in stepResults.Entities)
-                {
-                    var filteringAttributes = step.GetAttributeValue<string>("filteringattributes");
-                    var entityLogicalName = step.GetAttributeValue<AliasedValue>("filter.primaryobjecttypecode")?.Value as string;
-                    var pluginTypeName = step.GetAttributeValue<AliasedValue>("plugintype.name")?.Value as string;
-                    
-                    if (string.IsNullOrEmpty(filteringAttributes) || string.IsNullOrEmpty(entityLogicalName) || string.IsNullOrEmpty(pluginTypeName))
-                        continue;
-                    
-                    // Get entity logical name from metadata mapping
-                    if (!relevantLogicalNames.Contains(entityLogicalName))
-                    {
-                        logger.LogDebug("Unknown entity type code: {TypeCode}", entityLogicalName);
-                        continue;
-                    }
-                    
-                    if (!pluginStepAttributeMap.ContainsKey(entityLogicalName))
-                        pluginStepAttributeMap[entityLogicalName] = new Dictionary<string, HashSet<string>>();
-                    
-                    // Parse comma-separated attribute names
-                    var attributeNames = filteringAttributes.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var attributeName in attributeNames)
-                    {
-                        var trimmedAttributeName = attributeName.Trim();
-                        if (!pluginStepAttributeMap[entityLogicalName].ContainsKey(trimmedAttributeName))
-                            pluginStepAttributeMap[entityLogicalName][trimmedAttributeName] = new HashSet<string>();
-                        
-                        var pluginTypeNameParts = pluginTypeName.Split('.');
-                        pluginStepAttributeMap[entityLogicalName][trimmedAttributeName].Add(pluginTypeNameParts[pluginTypeNameParts.Length - 1]);
-                    }
-                }
-                
-                logger.LogInformation("Found {Count} entities with plugin step attributes.", pluginStepAttributeMap.Count);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning("Failed to retrieve plugin step attributes: {Message}", ex.Message);
-            }
-            
-            return pluginStepAttributeMap;
         }
 
         private static async Task<AccessToken> FetchAccessToken(TokenCredential credential, string scope, ILogger logger)

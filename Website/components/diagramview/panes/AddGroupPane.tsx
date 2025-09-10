@@ -1,14 +1,19 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/shared/ui/button';
-import { Input } from '@/components/shared/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/shared/ui/sheet';
-import { Search, Database } from 'lucide-react';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogTitle, 
+    Button, 
+    TextField, 
+    Typography
+} from '@mui/material';
 import { Groups } from '@/generated/Data';
 import { EntityType, GroupType } from '@/lib/Types';
 import { useAttributeSelection } from '@/hooks/useAttributeSelection';
 import { AttributeSelectionPanel } from './AttributeSelectionPanel';
+import { FolderRounded, SearchRounded } from '@mui/icons-material';
 
 export interface AddGroupPaneProps {
     isOpen: boolean;
@@ -67,12 +72,10 @@ export const AddGroupPane: React.FC<AddGroupPaneProps> = ({
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="left" className="w-96 sm:w-[540px]">
-                <SheetHeader>
-                    <SheetTitle>Add Group to Diagram</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6 space-y-4">
+        <Dialog open={isOpen} onClose={() => onOpenChange(false)} maxWidth="md" fullWidth>
+            <DialogContent>
+                <DialogTitle>Add Group to Diagram</DialogTitle>
+                <div className="space-y-4">
                     {/* Attribute Selection Options */}
                     <AttributeSelectionPanel
                         attributeMode={attributeMode}
@@ -84,12 +87,14 @@ export const AddGroupPane: React.FC<AddGroupPaneProps> = ({
 
                     {/* Search Input */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                        <Input
+                        <SearchRounded className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                        <TextField
+                            fullWidth
+                            size="small"
                             placeholder="Search groups..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10"
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                            slotProps={{ input: { style: { paddingLeft: '40px' } } }}
                         />
                     </div>
 
@@ -104,18 +109,18 @@ export const AddGroupPane: React.FC<AddGroupPaneProps> = ({
                                 <div key={group.Name} className="border rounded-lg p-4 space-y-3">
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center space-x-2">
-                                            <Database className="w-5 h-5 text-muted-foreground" />
+                                            <FolderRounded className="w-5 h-5 text-muted-foreground" />
                                             <div>
-                                                <h3 className="font-semibold text-sm">{group.Name}</h3>
-                                                <p className="text-xs text-muted-foreground mt-1">
+                                                <Typography variant="subtitle2" className="font-semibold">{group.Name}</Typography>
+                                                <Typography variant="caption" color="text.secondary">
                                                     {group.Entities.length} entities
-                                                </p>
+                                                </Typography>
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end space-y-2">
-                                            <div className="text-xs text-muted-foreground">
+                                            <Typography variant="caption" color="text.secondary">
                                                 {entitiesInDiagram}/{totalEntities} entities
-                                            </div>
+                                            </Typography>
                                             {isFullyInDiagram && (
                                                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
                                                     All in Diagram
@@ -146,16 +151,16 @@ export const AddGroupPane: React.FC<AddGroupPaneProps> = ({
                                             );
                                         })}
                                         {group.Entities.length > 5 && (
-                                            <span className="text-xs text-muted-foreground px-2 py-1">
+                                            <Typography variant="caption" color="text.secondary" className="px-2 py-1">
                                                 +{group.Entities.length - 5} more
-                                            </span>
+                                            </Typography>
                                         )}
                                     </div>
                                     
                                     <Button
-                                        variant={isFullyInDiagram ? "outline" : "default"}
-                                        size="sm"
-                                        className="w-full"
+                                        variant={isFullyInDiagram ? "outlined" : "contained"}
+                                        size="small"
+                                        fullWidth
                                         onClick={() => handleAddGroup(group)}
                                         disabled={isFullyInDiagram && totalEntities > 0}
                                     >
@@ -176,7 +181,7 @@ export const AddGroupPane: React.FC<AddGroupPaneProps> = ({
                         )}
                     </div>
                 </div>
-            </SheetContent>
-        </Sheet>
+            </DialogContent>
+        </Dialog>
     );
 };

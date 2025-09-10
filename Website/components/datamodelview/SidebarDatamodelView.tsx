@@ -1,14 +1,14 @@
 import { EntityType, GroupType } from "@/lib/Types";
-import { useTouch } from '../shared/ui/hybridtooltop';
-import { useSidebarDispatch } from '@/contexts/SidebarContext';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { cn } from "@/lib/utils";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@radix-ui/react-collapsible";
-import { Slot } from "@radix-ui/react-slot";
-import { ExternalLink, Puzzle, Search, X } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Input } from "@/components/shared/ui/input";
+import { Accordion, AccordionSummary, AccordionDetails, Box, InputAdornment, Paper, Typography, Button, CircularProgress } from '@mui/material';
+import { ExpandMore, ExtensionRounded, OpenInNewRounded, SearchRounded } from '@mui/icons-material';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { TextField } from "@mui/material";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme, alpha } from '@mui/material/styles';
 
 interface ISidebarDatamodelViewProps { 
 
@@ -20,24 +20,42 @@ interface INavItemProps {
 
 
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
-    const isTouch = useTouch();
-    const dispatch = useSidebarDispatch();
-    const { currentSection, currentGroup, scrollToSection } = useDatamodelView();
+    const { currentSection, currentGroup, scrollToSection, loadingSection } = useDatamodelView();
+    const { close: closeSidebar } = useSidebar();
+    const theme = useTheme();
+    const isMobile = useIsMobile();
 
     const dataModelDispatch = useDatamodelViewDispatch();
 
     const { groups } = useDatamodelData();
-    
-    const [searchTerm, setSearchTerm] = useState("");
-    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-    
-    const setOpen = (state: boolean) => {
-        dispatch({ type: "SET_OPEN", payload: state })
-    }
 
+    const [searchTerm, setSearchTerm] = useState("");
+    const [displaySearchTerm, setDisplaySearchTerm] = useState("");
+    
+    // Memoize search results to prevent recalculation on every render
+    const filteredGroups = useMemo(() => {
+        if (!searchTerm.trim()) return groups;
+        
+        return groups.map(group => ({
+            ...group,
+            Entities: group.Entities.filter(entity => 
+                entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+        })).filter(group => group.Entities.length > 0);
+    }, [groups, searchTerm]);
+    
+    // Debounced search to reduce performance impact
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setSearchTerm(displaySearchTerm);
+        }, 150);
+        return () => clearTimeout(timeoutId);
+    }, [displaySearchTerm]);
+    
     // Search functionality
-    const handleSearch = (term: string) => {
-        setSearchTerm(term);
+    const handleSearch = useCallback((term: string) => {
+        setDisplaySearchTerm(term);
         if (term.trim()) {
             const newExpandedGroups = new Set<string>();
             groups.forEach(group => {
@@ -49,24 +67,21 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     newExpandedGroups.add(group.Name);
                 }
             });
-            setExpandedGroups(newExpandedGroups);
-        } else {
-            setExpandedGroups(new Set());
         }
-    };
+    }, [groups]);
 
-    const clearSearch = () => {
+    const clearSearch = useCallback(() => {
         setSearchTerm("");
-        setExpandedGroups(new Set());
-    };
+        setDisplaySearchTerm("");
+    }, []);
 
-    const isEntityMatch = (entity: EntityType) => {
+    const isEntityMatch = useCallback((entity: EntityType) => {
         if (!searchTerm.trim()) return false;
         return entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase());
-    };
+    }, [searchTerm]);
 
-    const highlightText = (text: string, searchTerm: string) => {
+    const highlightText = useCallback((text: string, searchTerm: string) => {
         if (!searchTerm.trim()) return text;
         const regex = new RegExp(`(${searchTerm})`, 'gi');
         const parts = text.split(regex);
@@ -75,153 +90,200 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 <mark key={index} className="bg-yellow-200 text-yellow-900 px-0.5 rounded">{part}</mark> : 
                 part
         );
-    };
+    }, []);
 
-    const handleGroupClick = (groupName: string) => {
+    const handleGroupClick = useCallback((groupName: string) => {
         dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
-    };
+    }, [dataModelDispatch]);
 
-    const handleSectionClick = (sectionId: string) => {
-        dataModelDispatch({ type: 'SET_LOADING', payload: true });
-        dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: sectionId });
-        if (scrollToSection) {
-            scrollToSection(sectionId);
-        }
-        if (isTouch) { setOpen(false); }
-        clearSearch();
-    };
+    const handleSectionClick = useCallback((sectionId: string, groupName: string) => {
+        // Use requestAnimationFrame to defer heavy operations
+        requestAnimationFrame(() => {
+            dataModelDispatch({ type: 'SET_LOADING', payload: true });
+            dataModelDispatch({ type: 'SET_LOADING_SECTION', payload: sectionId });
+            dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
+            dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: sectionId });
 
-    const NavItem = ({ group }: INavItemProps) => {
-        const isCurrentGroup = currentGroup?.toLowerCase() === group.Name.toLowerCase();
-        const shouldExpand = expandedGroups.has(group.Name);
-
-        const [isExpanded, setIsExpanded] = useState(false)
-    
-        useEffect(() => {
-            if (searchTerm.trim()) {
-                setIsExpanded(shouldExpand);
-            } else {
-                setIsExpanded(isCurrentGroup);
+            // On phone - close
+            if (!!isMobile) {
+                closeSidebar();
             }
-        }, [isCurrentGroup, shouldExpand, searchTerm])
+            
+            // Defer scroll operation to next frame to prevent blocking
+            requestAnimationFrame(() => {
+                if (scrollToSection) {
+                    scrollToSection(sectionId);
+                }
+                clearSearch();
+                
+                // Clear loading section after a short delay to show the loading state
+                setTimeout(() => {
+                    dataModelDispatch({ type: 'SET_LOADING_SECTION', payload: null });
+                }, 500);
+            });
+        });
+    }, [dataModelDispatch, scrollToSection, clearSearch]);
+
+    const NavItem = useCallback(({ group }: INavItemProps) => {
+        const isCurrentGroup = currentGroup?.toLowerCase() === group.Name.toLowerCase();
     
         return (
-            <Collapsible
-                open={isExpanded}
-                onOpenChange={setIsExpanded}
-                className={`group/collapsible ${isCurrentGroup ? "bg-sidebar-accent border-blue-500" : "border-transparent"} rounded-md transition-colors w-full m-0 pl-2`}
+            <Accordion
+                disableGutters 
+                expanded={isCurrentGroup}
+                onClick={() => handleGroupClick(group.Name)}
+                className={`group/accordion transition-all duration-300 w-full first:rounded-t-lg last:rounded-b-lg shadow-none p-1`}
+                sx={{
+                    backgroundColor: "background.paper",
+                    borderColor: 'border.main',
+                }}
             >
-                <div className="relative flex w-full min-w-0 flex-col p-0">
-                    <Slot
-                        className={cn(
-                            "duration-200 flex h-8 shrink-0 items-center bg-white rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full",
-                            isCurrentGroup ? "bg-blue-100 text-blue-900" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
-                        )}
+                <AccordionSummary
+                    expandIcon={<ExpandMore className="w-4 h-4" sx={{ color: isCurrentGroup ? "primary.main" : "default" }} />}
+                    className={cn(
+                        "p-2 duration-200 flex items-center rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full min-w-0",
+                        isCurrentGroup ? "font-semibold" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
+                    )}
+                    sx={{
+                        backgroundColor: isCurrentGroup ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                        padding: '4px',
+                        minHeight: '32px !important',
+                        '& .MuiAccordionSummary-content': {
+                            margin: 0,
+                            alignItems: 'center',
+                            minWidth: 0,
+                            overflow: 'hidden'
+                        }
+                    }}
+                >
+                    <Typography 
+                        className={`flex-1 text-sm text-left truncate min-w-0 ${isCurrentGroup ? 'font-semibold' : ''}`} 
+                        sx={{ 
+                            color: isCurrentGroup ? 'primary.main' : 'text.primary'
+                        }}
                     >
-                        <CollapsibleTrigger
-                            className={cn(
-                                "flex items-center w-full gap-2 rounded-md p-1 transition-colors cursor-pointer text-left min-h-8 border border-gray-100",
-                                isCurrentGroup ? "bg-blue-100 text-blue-900" : "bg-transparent text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-primary",
-                                "focus-visible:ring-2 focus-visible:ring-sidebar-ring outline-none"
-                            )}
-                            data-state={isExpanded ? 'open' : 'closed'}
-                        >
-                            <span className="flex-1 font-medium text-sm text-left truncate">{group.Name}</span>
-                            <p className="ml-auto font-semibold text-xs opacity-70">{group.Entities.length}</p>
-                            <a
-                                className={cn(
-                                    "p-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400",
-                                    currentSection?.toLowerCase() === (group.Entities[0]?.SchemaName?.toLowerCase())
-                                        ? "bg-blue-100 text-blue-900"
-                                        : "hover:bg-gray-200 text-gray-400 hover:text-blue-700"
-                                )}
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    handleGroupClick(group.Name);
-                                    if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName);
-                                }}
-                                aria-label={`Link to first entity in ${group.Name}`}
-                                tabIndex={0}
-                            >
-                                <ExternalLink className="w-4 h-4" onClick={e => {
-                                    e.preventDefault();
-                                    handleGroupClick(group.Name);
-                                    if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName);
-                                }} />
-                            </a>
-                        </CollapsibleTrigger>
-                    </Slot>
-                    <CollapsibleContent>
-                        <div className="flex flex-col w-full gap-1 py-1">
-                            {group.Entities.map(entity => {
-                                const isCurrentSection = currentSection?.toLowerCase() === entity.SchemaName.toLowerCase()
-                                const isMatch = isEntityMatch(entity);
-                                
-                                // If searching and this entity doesn't match, don't render it
-                                if (searchTerm.trim() && !isMatch) {
-                                    return null;
-                                }
-                                
-                                return (
-                                    <button
-                                        className={cn(
-                                            "flex items-center gap-2 rounded-full px-3 py-1 cursor-pointer transition-colors text-xs font-medium",
-                                            "hover:bg-blue-50 hover:text-blue-900 text-sidebar-foreground/60",
-                                            isCurrentSection ? "bg-blue-100 text-blue-900" : "",
-                                            isMatch ? "ring-1 ring-yellow-300" : ""
-                                        )}
-                                        key={entity.SchemaName}
-                                        onClick={() => {
-                                            handleGroupClick(group.Name)
-                                            handleSectionClick(entity.SchemaName)
-                                        }}
-                                    >
-                                        {entity.IconBase64 ? <img className="h-4 w-4" src={`data:image/svg+xml;base64,${entity.IconBase64}`} alt="icon" /> : <Puzzle className="w-4 h-4" />}
-                                        <span className="truncate">
-                                            {isMatch ? highlightText(entity.DisplayName, searchTerm) : entity.DisplayName}
-                                        </span>
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </CollapsibleContent>
-                </div>
-            </Collapsible>
+                        {group.Name}
+                    </Typography>
+                    <Typography className={`flex-shrink-0 text-xs mr-2 ${isCurrentGroup ? 'font-semibold' : ''}`} sx={{ opacity: 0.7, color: isCurrentGroup ? 'primary.main' : 'text.primary' }}>{group.Entities.length}</Typography>
+                    
+                    <OpenInNewRounded 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName, group.Name);
+                        }}
+                        aria-label={`Link to first entity in ${group.Name}`}
+                        className="w-4 h-4 flex-shrink-0"
+                        sx={{
+                            color: isCurrentGroup ? "primary.main" : "default"
+                        }}
+                    />
+                </AccordionSummary>
+                <AccordionDetails className="p-0">
+                    <Box className="flex flex-col w-full gap-1 pt-1">
+                        {group.Entities.map(entity => {
+                            const isCurrentSection = currentSection?.toLowerCase() === entity.SchemaName.toLowerCase()
+                            const isMatch = isEntityMatch(entity);
+                            const isLoading = loadingSection === entity.SchemaName;
+                            
+                            // If searching and this entity doesn't match, don't render it
+                            if (searchTerm.trim() && !isMatch) {
+                                return null;
+                            }
+                            
+                            return (
+                                <Button
+                                    className={cn(
+                                        "flex items-center gap-2 rounded-lg px-3 py-1 cursor-pointer transition-colors text-xs font-medium mx-1 justify-start",
+                                        isMatch ? "ring-1" : ""
+                                    )}
+                                    sx={{ 
+                                        borderColor: 'accent.main',
+                                        backgroundColor: isCurrentSection ? alpha(theme.palette.primary.main, 0.1) : 'transparent' 
+                                    }}
+                                    key={entity.SchemaName}
+                                    onClick={() => {
+                                        handleSectionClick(entity.SchemaName, group.Name)
+                                    }}
+                                    disabled={isLoading}
+                                >
+                                    {entity.IconBase64 ? (
+                                        isCurrentSection ? (
+                                            <div 
+                                                className="h-4 w-4"
+                                                style={{
+                                                    maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                                    maskSize: 'contain',
+                                                    maskRepeat: 'no-repeat',
+                                                    maskPosition: 'center',
+                                                    backgroundColor: theme.palette.primary.main
+                                                }}
+                                            />
+                                        ) : (
+                                            <div 
+                                                className="h-4 w-4"
+                                                style={{
+                                                    maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                                    maskSize: 'contain',
+                                                    maskRepeat: 'no-repeat',
+                                                    maskPosition: 'center',
+                                                    backgroundColor: theme.palette.text.primary
+                                                }}
+                                            />
+                                        )
+                                    ) : (
+                                        <ExtensionRounded 
+                                            className="w-4 h-4" 
+                                            sx={{ color: isCurrentSection ? 'primary.main' : 'text.secondary' }}
+                                        />
+                                    )}
+                                    <Typography className="truncate text-xs flex-1" variant="body2" sx={{
+                                        color: isCurrentSection ? 'primary' : 'text.secondary',
+                                    }}>
+                                        {isMatch ? highlightText(entity.DisplayName, searchTerm) : entity.DisplayName}
+                                    </Typography>
+                                    {isLoading && (
+                                        <CircularProgress 
+                                            size={12} 
+                                            sx={{ 
+                                                color: 'primary.main',
+                                                ml: 'auto'
+                                            }}
+                                        />
+                                    )}
+                                </Button>
+                            )
+                        })}
+                    </Box>
+                </AccordionDetails>
+            </Accordion>
         )
-    }
+    }, [currentGroup, currentSection, theme, handleGroupClick, handleSectionClick, isEntityMatch, searchTerm, highlightText]);
 
     return (
-        <div className="flex flex-col">
-            {/* Search Bar */}
-            <div className="px-2 pb-3">
-                <div className="relative mt-2">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                        type="text"
-                        placeholder="Search tables..."
-                        aria-label="Search tables"
-                        value={searchTerm}
-                        onChange={(e) => handleSearch(e.target.value)}
-                        className="pl-8 pr-8 h-8 text-xs"
-                    />
-                    {searchTerm && (
-                        <button
-                            onClick={clearSearch}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-0.5 rounded hover:bg-gray-100"
-                        >
-                            <X className="w-3 h-3 text-gray-400" />
-                        </button>
-                    )}
-                </div>
-            </div>
-            
-            <div className='h-full gap-1 flex flex-col max-w-48 overflow-y-auto overflow-x-hidden'> 
+        <Box className="flex flex-col w-full p-2">
+            <TextField
+                type="text"
+                placeholder="Search tables..."
+                aria-label="Search tables"
+                value={displaySearchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                size="small"
+                variant="outlined"
+                fullWidth
+                slotProps={{
+                    input: {
+                        startAdornment: <InputAdornment position="start"><SearchRounded /></InputAdornment>,
+                    }
+                }}      
+                
+            />
+            <Paper className="mt-4 border rounded-lg" sx={{ borderColor: 'border.main' }} variant="outlined">
                 {
-                    groups.map((group) => 
+                    filteredGroups.map((group) => 
                         <NavItem key={group.Name} group={group} />
                     )
                 }
-            </div>
-        </div>
+            </Paper>
+        </Box>
     );
 }

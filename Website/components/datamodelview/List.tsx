@@ -140,13 +140,22 @@ export const List = ({ }: IListProps) => {
 
                 setTimeout(() => {
                     setIsScrollingToSection(false);
+                    // Reset intentional scroll flag after scroll is complete
+                    setTimeout(() => {
+                        isIntentionalScroll.current = false;
+                    }, 100);
                 }, 500);
             } catch (error) {
                 console.warn(`Failed to scroll to section ${sectionId}:`, error);
                 
                 const estimatedOffset = sectionIndex * 300;
                 if (parentRef.current) {
+                    isIntentionalScroll.current = true;
                     parentRef.current.scrollTop = estimatedOffset;
+                    // Reset flags for fallback scroll
+                    setTimeout(() => {
+                        isIntentionalScroll.current = false;
+                    }, 600);
                 }
                 setIsScrollingToSection(false);
             }
@@ -220,15 +229,15 @@ export const List = ({ }: IListProps) => {
         lastScrollHandleTime.current = now;
         
         const scrollElement = parentRef.current;
-        if (!scrollElement || isScrollingToSection) return;
+        if (!scrollElement || isScrollingToSection || isIntentionalScroll.current) return;
         
         const scrollOffset = scrollElement.scrollTop;
         const virtualItems = rowVirtualizer.getVirtualItems();
         
         // Find the first visible item
-        const padding = 16;
+        const padding = 32;
         const firstVisibleItem = virtualItems.find(v => {
-            return v.start <= scrollOffset && (v.end - padding) >= scrollOffset;
+            return (v.start - padding) <= scrollOffset && v.end >= (scrollOffset + padding);
         });
         
         if (firstVisibleItem) {
@@ -289,7 +298,7 @@ export const List = ({ }: IListProps) => {
     }, [datamodelView.currentSection, flatItems, rowVirtualizer, dispatch]);
 
     return (
-        <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }} className="p-6 relative">
+        <div ref={parentRef} style={{ height: 'calc(100vh - var(--layout-header-desktop-height))', overflow: 'auto' }} className="p-6 relative no-scrollbar">
 
             {/* Show skeleton loading state only when initially loading */}
             {flatItems.length === 0 && datamodelView.loading && (!search || search.length < 3) && (

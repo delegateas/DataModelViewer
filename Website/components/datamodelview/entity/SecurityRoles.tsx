@@ -1,24 +1,58 @@
 'use client'
 
 import { SecurityRole, PrivilegeDepth } from "@/lib/Types";
-import { Ban, User, Users, Boxes, Building2, Minus } from "lucide-react";
-import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../shared/ui/hybridtooltop";
+import { AccountTreeRounded, BlockRounded, BusinessRounded, PeopleRounded, PersonRounded, RemoveRounded } from "@mui/icons-material";
+import { Tooltip, Box, Typography, Paper, useTheme } from "@mui/material";
 
 export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
     return (
-        <div className="flex flex-col gap-2 w-full">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
             {roles.map(role => (
                 <SecurityRoleRow key={role.Name} role={role} />
             ))}
-        </div>
+        </Box>
     );
 }
 
 function SecurityRoleRow({ role }: { role: SecurityRole }) {
+    const theme = useTheme();
+    
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 rounded-lg p-4 border border-gray-100 w-full min-w-[320px]">
-            <p className="font-bold text-base text-wrap max-w-full sm:max-w-[180px] md:max-w-[240px]">{role.Name}</p>
-            <div className="flex flex-wrap sm:flex-nowrap gap-2 align-bottom">
+        <Paper
+            variant="outlined"
+            sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { sm: 'center' },
+                justifyContent: 'space-between',
+                gap: 1,
+                p: 2,
+                backgroundColor: theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.02)' 
+                    : 'rgba(0, 0, 0, 0.02)',
+                borderColor: 'border.main',
+                width: '100%',
+            }}
+        >
+            <Typography 
+                variant="subtitle1" 
+                sx={{ 
+                    fontWeight: 700,
+                    wordWrap: 'break-word',
+                    maxWidth: { xs: '100%', sm: '180px', md: '240px' },
+                    color: 'text.primary'
+                }}
+            >
+                {role.Name}
+            </Typography>
+            <Box 
+                sx={{ 
+                    display: 'flex', 
+                    flexWrap: { xs: 'wrap', sm: 'nowrap' }, 
+                    gap: 1, 
+                    alignItems: 'flex-end' 
+                }}
+            >
                 <PrivilegeIcon name="Create" depth={role.Create} />
                 <PrivilegeIcon name="Read" depth={role.Read} />
                 <PrivilegeIcon name="Write" depth={role.Write} />
@@ -27,48 +61,70 @@ function SecurityRoleRow({ role }: { role: SecurityRole }) {
                 <PrivilegeIcon name="Append To" depth={role.AppendTo} />
                 <PrivilegeIcon name="Assign" depth={role.Assign} />
                 <PrivilegeIcon name="Share" depth={role.Share} />
-            </div>
-        </div>
+            </Box>
+        </Paper>
     );
 }
 
 function PrivilegeIcon({ name, depth }: { name: string, depth: PrivilegeDepth | null }) {
     return (
-        <div className="flex flex-col items-center min-w-[60px] max-w-[80px]">
-            <p className="w-max text-xs sm:text-sm truncate">{name}</p>
+        <Box 
+            sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                minWidth: '60px', 
+                maxWidth: '80px' 
+            }}
+        >
+            <Typography 
+                variant="caption"
+                sx={{ 
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    textAlign: 'center',
+                    color: 'text.secondary',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    width: '100%'
+                }}
+            >
+                {name}
+            </Typography>
             <GetDepthIcon depth={depth} />
-        </div>
+        </Box>
     );
 }
 
 function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
-
+    const theme = useTheme();
+    
     let icon = null;
     let tooltip = "";
 
     if (depth === null || depth === undefined) {
-        icon = <Minus className="h-4 w-4 text-black" />;
+        icon = <RemoveRounded style={{ height: '16px', width: '16px', color: theme.palette.text.primary }} />;
         tooltip = "Unavailable";
     } else {
         switch (depth) {
             case PrivilegeDepth.None:
-                icon = <Ban className="h-4 w-4 text-red-600" />;
+                icon = <BlockRounded style={{ height: '16px', width: '16px', color: theme.palette.error.main }} />;
                 tooltip = "None";
                 break;
             case PrivilegeDepth.Basic:
-                icon = <User className="h-4 w-4 text-gray-600" />;
+                icon = <PersonRounded style={{ height: '16px', width: '16px', color: theme.palette.text.secondary }} />;
                 tooltip = "User";
                 break;
             case PrivilegeDepth.Local:
-                icon = <Users className="h-4 w-4 text-gray-600" />;
+                icon = <PeopleRounded style={{ height: '16px', width: '16px', color: theme.palette.text.secondary }} />;
                 tooltip = "Business Unit";
                 break;
             case PrivilegeDepth.Deep:
-                icon = <Boxes className="h-4 w-4 text-sky-600" />;
+                icon = <AccountTreeRounded style={{ height: '16px', width: '16px', color: theme.palette.info.main }} />;
                 tooltip = "Parent: Child Business Units";
                 break;
             case PrivilegeDepth.Global:
-                icon = <Building2 className="h-4 w-4 text-green-600" />;
+                icon = <BusinessRounded style={{ height: '16px', width: '16px', color: theme.palette.success.main }} />;
                 tooltip = "Organization";
                 break;
             default:
@@ -77,9 +133,10 @@ function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
     }
 
     return (
-        <HybridTooltip>
-            <HybridTooltipTrigger asChild>{icon}</HybridTooltipTrigger>
-            <HybridTooltipContent>{tooltip}</HybridTooltipContent>
-        </HybridTooltip>
+        <Tooltip title={tooltip}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {icon}
+            </Box>
+        </Tooltip>
     );
 }

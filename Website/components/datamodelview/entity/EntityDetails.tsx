@@ -1,32 +1,32 @@
 'use client'
 
 import { EntityType, OwnershipType } from "@/lib/Types";
-import { Eye, ClipboardList, Paperclip, Building, Users } from "lucide-react";
-import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "../../shared/ui/hybridtooltop";
+import { AssignmentRounded, AttachmentRounded, BusinessRounded, FaceRounded, VisibilityRounded } from "@mui/icons-material";
+import { Chip, ChipPropsColorOverrides, Tooltip } from "@mui/material";
+import { OverridableStringUnion } from "@mui/types";
 
 type EntityDetailType = {
     icon: JSX.Element;
     tooltip: string;
-    color?: string;
+    color?: OverridableStringUnion<'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning', ChipPropsColorOverrides>;
 };
 
 export function EntityDetails({ entity }: { entity: EntityType }) {
     const details = getEntityDetails(entity);
 
     if (details.length === 0) return null;
-
+    
     return (
         <div className="flex flex-wrap gap-2">
             {details.map((detail, index) => (
-                <HybridTooltip key={index}>
-                    <HybridTooltipTrigger asChild>
-                        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm ${detail.color || 'bg-blue-50 text-blue-700'}`}>
-                            {detail.icon}
-                            <span>{detail.tooltip}</span>
-                        </div>
-                    </HybridTooltipTrigger>
-                    <HybridTooltipContent>{detail.tooltip}</HybridTooltipContent>
-                </HybridTooltip>
+                <Tooltip key={index} title={detail.tooltip}>
+                    <Chip 
+                        variant="outlined"
+                        size="small"
+                        label={detail.tooltip}
+                        icon={detail.icon}
+                        color={detail.color} />
+                </Tooltip>
             ))}
         </div>
     );
@@ -37,40 +37,40 @@ function getEntityDetails(entity: EntityType): EntityDetailType[] {
 
     if (entity.IsAuditEnabled) {
         details.push({ 
-            icon: <Eye className="h-4 w-4" />, 
+            icon: <VisibilityRounded className="h-4 w-4" />, 
             tooltip: "Audit Enabled",
-            color: 'bg-purple-50 text-purple-700'
+            color: "primary"
         });
     }
     if (entity.IsActivity) {
         details.push({ 
-            icon: <ClipboardList className="h-4 w-4" />, 
+            icon: <AssignmentRounded className="h-4 w-4" />, 
             tooltip: "Is Activity",
-            color: 'bg-green-50 text-green-700'
+            color: 'success'
         });
     }
     if (entity.IsNotesEnabled) {
         details.push({ 
-            icon: <Paperclip className="h-4 w-4" />, 
+            icon: <AttachmentRounded className="h-4 w-4" />, 
             tooltip: "Notes Enabled",
-            color: 'bg-orange-50 text-orange-700'
+            color: 'warning'
         });
     }
 
     switch (entity.Ownership) {
         case OwnershipType.OrganizationOwned:
             details.push({ 
-                icon: <Building className="h-4 w-4" />, 
+                icon: <BusinessRounded className="h-4 w-4" />, 
                 tooltip: "Organization Owned",
-                color: 'bg-gray-50 text-gray-700'
+                color: 'info'
             });
             break;
         case OwnershipType.UserOwned:
         case OwnershipType.TeamOwned:
             details.push({ 
-                icon: <Users className="h-4 w-4" />, 
+                icon: <FaceRounded className="h-4 w-4" />, 
                 tooltip: "User/Team Owned",
-                color: 'bg-gray-50 text-gray-700'
+                color: 'info'
             });
             break;
     }

@@ -1,27 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components/shared/ui/button';
-import { Input } from '@/components/shared/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/shared/ui/sheet';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/shared/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/shared/ui/tooltip';
 import { 
-    Trash2, 
-    Plus, 
-    ChevronDown, 
-    ChevronRight,
-    Type, 
-    Calendar, 
-    Hash, 
-    Search, 
-    DollarSign, 
-    ToggleLeft, 
-    FileText, 
-    List, 
-    Activity
-} from 'lucide-react';
+    Dialog, 
+    DialogContent, 
+    DialogTitle, 
+    Button, 
+    TextField, 
+    Collapse, 
+    Box, 
+    Typography,
+    Card,
+    CardContent,
+    Tooltip 
+} from '@mui/material';
 import { EntityType, AttributeType } from '@/lib/Types';
+import { RttRounded, NumbersRounded, AttachMoneyRounded, CalendarMonthRounded, ToggleOffRounded, ListRounded, SearchRounded, AttachmentRounded, AssignmentRounded, ChevronRight, AddRounded, ExpandRounded, DeleteRounded } from '@mui/icons-material';
 
 export interface EntityActionsPaneProps {
     isOpen: boolean;
@@ -36,16 +30,16 @@ export interface EntityActionsPaneProps {
 
 const getAttributeIcon = (attributeType: string) => {
     switch (attributeType) {
-        case 'StringAttribute': return Type;
-        case 'IntegerAttribute': return Hash;
-        case 'DecimalAttribute': return DollarSign;
-        case 'DateTimeAttribute': return Calendar;
-        case 'BooleanAttribute': return ToggleLeft;
-        case 'ChoiceAttribute': return List;
-        case 'LookupAttribute': return Search;
-        case 'FileAttribute': return FileText;
-        case 'StatusAttribute': return Activity;
-        default: return Type;
+        case 'StringAttribute': return RttRounded;
+        case 'IntegerAttribute': return NumbersRounded;
+        case 'DecimalAttribute': return AttachMoneyRounded;
+        case 'DateTimeAttribute': return CalendarMonthRounded;
+        case 'BooleanAttribute': return ToggleOffRounded;
+        case 'ChoiceAttribute': return ListRounded;
+        case 'LookupAttribute': return SearchRounded;
+        case 'FileAttribute': return AttachmentRounded;
+        case 'StatusAttribute': return AssignmentRounded;
+        default: return RttRounded;
     }
 };
 
@@ -105,158 +99,193 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
     );
 
     return (
-        <TooltipProvider>
-            <Sheet open={isOpen} onOpenChange={onOpenChange}>
-                <SheetContent side="right" className="w-96">
-                    <SheetHeader>
-                        <SheetTitle>Entity Actions</SheetTitle>
-                    </SheetHeader>
-                    
-                    {selectedEntity && (
-                        <div className="mt-6 space-y-4">
+        <Dialog open={isOpen && selectedEntity !== null} onClose={() => onOpenChange(false)} maxWidth="sm" fullWidth>
+            <DialogContent>
+                {selectedEntity && (
+                    <>
+                        <DialogTitle>{selectedEntity.DisplayName}</DialogTitle>
+                        
+                        <div className="space-y-4">
                             <div className="space-y-2">
-                                <h3 className="font-medium">{selectedEntity.DisplayName}</h3>
-                                <p className="text-sm text-muted-foreground">{selectedEntity.SchemaName}</p>
+                                <Typography variant="body2" color="text.secondary">
+                                    {selectedEntity.SchemaName}
+                                </Typography>
                                 {selectedEntity.Description && (
-                                    <p className="text-xs text-muted-foreground">{selectedEntity.Description}</p>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {selectedEntity.Description}
+                                    </Typography>
                                 )}
                             </div>
 
                             <div className="border-t pt-4">
                                 <div className="space-y-3">
-                                    <h4 className="font-medium text-sm">Actions</h4>
+                                    <Typography variant="subtitle2">Actions</Typography>
                                     
                                     {/* Add Attribute Section */}
                                     {onAddAttribute && availableAttributes.length > 0 && (
-                                        <Collapsible open={isAttributesExpanded} onOpenChange={setIsAttributesExpanded}>
-                                            <CollapsibleTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="w-full justify-between"
-                                                >
-                                                    <span className="flex items-center">
-                                                        <Plus className="w-4 h-4 mr-2" />
-                                                        Add Attribute
-                                                    </span>
-                                                    {isAttributesExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                                </Button>
-                                            </CollapsibleTrigger>
-                                            <CollapsibleContent className="mt-3 space-y-3">
-                                                {/* Search */}
-                                                <div>
-                                                    <Input
+                                        <Box>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                fullWidth
+                                                onClick={() => setIsAttributesExpanded(!isAttributesExpanded)}
+                                                sx={{ justifyContent: 'space-between', textTransform: 'none' }}
+                                            >
+                                                <Box display="flex" alignItems="center">
+                                                    <AddRounded style={{ width: 16, height: 16, marginRight: 8 }} />
+                                                    Add Attribute
+                                                </Box>
+                                                {isAttributesExpanded ? <ExpandRounded style={{ width: 16, height: 16 }} /> : <ChevronRight style={{ width: 16, height: 16 }} />}
+                                            </Button>
+                                            
+                                            <Collapse in={isAttributesExpanded}>
+                                                <Box mt={2}>
+                                                    {/* Search */}
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
                                                         value={searchQuery}
-                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                                                         placeholder="Search attributes..."
-                                                        className="text-sm"
+                                                        sx={{ mb: 2 }}
                                                     />
-                                                </div>
 
-                                                {/* Available Attributes */}
-                                                <div className="max-h-48 overflow-y-auto space-y-1">
-                                                    {addableAttributes.length === 0 ? (
-                                                        <div className="text-center text-muted-foreground py-4 text-sm">
-                                                            {searchQuery ? 'No attributes found.' : 'No attributes available.'}
-                                                        </div>
-                                                    ) : (
-                                                        addableAttributes.map((attribute) => {
-                                                            const AttributeIcon = getAttributeIcon(attribute.AttributeType);
-                                                            const typeLabel = getAttributeTypeLabel(attribute.AttributeType);
-                                                            
-                                                            return (
-                                                                <div
-                                                                    key={attribute.SchemaName} 
-                                                                    className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-accent transition-colors"
-                                                                    onClick={() => handleAddAttribute(attribute)}
-                                                                >
-                                                                    <AttributeIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                                                    <div className="min-w-0 flex-1">
-                                                                        <div className="font-medium text-sm truncate">
-                                                                            {attribute.DisplayName}
-                                                                        </div>
-                                                                        <div className="text-xs text-muted-foreground truncate">
-                                                                            {typeLabel}
-                                                                        </div>
-                                                                    </div>
-                                                                    {attribute.Description && (
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger asChild>
-                                                                                <div className="flex-shrink-0 w-4 h-4 rounded-full bg-muted flex items-center justify-center cursor-help">
-                                                                                    <span className="text-xs text-muted-foreground">?</span>
-                                                                                </div>
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent side="left" className="max-w-xs">
-                                                                                <p className="text-sm">{attribute.Description}</p>
-                                                                            </TooltipContent>
-                                                                        </Tooltip>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })
-                                                    )}
-                                                </div>
-                                            </CollapsibleContent>
-                                        </Collapsible>
+                                                    {/* Available Attributes */}
+                                                    <Box sx={{ maxHeight: 192, overflowY: 'auto' }}>
+                                                        {addableAttributes.length === 0 ? (
+                                                            <Box textAlign="center" py={4}>
+                                                                <Typography variant="body2" color="text.secondary">
+                                                                    {searchQuery ? 'No attributes found.' : 'No attributes available.'}
+                                                                </Typography>
+                                                            </Box>
+                                                        ) : (
+                                                            <Box display="flex" flexDirection="column" gap={1}>
+                                                                {addableAttributes.map((attribute) => {
+                                                                    const AttributeIcon = getAttributeIcon(attribute.AttributeType);
+                                                                    const typeLabel = getAttributeTypeLabel(attribute.AttributeType);
+                                                                    
+                                                                    return (
+                                                                        <Card
+                                                                            key={attribute.SchemaName}
+                                                                            sx={{ 
+                                                                                cursor: 'pointer', 
+                                                                                '&:hover': { backgroundColor: 'action.hover' },
+                                                                                transition: 'background-color 0.2s'
+                                                                            }}
+                                                                            onClick={() => handleAddAttribute(attribute)}
+                                                                        >
+                                                                            <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                                                                <Box display="flex" alignItems="center" gap={1}>
+                                                                                    <AttributeIcon style={{ width: 16, height: 16, color: 'text.secondary' }} />
+                                                                                    <Box flexGrow={1} minWidth={0}>
+                                                                                        <Typography variant="body2" fontWeight="medium" noWrap>
+                                                                                            {attribute.DisplayName}
+                                                                                        </Typography>
+                                                                                        <Typography variant="caption" color="text.secondary" noWrap>
+                                                                                            {typeLabel}
+                                                                                        </Typography>
+                                                                                    </Box>
+                                                                                    {attribute.Description && (
+                                                                                        <Tooltip title={attribute.Description} arrow>
+                                                                                            <Box 
+                                                                                                sx={{ 
+                                                                                                    width: 16, 
+                                                                                                    height: 16, 
+                                                                                                    borderRadius: '50%', 
+                                                                                                    backgroundColor: 'grey.200',
+                                                                                                    display: 'flex',
+                                                                                                    alignItems: 'center',
+                                                                                                    justifyContent: 'center',
+                                                                                                    cursor: 'help'
+                                                                                                }}
+                                                                                            >
+                                                                                                <Typography variant="caption" fontSize={10}>?</Typography>
+                                                                                            </Box>
+                                                                                        </Tooltip>
+                                                                                    )}
+                                                                                </Box>
+                                                                            </CardContent>
+                                                                        </Card>
+                                                                    );
+                                                                })}
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            </Collapse>
+                                        </Box>
                                     )}
 
                                     {/* Remove Attribute Section */}
                                     {onRemoveAttribute && removableAttributes.length > 0 && (
-                                        <Collapsible open={isRemoveAttributesExpanded} onOpenChange={setIsRemoveAttributesExpanded}>
-                                            <CollapsibleTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="w-full justify-between"
-                                                >
-                                                    <span className="flex items-center">
-                                                        <Trash2 className="w-4 h-4 mr-2" />
-                                                        Remove Attribute
-                                                    </span>
-                                                    {isRemoveAttributesExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                                </Button>
-                                            </CollapsibleTrigger>
-                                            <CollapsibleContent className="mt-3 space-y-3">
-                                                {/* Removable Attributes */}
-                                                <div className="max-h-48 overflow-y-auto space-y-1">
-                                                    {removableAttributes.map((attribute) => {
-                                                        const AttributeIcon = getAttributeIcon(attribute.AttributeType);
-                                                        const typeLabel = getAttributeTypeLabel(attribute.AttributeType);
-                                                        
-                                                        return (
-                                                            <div
-                                                                key={attribute.SchemaName} 
-                                                                className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-destructive/10 transition-colors"
-                                                                onClick={() => handleRemoveAttribute(attribute)}
-                                                            >
-                                                                <AttributeIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                                                <div className="min-w-0 flex-1">
-                                                                    <div className="font-medium text-sm truncate">
-                                                                        {attribute.DisplayName}
-                                                                    </div>
-                                                                    <div className="text-xs text-muted-foreground truncate">
-                                                                        {typeLabel}
-                                                                    </div>
-                                                                </div>
-                                                                <Trash2 className="w-4 h-4 text-destructive flex-shrink-0" />
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    Note: Primary key cannot be removed.
-                                                </div>
-                                            </CollapsibleContent>
-                                        </Collapsible>
+                                        <Box>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                fullWidth
+                                                onClick={() => setIsRemoveAttributesExpanded(!isRemoveAttributesExpanded)}
+                                                sx={{ justifyContent: 'space-between', textTransform: 'none' }}
+                                            >
+                                                <Box display="flex" alignItems="center">
+                                                    <DeleteRounded style={{ width: 16, height: 16, marginRight: 8 }} />
+                                                    Remove Attribute
+                                                </Box>
+                                                {isRemoveAttributesExpanded ? <ExpandRounded style={{ width: 16, height: 16 }} /> : <ChevronRight style={{ width: 16, height: 16 }} />}
+                                            </Button>
+                                            
+                                            <Collapse in={isRemoveAttributesExpanded}>
+                                                <Box mt={2}>
+                                                    <Box sx={{ maxHeight: 192, overflowY: 'auto' }} mb={1}>
+                                                        {removableAttributes.map((attribute) => {
+                                                            const AttributeIcon = getAttributeIcon(attribute.AttributeType);
+                                                            const typeLabel = getAttributeTypeLabel(attribute.AttributeType);
+                                                            
+                                                            return (
+                                                                <Card
+                                                                    key={attribute.SchemaName}
+                                                                    sx={{ 
+                                                                        cursor: 'pointer', 
+                                                                        '&:hover': { backgroundColor: 'error.light', opacity: 0.1 },
+                                                                        transition: 'background-color 0.2s',
+                                                                        mb: 0.5
+                                                                    }}
+                                                                    onClick={() => handleRemoveAttribute(attribute)}
+                                                                >
+                                                                    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                                                        <Box display="flex" alignItems="center" gap={1}>
+                                                                            <AttributeIcon style={{ width: 16, height: 16, color: 'text.secondary' }} />
+                                                                            <Box flexGrow={1} minWidth={0}>
+                                                                                <Typography variant="body2" fontWeight="medium" noWrap>
+                                                                                    {attribute.DisplayName}
+                                                                                </Typography>
+                                                                                <Typography variant="caption" color="text.secondary" noWrap>
+                                                                                    {typeLabel}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                            <DeleteRounded style={{ width: 16, height: 16, color: 'error.main' }} />
+                                                                        </Box>
+                                                                    </CardContent>
+                                                                </Card>
+                                                            );
+                                                        })}
+                                                    </Box>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Note: Primary key cannot be removed.
+                                                    </Typography>
+                                                </Box>
+                                            </Collapse>
+                                        </Box>
                                     )}
                                     
                                     <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        className="w-full justify-start"
+                                        variant="contained"
+                                        color="error"
+                                        size="small"
+                                        fullWidth
                                         onClick={onDeleteEntity}
+                                        sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                                     >
-                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        <DeleteRounded style={{ width: 16, height: 16, marginRight: 8 }} />
                                         Remove from Diagram
                                     </Button>
                                 </div>
@@ -264,19 +293,27 @@ export const EntityActionsPane: React.FC<EntityActionsPaneProps> = ({
 
                             <div className="border-t pt-4">
                                 <div className="space-y-2">
-                                    <h4 className="font-medium text-sm">Entity Information</h4>
+                                    <Typography variant="subtitle2">Entity Information</Typography>
                                     <div className="text-xs text-muted-foreground space-y-1">
-                                        <p>Attributes: <span className="font-medium">{selectedEntity.Attributes.length}</span></p>
-                                        <p>Relationships: <span className="font-medium">{selectedEntity.Relationships?.length || 0}</span></p>
-                                        <p>Is Activity: <span className="font-medium">{selectedEntity.IsActivity ? 'Yes' : 'No'}</span></p>
-                                        <p>Audit Enabled: <span className="font-medium">{selectedEntity.IsAuditEnabled ? 'Yes' : 'No'}</span></p>
+                                        <Typography variant="caption" display="block">
+                                            Attributes: <strong>{selectedEntity.Attributes.length}</strong>
+                                        </Typography>
+                                        <Typography variant="caption" display="block">
+                                            Relationships: <strong>{selectedEntity.Relationships?.length || 0}</strong>
+                                        </Typography>
+                                        <Typography variant="caption" display="block">
+                                            Is Activity: <strong>{selectedEntity.IsActivity ? 'Yes' : 'No'}</strong>
+                                        </Typography>
+                                        <Typography variant="caption" display="block">
+                                            Audit Enabled: <strong>{selectedEntity.IsAuditEnabled ? 'Yes' : 'No'}</strong>
+                                        </Typography>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    )}
-                </SheetContent>
-            </Sheet>
-        </TooltipProvider>
+                    </>
+                )}
+            </DialogContent>
+        </Dialog>
     );
 };

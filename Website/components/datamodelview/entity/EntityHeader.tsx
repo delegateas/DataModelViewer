@@ -1,45 +1,96 @@
 'use client'
 
 import { EntityType } from "@/lib/Types";
-import { Link } from "lucide-react";
 import { EntityDetails } from "./EntityDetails";
+import { Box, Typography, Paper, useTheme } from '@mui/material';
+import { LinkRounded } from "@mui/icons-material";
 
 export function EntityHeader({ entity }: { entity: EntityType }) {
+    const theme = useTheme();
+    
     return (
-        <div className="min-w-0 xl:w-1/3 w-full xl:pr-6">
-            <div className="flex items-center gap-3 mb-3">
-                <div className="flex-shrink-0">
+        <Box 
+            sx={{ 
+                minWidth: 0, 
+                width: { xl: '33.333333%', xs: '100%' }, 
+                pr: { xl: 3, xs: 0 } 
+            }}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                <Box sx={{ flexShrink: 0 }}>
                     {entity.IconBase64 == null ? 
-                        <Link className="h-6 w-6 text-gray-600" /> : 
-                        <img className="h-6 w-6" src={`data:image/svg+xml;base64,${entity.IconBase64}`} />
+                        <LinkRounded 
+                            style={{ 
+                                height: '24px', 
+                                width: '24px', 
+                                color: theme.palette.text.secondary 
+                            }} 
+                        /> : 
+                        <div 
+                            className="h-6 w-6"
+                            style={{
+                                maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                maskSize: 'contain',
+                                maskRepeat: 'no-repeat',
+                                maskPosition: 'center',
+                                backgroundColor: theme.palette.text.primary
+                            }}
+                        />
                     }
-                </div>
-                <div className="min-w-0">
-                    <a 
-                        className="group flex items-center gap-2 hover:no-underline flex-wrap" 
-                         href={`#${entity.SchemaName}`}
+                </Box>
+                <Box sx={{ minWidth: 0, flex: 1 }} className="flex items-center flex-wrap" gap={2}>
+                    <Typography 
+                        variant="h5" 
+                        component="h2"
+                        className="entity-title"
+                        sx={{ 
+                            fontWeight: 600,
+                            color: 'text.primary',
+                            transition: 'color 0.2s',
+                            minWidth: 0
+                        }}
                     >
-                        <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                            {entity.DisplayName}
-                        </h2>
-                        <span className="text-sm text-gray-500 font-mono">
-                            {entity.SchemaName}
-                        </span>
-                    </a>
-                </div>
-            </div>
+                        {entity.DisplayName}
+                    </Typography>
+                    <Typography 
+                        variant="body2" 
+                        sx={{ 
+                            color: 'text.secondary',
+                            fontFamily: 'monospace',
+                            flexShrink: 0
+                        }}
+                    >
+                        {entity.SchemaName}
+                    </Typography>
+                </Box>
+            </Box>
             
-            <div className="mb-4">
+            <Box sx={{ mb: 2 }}>
                 <EntityDetails entity={entity} />
-            </div>
+            </Box>
 
             {entity.Description && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                    <p className="text-gray-600 leading-relaxed">
+                <Paper 
+                    variant="outlined"
+                    sx={{ 
+                        p: 2,
+                        backgroundColor: theme.palette.mode === 'dark' 
+                            ? 'rgba(255, 255, 255, 0.02)' 
+                            : 'rgba(0, 0, 0, 0.02)',
+                        borderColor: 'border.main'
+                    }}
+                >
+                    <Typography 
+                        variant="body2" 
+                        sx={{ 
+                            color: 'text.secondary',
+                            lineHeight: 1.6
+                        }}
+                    >
                         {entity.Description}
-                    </p>
-                </div>
+                    </Typography>
+                </Paper>
             )}
-        </div>
+        </Box>
     );
 }

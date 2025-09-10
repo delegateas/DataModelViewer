@@ -1,13 +1,25 @@
 'use client'
 
 import { EntityType } from "@/lib/Types"
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "../shared/ui/table"
 import { useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Search, X } from "lucide-react"
-import { Input } from "../shared/ui/input"
-import { Button } from "../shared/ui/button"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
+import { 
+    Button, 
+    TextField, 
+    Table, 
+    TableBody, 
+    TableCell, 
+    TableHead, 
+    TableRow, 
+    Box, 
+    Typography, 
+    Alert, 
+    Chip,
+    InputAdornment,
+    useTheme
+} from "@mui/material"
+import { ArrowDownwardRounded, ArrowUpwardRounded, CloseRounded, SearchRounded } from "@mui/icons-material";
 
 type SortColumn = 'name' | 'logicalName' | 'attributes' | null
 type SortDirection = 'asc' | 'desc' | null
@@ -21,6 +33,7 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [searchQuery, setSearchQuery] = useState("")
+    const theme = useTheme()
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -101,143 +114,208 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
     }, [onVisibleCountChange, sortedKeys.length]);
 
     const SortIcon = ({ column }: { column: SortColumn }) => {
-        if (sortColumn !== column) return <ArrowUpDown className="ml-2 h-4 w-4" />
-        if (sortDirection === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />
-        if (sortDirection === 'desc') return <ArrowDown className="ml-2 h-4 w-4" />
-        return <ArrowUpDown className="ml-2 h-4 w-4" />
+        if (sortColumn !== column) return <ArrowDownwardRounded className="ml-2 h-4 w-4" />
+        if (sortDirection === 'asc') return <ArrowUpwardRounded className="ml-2 h-4 w-4" />
+        if (sortDirection === 'desc') return <ArrowDownwardRounded className="ml-2 h-4 w-4" />
+        return <ArrowUpwardRounded className="ml-2 h-4 w-4" />
     }
 
     return (
         <>
-            <div className="flex flex-col gap-2 p-2 border-b border-gray-100 md:p-4 md:gap-4">
-                <div className="flex items-center gap-2 md:gap-4">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-1.5 top-2 h-3 w-3 text-gray-500 md:left-2 md:top-2.5 md:h-4 md:w-4" />
-                        <Input
-                            placeholder="Search keys..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Escape') {
-                                    setSearchQuery("")
-                                }
-                            }}
-                            className="pl-6 pr-8 h-8 text-xs md:pl-8 md:pr-10 md:h-10 md:text-sm"
-                        />
-                        {searchQuery && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setSearchQuery("")}
-                                className="absolute right-1 top-1 h-6 w-6 text-gray-400 hover:text-gray-600 md:right-1 md:top-1.5 md:h-7 md:w-7"
-                                title="Clear search"
-                            >
-                                <X className="h-3 w-3 md:h-4 md:w-4" />
-                            </Button>
-                        )}
-                    </div>
-                    {searchQuery && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setSearchQuery("")}
-                            className="h-8 w-8 text-gray-500 hover:text-gray-700 md:h-10 md:w-10"
-                            title="Clear search"
-                        >
-                            <X className="h-3 w-3 md:h-4 md:w-4" />
-                        </Button>
-                    )}
-                </div>
+            <Box 
+                className="flex flex-col gap-1 md:gap-2 p-1 md:p-2 border-b"
+                sx={{ borderColor: 'border.main' }}
+            >
+                <Box className="flex items-center gap-1 md:gap-2">
+                    <TextField
+                        placeholder="Search keys..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                                setSearchQuery("")
+                            }
+                        }}
+                        size="small"
+                        className="flex-grow"
+                        sx={{ 
+                            '& .MuiInputBase-input': {
+                                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                py: { xs: 0.5, md: 1 }
+                            }
+                        }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchRounded className="h-3 w-3 md:h-4 md:w-4" style={{ color: theme.palette.text.secondary }} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: searchQuery && (
+                                <InputAdornment position="end">
+                                    <Button
+                                        onClick={() => setSearchQuery("")}
+                                        size="small"
+                                        className="min-w-0 p-1"
+                                        sx={{ 
+                                            color: 'text.secondary',
+                                            '&:hover': { color: 'text.primary' }
+                                        }}
+                                        title="Clear search"
+                                    >
+                                        <CloseRounded className="h-3 w-3 md:h-4 md:w-4" />
+                                    </Button>
+                                </InputAdornment>
+                            )
+                        }}
+                    />
+                </Box>
                 {search && search.length >= 3 && searchQuery && (
-                    <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md md:text-sm">
-                        <Search className="h-3 w-3 md:h-4 md:w-4" />
-                        <span>Warning: Global search &quot;{search}&quot; is also active</span>
-                    </div>
+                    <Alert 
+                        severity="warning" 
+                        className="py-1 text-xs md:text-sm"
+                        sx={{ 
+                            '& .MuiAlert-icon': {
+                                fontSize: { xs: '0.875rem', md: '1rem' }
+                            }
+                        }}
+                    >
+                        Warning: Global search &quot;{search}&quot; is also active
+                    </Alert>
                 )}
-            </div>
-            <div className="overflow-x-auto">
+            </Box>
+            <Box className="overflow-x-auto">
                 {sortedKeys.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
+                    <Box className="p-4 text-center" sx={{ color: 'text.secondary' }}>
                         {searchQuery ? (
-                            <div className="flex flex-col items-center gap-2">
-                                <p>No keys found matching &quot;{searchQuery}&quot;</p>
+                            <Box className="flex flex-col items-center gap-1">
+                                <Typography variant="body2" className="text-xs md:text-sm">
+                                    No keys found matching &quot;{searchQuery}&quot;
+                                </Typography>
                                 <Button
-                                    variant="ghost"
+                                    variant="text"
                                     onClick={() => setSearchQuery("")}
-                                    className="text-blue-600 hover:text-blue-700"
+                                    className="text-xs md:text-sm"
+                                    sx={{ color: 'primary.main' }}
                                 >
                                     Clear search
                                 </Button>
-                            </div>
+                            </Box>
                         ) : (
-                            <p>No keys available for this table</p>
+                            <Typography variant="body2" className="text-xs md:text-sm">No keys available for this table</Typography>
                         )}
-                    </div>
+                    </Box>
                 ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-gray-100 hover:bg-gray-100 border-b-2 border-gray-200">
-                                <TableHead 
-                                    className="w-[25%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
+                    <Box 
+                        className="border-t max-w-full overflow-x-auto md:overflow-x-visible"
+                        sx={{ 
+                            borderColor: 'border.main',
+                            '@media (max-width: 768px)': {
+                                '&::-webkit-scrollbar': {
+                                    height: '8px',
+                                },
+                                '&::-webkit-scrollbar-track': {
+                                    backgroundColor: 'rgba(0,0,0,0.1)',
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                    backgroundColor: 'rgba(0,0,0,0.3)',
+                                    borderRadius: '4px',
+                                },
+                            }
+                        }}
+                    >
+                        <Table 
+                            className="w-full min-w-[700px] md:min-w-0"
+                            sx={{ borderColor: 'border.main' }}
+                        >
+                        <TableHead sx={{ backgroundColor: 'background.paper' }}>
+                            <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
+                                <TableCell 
+                                    className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
                                     onClick={() => handleSort('name')}
+                                    sx={{ color: 'text.primary' }}
                                 >
-                                    <div className="flex items-center">
+                                    <Box className="flex items-center">
                                         Name
                                         <SortIcon column="name" />
-                                    </div>
-                                </TableHead>
-                                <TableHead 
-                                    className="w-[25%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
+                                    </Box>
+                                </TableCell>
+                                <TableCell 
+                                    className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
                                     onClick={() => handleSort('logicalName')}
+                                    sx={{ color: 'text.primary' }}
                                 >
-                                    <div className="flex items-center">
+                                    <Box className="flex items-center">
                                         Logical Name
                                         <SortIcon column="logicalName" />
-                                    </div>
-                                </TableHead>
-                                <TableHead 
-                                    className="w-[50%] text-black font-semibold py-2 text-xs cursor-pointer hover:bg-gray-200 md:font-bold md:py-3 md:text-sm"
+                                    </Box>
+                                </TableCell>
+                                <TableCell 
+                                    className="w-[50%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
                                     onClick={() => handleSort('attributes')}
+                                    sx={{ color: 'text.primary' }}
                                 >
-                                    <div className="flex items-center">
+                                    <Box className="flex items-center">
                                         Key Attributes
                                         <SortIcon column="attributes" />
-                                    </div>
-                                </TableHead>
+                                    </Box>
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
+                        </TableHead>
                         <TableBody>
                             {sortedKeys.map((key, index) => (
                                 <TableRow 
                                     key={key.LogicalName}
-                                    className={`hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 ${
-                                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                                    }`}
+                                    className="transition-colors duration-150 border-b"
+                                    sx={{
+                                        '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
+                                        borderColor: 'border.main',
+                                        backgroundColor: index % 2 === 0 
+                                            ? 'background.paper' 
+                                            : theme.palette.mode === 'dark' 
+                                                ? 'rgba(255, 255, 255, 0.02)' 
+                                                : 'rgba(0, 0, 0, 0.02)'
+                                    }}
                                 >
-                                    <TableCell className="break-words font-medium py-2 text-xs md:py-3 md:text-sm">
+                                    <TableCell className="break-words font-medium py-1 md:py-1.5 text-xs md:text-sm">
                                         {highlightMatch(key.Name, highlightTerm)}
                                     </TableCell>
-                                    <TableCell className="break-words text-gray-600 py-2 text-xs md:py-3 md:text-sm">
+                                    <TableCell 
+                                        className="break-words py-1 md:py-1.5 text-xs md:text-sm"
+                                        sx={{ color: 'text.secondary' }}
+                                    >
                                         {highlightMatch(key.LogicalName, highlightTerm)}
                                     </TableCell>
-                                    <TableCell className="break-words py-2 md:py-3">
-                                        <div className="flex flex-wrap gap-1">
+                                    <TableCell className="break-words py-1 md:py-1.5">
+                                        <Box className="flex flex-wrap gap-1">
                                             {key.KeyAttributes.map((attr, i) => (
-                                                <span 
+                                                <Chip 
                                                     key={i}
-                                                    className="inline-flex items-center px-1.5 py-0.5 text-xs rounded-md font-medium bg-blue-50 text-blue-700 md:px-2 md:py-1 md:text-sm"
-                                                >
-                                                    {highlightMatch(attr, highlightTerm)}
-                                                </span>
+                                                    label={highlightMatch(attr, highlightTerm)}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    className="text-xs md:text-sm h-5 md:h-6"
+                                                    sx={{
+                                                        backgroundColor: theme.palette.mode === 'dark' 
+                                                            ? 'rgba(25, 118, 210, 0.12)' 
+                                                            : 'rgba(25, 118, 210, 0.08)',
+                                                        color: 'primary.main',
+                                                        borderColor: 'primary.main',
+                                                        '& .MuiChip-label': {
+                                                            px: { xs: 0.5, md: 1 },
+                                                            fontSize: { xs: '0.65rem', md: '0.75rem' }
+                                                        }
+                                                    }}
+                                                />
                                             ))}
-                                        </div>
+                                        </Box>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
+                    </Box>
                 )}
-            </div>
+            </Box>
         </>
     )
 }
