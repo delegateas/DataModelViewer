@@ -46,12 +46,29 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
         var attributeNames = ExtractGetAttributeCalls(content);
 
         foreach (var attributeName in attributeNames)
-            AddAttributeUsage(attributeUsages, webresourceNamingFunc(webResource.Name).ToLower(), attributeName, new AttributeUsage(
+        {
+            string entityName = null;
+            try
+            {
+                entityName = webresourceNamingFunc(webResource.Name);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Naming function failed for web resource '{webResource.Name}': {ex.Message}");
+                continue;
+            }
+            if (string.IsNullOrWhiteSpace(entityName))
+            {
+                Console.WriteLine($"Warning: Naming function returned an invalid value for web resource '{webResource.Name}'. Skipping attribute usage.");
+                continue;
+            }
+            AddAttributeUsage(attributeUsages, entityName.ToLower(), attributeName, new AttributeUsage(
                 webResource.Name,
                 $"getAttribute call",
                 OperationType.Read,
                 SupportedType
             ));
+        }
     }
 
     // TODO get attributes used in XrmApi or XrmQuery calls
