@@ -5,6 +5,7 @@ using Generator.DTO.Attributes;
 using Generator.Queries;
 using Generator.Services;
 using Generator.Services.Plugins;
+using Generator.Services.WebResources;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection;
 using Attribute = Generator.DTO.Attributes.Attribute;
 
@@ -27,6 +29,7 @@ namespace Generator
 
         private readonly PluginAnalyzer pluginAnalyzer;
         private readonly PowerAutomateFlowAnalyzer flowAnalyzer;
+        private readonly WebResourceAnalyzer webResourceAnalyzer;
 
         public DataverseService(IConfiguration configuration, ILogger<DataverseService> logger)
         {
@@ -47,6 +50,7 @@ namespace Generator
 
             pluginAnalyzer = new PluginAnalyzer(client);
             flowAnalyzer = new PowerAutomateFlowAnalyzer(client);
+            webResourceAnalyzer = new WebResourceAnalyzer(client);
         }
 
         public async Task<IEnumerable<Record>> GetFilteredMetadata()
@@ -96,15 +100,32 @@ namespace Generator
             // Processes analysis
             var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
             // Plugins
+            var pluginStopWatch = new Stopwatch();
+            pluginStopWatch.Start();
             var pluginCollection = await client.GetSDKMessageProcessingStepsAsync(solutionIds);
             logger.LogInformation($"There are {pluginCollection.Count()} plugin sdk steps in the environment.");
             foreach (var plugin in pluginCollection)
                 await pluginAnalyzer.AnalyzeComponentAsync(plugin, attributeUsages);
+            pluginStopWatch.Stop();
+            logger.LogInformation($"Plugin analysis took {pluginStopWatch.ElapsedMilliseconds} ms.");
             // Flows
+            var flowStopWatch = new Stopwatch();
+            flowStopWatch.Start();
             var flowCollection = await client.GetPowerAutomateFlowsAsync(solutionIds);
             logger.LogInformation($"There are {flowCollection.Count()} Power Automate flows in the environment.");
             foreach (var flow in flowCollection)
                 await flowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+            flowStopWatch.Stop();
+            logger.LogInformation($"Power Automate flow analysis took {flowStopWatch.ElapsedMilliseconds} ms.");
+            // WebResources
+            var resourceStopWatch = new Stopwatch();
+            resourceStopWatch.Start();
+            var webresourceCollection = await client.GetWebResourcesAsync(solutionIds);
+            logger.LogInformation($"There are {webresourceCollection.Count()} WebResources in the environment.");
+            foreach (var resource in webresourceCollection)
+                await webResourceAnalyzer.AnalyzeComponentAsync(resource, attributeUsages);
+            resourceStopWatch.Stop();
+            logger.LogInformation($"WebResource analysis took {resourceStopWatch.ElapsedMilliseconds} ms.");
 
             var records =
                 entitiesInSolutionMetadata

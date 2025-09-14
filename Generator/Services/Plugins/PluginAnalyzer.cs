@@ -23,17 +23,8 @@ public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
 
             // Populate the attributeUsages dictionary
             foreach (var attribute in filteringAttributes)
-            {
-                if (!attributeUsages.ContainsKey(logicalTableName))
-                    attributeUsages[logicalTableName] = new Dictionary<string, List<AttributeUsage>>();
+                AddAttributeUsage(attributeUsages, logicalTableName, attribute, new AttributeUsage(pluginName, $"Used in filterattributes", OperationType.Other, SupportedType));
 
-                if (!attributeUsages[logicalTableName].ContainsKey(attribute))
-                    attributeUsages[logicalTableName][attribute] = new List<AttributeUsage>();
-
-                // Add the usage information (assuming AttributeUsage is a defined class)
-
-                attributeUsages[logicalTableName][attribute].Add(new AttributeUsage(pluginName, $"Used in filterattributes", OperationType.Other, SupportedType));
-            }
         }
         catch (Exception ex)
         {
