@@ -25,9 +25,9 @@ export const HomeView = ({ }: IHomeViewProps) => {
     const carouselItems: CarouselItem[] = [
         {
             image: '/processes.jpg',
-            title: 'Process Explorer!',
-            text: "Work has started on the process explorer! This will be a place to figure out what processes are touching your fields. Everything from server- to client side.",
-            type: '(v2.0.0) Alpha Feature',
+            title: 'Webresource support!',
+            text: "View your attributes used inside your JS webresources in the Processes Explorer. Now supports the getAttribute method with more to come soon.",
+            type: '(v2.0.1) Feature update',
             actionlabel: 'Try it out',
             action: () => router.push('/processes')
         },
