@@ -78,8 +78,6 @@ Afterwards go into the "Website"-folder from VS Code and open the terminal (of t
 # Settings in pipeline
 The pipeline expects a variable group called `DataModel`. It must have the following variables. The app user only requires the `Environment Maker` security role.
 
-* AdoWikiName: Name of your wiki found under "Overview -> Wiki" in ADO. (will be encoded so dont worry about space)
-* AdoWikiPagePath: Path to the introduction page you wish to show in DMV. (will also be encoded so dont worry about spaces)
 * AzureClientId: Client id for an Azure App Registration with access to the Dataverse Environment.
 * AzureClientSecret: Client Secret for the above. Remember to set its variable type to "Secret"! 
 * AzureTenantId: Azure Tenant ID (where your App Regustration is placed and resource group will be placed).
@@ -91,7 +89,10 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * WebsiteName: Used for the url of the web app presenting the data model to the user. The full URL will be in the format "https://wa-{WebsiteName}.azurewebsites.net/" and must be globally unique. 
 * WebsitePassword: Password used by DMV users to login to the generated site.
 * WebsiteSessionSecret: Key to encrypt the session token with (You can set it to whatever you like, but recommended 32 random characters).
-* TableGroups: Enter a semi-colon separated list of group names and for each group a comma-separated list of table schema names within that group. Then this configuration will be used to order the tables in groups in the DMV side-menu. Example: `Org. tables: team, systemuser, businessunit; Sales: opportunity, lead`
+* (Optional) TableGroups: Enter a semi-colon separated list of group names and for each group a comma-separated list of table schema names within that group. Then this configuration will be used to order the tables in groups in the DMV side-menu. Example: `Org. tables: team, systemuser, businessunit; Sales: opportunity, lead`
+* (Optional) AdoWikiName: Name of your wiki found under "Overview -> Wiki" in ADO. (will be encoded so dont worry about space)
+* (Optional) AdoWikiPagePath: Path to the introduction page you wish to show in DMV. (will also be encoded so dont worry about spaces)
+* (Optional) WebResourceNameFunc: Function to fetch the entity logicalname from a webresource. The function must be a valid C# LINQ expression that works on the `name` input parameter. Default: `name.Split('.').First()`
 
 ## After deployment
 * Go to portal.azure.com 

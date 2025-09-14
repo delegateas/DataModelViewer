@@ -1,3 +1,12 @@
+export type SolutionWarningType = {
+    Type: WarningType,
+    Message: string,
+}
+
+export enum WarningType {
+    Attribute
+}
+
 export type GroupType = {
     Name: string,
     Entities: EntityType[]

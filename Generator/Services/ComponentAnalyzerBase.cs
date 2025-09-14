@@ -11,6 +11,22 @@ public abstract class BaseComponentAnalyzer<T>(ServiceClient service) : ICompone
     public abstract ComponentType SupportedType { get; }
     public abstract Task AnalyzeComponentAsync(T component, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages);
 
+    protected void AddAttributeUsage(Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+        string entityName, string attributeName, AttributeUsage usage)
+    {
+        if (!attributeUsages.ContainsKey(entityName))
+        {
+            attributeUsages[entityName] = new Dictionary<string, List<AttributeUsage>>();
+        }
+
+        if (!attributeUsages[entityName].ContainsKey(attributeName))
+        {
+            attributeUsages[entityName][attributeName] = new List<AttributeUsage>();
+        }
+
+        attributeUsages[entityName][attributeName].Add(usage);
+    }
+
     protected List<string> ExtractFieldsFromODataFilter(string filter)
     {
         var fields = new List<string>();

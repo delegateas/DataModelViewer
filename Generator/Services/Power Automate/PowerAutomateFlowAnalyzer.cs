@@ -448,20 +448,4 @@ public class PowerAutomateFlowAnalyzer : BaseComponentAnalyzer<PowerAutomateFlow
         // Default to Other for unknown actions
         return OperationType.Other;
     }
-
-    private void AddAttributeUsage(Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
-        string entityName, string attributeName, AttributeUsage usage)
-    {
-        if (!attributeUsages.ContainsKey(entityName))
-        {
-            attributeUsages[entityName] = new Dictionary<string, List<AttributeUsage>>();
-        }
-
-        if (!attributeUsages[entityName].ContainsKey(attributeName))
-        {
-            attributeUsages[entityName][attributeName] = new List<AttributeUsage>();
-        }
-
-        attributeUsages[entityName][attributeName].Add(usage);
-    }
 }

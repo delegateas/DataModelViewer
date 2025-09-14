@@ -2,9 +2,11 @@
 using Azure.Identity;
 using Generator.DTO;
 using Generator.DTO.Attributes;
+using Generator.DTO.Warnings;
 using Generator.Queries;
 using Generator.Services;
 using Generator.Services.Plugins;
+using Generator.Services.WebResources;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +16,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection;
 using Attribute = Generator.DTO.Attributes.Attribute;
 
@@ -27,6 +30,7 @@ namespace Generator
 
         private readonly PluginAnalyzer pluginAnalyzer;
         private readonly PowerAutomateFlowAnalyzer flowAnalyzer;
+        private readonly WebResourceAnalyzer webResourceAnalyzer;
 
         public DataverseService(IConfiguration configuration, ILogger<DataverseService> logger)
         {
@@ -47,10 +51,12 @@ namespace Generator
 
             pluginAnalyzer = new PluginAnalyzer(client);
             flowAnalyzer = new PowerAutomateFlowAnalyzer(client);
+            webResourceAnalyzer = new WebResourceAnalyzer(client, configuration);
         }
 
-        public async Task<IEnumerable<Record>> GetFilteredMetadata()
+        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>)> GetFilteredMetadata()
         {
+            var warnings = new List<SolutionWarning>(); // used to collect warnings for the insights dashboard
             var (publisherPrefix, solutionIds) = await GetSolutionIds();
             var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type, rootcomponentbehavior)
 
@@ -96,15 +102,32 @@ namespace Generator
             // Processes analysis
             var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
             // Plugins
+            var pluginStopWatch = new Stopwatch();
+            pluginStopWatch.Start();
             var pluginCollection = await client.GetSDKMessageProcessingStepsAsync(solutionIds);
             logger.LogInformation($"There are {pluginCollection.Count()} plugin sdk steps in the environment.");
             foreach (var plugin in pluginCollection)
                 await pluginAnalyzer.AnalyzeComponentAsync(plugin, attributeUsages);
+            pluginStopWatch.Stop();
+            logger.LogInformation($"Plugin analysis took {pluginStopWatch.ElapsedMilliseconds} ms.");
             // Flows
+            var flowStopWatch = new Stopwatch();
+            flowStopWatch.Start();
             var flowCollection = await client.GetPowerAutomateFlowsAsync(solutionIds);
             logger.LogInformation($"There are {flowCollection.Count()} Power Automate flows in the environment.");
             foreach (var flow in flowCollection)
                 await flowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+            flowStopWatch.Stop();
+            logger.LogInformation($"Power Automate flow analysis took {flowStopWatch.ElapsedMilliseconds} ms.");
+            // WebResources
+            var resourceStopWatch = new Stopwatch();
+            resourceStopWatch.Start();
+            var webresourceCollection = await client.GetWebResourcesAsync(solutionIds);
+            logger.LogInformation($"There are {webresourceCollection.Count()} WebResources in the environment.");
+            foreach (var resource in webresourceCollection)
+                await webResourceAnalyzer.AnalyzeComponentAsync(resource, attributeUsages);
+            resourceStopWatch.Stop();
+            logger.LogInformation($"WebResource analysis took {resourceStopWatch.ElapsedMilliseconds} ms.");
 
             var records =
                 entitiesInSolutionMetadata
@@ -123,8 +146,17 @@ namespace Generator
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
                 .ToList();
 
+            // Warn about attributes that were used in processes, but the entity could not be resolved from e.g. JavaScript file name or similar
+            var hash = entitiesInSolutionMetadata.SelectMany<EntityMetadata, string>(r => [r.LogicalCollectionName?.ToLower() ?? "", r.LogicalName.ToLower()]).ToHashSet();
+            warnings.AddRange(attributeUsages.Keys
+                .Where(k => !hash.Contains(k.ToLower()))
+                .SelectMany(entityKey => attributeUsages.GetValueOrDefault(entityKey)!
+                    .SelectMany(attributeDict => attributeDict.Value
+                        .Select(usage =>
+                            new AttributeWarning($"{attributeDict.Key} was used inside a {usage.ComponentType} component [{usage.Name}]. However, the entity {entityKey} could not be resolved in the provided solutions.")))));
 
-            return records
+
+            return (records
                 .Select(x =>
                 {
                     logicalNameToSecurityRoles.TryGetValue(x.EntityMetadata.LogicalName, out var securityRoles);
@@ -142,7 +174,7 @@ namespace Generator
                         entityIconMap,
                         attributeUsages,
                         configuration);
-                });
+                }), warnings);
         }
 
         private static Record MakeRecord(
