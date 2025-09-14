@@ -1,12 +1,22 @@
 using Generator.DTO;
+using Microsoft.Extensions.Configuration;
 using Microsoft.PowerPlatform.Dataverse.Client;
+using System.Linq.Dynamic.Core;
 using System.Text.RegularExpressions;
 
 namespace Generator.Services.WebResources;
 
 public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
 {
-    public WebResourceAnalyzer(ServiceClient service) : base(service) { }
+    private readonly Func<string, string> webresourceNamingFunc;
+    public WebResourceAnalyzer(ServiceClient service, IConfiguration configuration) : base(service)
+    {
+        webresourceNamingFunc = DynamicExpressionParser.ParseLambda<string, string>(
+            new ParsingConfig { ResolveTypesBySimpleName = true },
+            false,
+            configuration.GetValue<string>("WebResourceNamingFunc") ?? "name => name.Split('.').First()"
+        ).Compile();
+    }
 
     public override ComponentType SupportedType => ComponentType.WebResource;
 
@@ -33,14 +43,14 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
         var content = webResource.Content;
 
         var attributeNames = ExtractGetAttributeCalls(content);
+
         foreach (var attributeName in attributeNames)
-            foreach (var form in webResource.dependencies)
-                AddAttributeUsage(attributeUsages, form.EntityName, attributeName, new AttributeUsage(
-                    webResource.Name,
-                    $"getAttribute call",
-                    OperationType.Read,
-                    SupportedType
-                ));
+            AddAttributeUsage(attributeUsages, webresourceNamingFunc(webResource.Name), attributeName, new AttributeUsage(
+                webResource.Name,
+                $"getAttribute call",
+                OperationType.Read,
+                SupportedType
+            ));
     }
 
     // TODO get attributes used in XrmApi or XrmQuery calls

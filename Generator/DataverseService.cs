@@ -2,6 +2,7 @@
 using Azure.Identity;
 using Generator.DTO;
 using Generator.DTO.Attributes;
+using Generator.DTO.Warnings;
 using Generator.Queries;
 using Generator.Services;
 using Generator.Services.Plugins;
@@ -50,11 +51,12 @@ namespace Generator
 
             pluginAnalyzer = new PluginAnalyzer(client);
             flowAnalyzer = new PowerAutomateFlowAnalyzer(client);
-            webResourceAnalyzer = new WebResourceAnalyzer(client);
+            webResourceAnalyzer = new WebResourceAnalyzer(client, configuration);
         }
 
-        public async Task<IEnumerable<Record>> GetFilteredMetadata()
+        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>)> GetFilteredMetadata()
         {
+            var warnings = new List<SolutionWarning>(); // used to collect warnings for the insights dashboard
             var (publisherPrefix, solutionIds) = await GetSolutionIds();
             var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type, rootcomponentbehavior)
 
@@ -144,8 +146,17 @@ namespace Generator
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
                 .ToList();
 
+            // Warn about attributes that were used in processes, but the entity could not be resolved from e.g. JavaScript file name or similar
+            var hash = entitiesInSolutionMetadata.SelectMany<EntityMetadata, string>(r => [r.LogicalCollectionName?.ToLower() ?? "", r.LogicalName.ToLower()]).ToHashSet();
+            warnings.AddRange(attributeUsages.Keys
+                .Where(k => !hash.Contains(k.ToLower()))
+                .SelectMany(entityKey => attributeUsages.GetValueOrDefault(entityKey)!
+                    .SelectMany(attributeDict => attributeDict.Value
+                        .Select(usage =>
+                            new AttributeWarning($"{attributeDict.Key} was used inside a {usage.ComponentType} component [{usage.Name}]. However, the entity {entityKey} could not be resolved in the provided solutions.")))));
 
-            return records
+
+            return (records
                 .Select(x =>
                 {
                     logicalNameToSecurityRoles.TryGetValue(x.EntityMetadata.LogicalName, out var securityRoles);
@@ -163,7 +174,7 @@ namespace Generator
                         entityIconMap,
                         attributeUsages,
                         configuration);
-                });
+                }), warnings);
         }
 
         private static Record MakeRecord(

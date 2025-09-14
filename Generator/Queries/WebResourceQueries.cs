@@ -2,7 +2,6 @@ using Generator.DTO;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
-using System.Xml.Linq;
 
 namespace Generator.Queries;
 
@@ -45,7 +44,6 @@ public static class WebResourceQueries
         };
 
         var results = (await service.RetrieveMultipleAsync(query)).Entities;
-        var formsDependencies = await service.GetDependentForms(solutionIds);
 
         var webResources = results.Select(e =>
         {
@@ -53,7 +51,6 @@ public static class WebResourceQueries
             var contentValue = e.GetAttributeValue<AliasedValue>("webresource.content")?.Value;
             var webresourceId = e.GetAttributeValue<AliasedValue>("webresource.webresourceid").Value?.ToString() ?? "";
             var webresourceName = e.GetAttributeValue<AliasedValue>("webresource.name").Value?.ToString();
-            var dependencies = formsDependencies.GetValueOrDefault(webresourceName, Enumerable.Empty<Form>());
             if (contentValue != null)
             {
                 // Content is base64 encoded, decode it
@@ -74,7 +71,6 @@ public static class WebResourceQueries
             }
 
             return new WebResource(
-                dependencies,
                 webresourceId,
                 webresourceName,
                 content,
@@ -84,73 +80,5 @@ public static class WebResourceQueries
         });
 
         return webResources;
-    }
-
-    /// <summary>
-    /// Retrieve all forms in the solutions and return the dependencies to webresources.
-    /// </summary>
-    /// <param name="service"></param>
-    /// <param name="solutionIds"></param>
-    /// <returns>A dictionary where the key is the weresource id and the value is a list of forms depending on this weresource.</returns>
-    private static async Task<Dictionary<string, IEnumerable<Form>>> GetDependentForms(this ServiceClient service, List<Guid>? solutionIds = null)
-    {
-        var query = new QueryExpression("solutioncomponent")
-        {
-            ColumnSet = new ColumnSet("objectid"),
-            Criteria = new FilterExpression(LogicalOperator.And)
-            {
-                Conditions =
-                {
-                    new ConditionExpression("solutionid", ConditionOperator.In, solutionIds),
-                    new ConditionExpression("componenttype", ConditionOperator.Equal, 60) // 60 = System Form OBS not 24 = Form
-                }
-            },
-            LinkEntities =
-            {
-                new LinkEntity(
-                    "solutioncomponent",
-                    "systemform",
-                    "objectid",
-                    "formid",
-                    JoinOperator.Inner)
-                {
-                    EntityAlias = "form",
-                    Columns = new ColumnSet("formid", "name", "objecttypecode", "formxml"),
-                }
-            }
-        };
-
-        var forms = await service.RetrieveMultipleAsync(query);
-
-        var webresources = forms.Entities.SelectMany(form =>
-        {
-            var content = form.GetAttributeValue<AliasedValue>("form.formxml").Value.ToString() ?? "";
-            var formid = form.GetAttributeValue<AliasedValue>("form.formid").Value.ToString();
-            var formname = form.GetAttributeValue<AliasedValue>("form.name").Value.ToString();
-            var entityname = form.GetAttributeValue<AliasedValue>("form.objecttypecode").Value.ToString();
-
-            var doc = XDocument.Parse(content, LoadOptions.PreserveWhitespace);
-
-            var libraries = doc.Descendants("formLibraries")
-               .Descendants("Library")
-               .Select(lib => new
-               {
-                   Name = lib.Attribute("name")?.Value,
-                   Form = formid,
-                   FormName = formname,
-                   FormEntity = entityname
-               });
-
-            return libraries;
-        });
-
-        return webresources
-            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-            .GroupBy(x => x.Name!)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(x => new Form(x.Form, x.FormName, x.FormEntity))
-                      .Distinct()
-            );
     }
 }
