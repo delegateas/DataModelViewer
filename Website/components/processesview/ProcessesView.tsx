@@ -3,11 +3,12 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useDatamodelData } from '@/contexts/DatamodelDataContext'
-import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, ListItemText, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme, Alert } from '@mui/material'
-import { AccountTreeRounded, CloseRounded, ExtensionRounded, SearchRounded } from '@mui/icons-material'
+import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, ListItemText, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme, Alert, Tooltip } from '@mui/material'
+import { AccountTreeRounded, AddAlertRounded, CloseRounded, ExtensionRounded, JavascriptRounded, SearchRounded, WarningRounded } from '@mui/icons-material'
 import { AttributeType, EntityType, ComponentType, OperationType } from '@/lib/Types'
 import LoadingOverlay from '@/components/shared/LoadingOverlay'
 import NotchedBox from '../shared/elements/NotchedBox'
+import { StatCard } from '../shared/elements/StatCard'
 import { ResponsivePie } from '@nivo/pie'
 
 interface IProcessesViewProps { }
@@ -30,6 +31,20 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
         setElement(null);
         close();
     }, [setElement, close])
+
+    const typeDistribution = useMemo(() => {
+        return groups.reduce((acc, group) => {
+            group.Entities.forEach(entity => {
+                entity.Attributes.forEach(attribute => {
+                    attribute.AttributeUsages.forEach(au => {
+                        const componentTypeName = au.ComponentType;
+                        acc[componentTypeName] = (acc[componentTypeName] || 0) + 1;
+                    });
+                });
+            });
+            return acc;
+        }, { } as Record<ComponentType, number>);
+    }, [groups])
 
     const chartData = useMemo(() => {
         if (!selectedAttribute) return [];
@@ -129,9 +144,11 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
     const getProcessChip = (componentType: ComponentType) => {
         switch (componentType) {
             case ComponentType.Plugin:
-                return <Chip variant="outlined" label="Plugin" color="success" icon={<ExtensionRounded color='success' />} />;
+                return <Chip variant="outlined" label="Plugin" color="success" size='small' icon={<ExtensionRounded color='success' />} />;
             case ComponentType.PowerAutomateFlow:
-                return <Chip variant="outlined" label="Power Automate" color="info" icon={<AccountTreeRounded color='info' />} />;
+                return <Chip variant="outlined" label="Power Automate" color="info" size='small' icon={<AccountTreeRounded color='info' />} />;
+            case ComponentType.WebResource:
+                return <Chip variant="outlined" label="Web Resource" color="warning" size='small' icon={<JavascriptRounded color='warning' />} />;
         }
     }
 
@@ -141,15 +158,42 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
         <Box className="flex min-h-screen">
             <Box className="flex-1 overflow-auto" sx={{ backgroundColor: 'background.default' }}>
             <Box className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                {/* Page Title */}
-                <Typography 
-                variant="h3" 
-                component="h1" 
-                className="text-3xl sm:text-4xl font-bold mb-8"
-                sx={{ color: 'text.primary' }}
-                >
-                    Processes
-                </Typography>
+
+                <Grid container spacing={2} className="mb-8">
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <StatCard
+                            title="processes"
+                            value={typeDistribution[ComponentType.Plugin] || 0}
+                            highlightedWord="Plugin"
+                            tooltipTitle="Only includes registered plugin step triggers."
+                            tooltipWarning="Limitations"
+                            imageSrc="/plugin.svg"
+                            imageAlt="Plugin icon"
+                        />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <StatCard
+                            title="processes"
+                            value={typeDistribution[ComponentType.PowerAutomateFlow] || 0}
+                            highlightedWord="Power Automate"
+                            tooltipTitle="Only includes CDS Actions."
+                            tooltipWarning="Limitations"
+                            imageSrc="/powerautomate.svg"
+                            imageAlt="Power Automate icon"
+                        />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <StatCard
+                            title="processes"
+                            value={typeDistribution[ComponentType.WebResource] || 0}
+                            highlightedWord="Web Resource"
+                            tooltipTitle="Only includes getAttribute from Web Resource."
+                            tooltipWarning="Limitations"
+                            imageSrc="/webresource.svg"
+                            imageAlt="Web Resource icon"
+                        />
+                    </Grid>
+                </Grid>
 
                 {/* Search Bar */}
                 <Box className="mb-8">
@@ -171,6 +215,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                     sx={{
                     '& .MuiOutlinedInput-root': {
                         backgroundColor: 'background.paper',
+                        borderRadius: '8px',
                         '& fieldset': {
                         borderColor: 'divider',
                         },
@@ -237,10 +282,10 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                 }
                                 secondary={
                                     <Box>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                    <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>
                                         {result.entity.DisplayName} • {result.group}
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    <Typography component="div" variant="caption" sx={{ color: 'text.secondary' }}>
                                         {result.attribute.SchemaName}
                                     </Typography>
                                     </Box>
@@ -264,12 +309,6 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                     Enter at least 2 characters to search attributes
                 </Typography>
                 )}
-
-               <Alert severity="info" className="mb-8">
-                   <Typography variant="body2">
-                       Currently only supports <b>Plugin triggers</b> and <b>CDS Power Automate Actions</b>
-                   </Typography>
-               </Alert>
 
                 {!selectedAttribute && (
                     <Typography variant="h6" className=''>
@@ -304,6 +343,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                         cornerRadius={3}
                                         activeOuterRadiusOffset={8}
                                         borderWidth={1}
+                                        colors={{ scheme: 'blues' }}
                                         borderColor={{
                                             from: 'color',
                                             modifiers: [
@@ -410,7 +450,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                         >
                                             <TableHead sx={{ backgroundColor: 'background.paper' }}>
                                                 <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
-                                                    <TableCell 
+                                                    <TableCell align='center'
                                                         className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
                                                         sx={{ 
                                                             color: 'text.primary',
@@ -475,7 +515,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                                                     : 'rgba(0, 0, 0, 0.02)'
                                                         }}
                                                     >
-                                                        <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                        <TableCell align='center' className="break-words py-1 md:py-1.5 text-xs md:text-sm">
                                                             {getProcessChip(usage.ComponentType)}
                                                         </TableCell>
                                                         <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">

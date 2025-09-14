@@ -11,10 +11,11 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
     private readonly Func<string, string> webresourceNamingFunc;
     public WebResourceAnalyzer(ServiceClient service, IConfiguration configuration) : base(service)
     {
+        var lambda = configuration.GetValue<string>("WebResourceNameFunc") ?? "name.Split('.').First()";
         webresourceNamingFunc = DynamicExpressionParser.ParseLambda<string, string>(
             new ParsingConfig { ResolveTypesBySimpleName = true },
             false,
-            configuration.GetValue<string>("WebResourceNamingFunc") ?? "name => name.Split('.').First()"
+            "name => " + lambda
         ).Compile();
     }
 
@@ -45,7 +46,7 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
         var attributeNames = ExtractGetAttributeCalls(content);
 
         foreach (var attributeName in attributeNames)
-            AddAttributeUsage(attributeUsages, webresourceNamingFunc(webResource.Name), attributeName, new AttributeUsage(
+            AddAttributeUsage(attributeUsages, webresourceNamingFunc(webResource.Name).ToLower(), attributeName, new AttributeUsage(
                 webResource.Name,
                 $"getAttribute call",
                 OperationType.Read,
