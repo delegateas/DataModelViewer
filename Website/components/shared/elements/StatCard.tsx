@@ -54,7 +54,7 @@ export const StatCard = ({
         <Paper variant='outlined' className="p-4 flex rounded-2xl items-center justify-between">
             <Box className="flex flex-col mr-4">
                 <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
-                    Total <b>{highlightedWord}</b> {title}
+                    <b>{highlightedWord}</b> {title}
                 </Typography>
                 <Typography variant="h4" className='py-2 font-semibold' sx={{ color: 'text.primary' }}>
                     {animatedValue}
