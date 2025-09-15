@@ -44,8 +44,8 @@ public class PowerAutomateFlowAnalyzer : BaseComponentAnalyzer<PowerAutomateFlow
         foreach (var action in actions)
             await AnalyzeAction(action, flow, attributeUsages);
 
-        // Also check for dynamic content references that might reference Dataverse fields
-        AnalyzeDynamicContent(flowDefinition, flow, attributeUsages);
+        // Also check for dynamic content references that might reference Dataverse fields - problematic to do, as  you can known if what is inside the query are CDS props
+        // AnalyzeDynamicContent(flowDefinition, flow, attributeUsages);
     }
 
     private IEnumerable<JToken> ExtractActions(JObject flowDefinition)
@@ -396,7 +396,7 @@ public class PowerAutomateFlowAnalyzer : BaseComponentAnalyzer<PowerAutomateFlow
         {
             "@odata.context", "@odata.etag", "@odata.id", "@odata.type",
             "entityName", "entitySetName", "uri", "path", "method", "headers",
-            "authentication", "retryPolicy", "pagination", "timeout"
+            "authentication", "retryPolicy", "pagination", "timeout", "recordId"
         };
 
         if (systemFields.Contains(name)) return false;

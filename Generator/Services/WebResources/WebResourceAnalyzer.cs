@@ -8,10 +8,12 @@ namespace Generator.Services.WebResources;
 
 public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
 {
+    private record AttributeCall(string AttributeName, string Type, OperationType Operation);
+
     private readonly Func<string, string> webresourceNamingFunc;
     public WebResourceAnalyzer(ServiceClient service, IConfiguration configuration) : base(service)
     {
-        var lambda = configuration.GetValue<string>("WebResourceNameFunc") ?? "name.Split('.').First()";
+        var lambda = configuration.GetValue<string>("WebResourceNameFunc") ?? "np(name.Split('/').LastOrDefault()).Split('.').Reverse().Skip(1).FirstOrDefault()";
         webresourceNamingFunc = DynamicExpressionParser.ParseLambda<string, string>(
             new ParsingConfig { ResolveTypesBySimpleName = true },
             false,
@@ -43,11 +45,14 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
     {
         var content = webResource.Content;
 
-        var attributeNames = ExtractGetAttributeCalls(content);
+        var attributeNames = new List<AttributeCall>();
+        ExtractGetAttributeCalls(content, attributeNames);
+        ExtractGetControlCalls(content, attributeNames);
+        // TODO get attributes used in XrmApi or XrmQuery calls
 
         foreach (var attributeName in attributeNames)
         {
-            string entityName = null;
+            string entityName;
             try
             {
                 entityName = webresourceNamingFunc(webResource.Name);
@@ -62,41 +67,58 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
                 Console.WriteLine($"Warning: Naming function returned an invalid value for web resource '{webResource.Name}'. Skipping attribute usage.");
                 continue;
             }
-            AddAttributeUsage(attributeUsages, entityName.ToLower(), attributeName, new AttributeUsage(
+            AddAttributeUsage(attributeUsages, entityName.ToLower(), attributeName.AttributeName, new AttributeUsage(
                 webResource.Name,
-                $"getAttribute call",
-                OperationType.Read,
+                attributeName.Type,
+                attributeName.Operation,
                 SupportedType
             ));
         }
     }
 
-    // TODO get attributes used in XrmApi or XrmQuery calls
-
-    // TODO get attributes from getControl
-
-    private List<string> ExtractGetAttributeCalls(string code)
+    private void ExtractGetAttributeCalls(string code, List<AttributeCall> attributes)
     {
-        var attributes = new List<string>();
-
         if (string.IsNullOrEmpty(code))
-            return attributes;
+            return;
 
         // Examples:
-        // formContext.getAttribute("firstname")
-        // Xrm.Page.getAttribute("lastname") 
+        // formContext.getAttribute("firstname").setValue("some value")
+        // Xrm.Page.getAttribute("lastname").getValue()
         // executionContext.getFormContext().getAttribute("email")
         // context.getAttribute("phonenumber")
         // this.getAttribute("address1_city")
-        var getAttributePattern = @"(\w+(?:\.\w+)*\.getAttribute)\([""']([^""']+)[""']\)";
+        var getAttributePattern = @"(?<recv>\b\w+(?:\.\w+)*\.getAttribute)\(\s*[""'](?<attr>[^""']+)[""']\s*\)(?:\s*\.\s*(?<op>getValue|setValue)\s*\((?<args>[^)]*)\))?";
         var matches = Regex.Matches(code, getAttributePattern, RegexOptions.IgnoreCase);
 
         foreach (Match match in matches)
         {
-            var attributeName = match.Groups[2].Value;
-            attributes.Add(attributeName);
+            var attributeName = match.Groups["attr"].Value;
+            var operation = match.Groups["op"].Value.StartsWith("get") ? OperationType.Read : OperationType.Update;
+            attributes.Add(new AttributeCall(attributeName, $"getAttribute call, {operation}", operation));
         }
+        return;
+    }
 
-        return attributes.Distinct().ToList();
+    // getControl calls also return tabs, subgrids etc. which is a bit problematic
+    private void ExtractGetControlCalls(string code, List<AttributeCall> attributes)
+    {
+        if (string.IsNullOrEmpty(code))
+            return;
+
+        // Examples:
+        // formContext.getControl("firstname")
+        // Xrm.Page.getControl("lastname") 
+        // executionContext.getFormContext().getControl("email")
+        // context.getControl("phonenumber")
+        // this.getControl("address1_city")
+        var getAttributePattern = @"(?<recv>\b\w+(?:\.\w+)*\.getControl)\(\s*[""'](?<attr>[^""']+)[""']?";
+        var matches = Regex.Matches(code, getAttributePattern, RegexOptions.IgnoreCase);
+
+        foreach (Match match in matches)
+        {
+            var attributeName = match.Groups["attr"].Value;
+            attributes.Add(new AttributeCall(attributeName, "getControl call", OperationType.Read));
+        }
+        return;
     }
 }

@@ -92,7 +92,7 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * (Optional) TableGroups: Enter a semi-colon separated list of group names and for each group a comma-separated list of table schema names within that group. Then this configuration will be used to order the tables in groups in the DMV side-menu. Example: `Org. tables: team, systemuser, businessunit; Sales: opportunity, lead`
 * (Optional) AdoWikiName: Name of your wiki found under "Overview -> Wiki" in ADO. (will be encoded so dont worry about space)
 * (Optional) AdoWikiPagePath: Path to the introduction page you wish to show in DMV. (will also be encoded so dont worry about spaces)
-* (Optional) WebResourceNameFunc: Function to fetch the entity logicalname from a webresource. The function must be a valid C# LINQ expression that works on the `name` input parameter. Default: `name.Split('.').First()`
+* (Optional) WebResourceNameFunc: Function to fetch the entity logicalname from a webresource. The function must be a valid C# LINQ expression that works on the `name` input parameter. Default: `np(name.Split('/').LastOrDefault()).Split('.').Reverse().Skip(1).FirstOrDefault()`
 
 ## After deployment
 * Go to portal.azure.com 
