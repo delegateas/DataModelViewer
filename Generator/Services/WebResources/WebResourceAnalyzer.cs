@@ -13,7 +13,7 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
     private readonly Func<string, string> webresourceNamingFunc;
     public WebResourceAnalyzer(ServiceClient service, IConfiguration configuration) : base(service)
     {
-        var lambda = configuration.GetValue<string>("WebResourceNameFunc") ?? "name.Split('.').First()";
+        var lambda = configuration.GetValue<string>("WebResourceNameFunc") ?? "np(name.Split('/').LastOrDefault()).Split('.').Reverse().Skip(1).FirstOrDefault()";
         webresourceNamingFunc = DynamicExpressionParser.ParseLambda<string, string>(
             new ParsingConfig { ResolveTypesBySimpleName = true },
             false,
