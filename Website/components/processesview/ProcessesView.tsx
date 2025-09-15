@@ -193,7 +193,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                     title="attribute usages"
                                     value={typeDistribution[ComponentType.WebResource] || 0}
                                     highlightedWord="Web Resource"
-                                    tooltipTitle="Only includes getAttribute from Web Resource."
+                                    tooltipTitle="Only includes getAttribute/getControl from Web Resource."
                                     tooltipWarning="Limitations"
                                     imageSrc="/webresource.svg"
                                     imageAlt="Web Resource icon"
@@ -418,7 +418,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                             </Box>
                                         ) : (
                                             <Box 
-                                                className="overflow-x-auto md:overflow-x-visible"
+                                                className="overflow-x-auto md:overflow-x-visible rounded-b-2xl"
                                                 sx={{ 
                                                     borderTop: 1, 
                                                     borderColor: 'border.main',
@@ -443,7 +443,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                             >
                                                 <Table 
                                                     stickyHeader
-                                                    className="w-full min-w-[600px] md:min-w-0"
+                                                    className="w-full min-w-[600px] md:min-w-0 rounded-b-2xl"
                                                     sx={{ 
                                                         borderColor: 'border.main'
                                                     }}

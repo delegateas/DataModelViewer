@@ -94,7 +94,7 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
         {
             var attributeName = match.Groups["attr"].Value;
             var operation = match.Groups["op"].Value.StartsWith("get") ? OperationType.Read : OperationType.Update;
-            attributes.Add(new AttributeCall(attributeName, "getAttribute call", operation));
+            attributes.Add(new AttributeCall(attributeName, $"getAttribute call, {operation}", operation));
         }
         return;
     }
