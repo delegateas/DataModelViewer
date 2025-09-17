@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/postBuild.js",
     "start": "next start",
     "lint": "next lint",
     "prepipeline": "node scripts/copyStub.js"
