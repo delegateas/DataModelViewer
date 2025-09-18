@@ -31,6 +31,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [displaySearchTerm, setDisplaySearchTerm] = useState("");
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     
     // Memoize search results to prevent recalculation on every render
     const filteredGroups = useMemo(() => {
@@ -67,6 +68,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     newExpandedGroups.add(group.Name);
                 }
             });
+            setExpandedGroups(newExpandedGroups);
         }
     }, [groups]);
 
@@ -93,7 +95,15 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     }, []);
 
     const handleGroupClick = useCallback((groupName: string) => {
-        dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
+        setExpandedGroups(prev => {
+            const newExpanded = new Set(prev);
+            if (newExpanded.has(groupName)) {
+                newExpanded.delete(groupName);
+            } else if (currentGroup?.toLowerCase() !== groupName.toLowerCase()) {
+                newExpanded.add(groupName);
+            }
+            return newExpanded;
+        });
     }, [dataModelDispatch]);
 
     const handleSectionClick = useCallback((sectionId: string, groupName: string) => {
@@ -126,12 +136,13 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
 
     const NavItem = useCallback(({ group }: INavItemProps) => {
         const isCurrentGroup = currentGroup?.toLowerCase() === group.Name.toLowerCase();
-    
+        const isExpanded = expandedGroups.has(group.Name) || isCurrentGroup;
+
         return (
             <Accordion
                 disableGutters 
-                expanded={isCurrentGroup}
-                onClick={() => handleGroupClick(group.Name)}
+                expanded={isExpanded}
+                onChange={() => handleGroupClick(group.Name)}
                 className={`group/accordion transition-all duration-300 w-full first:rounded-t-lg last:rounded-b-lg shadow-none p-1`}
                 sx={{
                     backgroundColor: "background.paper",
@@ -145,7 +156,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                         isCurrentGroup ? "font-semibold" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
                     )}
                     sx={{
-                        backgroundColor: isCurrentGroup ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                        backgroundColor: isExpanded ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
                         padding: '4px',
                         minHeight: '32px !important',
                         '& .MuiAccordionSummary-content': {
@@ -157,14 +168,14 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     }}
                 >
                     <Typography 
-                        className={`flex-1 text-sm text-left truncate min-w-0 ${isCurrentGroup ? 'font-semibold' : ''}`} 
+                        className={`flex-1 text-sm text-left truncate min-w-0 ${isExpanded ? 'font-semibold' : ''}`} 
                         sx={{ 
-                            color: isCurrentGroup ? 'primary.main' : 'text.primary'
+                            color: isExpanded ? 'primary.main' : 'text.primary'
                         }}
                     >
                         {group.Name}
                     </Typography>
-                    <Typography className={`flex-shrink-0 text-xs mr-2 ${isCurrentGroup ? 'font-semibold' : ''}`} sx={{ opacity: 0.7, color: isCurrentGroup ? 'primary.main' : 'text.primary' }}>{group.Entities.length}</Typography>
+                    <Typography className={`flex-shrink-0 text-xs mr-2 ${isExpanded ? 'font-semibold' : ''}`} sx={{ opacity: 0.7, color: isExpanded ? 'primary.main' : 'text.primary' }}>{group.Entities.length}</Typography>
                     
                     <OpenInNewRounded 
                         onClick={(e) => {
@@ -174,7 +185,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                         aria-label={`Link to first entity in ${group.Name}`}
                         className="w-4 h-4 flex-shrink-0"
                         sx={{
-                            color: isCurrentGroup ? "primary.main" : "default"
+                            color: isExpanded ? "primary.main" : "default"
                         }}
                     />
                 </AccordionSummary>
@@ -257,7 +268,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 </AccordionDetails>
             </Accordion>
         )
-    }, [currentGroup, currentSection, theme, handleGroupClick, handleSectionClick, isEntityMatch, searchTerm, highlightText]);
+    }, [currentGroup, currentSection, theme, handleGroupClick, handleSectionClick, isEntityMatch, searchTerm, highlightText, expandedGroups]);
 
     return (
         <Box className="flex flex-col w-full p-2">
