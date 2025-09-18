@@ -99,12 +99,13 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
             const newExpanded = new Set(prev);
             if (newExpanded.has(groupName)) {
                 newExpanded.delete(groupName);
-            } else if (currentGroup?.toLowerCase() !== groupName.toLowerCase()) {
+            } else {
+                if (currentGroup?.toLowerCase() === groupName.toLowerCase()) return newExpanded;
                 newExpanded.add(groupName);
             }
             return newExpanded;
         });
-    }, [dataModelDispatch]);
+    }, [dataModelDispatch, currentGroup]);
 
     const handleSectionClick = useCallback((sectionId: string, groupName: string) => {
         // Use requestAnimationFrame to defer heavy operations
