@@ -151,11 +151,6 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     scrollToSection(sectionId);
                 }
                 clearSearch();
-                
-                // Clear loading section after a short delay to show the loading state
-                setTimeout(() => {
-                    dataModelDispatch({ type: 'SET_LOADING_SECTION', payload: null });
-                }, 500);
             });
         });
     }, [dataModelDispatch, scrollToSection, clearSearch]);
@@ -302,7 +297,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 </AccordionDetails>
             </Accordion>
         )
-    }, [currentGroup, currentSection, theme, handleGroupClick, handleSectionClick, isEntityMatch, searchTerm, highlightText, expandedGroups]);
+    }, [currentGroup, currentSection, theme, handleGroupClick, handleSectionClick, isEntityMatch, searchTerm, highlightText, expandedGroups, loadingSection]);
 
     return (
         <Box className="flex flex-col w-full p-2">

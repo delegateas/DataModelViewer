@@ -140,6 +140,7 @@ export const List = ({ }: IListProps) => {
 
                 setTimeout(() => {
                     setIsScrollingToSection(false);
+                    dispatch({ type: 'SET_LOADING_SECTION', payload: null });
                     // Reset intentional scroll flag after scroll is complete
                     setTimeout(() => {
                         isIntentionalScroll.current = false;
@@ -160,6 +161,7 @@ export const List = ({ }: IListProps) => {
                 setIsScrollingToSection(false);
             }
         }, 20);
+
     }, [flatItems, rowVirtualizer]);
 
     const scrollToGroup = useCallback((groupName: string) => {
