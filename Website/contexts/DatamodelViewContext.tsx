@@ -8,6 +8,7 @@ export interface DatamodelViewState {
     currentGroup: string | null;
     currentSection: string | null;
     scrollToSection: (sectionId: string) => void;
+    scrollToGroup: (groupName: string) => void;
     loading: boolean;
     loadingSection: string | null;
 }
@@ -16,6 +17,7 @@ const initialState: DatamodelViewState = {
     currentGroup: null,
     currentSection: null,
     scrollToSection: () => { throw new Error("scrollToSection not initialized yet!"); },
+    scrollToGroup: () => { throw new Error("scrollToGroup not initialized yet!"); },
     loading: true,
     loadingSection: null,
 }
@@ -24,6 +26,7 @@ type DatamodelViewAction =
     | { type: 'SET_CURRENT_GROUP', payload: string | null }
     | { type: 'SET_CURRENT_SECTION', payload: string | null }
     | { type: 'SET_SCROLL_TO_SECTION', payload: (sectionId: string) => void }
+    | { type: 'SET_SCROLL_TO_GROUP', payload: (groupName: string) => void }
     | { type: 'SET_LOADING', payload: boolean }
     | { type: 'SET_LOADING_SECTION', payload: string | null }
 
@@ -36,6 +39,8 @@ const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAc
             return { ...state, currentSection: action.payload }
         case 'SET_SCROLL_TO_SECTION':
             return { ...state, scrollToSection: action.payload }
+        case 'SET_SCROLL_TO_GROUP':
+            return { ...state, scrollToGroup: action.payload }
         case 'SET_LOADING':
             return { ...state, loading: action.payload }
         case 'SET_LOADING_SECTION':

@@ -6,6 +6,9 @@ import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { updateURL } from "@/lib/url-utils";
+import { copyToClipboard, generateGroupLink } from "@/lib/clipboard-utils";
+import { useSnackbar } from "@/contexts/SnackbarContext";
+import { Tooltip } from '@mui/material';
 
 interface IListProps {
 }
@@ -23,6 +26,7 @@ export const List = ({ }: IListProps) => {
     const datamodelView = useDatamodelView();
     const [isScrollingToSection, setIsScrollingToSection] = useState(false);
     const { groups, filtered, search } = useDatamodelData();
+    const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
     const lastScrollHandleTime = useRef<number>(0);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
@@ -41,6 +45,16 @@ export const List = ({ }: IListProps) => {
         const el = sectionRefs.current[schemaName];
         if (el) rowVirtualizer.measureElement(el);
     };
+
+    const handleCopyGroupLink = useCallback(async (groupName: string) => {
+        const link = generateGroupLink(groupName);
+        const success = await copyToClipboard(link);
+        if (success) {
+            showSnackbar('Group link copied to clipboard!', 'success');
+        } else {
+            showSnackbar('Failed to copy group link', 'error');
+        }
+    }, [showSnackbar]);
 
     // Only recalculate items when filtered or search changes
     const flatItems = useMemo(() => {
@@ -140,6 +154,7 @@ export const List = ({ }: IListProps) => {
 
                 setTimeout(() => {
                     setIsScrollingToSection(false);
+                    dispatch({ type: 'SET_LOADING_SECTION', payload: null });
                     // Reset intentional scroll flag after scroll is complete
                     setTimeout(() => {
                         isIntentionalScroll.current = false;
@@ -149,6 +164,65 @@ export const List = ({ }: IListProps) => {
                 console.warn(`Failed to scroll to section ${sectionId}:`, error);
                 
                 const estimatedOffset = sectionIndex * 300;
+                if (parentRef.current) {
+                    isIntentionalScroll.current = true;
+                    parentRef.current.scrollTop = estimatedOffset;
+                    // Reset flags for fallback scroll
+                    setTimeout(() => {
+                        isIntentionalScroll.current = false;
+                    }, 600);
+                }
+                setIsScrollingToSection(false);
+            }
+        }, 20);
+
+    }, [flatItems, rowVirtualizer]);
+
+    const scrollToGroup = useCallback((groupName: string) => {
+        if (scrollTimeoutRef.current) {
+            clearTimeout(scrollTimeoutRef.current);
+        }
+
+        const groupIndex = flatItems.findIndex(item => 
+            item.type === 'group' && item.group.Name === groupName
+        );
+        
+        if (groupIndex === -1) {
+            console.warn(`Group ${groupName} not found in virtualized list`);
+            return;
+        }
+
+        const currentIndex = rowVirtualizer.getVirtualItems()[0]?.index || 0;
+        const isLargeJump = Math.abs(groupIndex - currentIndex) > 10;
+
+        if (isLargeJump) {
+            setIsScrollingToSection(true);
+        }
+
+        scrollTimeoutRef.current = setTimeout(() => {
+            if (!rowVirtualizer || groupIndex >= flatItems.length) {
+                console.warn(`Invalid index ${groupIndex} for group ${groupName}`);
+                setIsScrollingToSection(false);
+                return;
+            }
+
+            try {
+                isIntentionalScroll.current = true; // Mark this as intentional scroll
+                rowVirtualizer.scrollToIndex(groupIndex, { 
+                    align: 'start'
+                });
+
+                setTimeout(() => {
+                    setIsScrollingToSection(false);
+                    // Reset intentional scroll flag after scroll is complete
+                    setTimeout(() => {
+                        isIntentionalScroll.current = false;
+                    }, 100);
+                }, 500);
+            } catch (error) {
+                console.warn(`Failed to scroll to group ${groupName}:`, error);
+                
+                const estimatedOffset = groupIndex * 300;
                 if (parentRef.current) {
                     isIntentionalScroll.current = true;
                     parentRef.current.scrollTop = estimatedOffset;
@@ -275,13 +349,14 @@ export const List = ({ }: IListProps) => {
 
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
+        dispatch({ type: 'SET_SCROLL_TO_GROUP', payload: scrollToGroup });
         
         return () => {
             if (scrollTimeoutRef.current) {
                 clearTimeout(scrollTimeoutRef.current);
             }
         };
-    }, [dispatch, scrollToSection]);
+    }, [dispatch, scrollToSection, scrollToGroup]);
 
     useEffect(() => {
         // When the current section is in view, set loading to false
@@ -363,9 +438,14 @@ export const List = ({ }: IListProps) => {
                         {item.type === 'group' ? (
                             <div className="flex items-center py-6 my-4">
                                 <div className="flex-1 h-0.5 bg-gray-200" />
-                                <div className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                                    {item.group.Name}
-                                </div>
+                                <Tooltip title="Copy link to this group">
+                                    <div 
+                                        className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
+                                        onClick={() => handleCopyGroupLink(item.group.Name)}
+                                    >
+                                        {item.group.Name}
+                                    </div>
+                                </Tooltip>
                                 <div className="flex-1 h-0.5 bg-gray-200" />
                             </div>
                         ) : (

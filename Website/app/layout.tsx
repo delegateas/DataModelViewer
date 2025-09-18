@@ -5,6 +5,7 @@ import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { DatamodelViewProvider } from "@/contexts/DatamodelViewContext";
+import { SnackbarProvider } from "@/contexts/SnackbarContext";
 
 export const metadata: Metadata = {
   title: "Data Model Viewer",
@@ -30,7 +31,9 @@ export default function RootLayout({
             <SettingsProvider>
               <DatamodelViewProvider>
                 <SidebarProvider>
-                  {children}
+                  <SnackbarProvider>
+                    {children}
+                  </SnackbarProvider>
                 </SidebarProvider>
               </DatamodelViewProvider>
             </SettingsProvider>

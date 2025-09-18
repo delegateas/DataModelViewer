@@ -20,7 +20,7 @@ interface INavItemProps {
 
 
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
-    const { currentSection, currentGroup, scrollToSection, loadingSection } = useDatamodelView();
+    const { currentSection, currentGroup, scrollToSection, scrollToGroup, loadingSection } = useDatamodelView();
     const { close: closeSidebar } = useSidebar();
     const theme = useTheme();
     const isMobile = useIsMobile();
@@ -31,6 +31,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [displaySearchTerm, setDisplaySearchTerm] = useState("");
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     
     // Memoize search results to prevent recalculation on every render
     const filteredGroups = useMemo(() => {
@@ -67,6 +68,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     newExpandedGroups.add(group.Name);
                 }
             });
+            setExpandedGroups(newExpandedGroups);
         }
     }, [groups]);
 
@@ -93,8 +95,42 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     }, []);
 
     const handleGroupClick = useCallback((groupName: string) => {
-        dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
-    }, [dataModelDispatch]);
+        setExpandedGroups(prev => {
+            const newExpanded = new Set(prev);
+            if (newExpanded.has(groupName)) {
+                newExpanded.delete(groupName);
+            } else {
+                if (currentGroup?.toLowerCase() === groupName.toLowerCase()) return newExpanded;
+                newExpanded.add(groupName);
+            }
+            return newExpanded;
+        });
+    }, [dataModelDispatch, currentGroup]);
+
+    const handleScrollToGroup = useCallback((group: GroupType) => {
+        
+        // Set current group and scroll to group header
+        dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: group.Name });
+        if (group.Entities.length > 0) 
+            dataModelDispatch({ type: "SET_CURRENT_SECTION", payload: group.Entities[0].SchemaName });
+
+        setExpandedGroups(prev => {
+            const newExpanded = new Set(prev);
+            if (newExpanded.has(group.Name)) {
+                newExpanded.delete(group.Name);
+            }
+            return newExpanded;
+        });
+
+        if (scrollToGroup) {
+            scrollToGroup(group.Name);
+        }
+        
+        // On phone - close sidebar
+        if (!!isMobile) {
+            closeSidebar();
+        }
+    }, [dataModelDispatch, scrollToGroup, isMobile, closeSidebar]);
 
     const handleSectionClick = useCallback((sectionId: string, groupName: string) => {
         // Use requestAnimationFrame to defer heavy operations
@@ -115,27 +151,31 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     scrollToSection(sectionId);
                 }
                 clearSearch();
-                
-                // Clear loading section after a short delay to show the loading state
-                setTimeout(() => {
-                    dataModelDispatch({ type: 'SET_LOADING_SECTION', payload: null });
-                }, 500);
             });
         });
     }, [dataModelDispatch, scrollToSection, clearSearch]);
 
     const NavItem = useCallback(({ group }: INavItemProps) => {
         const isCurrentGroup = currentGroup?.toLowerCase() === group.Name.toLowerCase();
-    
+        const isExpanded = expandedGroups.has(group.Name) || isCurrentGroup;
+
         return (
             <Accordion
                 disableGutters 
-                expanded={isCurrentGroup}
-                onClick={() => handleGroupClick(group.Name)}
-                className={`group/accordion transition-all duration-300 w-full first:rounded-t-lg last:rounded-b-lg shadow-none p-1`}
+                expanded={isExpanded}
+                onChange={() => handleGroupClick(group.Name)}
+                className={`group/accordion w-full first:rounded-t-lg last:rounded-b-lg shadow-none p-1`}
+                slotProps={{
+                    transition: {
+                        timeout: 300,
+                    }
+                }}
                 sx={{
                     backgroundColor: "background.paper",
                     borderColor: 'border.main',
+                    '& .MuiCollapse-root': {
+                        transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }
                 }}
             >
                 <AccordionSummary
@@ -145,7 +185,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                         isCurrentGroup ? "font-semibold" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
                     )}
                     sx={{
-                        backgroundColor: isCurrentGroup ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                        backgroundColor: isExpanded ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
                         padding: '4px',
                         minHeight: '32px !important',
                         '& .MuiAccordionSummary-content': {
@@ -157,24 +197,24 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     }}
                 >
                     <Typography 
-                        className={`flex-1 text-sm text-left truncate min-w-0 ${isCurrentGroup ? 'font-semibold' : ''}`} 
+                        className={`flex-1 text-sm text-left truncate min-w-0 ${isExpanded ? 'font-semibold' : ''}`} 
                         sx={{ 
-                            color: isCurrentGroup ? 'primary.main' : 'text.primary'
+                            color: isExpanded ? 'primary.main' : 'text.primary'
                         }}
                     >
                         {group.Name}
                     </Typography>
-                    <Typography className={`flex-shrink-0 text-xs mr-2 ${isCurrentGroup ? 'font-semibold' : ''}`} sx={{ opacity: 0.7, color: isCurrentGroup ? 'primary.main' : 'text.primary' }}>{group.Entities.length}</Typography>
+                    <Typography className={`flex-shrink-0 text-xs mr-2 ${isExpanded ? 'font-semibold' : ''}`} sx={{ opacity: 0.7, color: isExpanded ? 'primary.main' : 'text.primary' }}>{group.Entities.length}</Typography>
                     
                     <OpenInNewRounded 
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName, group.Name);
+                            handleScrollToGroup(group);
                         }}
                         aria-label={`Link to first entity in ${group.Name}`}
                         className="w-4 h-4 flex-shrink-0"
                         sx={{
-                            color: isCurrentGroup ? "primary.main" : "default"
+                            color: isExpanded ? "primary.main" : "default"
                         }}
                     />
                 </AccordionSummary>
@@ -257,7 +297,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 </AccordionDetails>
             </Accordion>
         )
-    }, [currentGroup, currentSection, theme, handleGroupClick, handleSectionClick, isEntityMatch, searchTerm, highlightText]);
+    }, [currentGroup, currentSection, theme, handleGroupClick, handleSectionClick, isEntityMatch, searchTerm, highlightText, expandedGroups, loadingSection]);
 
     return (
         <Box className="flex flex-col w-full p-2">

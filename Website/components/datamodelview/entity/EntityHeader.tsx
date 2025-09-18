@@ -2,11 +2,25 @@
 
 import { EntityType } from "@/lib/Types";
 import { EntityDetails } from "./EntityDetails";
-import { Box, Typography, Paper, useTheme } from '@mui/material';
+import { Box, Typography, Paper, useTheme, Tooltip } from '@mui/material';
 import { LinkRounded } from "@mui/icons-material";
+import { useCallback } from 'react';
+import { copyToClipboard, generateSectionLink } from "@/lib/clipboard-utils";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 
 export function EntityHeader({ entity }: { entity: EntityType }) {
     const theme = useTheme();
+    const { showSnackbar } = useSnackbar();
+    
+    const handleCopyLink = useCallback(async () => {
+        const link = generateSectionLink(entity.SchemaName);
+        const success = await copyToClipboard(link);
+        if (success) {
+            showSnackbar('Link copied to clipboard!', 'success');
+        } else {
+            showSnackbar('Failed to copy link', 'error');
+        }
+    }, [entity.SchemaName, showSnackbar]);
     
     return (
         <Box 
@@ -17,51 +31,76 @@ export function EntityHeader({ entity }: { entity: EntityType }) {
             }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                <Box sx={{ flexShrink: 0 }}>
-                    {entity.IconBase64 == null ? 
-                        <LinkRounded 
-                            style={{ 
-                                height: '24px', 
-                                width: '24px', 
-                                color: theme.palette.text.secondary 
-                            }} 
-                        /> : 
-                        <div 
-                            className="h-6 w-6"
-                            style={{
-                                maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
-                                maskSize: 'contain',
-                                maskRepeat: 'no-repeat',
-                                maskPosition: 'center',
-                                backgroundColor: theme.palette.text.primary
-                            }}
-                        />
-                    }
-                </Box>
+                <Tooltip title="Copy link to this section">
+                    <Box 
+                        sx={{ 
+                            flexShrink: 0,
+                            cursor: 'pointer',
+                            '&:hover': {
+                                opacity: 0.7
+                            }
+                        }}
+                        onClick={handleCopyLink}
+                    >
+                        {entity.IconBase64 == null ? 
+                            <LinkRounded 
+                                style={{ 
+                                    height: '24px', 
+                                    width: '24px', 
+                                    color: theme.palette.text.secondary 
+                                }} 
+                            /> : 
+                            <div 
+                                className="h-6 w-6"
+                                style={{
+                                    maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
+                                    maskSize: 'contain',
+                                    maskRepeat: 'no-repeat',
+                                    maskPosition: 'center',
+                                    backgroundColor: theme.palette.text.primary
+                                }}
+                            />
+                        }
+                    </Box>
+                </Tooltip>
                 <Box sx={{ minWidth: 0, flex: 1 }} className="flex items-center flex-wrap" gap={2}>
-                    <Typography 
-                        variant="h5" 
-                        component="h2"
-                        className="entity-title"
-                        sx={{ 
-                            fontWeight: 600,
-                            color: 'text.primary',
-                            transition: 'color 0.2s',
-                            minWidth: 0
-                        }}
-                    >
-                        {entity.DisplayName}
-                    </Typography>
-                    <Typography 
-                        variant="body2" 
-                        sx={{ 
-                            color: 'text.secondary',
-                            fontFamily: 'monospace',
-                            flexShrink: 0
-                        }}
-                    >
-                        {entity.SchemaName}
-                    </Typography>
+                    <Tooltip title="Copy link to this section">
+                        <Typography 
+                            variant="h5" 
+                            component="h2"
+                            className="entity-title"
+                            sx={{ 
+                                fontWeight: 600,
+                                color: 'text.primary',
+                                transition: 'color 0.2s',
+                                minWidth: 0,
+                                cursor: 'pointer',
+                                '&:hover': {
+                                    color: 'primary.main'
+                                }
+                            }}
+                            onClick={handleCopyLink}
+                        >
+                            {entity.DisplayName}
+                        </Typography>
+                    </Tooltip>
+                    <Tooltip title="Copy link to this section">
+                        <Typography 
+                            variant="body2" 
+                            sx={{ 
+                                color: 'text.secondary',
+                                fontFamily: 'monospace',
+                                flexShrink: 0,
+                                cursor: 'pointer',
+                                '&:hover': {
+                                    color: 'primary.main'
+                                }
+                            }}
+                            onClick={handleCopyLink}
+                        >
+                            {entity.SchemaName}
+                        </Typography>
+                    </Tooltip>
                 </Box>
             </Box>
             
