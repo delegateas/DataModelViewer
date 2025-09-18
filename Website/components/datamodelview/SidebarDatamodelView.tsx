@@ -20,7 +20,7 @@ interface INavItemProps {
 
 
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
-    const { currentSection, currentGroup, scrollToSection, loadingSection } = useDatamodelView();
+    const { currentSection, currentGroup, scrollToSection, scrollToGroup, loadingSection } = useDatamodelView();
     const { close: closeSidebar } = useSidebar();
     const theme = useTheme();
     const isMobile = useIsMobile();
@@ -107,6 +107,31 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
         });
     }, [dataModelDispatch, currentGroup]);
 
+    const handleScrollToGroup = useCallback((group: GroupType) => {
+        
+        // Set current group and scroll to group header
+        dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: group.Name });
+        if (group.Entities.length > 0) 
+            dataModelDispatch({ type: "SET_CURRENT_SECTION", payload: group.Entities[0].SchemaName });
+
+        setExpandedGroups(prev => {
+            const newExpanded = new Set(prev);
+            if (newExpanded.has(group.Name)) {
+                newExpanded.delete(group.Name);
+            }
+            return newExpanded;
+        });
+
+        if (scrollToGroup) {
+            scrollToGroup(group.Name);
+        }
+        
+        // On phone - close sidebar
+        if (!!isMobile) {
+            closeSidebar();
+        }
+    }, [dataModelDispatch, scrollToGroup, isMobile, closeSidebar]);
+
     const handleSectionClick = useCallback((sectionId: string, groupName: string) => {
         // Use requestAnimationFrame to defer heavy operations
         requestAnimationFrame(() => {
@@ -144,10 +169,18 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                 disableGutters 
                 expanded={isExpanded}
                 onChange={() => handleGroupClick(group.Name)}
-                className={`group/accordion transition-all duration-300 w-full first:rounded-t-lg last:rounded-b-lg shadow-none p-1`}
+                className={`group/accordion w-full first:rounded-t-lg last:rounded-b-lg shadow-none p-1`}
+                slotProps={{
+                    transition: {
+                        timeout: 300,
+                    }
+                }}
                 sx={{
                     backgroundColor: "background.paper",
                     borderColor: 'border.main',
+                    '& .MuiCollapse-root': {
+                        transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }
                 }}
             >
                 <AccordionSummary
@@ -181,7 +214,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     <OpenInNewRounded 
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (group.Entities.length > 0) handleSectionClick(group.Entities[0].SchemaName, group.Name);
+                            handleScrollToGroup(group);
                         }}
                         aria-label={`Link to first entity in ${group.Name}`}
                         className="w-4 h-4 flex-shrink-0"

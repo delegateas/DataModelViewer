@@ -162,6 +162,64 @@ export const List = ({ }: IListProps) => {
         }, 20);
     }, [flatItems, rowVirtualizer]);
 
+    const scrollToGroup = useCallback((groupName: string) => {
+        if (scrollTimeoutRef.current) {
+            clearTimeout(scrollTimeoutRef.current);
+        }
+
+        const groupIndex = flatItems.findIndex(item => 
+            item.type === 'group' && item.group.Name === groupName
+        );
+        
+        if (groupIndex === -1) {
+            console.warn(`Group ${groupName} not found in virtualized list`);
+            return;
+        }
+
+        const currentIndex = rowVirtualizer.getVirtualItems()[0]?.index || 0;
+        const isLargeJump = Math.abs(groupIndex - currentIndex) > 10;
+
+        if (isLargeJump) {
+            setIsScrollingToSection(true);
+        }
+
+        scrollTimeoutRef.current = setTimeout(() => {
+            if (!rowVirtualizer || groupIndex >= flatItems.length) {
+                console.warn(`Invalid index ${groupIndex} for group ${groupName}`);
+                setIsScrollingToSection(false);
+                return;
+            }
+
+            try {
+                isIntentionalScroll.current = true; // Mark this as intentional scroll
+                rowVirtualizer.scrollToIndex(groupIndex, { 
+                    align: 'start'
+                });
+
+                setTimeout(() => {
+                    setIsScrollingToSection(false);
+                    // Reset intentional scroll flag after scroll is complete
+                    setTimeout(() => {
+                        isIntentionalScroll.current = false;
+                    }, 100);
+                }, 500);
+            } catch (error) {
+                console.warn(`Failed to scroll to group ${groupName}:`, error);
+                
+                const estimatedOffset = groupIndex * 300;
+                if (parentRef.current) {
+                    isIntentionalScroll.current = true;
+                    parentRef.current.scrollTop = estimatedOffset;
+                    // Reset flags for fallback scroll
+                    setTimeout(() => {
+                        isIntentionalScroll.current = false;
+                    }, 600);
+                }
+                setIsScrollingToSection(false);
+            }
+        }, 20);
+    }, [flatItems, rowVirtualizer]);
+
     useEffect(() => {
         // Only measure if we're not filtering - let the virtualizer handle filtered states naturally
         if (!search || search.length < 3) {
@@ -275,13 +333,14 @@ export const List = ({ }: IListProps) => {
 
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
+        dispatch({ type: 'SET_SCROLL_TO_GROUP', payload: scrollToGroup });
         
         return () => {
             if (scrollTimeoutRef.current) {
                 clearTimeout(scrollTimeoutRef.current);
             }
         };
-    }, [dispatch, scrollToSection]);
+    }, [dispatch, scrollToSection, scrollToGroup]);
 
     useEffect(() => {
         // When the current section is in view, set loading to false
