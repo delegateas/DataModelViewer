@@ -6,6 +6,9 @@ import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { updateURL } from "@/lib/url-utils";
+import { copyToClipboard, generateGroupLink } from "@/lib/clipboard-utils";
+import { useSnackbar } from "@/contexts/SnackbarContext";
+import { Tooltip } from '@mui/material';
 
 interface IListProps {
 }
@@ -23,6 +26,7 @@ export const List = ({ }: IListProps) => {
     const datamodelView = useDatamodelView();
     const [isScrollingToSection, setIsScrollingToSection] = useState(false);
     const { groups, filtered, search } = useDatamodelData();
+    const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
     const lastScrollHandleTime = useRef<number>(0);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
@@ -41,6 +45,16 @@ export const List = ({ }: IListProps) => {
         const el = sectionRefs.current[schemaName];
         if (el) rowVirtualizer.measureElement(el);
     };
+
+    const handleCopyGroupLink = useCallback(async (groupName: string) => {
+        const link = generateGroupLink(groupName);
+        const success = await copyToClipboard(link);
+        if (success) {
+            showSnackbar('Group link copied to clipboard!', 'success');
+        } else {
+            showSnackbar('Failed to copy group link', 'error');
+        }
+    }, [showSnackbar]);
 
     // Only recalculate items when filtered or search changes
     const flatItems = useMemo(() => {
@@ -424,9 +438,14 @@ export const List = ({ }: IListProps) => {
                         {item.type === 'group' ? (
                             <div className="flex items-center py-6 my-4">
                                 <div className="flex-1 h-0.5 bg-gray-200" />
-                                <div className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                                    {item.group.Name}
-                                </div>
+                                <Tooltip title="Copy link to this group">
+                                    <div 
+                                        className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
+                                        onClick={() => handleCopyGroupLink(item.group.Name)}
+                                    >
+                                        {item.group.Name}
+                                    </div>
+                                </Tooltip>
                                 <div className="flex-1 h-0.5 bg-gray-200" />
                             </div>
                         ) : (
