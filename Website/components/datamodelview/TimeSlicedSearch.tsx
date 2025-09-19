@@ -5,8 +5,8 @@ import { createPortal } from 'react-dom';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Box, IconButton, InputAdornment, TextField } from '@mui/material';
-import { CloseRounded, SearchRounded } from '@mui/icons-material';
+import { Box, CircularProgress, Divider, IconButton, InputAdornment, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, Paper, TextField, Typography } from '@mui/material';
+import { ClearRounded, CloseRounded, InfoRounded, NavigateBeforeRounded, NavigateNextRounded, SearchRounded } from '@mui/icons-material';
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;
@@ -26,6 +26,8 @@ export const TimeSlicedSearch = ({
   onNavigateNext,
   onNavigatePrevious,
   initialLocalValue,
+  currentIndex,
+  totalResults,
   placeholder = "Search attributes...",
 }: TimeSlicedSearchProps) => {
   const [localValue, setLocalValue] = useState(initialLocalValue);
@@ -122,6 +124,7 @@ export const TimeSlicedSearch = ({
 
   // Handle clear button
   const handleClear = useCallback(() => {
+    if (localValue.length === 0) return; // No-op if already empty
     setLocalValue('');
     onSearch(''); // Clear search immediately
     setIsTyping(false);
@@ -208,53 +211,111 @@ export const TimeSlicedSearch = ({
     };
   }, []);
 
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (open) {
+      setAnchorEl(null);
+    } else {
+      setAnchorEl(event.currentTarget);
+    }
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   const searchInput = (
-    <Box className={`fixed top-20 right-0 z-50 w-[320px] transition-opacity bg-transparent duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-      <TextField
-        type="text"
-        placeholder={placeholder}
-        aria-label="Search attributes in tables"
-        value={localValue}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        className="pl-10 pr-10"
-        spellCheck={false}
-        autoComplete="off"
-        autoCapitalize="off"
-        size="small"
-        fullWidth
-        slotProps={{
-          input: {
-              sx: { backgroundColor: 'background.paper' },
-              startAdornment: <InputAdornment position="start"><SearchRounded /></InputAdornment>,
-              endAdornment: (
-                <InputAdornment position="end">
-                  {isTyping && localValue.length >= 3 ? (
-                    <Box className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></Box>
-                  ) : localValue ? (
-                    <IconButton
-                      onClick={handleClear}
-                      size="small"
-                      sx={{ 
-                        width: '20px', 
-                        height: '20px',
-                        color: 'text.secondary',
-                        '&:hover': {
-                          color: 'text.primary',
-                          backgroundColor: 'action.hover'
-                        }
-                      }}
-                      title="Clear search"
-                      aria-label="Clear search"
-                    >
-                      <CloseRounded />
-                    </IconButton>
-                  ) : null}
-                </InputAdornment>
-              )
-          }
-        }}
-      />
+    <Box className={`fixed top-20 right-0 z-50 transition-opacity bg-transparent duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+      <Paper component="form" className='p-1 rounded-lg flex items-center w-[320px]' sx={{ backgroundColor: 'background.paper' }}>
+        <InputAdornment position="start" className='ml-1'>
+          <SearchRounded color="action" />
+        </InputAdornment>
+
+        <Divider orientation="vertical" className='mr-1 h-6' />
+        
+        <InputBase 
+          className='ml-1 flex-1'
+          type="text"
+          placeholder={placeholder}
+          aria-label="Search attributes in tables"
+          value={localValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          spellCheck={false}
+          autoComplete="off"
+          autoCapitalize="off"
+          sx={{ backgroundColor: 'transparent' }}
+        />
+        
+        <InputAdornment position="end">
+          {isTyping && localValue.length >= 3 ? (
+            <CircularProgress size={20} />
+          ) : localValue ? (
+            <IconButton
+              onClick={handleClear}
+              size="small"
+              sx={{ 
+                width: '20px', 
+                height: '20px',
+                color: 'text.secondary',
+                '&:hover': {
+                  color: 'text.primary',
+                  backgroundColor: 'action.hover'
+                }
+              }}
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              <CloseRounded />
+            </IconButton>
+          ) : null}
+        </InputAdornment>
+        
+        <Divider orientation="vertical" className='mx-1 h-6' />
+        
+        <IconButton onClick={handleClick} size="small">
+          <InfoRounded fontSize="small" color="action" />
+        </IconButton>
+
+        <Divider orientation="vertical" className='mx-1 h-6' />
+
+        <Box className="flex flex-col items-center px-2 justify-center h-full">
+          <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{currentIndex}</Typography>
+          <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{totalResults}</Typography>
+        </Box>
+      </Paper>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        className='mt-2'
+      >
+        <MenuList dense className='w-64'>
+          <MenuItem onClick={onNavigateNext}>
+            <ListItemIcon>
+              <NavigateNextRounded />
+            </ListItemIcon>
+            <ListItemText>Next</ListItemText>
+            <Typography variant='body2' color="text.secondary">Enter</Typography>
+          </MenuItem>
+          <MenuItem onClick={onNavigatePrevious}>
+            <ListItemIcon>
+              <NavigateBeforeRounded />
+            </ListItemIcon>
+            <ListItemText>Previous</ListItemText>
+            <Typography variant='body2' color="text.secondary">Shift + Enter</Typography>
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={handleClear}>
+            <ListItemIcon>
+              <ClearRounded />
+            </ListItemIcon>
+            <ListItemText>Clear</ListItemText>
+            <Typography variant='body2' color="text.secondary">Esc</Typography>
+          </MenuItem>
+        </MenuList>
+      </Menu>
     </Box>
   );
 
