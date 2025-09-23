@@ -23,7 +23,7 @@ export function highlightMatch(text: string, search: string) {
 
 export const List = ({ }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
-    const datamodelView = useDatamodelView();
+    const { currentSection, loading } = useDatamodelView();
     const [isScrollingToSection, setIsScrollingToSection] = useState(false);
     const { groups, filtered, search } = useDatamodelData();
     const { showSnackbar } = useSnackbar();
@@ -252,17 +252,19 @@ export const List = ({ }: IListProps) => {
         const prevSearchLength = prevSearchLengthRef.current;
         
         // Store position before starting search (crossing from < 3 to >= 3 characters)
-        if (prevSearchLength < 3 && currentSearchLength >= 3) {
+        if (prevSearchLength <= 3 && currentSearchLength >= 3) {
             positionBeforeSearch.current = {
-                section: datamodelView.currentSection,
+                section: currentSection,
                 scrollTop: parentRef.current?.scrollTop || 0
             };
             
-            setTimeout(() => {
-                if (parentRef.current) {
-                    parentRef.current.scrollTop = 0;
-                }
-            }, 50); // Small delay to ensure virtualizer has processed the new items
+            if (prevSearchLength < 3) {
+                setTimeout(() => {
+                    if (parentRef.current) {
+                        parentRef.current.scrollTop = 0;
+                    }
+                }, 50); // Small delay to ensure virtualizer has processed the new items
+            }
         }
         // Restore position when stopping search (crossing from >= 3 to < 3 characters)
         else if (prevSearchLength >= 3 && currentSearchLength < 3) {
@@ -294,7 +296,7 @@ export const List = ({ }: IListProps) => {
         }
         
         prevSearchLengthRef.current = currentSearchLength;
-    }, [search, datamodelView.currentSection, flatItems, rowVirtualizer]);
+    }, [search, currentSection, flatItems, rowVirtualizer]);
 
     // Throttled scroll handler to reduce calculations
     const handleScroll = useCallback(() => {
@@ -317,14 +319,14 @@ export const List = ({ }: IListProps) => {
         if (firstVisibleItem) {
             const item = flatItems[firstVisibleItem.index];
             if (item?.type === 'entity') {
-                if (item.entity.SchemaName !== datamodelView.currentSection) {
+                if (item.entity.SchemaName !== currentSection) {
                     updateURL({ query: { group: item.group.Name, section: item.entity.SchemaName } });
                     dispatch({ type: "SET_CURRENT_GROUP", payload: item.group.Name });
                     dispatch({ type: "SET_CURRENT_SECTION", payload: item.entity.SchemaName });
                 }
             }
         }
-    }, [dispatch, flatItems, rowVirtualizer, datamodelView.currentSection, isScrollingToSection]);
+    }, [dispatch, flatItems, rowVirtualizer, currentSection, isScrollingToSection]);
 
     // Throttled scroll event listener
     useEffect(() => {
@@ -360,23 +362,23 @@ export const List = ({ }: IListProps) => {
 
     useEffect(() => {
         // When the current section is in view, set loading to false
-        if (datamodelView.currentSection) {
+        if (currentSection) {
             // Check if the current section is rendered in the virtualizer
             const isInView = rowVirtualizer.getVirtualItems().some(vi => {
                 const item = flatItems[vi.index];
-                return item.type === 'entity' && item.entity.SchemaName === datamodelView.currentSection;
+                return item.type === 'entity' && item.entity.SchemaName === currentSection;
             });
             if (isInView) {
                 dispatch({ type: 'SET_LOADING', payload: false });
             }
         }
-    }, [datamodelView.currentSection, flatItems, rowVirtualizer, dispatch]);
+    }, [currentSection, flatItems, rowVirtualizer, dispatch]);
 
     return (
         <div ref={parentRef} style={{ height: 'calc(100vh - var(--layout-header-desktop-height))', overflow: 'auto' }} className="p-6 relative no-scrollbar">
 
             {/* Show skeleton loading state only when initially loading */}
-            {flatItems.length === 0 && datamodelView.loading && (!search || search.length < 3) && (
+            {flatItems.length === 0 && loading && (!search || search.length < 3) && (
                 <div className="space-y-8">
                     {[...Array(5)].map((_, i) => (
                         <div key={i} className="bg-white rounded-lg border border-gray-300 shadow-md animate-pulse">

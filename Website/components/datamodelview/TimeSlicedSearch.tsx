@@ -251,23 +251,10 @@ export const TimeSlicedSearch = ({
           {isTyping && localValue.length >= 3 ? (
             <CircularProgress size={20} />
           ) : localValue ? (
-            <IconButton
-              onClick={handleClear}
-              size="small"
-              sx={{ 
-                width: '20px', 
-                height: '20px',
-                color: 'text.secondary',
-                '&:hover': {
-                  color: 'text.primary',
-                  backgroundColor: 'action.hover'
-                }
-              }}
-              title="Clear search"
-              aria-label="Clear search"
-            >
-              <CloseRounded />
-            </IconButton>
+            <Box className="flex flex-col items-center px-2 justify-center h-full">
+              <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{currentIndex}</Typography>
+              <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{totalResults}</Typography>
+            </Box>
           ) : null}
         </InputAdornment>
         
@@ -276,13 +263,6 @@ export const TimeSlicedSearch = ({
         <IconButton onClick={handleClick} size="small">
           <InfoRounded fontSize="small" color="action" />
         </IconButton>
-
-        <Divider orientation="vertical" className='mx-1 h-6' />
-
-        <Box className="flex flex-col items-center px-2 justify-center h-full">
-          <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{currentIndex}</Typography>
-          <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{totalResults}</Typography>
-        </Box>
       </Paper>
 
       <Menu
