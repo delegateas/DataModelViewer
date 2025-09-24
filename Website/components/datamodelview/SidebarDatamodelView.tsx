@@ -27,7 +27,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
 
     const dataModelDispatch = useDatamodelViewDispatch();
 
-    const { groups } = useDatamodelData();
+    const { groups, filtered, search } = useDatamodelData();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [displaySearchTerm, setDisplaySearchTerm] = useState("");
@@ -35,16 +35,17 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     
     // Memoize search results to prevent recalculation on every render
     const filteredGroups = useMemo(() => {
-        if (!searchTerm.trim()) return groups;
+        if (!searchTerm.trim() && !search) return groups;
         
         return groups.map(group => ({
             ...group,
             Entities: group.Entities.filter(entity => 
-                entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase())
+                (entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase())) &&
+                filtered.some(f => f.type === 'entity' && f.entity.SchemaName === entity.SchemaName)
             )
         })).filter(group => group.Entities.length > 0);
-    }, [groups, searchTerm]);
+    }, [groups, searchTerm, filtered]);
     
     // Debounced search to reduce performance impact
     useEffect(() => {
