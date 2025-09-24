@@ -11,6 +11,7 @@ import { useSnackbar } from "@/contexts/SnackbarContext";
 import { debounce, Tooltip } from '@mui/material';
 
 interface IListProps {
+    setCurrentIndex: (index: number) => void;
 }
 
 // Helper to highlight search matches
@@ -21,7 +22,7 @@ export function highlightMatch(text: string, search: string) {
     return <>{text.slice(0, idx)}<mark className="bg-yellow-200 text-black px-0.5 rounded">{text.slice(idx, idx + search.length)}</mark>{text.slice(idx + search.length)}</>;
 }
 
-export const List = ({ }: IListProps) => {
+export const List = ({ setCurrentIndex }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
     const { currentSection, loading } = useDatamodelView();
     const { groups, filtered, search } = useDatamodelData();
@@ -124,12 +125,15 @@ export const List = ({ }: IListProps) => {
         let mostVisibleEntity: {
             entity: EntityType;
             group: GroupType;
+            index: number;
             visibleArea: number;
         } | null = null;
 
+        let actualIndex = 0;
         for (const vi of virtualItems) {
             const item = flatItems[vi.index];
             if (!item || item.type !== 'entity') continue;
+            actualIndex++;
             
             const itemTop = vi.start;
             const itemBottom = vi.end;
@@ -148,6 +152,7 @@ export const List = ({ }: IListProps) => {
                 mostVisibleEntity = {
                     entity: item.entity,
                     group: item.group,
+                    index: actualIndex,
                     visibleArea
                 };
             }
@@ -158,6 +163,7 @@ export const List = ({ }: IListProps) => {
             updateURL({ query: { group: mostVisibleEntity.group.Name, section: mostVisibleEntity.entity.SchemaName } });
             dispatch({ type: "SET_CURRENT_GROUP", payload: mostVisibleEntity.group.Name });
             dispatch({ type: "SET_CURRENT_SECTION", payload: mostVisibleEntity.entity.SchemaName });
+            setCurrentIndex(mostVisibleEntity.index);
         }
     }, 100);
 

@@ -212,7 +212,7 @@ function DatamodelViewContent() {
                     currentIndex={currentSearchIndex}
                     totalResults={totalResults}
                 />
-                <List />
+                <List setCurrentIndex={setCurrentSearchIndex} />
             </div>
         </div>
     );
