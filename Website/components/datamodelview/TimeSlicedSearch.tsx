@@ -6,7 +6,7 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Box, CircularProgress, Divider, IconButton, InputAdornment, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, Paper, TextField, Typography } from '@mui/material';
-import { ClearRounded, CloseRounded, InfoRounded, NavigateBeforeRounded, NavigateNextRounded, SearchRounded } from '@mui/icons-material';
+import { ClearRounded, CloseRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, NavigateBeforeRounded, NavigateNextRounded, SearchRounded } from '@mui/icons-material';
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;
@@ -44,6 +44,39 @@ export const TimeSlicedSearch = ({
 
   // Hide search on mobile when sidebar is open, or when settings are open
   const shouldHideSearch = (isMobile && isOpen) || isSettingsOpen;
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (localValue.length === 0) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setLocalValue('');
+        onSearch(''); // Only clear when explicitly using ESC
+        setIsTyping(false);
+        onLoadingChange(false);
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        onNavigateNext?.();
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+      } else if (e.key === 'Enter' && e.shiftKey) {
+        e.preventDefault();
+        onNavigatePrevious?.();
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+      } else if (e.key === 'ArrowDown' && e.ctrlKey) {
+        e.preventDefault();
+        onNavigateNext?.();
+      } else if (e.key === 'ArrowUp' && e.ctrlKey) {
+        e.preventDefault();
+        onNavigatePrevious?.();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [localValue, onSearch, onLoadingChange, onNavigateNext, onNavigatePrevious]);
 
   // Time-sliced debouncing using requestAnimationFrame
   const scheduleSearch = useCallback((value: string) => {
@@ -139,35 +172,6 @@ export const TimeSlicedSearch = ({
     }
   }, [onSearch, onLoadingChange]);
 
-  // Handle keyboard navigation
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      setLocalValue('');
-      onSearch(''); // Only clear when explicitly using ESC
-      setIsTyping(false);
-      onLoadingChange(false);
-    } else if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      onNavigateNext?.();
-      if ('vibrate' in navigator) {
-        navigator.vibrate(50);
-      }
-    } else if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault();
-      onNavigatePrevious?.();
-      if ('vibrate' in navigator) {
-        navigator.vibrate(50);
-      }
-    } else if (e.key === 'ArrowDown' && e.ctrlKey) {
-      e.preventDefault();
-      onNavigateNext?.();
-    } else if (e.key === 'ArrowUp' && e.ctrlKey) {
-      e.preventDefault();
-      onNavigatePrevious?.();
-    }
-  }, [onNavigateNext, onNavigatePrevious, onSearch, onLoadingChange]);
-
   // Cleanup
   useEffect(() => {
     return () => {
@@ -240,7 +244,6 @@ export const TimeSlicedSearch = ({
           aria-label="Search attributes in tables"
           value={localValue}
           onChange={handleChange}
-          onKeyDown={handleKeyDown}
           spellCheck={false}
           autoComplete="off"
           autoCapitalize="off"
@@ -285,6 +288,20 @@ export const TimeSlicedSearch = ({
             </ListItemIcon>
             <ListItemText>Previous</ListItemText>
             <Typography variant='body2' color="text.secondary">Shift + Enter</Typography>
+          </MenuItem>
+          <MenuItem onClick={onNavigateNext}>
+            <ListItemIcon>
+              <NavigateNextRounded />
+            </ListItemIcon>
+            <ListItemText>Next</ListItemText>
+            <Typography variant='body2' color="text.secondary">Ctrl + <KeyboardArrowDownRounded /></Typography>
+          </MenuItem>
+          <MenuItem onClick={onNavigatePrevious}>
+            <ListItemIcon>
+              <NavigateBeforeRounded />
+            </ListItemIcon>
+            <ListItemText>Previous</ListItemText>
+            <Typography variant='body2' color="text.secondary">Ctrl + <KeyboardArrowUpRounded /></Typography>
           </MenuItem>
           <Divider />
           <MenuItem onClick={handleClear}>
