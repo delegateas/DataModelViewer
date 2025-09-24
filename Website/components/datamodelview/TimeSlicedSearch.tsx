@@ -5,8 +5,8 @@ import { createPortal } from 'react-dom';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Box, CircularProgress, Divider, IconButton, InputAdornment, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, Paper, TextField, Typography } from '@mui/material';
-import { ClearRounded, CloseRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, NavigateBeforeRounded, NavigateNextRounded, SearchRounded } from '@mui/icons-material';
+import { Box, CircularProgress, Divider, IconButton, InputAdornment, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, Paper, Typography } from '@mui/material';
+import { ClearRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, NavigateBeforeRounded, NavigateNextRounded, SearchRounded } from '@mui/icons-material';
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;

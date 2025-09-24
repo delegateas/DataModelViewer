@@ -83,7 +83,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
     }
 
-    const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] =
+    const scrollToFn: VirtualizerOptions<HTMLDivElement, HTMLElement>['scrollToFn'] =
         React.useCallback((offset, canSmooth, instance) => {
         const duration = 2000
         const start = parentRef.current?.scrollTop || 0
