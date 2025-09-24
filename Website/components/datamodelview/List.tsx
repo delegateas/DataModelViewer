@@ -139,10 +139,11 @@ export const List = ({ }: IListProps) => {
                 // vi.start is the top position of the item, vi.end would be vi.start + vi.size
                 const itemTop = vi.start;
                 const itemBottom = vi.end;
+                const offset = 80;
 
                 // An item is visible if its bottom is below the scroll position
                 // and its top is above the scroll position + viewport height
-                return itemBottom > scrollOffset && itemTop < scrollOffset + scrollRect.height;
+                return itemBottom - offset > scrollOffset && itemTop < scrollOffset + scrollRect.height;
             });
             
             if (firstVisibleEntity) {
