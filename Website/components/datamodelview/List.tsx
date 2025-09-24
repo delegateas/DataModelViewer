@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import React from "react";
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer, VirtualItem } from '@tanstack/react-virtual';
 import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
@@ -28,6 +28,8 @@ export const List = ({ }: IListProps) => {
     const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+    // used to relocate section after search/filter
+    const [sectionVirtualItem, setSectionVirtualItem] = useState<string | null>(null);
     
     // Track position before search for restoration
     const isTabSwitching = useRef(false);
@@ -85,9 +87,6 @@ export const List = ({ }: IListProps) => {
             return item.type === 'group' ? 100 : 500; 
         },
         onChange: (instance, sync) => {
-
-            console.log("change", { instance, sync });
-
             // Only update during actual scrolling (sync = true)
             if (!sync) return;
             
@@ -118,6 +117,7 @@ export const List = ({ }: IListProps) => {
                 if (item && item.type === 'entity') {
                     // Only update if the section has actually changed
                     if (currentSection !== item.entity.SchemaName) {
+                        setSectionVirtualItem(item.entity.SchemaName);
                         updateURL({ query: { group: item.group.Name, section: item.entity.SchemaName } });
                         dispatch({ type: "SET_CURRENT_GROUP", payload: item.group.Name });
                         dispatch({ type: "SET_CURRENT_SECTION", payload: item.entity.SchemaName });
@@ -166,9 +166,17 @@ export const List = ({ }: IListProps) => {
         });
     }, [flatItems]);
 
+    const restoreSection = useCallback(() => {
+        console.log(sectionVirtualItem)
+        if (sectionVirtualItem) {
+            scrollToSection(sectionVirtualItem);
+        }
+    }, [sectionVirtualItem]);
+
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
         dispatch({ type: 'SET_SCROLL_TO_GROUP', payload: scrollToGroup });
+        dispatch({ type: 'SET_RESTORE_SECTION', payload: restoreSection });
         
         return () => {
             if (scrollTimeoutRef.current) {

@@ -27,7 +27,7 @@ export function DatamodelView() {
 }
 
 function DatamodelViewContent() {
-    const { scrollToSection } = useDatamodelView();
+    const { scrollToSection, restoreSection  } = useDatamodelView();
     const datamodelDispatch = useDatamodelViewDispatch();
     const { groups, filtered } = useDatamodelData();
     const datamodelDataDispatch = useDatamodelDataDispatch();
@@ -47,6 +47,8 @@ function DatamodelViewContent() {
             } else {
                 // Clear search - reset to show all groups
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
+                // Relocate section
+                restoreSection();
             }
         }
         updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })
