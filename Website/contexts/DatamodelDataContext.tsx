@@ -1,14 +1,17 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, ReactNode } from "react";
-import { GroupType, SolutionWarningType } from "@/lib/Types";
+import { EntityType, GroupType, SolutionWarningType } from "@/lib/Types";
 import { useSearchParams } from "next/navigation";
 
 interface DatamodelDataState {
   groups: GroupType[];
   warnings: SolutionWarningType[];
   search: string;
-  filtered: any[];
+  filtered: Array<
+              | { type: 'group'; group: GroupType }
+              | { type: 'entity'; group: GroupType; entity: EntityType }
+            >;
 }
 
 const initialState: DatamodelDataState = {

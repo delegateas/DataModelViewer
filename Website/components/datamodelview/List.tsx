@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import React from "react";
-import { elementScroll, useVirtualizer, VirtualItem, VirtualizerOptions } from '@tanstack/react-virtual';
+import { elementScroll, useVirtualizer, VirtualizerOptions } from '@tanstack/react-virtual';
 import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { updateURL } from "@/lib/url-utils";
 import { copyToClipboard, generateGroupLink } from "@/lib/clipboard-utils";
 import { useSnackbar } from "@/contexts/SnackbarContext";
-import { Tooltip } from '@mui/material';
+import { debounce, Tooltip } from '@mui/material';
 
 interface IListProps {
 }
@@ -106,6 +106,61 @@ export const List = ({ }: IListProps) => {
         requestAnimationFrame(run)
     }, [])
 
+    const debouncedOnChange = debounce((instance, sync) => {
+        if (!sync) {
+            dispatch({ type: 'SET_LOADING_SECTION', payload: null });
+        }
+        
+        const virtualItems = instance.getVirtualItems();
+        if (virtualItems.length === 0) return;
+
+        const scrollOffset = instance.scrollOffset;
+        const scrollRect = instance.scrollRect;
+        if (!scrollOffset || !scrollRect) return;
+
+        const viewportTop = scrollOffset;
+        const viewportBottom = scrollOffset + scrollRect.height;
+
+        let mostVisibleEntity: {
+            entity: EntityType;
+            group: GroupType;
+            visibleArea: number;
+        } | null = null;
+
+        for (const vi of virtualItems) {
+            const item = flatItems[vi.index];
+            if (!item || item.type !== 'entity') continue;
+            
+            const itemTop = vi.start;
+            const itemBottom = vi.end;
+            
+            // Calculate intersection
+            const intersectionTop = Math.max(itemTop, viewportTop);
+            const intersectionBottom = Math.min(itemBottom, viewportBottom);
+            
+            // Skip if no intersection
+            if (intersectionTop >= intersectionBottom) continue;
+            
+            const visibleArea = intersectionBottom - intersectionTop;
+            
+            // Update most visible entity without array operations
+            if (!mostVisibleEntity || visibleArea > mostVisibleEntity.visibleArea) {
+                mostVisibleEntity = {
+                    entity: item.entity,
+                    group: item.group,
+                    visibleArea
+                };
+            }
+        }
+
+        if (mostVisibleEntity && currentSection !== mostVisibleEntity.entity.SchemaName) {
+            setSectionVirtualItem(mostVisibleEntity.entity.SchemaName);
+            updateURL({ query: { group: mostVisibleEntity.group.Name, section: mostVisibleEntity.entity.SchemaName } });
+            dispatch({ type: "SET_CURRENT_GROUP", payload: mostVisibleEntity.group.Name });
+            dispatch({ type: "SET_CURRENT_SECTION", payload: mostVisibleEntity.entity.SchemaName });
+        }
+    }, 100);
+
     const rowVirtualizer = useVirtualizer({
         count: flatItems.length,
         getScrollElement: () => parentRef.current,
@@ -116,49 +171,7 @@ export const List = ({ }: IListProps) => {
             return item.type === 'group' ? 100 : 500; 
         },
         scrollToFn,
-        onChange: (instance, sync) => {
-            // Only update during actual scrolling (sync = true)
-            if (!sync) {
-                dispatch({ type: 'SET_LOADING_SECTION', payload: null });
-                return;
-            }
-            
-            const virtualItems = instance.getVirtualItems();
-            if (virtualItems.length === 0) return;
-
-            const scrollOffset = instance.scrollOffset;
-            const scrollRect = instance.scrollRect;
-            if (!scrollOffset || !scrollRect) return;
-
-            // Find the first entity item that's currently visible
-            const firstVisibleEntity = virtualItems.find(vi => {
-                const item = flatItems[vi.index];
-                if (!item || item.type !== 'entity') return false;
-                
-                // Check if this virtual item is actually visible in the viewport
-                // vi.start is the top position of the item, vi.end would be vi.start + vi.size
-                const itemTop = vi.start;
-                const itemBottom = vi.end;
-                const offset = 80;
-
-                // An item is visible if its bottom is below the scroll position
-                // and its top is above the scroll position + viewport height
-                return itemBottom - offset > scrollOffset && itemTop < scrollOffset + scrollRect.height;
-            });
-            
-            if (firstVisibleEntity) {
-                const item = flatItems[firstVisibleEntity.index];
-                if (item && item.type === 'entity') {
-                    // Only update if the section has actually changed
-                    if (currentSection !== item.entity.SchemaName) {
-                        setSectionVirtualItem(item.entity.SchemaName);
-                        updateURL({ query: { group: item.group.Name, section: item.entity.SchemaName } });
-                        dispatch({ type: "SET_CURRENT_GROUP", payload: item.group.Name });
-                        dispatch({ type: "SET_CURRENT_SECTION", payload: item.entity.SchemaName });
-                    }
-                }
-            }
-        },
+        onChange: debouncedOnChange,
     });
     
     const scrollToSection = useCallback((sectionId: string) => {
@@ -201,7 +214,6 @@ export const List = ({ }: IListProps) => {
     }, [flatItems]);
 
     const restoreSection = useCallback(() => {
-        console.log(sectionVirtualItem)
         if (sectionVirtualItem) {
             scrollToSection(sectionVirtualItem);
         }
