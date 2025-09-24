@@ -1,21 +1,23 @@
-## [2.0.3] - 2025-09-18
+## [2.0.4] - 2025-09-24
 
 ### Features
 
-* deeplink to group and sections with snackbar response ([6a7f944](https://github.com/delegateas/DataModelViewer/commit/6a7f944))
-* scroll to group functionality ([13175a9](https://github.com/delegateas/DataModelViewer/commit/13175a9))
+* move key events to become global. ([0bd6803](https://github.com/delegateas/DataModelViewer/commit/0bd6803))
+* only show globally searched tables in the sidebar ([1c105ce](https://github.com/delegateas/DataModelViewer/commit/1c105ce))
+* smooth scroll operation between section ([66b5c67](https://github.com/delegateas/DataModelViewer/commit/66b5c67))
+* restore section location on search clear ([377b6d8](https://github.com/delegateas/DataModelViewer/commit/377b6d8))
+* global search look change ([55eede1](https://github.com/delegateas/DataModelViewer/commit/55eede1))
 
 ### Bug Fixes
 
-* stop infinite section spinner ([81e7781](https://github.com/delegateas/DataModelViewer/commit/81e7781))
-* remake callback when group changes ([e3ad295](https://github.com/delegateas/DataModelViewer/commit/e3ad295))
-* allow accordion in sidebar for datamodel to close ([e73e280](https://github.com/delegateas/DataModelViewer/commit/e73e280))
-* simplyfication of postbuild ([fd660da](https://github.com/delegateas/DataModelViewer/commit/fd660da))
+* section markers changing when scrolling list. ([bf92ee2](https://github.com/delegateas/DataModelViewer/commit/bf92ee2))
+* stop infinite progress throbber in sidebar ([a9e0dbb](https://github.com/delegateas/DataModelViewer/commit/a9e0dbb))
+* performance optimization and cleanup of AI slop in virtualization list ([5c06003](https://github.com/delegateas/DataModelViewer/commit/5c06003))
+* restore last section when search is cleared ([c98a34b](https://github.com/delegateas/DataModelViewer/commit/c98a34b))
 
 ### Other Changes
 
-* hotfix: found turbopack issue from next git ([8c4bead](https://github.com/delegateas/DataModelViewer/commit/8c4bead))
-* hotfix: removed experimental outputFileTracingIncludes ([c917d2c](https://github.com/delegateas/DataModelViewer/commit/c917d2c))
-* hotfix: attempt to fix breaking Next version update ([b7d7e71](https://github.com/delegateas/DataModelViewer/commit/b7d7e71))
+* fixed ESLint errors ([af7e99f](https://github.com/delegateas/DataModelViewer/commit/af7e99f))
+* small offset ([4855e2d](https://github.com/delegateas/DataModelViewer/commit/4855e2d))
 
 
