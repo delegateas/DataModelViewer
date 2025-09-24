@@ -118,7 +118,10 @@ export const List = ({ }: IListProps) => {
         scrollToFn,
         onChange: (instance, sync) => {
             // Only update during actual scrolling (sync = true)
-            if (!sync) return;
+            if (!sync) {
+                dispatch({ type: 'SET_LOADING_SECTION', payload: null });
+                return;
+            }
             
             const virtualItems = instance.getVirtualItems();
             if (virtualItems.length === 0) return;
