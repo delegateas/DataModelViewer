@@ -24,28 +24,14 @@ export function highlightMatch(text: string, search: string) {
 export const List = ({ }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
     const { currentSection, loading } = useDatamodelView();
-    const [isScrollingToSection, setIsScrollingToSection] = useState(false);
     const { groups, filtered, search } = useDatamodelData();
     const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
-    const lastScrollHandleTime = useRef<number>(0);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-    const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
     
     // Track position before search for restoration
-    const positionBeforeSearch = useRef<{ section: string | null; scrollTop: number } | null>(null);
     const isTabSwitching = useRef(false);
-    const isIntentionalScroll = useRef(false);
     
-    const getSectionRefCallback = (schemaName: string) => (el: HTMLDivElement | null) => {
-        sectionRefs.current[schemaName] = el;
-    };
-    
-    const remeasureSection = (schemaName: string) => {
-        const el = sectionRefs.current[schemaName];
-        if (el) rowVirtualizer.measureElement(el);
-    };
-
     const handleCopyGroupLink = useCallback(async (groupName: string) => {
         const link = generateGroupLink(groupName);
         const success = await copyToClipboard(link);
@@ -92,32 +78,55 @@ export const List = ({ }: IListProps) => {
     const rowVirtualizer = useVirtualizer({
         count: flatItems.length,
         getScrollElement: () => parentRef.current,
-        overscan: 5, // Reduce overscan to improve performance
+        overscan: 5,
         estimateSize: (index) => {
             const item = flatItems[index];
-            if (!item) return 100;
-            return item.type === 'group' ? 92 : 300;
+            if (!item) return 200;
+            return item.type === 'group' ? 100 : 500; 
         },
-        // Override scroll behavior to prevent jumping during tab switches
-        scrollToFn: (offset) => { 
-            // When switching tabs during search, don't change scroll position
-            if (isTabSwitching.current && !isIntentionalScroll.current) {
-                return;
-            }
+        onChange: (instance, sync) => {
+
+            console.log("change", { instance, sync });
+
+            // Only update during actual scrolling (sync = true)
+            if (!sync) return;
             
-            // Reset the intentional scroll flag after use
-            if (isIntentionalScroll.current) {
-                isIntentionalScroll.current = false;
-            }
+            const virtualItems = instance.getVirtualItems();
+            if (virtualItems.length === 0) return;
+
+            const scrollOffset = instance.scrollOffset;
+            const scrollRect = instance.scrollRect;
+            if (!scrollOffset || !scrollRect) return;
+
+            // Find the first entity item that's currently visible
+            const firstVisibleEntity = virtualItems.find(vi => {
+                const item = flatItems[vi.index];
+                if (!item || item.type !== 'entity') return false;
+                
+                // Check if this virtual item is actually visible in the viewport
+                // vi.start is the top position of the item, vi.end would be vi.start + vi.size
+                const itemTop = vi.start;
+                const itemBottom = vi.end;
+
+                // An item is visible if its bottom is below the scroll position
+                // and its top is above the scroll position + viewport height
+                return itemBottom > scrollOffset && itemTop < scrollOffset + scrollRect.height;
+            });
             
-            // Default scroll behavior for other cases
-            const scrollElement = parentRef.current;
-            if (scrollElement) {
-                scrollElement.scrollTop = offset;
+            if (firstVisibleEntity) {
+                const item = flatItems[firstVisibleEntity.index];
+                if (item && item.type === 'entity') {
+                    // Only update if the section has actually changed
+                    if (currentSection !== item.entity.SchemaName) {
+                        updateURL({ query: { group: item.group.Name, section: item.entity.SchemaName } });
+                        dispatch({ type: "SET_CURRENT_GROUP", payload: item.group.Name });
+                        dispatch({ type: "SET_CURRENT_SECTION", payload: item.entity.SchemaName });
+                    }
+                }
             }
         },
     });
-
+    
     const scrollToSection = useCallback((sectionId: string) => {
         if (scrollTimeoutRef.current) {
             clearTimeout(scrollTimeoutRef.current);
@@ -132,51 +141,11 @@ export const List = ({ }: IListProps) => {
             return;
         }
 
-        const currentIndex = rowVirtualizer.getVirtualItems()[0]?.index || 0;
-        const isLargeJump = Math.abs(sectionIndex - currentIndex) > 10;
+        rowVirtualizer.scrollToIndex(sectionIndex, { 
+            align: 'start'
+        });
 
-        if (isLargeJump) {
-            setIsScrollingToSection(true);
-        }
-
-        scrollTimeoutRef.current = setTimeout(() => {
-            if (!rowVirtualizer || sectionIndex >= flatItems.length) {
-                console.warn(`Invalid index ${sectionIndex} for section ${sectionId}`);
-                setIsScrollingToSection(false);
-                return;
-            }
-
-            try {
-                isIntentionalScroll.current = true; // Mark this as intentional scroll
-                rowVirtualizer.scrollToIndex(sectionIndex, { 
-                    align: 'start'
-                });
-
-                setTimeout(() => {
-                    setIsScrollingToSection(false);
-                    dispatch({ type: 'SET_LOADING_SECTION', payload: null });
-                    // Reset intentional scroll flag after scroll is complete
-                    setTimeout(() => {
-                        isIntentionalScroll.current = false;
-                    }, 100);
-                }, 500);
-            } catch (error) {
-                console.warn(`Failed to scroll to section ${sectionId}:`, error);
-                
-                const estimatedOffset = sectionIndex * 300;
-                if (parentRef.current) {
-                    isIntentionalScroll.current = true;
-                    parentRef.current.scrollTop = estimatedOffset;
-                    // Reset flags for fallback scroll
-                    setTimeout(() => {
-                        isIntentionalScroll.current = false;
-                    }, 600);
-                }
-                setIsScrollingToSection(false);
-            }
-        }, 20);
-
-    }, [flatItems, rowVirtualizer]);
+    }, [flatItems]);
 
     const scrollToGroup = useCallback((groupName: string) => {
         if (scrollTimeoutRef.current) {
@@ -192,162 +161,10 @@ export const List = ({ }: IListProps) => {
             return;
         }
 
-        const currentIndex = rowVirtualizer.getVirtualItems()[0]?.index || 0;
-        const isLargeJump = Math.abs(groupIndex - currentIndex) > 10;
-
-        if (isLargeJump) {
-            setIsScrollingToSection(true);
-        }
-
-        scrollTimeoutRef.current = setTimeout(() => {
-            if (!rowVirtualizer || groupIndex >= flatItems.length) {
-                console.warn(`Invalid index ${groupIndex} for group ${groupName}`);
-                setIsScrollingToSection(false);
-                return;
-            }
-
-            try {
-                isIntentionalScroll.current = true; // Mark this as intentional scroll
-                rowVirtualizer.scrollToIndex(groupIndex, { 
-                    align: 'start'
-                });
-
-                setTimeout(() => {
-                    setIsScrollingToSection(false);
-                    // Reset intentional scroll flag after scroll is complete
-                    setTimeout(() => {
-                        isIntentionalScroll.current = false;
-                    }, 100);
-                }, 500);
-            } catch (error) {
-                console.warn(`Failed to scroll to group ${groupName}:`, error);
-                
-                const estimatedOffset = groupIndex * 300;
-                if (parentRef.current) {
-                    isIntentionalScroll.current = true;
-                    parentRef.current.scrollTop = estimatedOffset;
-                    // Reset flags for fallback scroll
-                    setTimeout(() => {
-                        isIntentionalScroll.current = false;
-                    }, 600);
-                }
-                setIsScrollingToSection(false);
-            }
-        }, 20);
-    }, [flatItems, rowVirtualizer]);
-
-    useEffect(() => {
-        // Only measure if we're not filtering - let the virtualizer handle filtered states naturally
-        if (!search || search.length < 3) {
-            requestAnimationFrame(() => {
-                rowVirtualizer.measure();
-            });
-        }
-    }, [flatItems, search, rowVirtualizer]);
-
-    // Handle scrolling to top when starting a search
-    const prevSearchLengthRef = useRef(search.length);
-    useEffect(() => {
-        const currentSearchLength = search.length;
-        const prevSearchLength = prevSearchLengthRef.current;
-        
-        // Store position before starting search (crossing from < 3 to >= 3 characters)
-        if (prevSearchLength <= 3 && currentSearchLength >= 3) {
-            positionBeforeSearch.current = {
-                section: currentSection,
-                scrollTop: parentRef.current?.scrollTop || 0
-            };
-            
-            if (prevSearchLength < 3) {
-                setTimeout(() => {
-                    if (parentRef.current) {
-                        parentRef.current.scrollTop = 0;
-                    }
-                }, 50); // Small delay to ensure virtualizer has processed the new items
-            }
-        }
-        // Restore position when stopping search (crossing from >= 3 to < 3 characters)
-        else if (prevSearchLength >= 3 && currentSearchLength < 3) {
-            if (positionBeforeSearch.current) {
-                const { section, scrollTop } = positionBeforeSearch.current;
-                
-                // Restore to the section where the user was before searching
-                if (section) {
-                    setTimeout(() => {
-                        const sectionIndex = flatItems.findIndex(item => 
-                            item.type === 'entity' && item.entity.SchemaName === section
-                        );
-                        
-                        if (sectionIndex !== -1) {
-                            // Scroll to the section they were at before search
-                            isIntentionalScroll.current = true; // Mark this as intentional scroll
-                            rowVirtualizer.scrollToIndex(sectionIndex, { align: 'start' });
-                        } else {
-                            // Fallback to original scroll position
-                            if (parentRef.current) {
-                                parentRef.current.scrollTop = scrollTop;
-                            }
-                        }
-                    }, 100); // Delay to ensure flatItems is updated
-                }
-                
-                positionBeforeSearch.current = null;
-            }
-        }
-        
-        prevSearchLengthRef.current = currentSearchLength;
-    }, [search, currentSection, flatItems, rowVirtualizer]);
-
-    // Throttled scroll handler to reduce calculations
-    const handleScroll = useCallback(() => {
-        const now = Date.now();
-        if (now - lastScrollHandleTime.current < 100) return; // Only process every 100ms
-        lastScrollHandleTime.current = now;
-        
-        const scrollElement = parentRef.current;
-        if (!scrollElement || isScrollingToSection || isIntentionalScroll.current) return;
-        
-        const scrollOffset = scrollElement.scrollTop;
-        const virtualItems = rowVirtualizer.getVirtualItems();
-        
-        // Find the first visible item
-        const padding = 32;
-        const firstVisibleItem = virtualItems.find(v => {
-            return (v.start - padding) <= scrollOffset && v.end >= (scrollOffset + padding);
+        rowVirtualizer.scrollToIndex(groupIndex, { 
+            align: 'start'
         });
-        
-        if (firstVisibleItem) {
-            const item = flatItems[firstVisibleItem.index];
-            if (item?.type === 'entity') {
-                if (item.entity.SchemaName !== currentSection) {
-                    updateURL({ query: { group: item.group.Name, section: item.entity.SchemaName } });
-                    dispatch({ type: "SET_CURRENT_GROUP", payload: item.group.Name });
-                    dispatch({ type: "SET_CURRENT_SECTION", payload: item.entity.SchemaName });
-                }
-            }
-        }
-    }, [dispatch, flatItems, rowVirtualizer, currentSection, isScrollingToSection]);
-
-    // Throttled scroll event listener
-    useEffect(() => {
-        const scrollElement = parentRef.current;
-        if (!scrollElement) return;
-        
-        let scrollTimeout: number;
-        const throttledScrollHandler = () => {
-            if (scrollTimeout) return;
-            scrollTimeout = window.setTimeout(() => {
-                handleScroll();
-                scrollTimeout = 0;
-            }, 100);
-        };
-        
-        scrollElement.addEventListener("scroll", throttledScrollHandler, { passive: true });
-        return () => {
-            scrollElement.removeEventListener("scroll", throttledScrollHandler);
-            clearTimeout(scrollTimeout);
-        };
-    }, [handleScroll]);
+    }, [flatItems]);
 
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
@@ -360,19 +177,15 @@ export const List = ({ }: IListProps) => {
         };
     }, [dispatch, scrollToSection, scrollToGroup]);
 
-    useEffect(() => {
-        // When the current section is in view, set loading to false
-        if (currentSection) {
-            // Check if the current section is rendered in the virtualizer
-            const isInView = rowVirtualizer.getVirtualItems().some(vi => {
-                const item = flatItems[vi.index];
-                return item.type === 'entity' && item.entity.SchemaName === currentSection;
-            });
-            if (isInView) {
-                dispatch({ type: 'SET_LOADING', payload: false });
+    // Callback to handle section content changes (for tab switches, expansions, etc.)
+    const handleSectionResize = useCallback((index: number) => {
+        if (index !== -1) {
+            const containerElement = document.querySelector(`[data-index="${index}"]`) as HTMLElement;
+            if (containerElement) {
+                rowVirtualizer.measureElement(containerElement);
             }
         }
-    }, [currentSection, flatItems, rowVirtualizer, dispatch]);
+    }, [rowVirtualizer]);
 
     return (
         <div ref={parentRef} style={{ height: 'calc(100vh - var(--layout-header-desktop-height))', overflow: 'auto' }} className="p-6 relative no-scrollbar">
@@ -415,62 +228,61 @@ export const List = ({ }: IListProps) => {
                 }}
             >
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-                const item = flatItems[virtualItem.index];
-                const sectionRef = item.type === 'entity' ? getSectionRefCallback(item.entity.SchemaName) : undefined;
+                    const item = flatItems[virtualItem.index];
 
-                return (
-                    <div
-                        key={virtualItem.key}
-                        data-index={virtualItem.index}
-                        ref={item.type === 'entity'
-                            ? el => {
-                                if (sectionRef) sectionRef(el);
-                                if (el) rowVirtualizer.measureElement(el);
-                              }
-                            : rowVirtualizer.measureElement
-                        }
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            transform: `translateY(${virtualItem.start}px)`,
-                        }}
-                    >
-                        {item.type === 'group' ? (
-                            <div className="flex items-center py-6 my-4">
-                                <div className="flex-1 h-0.5 bg-gray-200" />
-                                <Tooltip title="Copy link to this group">
-                                    <div 
-                                        className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
-                                        onClick={() => handleCopyGroupLink(item.group.Name)}
-                                    >
-                                        {item.group.Name}
-                                    </div>
-                                </Tooltip>
-                                <div className="flex-1 h-0.5 bg-gray-200" />
-                            </div>
-                        ) : (
-                            <div className="text-sm">
-                                <Section
-                                    entity={item.entity}
-                                    group={item.group}
-                                    onContentChange={() => remeasureSection(item.entity.SchemaName)}
-                                    onTabChange={(isChanging: boolean) => {
-                                        isTabSwitching.current = isChanging;
-                                        if (isChanging) {
-                                            // Reset after a short delay to allow for the content change
-                                            setTimeout(() => {
-                                                isTabSwitching.current = false;
-                                            }, 100);
-                                        }
-                                    }}
-                                    search={search}
-                                />
-                            </div>
-                        )}
-                    </div>
-                );
+                    return (
+                        <div
+                            key={virtualItem.key}
+                            data-index={virtualItem.index}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                transform: `translateY(${virtualItem.start}px)`,
+                            }}
+                            ref={(el) => {
+                                if (el) {
+                                    // trigger remeasurement when content changes and load
+                                    requestAnimationFrame(() => {
+                                        handleSectionResize(virtualItem.index);
+                                    });
+                                }
+                            }}
+                        >
+                            {item.type === 'group' ? (
+                                <div className="flex items-center py-6 my-4">
+                                    <div className="flex-1 h-0.5 bg-gray-200" />
+                                    <Tooltip title="Copy link to this group">
+                                        <div 
+                                            className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
+                                            onClick={() => handleCopyGroupLink(item.group.Name)}
+                                        >
+                                            {item.group.Name}
+                                        </div>
+                                    </Tooltip>
+                                    <div className="flex-1 h-0.5 bg-gray-200" />
+                                </div>
+                            ) : (
+                                <div className="text-sm">
+                                    <Section
+                                        entity={item.entity}
+                                        group={item.group}
+                                        onTabChange={(isChanging: boolean) => {
+                                            isTabSwitching.current = isChanging;
+                                            if (isChanging) {
+                                                // Reset after a short delay to allow for the content change
+                                                setTimeout(() => {
+                                                    isTabSwitching.current = false;
+                                                }, 100);
+                                            }
+                                        }}
+                                        search={search}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    );
                 })}
             </div>
         </div>
