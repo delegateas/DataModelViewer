@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import React from "react";
-import { useVirtualizer, VirtualItem } from '@tanstack/react-virtual';
+import { elementScroll, useVirtualizer, VirtualItem, VirtualizerOptions } from '@tanstack/react-virtual';
 import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
@@ -28,6 +28,7 @@ export const List = ({ }: IListProps) => {
     const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+    const scrollingRef = React.useRef<number>()
     // used to relocate section after search/filter
     const [sectionVirtualItem, setSectionVirtualItem] = useState<string | null>(null);
     
@@ -77,6 +78,34 @@ export const List = ({ }: IListProps) => {
         return items;
     }, [filtered, search, groups]);
 
+    function easeInOutQuint(t: number) {
+        return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
+    }
+
+    const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] =
+        React.useCallback((offset, canSmooth, instance) => {
+        const duration = 2000
+        const start = parentRef.current?.scrollTop || 0
+        const startTime = (scrollingRef.current = Date.now())
+
+        const run = () => {
+            if (scrollingRef.current !== startTime) return
+            const now = Date.now()
+            const elapsed = now - startTime
+            const progress = easeInOutQuint(Math.min(elapsed / duration, 1))
+            const interpolated = start + (offset - start) * progress
+
+            if (elapsed < duration) {
+                elementScroll(interpolated, canSmooth, instance)
+                requestAnimationFrame(run)
+            } else {
+                elementScroll(interpolated, canSmooth, instance)
+            }
+        }
+
+        requestAnimationFrame(run)
+    }, [])
+
     const rowVirtualizer = useVirtualizer({
         count: flatItems.length,
         getScrollElement: () => parentRef.current,
@@ -86,6 +115,7 @@ export const List = ({ }: IListProps) => {
             if (!item) return 200;
             return item.type === 'group' ? 100 : 500; 
         },
+        scrollToFn,
         onChange: (instance, sync) => {
             // Only update during actual scrolling (sync = true)
             if (!sync) return;
