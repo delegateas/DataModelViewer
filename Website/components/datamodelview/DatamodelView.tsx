@@ -47,8 +47,11 @@ function DatamodelViewContent() {
             } else {
                 // Clear search - reset to show all groups
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
+
                 // Relocate section
-                restoreSection();
+                if (searchValue && searchValue.length === 0) {
+                    restoreSection();
+                }
             }
         }
         updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })

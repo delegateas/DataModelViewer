@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import React from "react";
-import { elementScroll, useVirtualizer, VirtualizerOptions } from '@tanstack/react-virtual';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Section } from "./Section";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { updateURL } from "@/lib/url-utils";
 import { copyToClipboard, generateGroupLink } from "@/lib/clipboard-utils";
 import { useSnackbar } from "@/contexts/SnackbarContext";
-import { Backdrop, Box, CircularProgress, debounce, Paper, Skeleton, Tooltip } from '@mui/material';
+import { debounce, Tooltip } from '@mui/material';
 
 interface IListProps {
     setCurrentIndex: (index: number) => void;
@@ -24,7 +24,7 @@ export function highlightMatch(text: string, search: string) {
 
 export const List = ({ setCurrentIndex }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
-    const { currentSection, loading, loadingSection } = useDatamodelView();
+    const { currentSection } = useDatamodelView();
     const { groups, filtered, search } = useDatamodelData();
     const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
@@ -128,8 +128,11 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             }
         }
 
-        if (mostVisibleEntity && currentSection !== mostVisibleEntity.entity.SchemaName) {
+        if (mostVisibleEntity && !search) {
             setSectionVirtualItem(mostVisibleEntity.entity.SchemaName);
+        }
+
+        if (mostVisibleEntity && currentSection !== mostVisibleEntity.entity.SchemaName) {
             updateURL({ query: { group: mostVisibleEntity.group.Name, section: mostVisibleEntity.entity.SchemaName } });
             dispatch({ type: "SET_CURRENT_GROUP", payload: mostVisibleEntity.group.Name });
             dispatch({ type: "SET_CURRENT_SECTION", payload: mostVisibleEntity.entity.SchemaName });
