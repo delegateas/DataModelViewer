@@ -170,7 +170,7 @@ export const TimeSlicedSearch = ({
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-  }, [onSearch, onLoadingChange]);
+  }, [onSearch, onLoadingChange, localValue]);
 
   // Cleanup
   useEffect(() => {
