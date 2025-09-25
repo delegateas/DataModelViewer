@@ -42,7 +42,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
             Entities: group.Entities.filter(entity => 
                 (entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase())) &&
-                filtered.some(f => f.type === 'entity' && f.entity.SchemaName === entity.SchemaName)
+                (!search || filtered.some(f => f.type === 'entity' && f.entity.SchemaName === entity.SchemaName))
             )
         })).filter(group => group.Entities.length > 0);
     }, [groups, searchTerm, filtered]);
