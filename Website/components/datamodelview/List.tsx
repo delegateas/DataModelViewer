@@ -8,7 +8,7 @@ import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { updateURL } from "@/lib/url-utils";
 import { copyToClipboard, generateGroupLink } from "@/lib/clipboard-utils";
 import { useSnackbar } from "@/contexts/SnackbarContext";
-import { debounce, Tooltip } from '@mui/material';
+import { Backdrop, Box, CircularProgress, debounce, Paper, Skeleton, Tooltip } from '@mui/material';
 
 interface IListProps {
     setCurrentIndex: (index: number) => void;
@@ -24,12 +24,10 @@ export function highlightMatch(text: string, search: string) {
 
 export const List = ({ setCurrentIndex }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
-    const { currentSection, loading } = useDatamodelView();
+    const { currentSection, loading, loadingSection } = useDatamodelView();
     const { groups, filtered, search } = useDatamodelData();
     const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
-    const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-    const scrollingRef = React.useRef<number>()
     // used to relocate section after search/filter
     const [sectionVirtualItem, setSectionVirtualItem] = useState<string | null>(null);
     
@@ -78,34 +76,6 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         }
         return items;
     }, [filtered, search, groups]);
-
-    function easeInOutQuint(t: number) {
-        return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
-    }
-
-    const scrollToFn: VirtualizerOptions<HTMLDivElement, HTMLElement>['scrollToFn'] =
-        React.useCallback((offset, canSmooth, instance) => {
-        const duration = 2000
-        const start = parentRef.current?.scrollTop || 0
-        const startTime = (scrollingRef.current = Date.now())
-
-        const run = () => {
-            if (scrollingRef.current !== startTime) return
-            const now = Date.now()
-            const elapsed = now - startTime
-            const progress = easeInOutQuint(Math.min(elapsed / duration, 1))
-            const interpolated = start + (offset - start) * progress
-
-            if (elapsed < duration) {
-                elementScroll(interpolated, canSmooth, instance)
-                requestAnimationFrame(run)
-            } else {
-                elementScroll(interpolated, canSmooth, instance)
-            }
-        }
-
-        requestAnimationFrame(run)
-    }, [])
 
     const debouncedOnChange = debounce((instance, sync) => {
         if (!sync) {
@@ -176,15 +146,10 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             if (!item) return 200;
             return item.type === 'group' ? 100 : 500; 
         },
-        scrollToFn,
         onChange: debouncedOnChange,
     });
     
     const scrollToSection = useCallback((sectionId: string) => {
-        if (scrollTimeoutRef.current) {
-            clearTimeout(scrollTimeoutRef.current);
-        }
-
         const sectionIndex = flatItems.findIndex(item => 
             item.type === 'entity' && item.entity.SchemaName === sectionId
         );
@@ -195,16 +160,13 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         }
 
         rowVirtualizer.scrollToIndex(sectionIndex, { 
-            align: 'start'
+            align: 'start',
+            behavior: 'smooth'
         });
 
     }, [flatItems]);
 
     const scrollToGroup = useCallback((groupName: string) => {
-        if (scrollTimeoutRef.current) {
-            clearTimeout(scrollTimeoutRef.current);
-        }
-
         const groupIndex = flatItems.findIndex(item => 
             item.type === 'group' && item.group.Name === groupName
         );
@@ -215,7 +177,8 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         }
 
         rowVirtualizer.scrollToIndex(groupIndex, { 
-            align: 'start'
+            align: 'start',
+            behavior: 'smooth'
         });
     }, [flatItems]);
 
@@ -229,12 +192,6 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
         dispatch({ type: 'SET_SCROLL_TO_GROUP', payload: scrollToGroup });
         dispatch({ type: 'SET_RESTORE_SECTION', payload: restoreSection });
-        
-        return () => {
-            if (scrollTimeoutRef.current) {
-                clearTimeout(scrollTimeoutRef.current);
-            }
-        };
     }, [dispatch, scrollToSection, scrollToGroup]);
 
     // Callback to handle section content changes (for tab switches, expansions, etc.)
@@ -249,24 +206,6 @@ export const List = ({ setCurrentIndex }: IListProps) => {
 
     return (
         <div ref={parentRef} style={{ height: 'calc(100vh - var(--layout-header-desktop-height))', overflow: 'auto' }} className="p-6 relative no-scrollbar">
-
-            {/* Show skeleton loading state only when initially loading */}
-            {flatItems.length === 0 && loading && (!search || search.length < 3) && (
-                <div className="space-y-8">
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} className="bg-white rounded-lg border border-gray-300 shadow-md animate-pulse">
-                            <div className="h-32 p-6 flex flex-col">
-                                <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-                                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                            </div>
-                            <div className="p-4 border-t">
-                                <div className="h-4 bg-gray-200 rounded w-full mb-3"></div>
-                                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
 
             {/* Show no results message when searching but no items found */}
             {flatItems.length === 0 && search && search.length >= 3 && (
