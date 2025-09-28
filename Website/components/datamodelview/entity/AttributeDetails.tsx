@@ -1,10 +1,10 @@
 'use client'
 
-import { AttributeType, CalculationMethods, ComponentType, RequiredLevel } from "@/lib/Types";
-import { AccountTreeRounded, AddCircleOutlineRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, JavascriptRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
-import { Tooltip } from "@mui/material";
+import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
+import { AddCircleOutlineRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
+import { Link, Tooltip } from "@mui/material";
 
-export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
+export function AttributeDetails({ entityName, attribute }: { entityName: string, attribute: AttributeType }) {
     const details = [];
 
     switch (attribute.RequiredLevel) {
@@ -34,21 +34,15 @@ export function AttributeDetails({ attribute }: { attribute: AttributeType }) {
         details.push({ icon: <LockRounded className="h-4 w-4" />, tooltip: "Field Security" });
     }
 
-    if (attribute.AttributeUsages.some(a => a.ComponentType == ComponentType.Plugin)) {
-        const tooltip = `Plugins ${attribute.AttributeUsages.filter(au => au.ComponentType == ComponentType.Plugin).map(au => au.Name).join(", ")}`;
-        details.push({ icon: <ElectricBoltRounded className="h-4 w-4" />, tooltip });
+    if (attribute.AttributeUsages.length > 0) {
+        const tooltip = <span className="">Processes ${attribute.AttributeUsages.map(au => au.Name).join(", ")}.<br />Click to see more details.</span>;
+        details.push({ icon: (
+            <Link href={`/processes?ent=${entityName}&attr=${attribute.SchemaName}`}>
+                <ElectricBoltRounded className="h-4 w-4" />
+            </Link>
+        ), tooltip });
     }
-
-    if (attribute.AttributeUsages.some(a => a.ComponentType == ComponentType.PowerAutomateFlow)) {
-        const tooltip = `Power Automate Flows ${attribute.AttributeUsages.filter(au => au.ComponentType == ComponentType.PowerAutomateFlow).map(au => au.Name).join(", ")}`;
-        details.push({ icon: <AccountTreeRounded className="h-4 w-4" />, tooltip });
-    }
-
-    if (attribute.AttributeUsages.some(a => a.ComponentType == ComponentType.WebResource)) {
-        const tooltip = `Web Resources ${attribute.AttributeUsages.filter(au => au.ComponentType == ComponentType.WebResource).map(au => au.Name).join(", ")}`;
-        details.push({ icon: <JavascriptRounded className="h-4 w-4" />, tooltip });
-    }
-
+    
     return (
         <div className="flex flex-row gap-1">
             {details.map((detail, index) => (
