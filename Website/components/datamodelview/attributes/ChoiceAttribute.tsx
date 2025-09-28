@@ -2,7 +2,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
 import { Box, Typography, Chip } from "@mui/material"
-import { CheckBoxOutlineBlankRounded, CheckBoxRounded, CheckRounded } from "@mui/icons-material"
+import { CheckBoxOutlineBlankRounded, CheckBoxRounded, CheckRounded, RadioButtonCheckedRounded, RadioButtonUncheckedRounded } from "@mui/icons-material"
 
 export default function ChoiceAttribute({ attribute, highlightMatch, highlightTerm }: { attribute: ChoiceAttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string }) {
 
@@ -38,9 +38,9 @@ export default function ChoiceAttribute({ attribute, highlightMatch, highlightTe
                                     ) : (
                                         // For single-select, show radio buttons
                                         option.Value === attribute.DefaultValue ? (
-                                            <CheckBoxRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
+                                            <RadioButtonCheckedRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'success.main' }} />
                                         ) : (
-                                            <CheckBoxOutlineBlankRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
+                                            <RadioButtonUncheckedRounded className="w-2 h-2 md:w-3 md:h-3" sx={{ color: 'text.disabled' }} />
                                         )
                                     )}
                                     <Typography className="text-xs md:text-sm">{highlightMatch(option.Name, highlightTerm)}</Typography>

@@ -10,6 +10,7 @@ import LoadingOverlay from '@/components/shared/LoadingOverlay'
 import NotchedBox from '../shared/elements/NotchedBox'
 import { StatCard } from '../shared/elements/StatCard'
 import { ResponsivePie } from '@nivo/pie'
+import { useSearchParams } from 'next/navigation'
 
 interface IProcessesViewProps { }
 
@@ -26,11 +27,31 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [isSearching, setIsSearching] = useState<boolean>(false)
     const [selectedAttribute, setSelectedAttribute] = useState<AttributeSearchResult | null>(null)
+    const initialAttribute = useSearchParams().get('attr') || "";
+    const initialEntity = useSearchParams().get('ent') || "";
 
     useEffect(() => {
         setElement(null);
         close();
-    }, [setElement, close])
+
+        if (initialAttribute && initialEntity && groups.length > 0) {
+            const d = groups.flatMap(group =>
+                group.Entities.flatMap(entity =>
+                    entity.Attributes.map(attribute => ({
+                        attribute,
+                        entity,
+                        group: group.Name,
+                    }))
+                )
+            );
+            const foundAttribute = d.find(result => 
+                result.attribute.SchemaName === initialAttribute 
+                && result.entity.SchemaName === initialEntity);
+            if (foundAttribute) {
+                setSelectedAttribute(foundAttribute);
+            }
+        }
+    }, [groups])
 
     const typeDistribution = useMemo(() => {
         return groups.reduce((acc, group) => {
@@ -111,13 +132,13 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
     // Simulate search delay for UX
     useEffect(() => {
         if (searchTerm.trim() && searchTerm.length >= 2) {
-        setIsSearching(true)
-        const timer = setTimeout(() => {
-            setIsSearching(false)
-        }, 300)
-        return () => clearTimeout(timer)
+            setIsSearching(true)
+            const timer = setTimeout(() => {
+                setIsSearching(false)
+            }, 300)
+            return () => clearTimeout(timer)
         } else {
-        setIsSearching(false)
+            setIsSearching(false)
         }
     }, [searchTerm])
 

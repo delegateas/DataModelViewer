@@ -368,7 +368,8 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                                             color: 'primary.main'
                                         }}
                                         onClick={() => {
-                                            dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema })
+                                            dispatch({ type: 'SET_LOADING_SECTION', payload: relationship.TableSchema });
+                                            dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema });
                                             scrollToSection(relationship.TableSchema);
                                         }}
                                     >

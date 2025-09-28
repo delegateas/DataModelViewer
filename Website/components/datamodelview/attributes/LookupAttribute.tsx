@@ -1,11 +1,12 @@
 import { LookupAttributeType } from "@/lib/Types"
-import { useDatamodelView } from "@/contexts/DatamodelViewContext"
+import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 import { Box, Typography, Button, Chip } from "@mui/material"
 import { ContentPasteOffRounded, ContentPasteSearchRounded } from "@mui/icons-material";
 
 export default function LookupAttribute({ attribute }: { attribute: LookupAttributeType }) {
 
     const { scrollToSection } = useDatamodelView();
+    const dispatch = useDatamodelViewDispatch();
 
     return (
         <Box className="flex flex-wrap items-center gap-1 md:gap-2">
@@ -18,7 +19,11 @@ export default function LookupAttribute({ attribute }: { attribute: LookupAttrib
                             variant="outlined"
                             size="small"
                             startIcon={<ContentPasteSearchRounded className="w-2 h-2 md:w-3 md:h-3" />}
-                            onClick={() => scrollToSection(target.Name)}
+                            onClick={() => {
+                                dispatch({ type: 'SET_LOADING_SECTION', payload: target.Name });
+                                dispatch({ type: "SET_CURRENT_SECTION", payload: target.Name });
+                                scrollToSection(target.Name);
+                            }}
                             sx={{
                                 fontSize: { xs: '0.625rem', md: '0.875rem' },
                                 height: { xs: '16px', md: '24px' },

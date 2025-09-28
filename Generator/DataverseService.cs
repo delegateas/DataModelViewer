@@ -64,7 +64,6 @@ namespace Generator
             var entityRootBehaviour = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
             var attributesInSolution = solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId).ToHashSet();
             var rolesInSolution = solutionComponents.Where(x => x.ComponentType == 20).Select(x => x.ObjectId).ToList();
-            var pluginStepsInSolution = solutionComponents.Where(x => x.ComponentType == 92).Select(x => x.ObjectId).ToList();
 
             var entitiesInSolutionMetadata = await GetEntityMetadata(entitiesInSolution);
 
@@ -140,7 +139,7 @@ namespace Generator
                         .ToList(),
                     RelevantManyToMany =
                         x.ManyToManyRelationships
-                        .Where(r => entityLogicalNamesInSolution.Contains(r.IntersectEntityName.ToLower()))
+                        .Where(r => entityLogicalNamesInSolution.Contains(r.Entity1LogicalName) && entityLogicalNamesInSolution.Contains(r.Entity2LogicalName))
                         .ToList(),
                 })
                 .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
@@ -215,16 +214,24 @@ namespace Generator
 
             var manyToMany = relevantManyToMany
                 .Where(x => logicalToSchema.ContainsKey(x.Entity1LogicalName) && logicalToSchema[x.Entity1LogicalName].IsInSolution)
-                .Select(x => new DTO.Relationship(
-                    x.IsCustomRelationship ?? false,
-                    x.Entity1AssociatedMenuConfiguration.Behavior == AssociatedMenuBehavior.UseLabel
-                    ? x.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel?.Label ?? x.Entity1NavigationPropertyName
-                    : x.Entity1NavigationPropertyName,
-                    logicalToSchema[x.Entity1LogicalName].Name,
-                    "-",
-                    x.SchemaName,
-                    IsManyToMany: true,
-                    null))
+                .Select(x =>
+                {
+                    var useEntity1 = x.Entity1LogicalName == entity.LogicalName;
+
+                    var label = !useEntity1
+                        ? x.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel?.Label ?? x.Entity1NavigationPropertyName
+                        : x.Entity2AssociatedMenuConfiguration.Label.UserLocalizedLabel?.Label ?? x.Entity2NavigationPropertyName;
+
+                    return new DTO.Relationship(
+                        x.IsCustomRelationship ?? false,
+                        label,
+                        logicalToSchema[!useEntity1 ? x.Entity1LogicalName : x.Entity2LogicalName].Name,
+                        "-",
+                        x.SchemaName,
+                        IsManyToMany: true,
+                        null
+                    );
+                })
                 .ToList();
 
             Dictionary<string, string> tablegroups = []; // logicalname -> group

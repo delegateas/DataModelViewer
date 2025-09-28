@@ -30,9 +30,10 @@ export function EntityHeader({ entity }: { entity: EntityType }) {
                 pr: { xl: 3, xs: 0 } 
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+            <Box className="flex gap-1.5 mb-1.5 items-start">
                 <Tooltip title="Copy link to this section">
                     <Box 
+                        className="flex mt-1"
                         sx={{ 
                             flexShrink: 0,
                             cursor: 'pointer',
@@ -63,12 +64,12 @@ export function EntityHeader({ entity }: { entity: EntityType }) {
                         }
                     </Box>
                 </Tooltip>
-                <Box sx={{ minWidth: 0, flex: 1 }} className="flex items-center flex-wrap" gap={2}>
+                <Box sx={{ minWidth: 0, flex: 1 }} className="flex items-center flex-wrap">
                     <Tooltip title="Copy link to this section">
                         <Typography 
                             variant="h5" 
                             component="h2"
-                            className="entity-title"
+                            className="entity-title mr-2"
                             sx={{ 
                                 fontWeight: 600,
                                 color: 'text.primary',
