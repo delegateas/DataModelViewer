@@ -2,7 +2,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRouter } from 'next/navigation';
-import { AppBar, Toolbar, Box, LinearProgress, Button, Badge, Stack } from '@mui/material';
+import { AppBar, Toolbar, Box, LinearProgress, Button, Stack } from '@mui/material';
 import SettingsPane from './elements/SettingsPane';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/contexts/SidebarContext';

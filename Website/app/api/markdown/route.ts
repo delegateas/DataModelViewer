@@ -13,7 +13,7 @@ export async function GET() {
     let fileContent: string;
     try {
         fileContent = readFileSync(generatedPath, 'utf-8');
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
     return NextResponse.json({ fileContent })

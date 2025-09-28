@@ -270,7 +270,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                         <Section
                                             entity={item.entity}
                                             group={item.group}
-                                            onTabChange={(isChanging: boolean) => {
+                                            onTabChange={() => {
                                                 
                                             }}
                                             search={search}

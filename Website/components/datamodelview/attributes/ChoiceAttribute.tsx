@@ -2,7 +2,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
 import { Box, Typography, Chip } from "@mui/material"
-import { CheckBoxOutlineBlankRounded, CheckBoxRounded, CheckRounded, RadioButtonChecked, RadioButtonCheckedRounded, RadioButtonUncheckedRounded } from "@mui/icons-material"
+import { CheckBoxOutlineBlankRounded, CheckBoxRounded, CheckRounded, RadioButtonCheckedRounded, RadioButtonUncheckedRounded } from "@mui/icons-material"
 
 export default function ChoiceAttribute({ attribute, highlightMatch, highlightTerm }: { attribute: ChoiceAttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string }) {
 
