@@ -30,10 +30,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
     const parentRef = useRef<HTMLDivElement | null>(null);
     // used to relocate section after search/filter
     const [sectionVirtualItem, setSectionVirtualItem] = useState<string | null>(null);
-    
-    // Track position before search for restoration
-    const isTabSwitching = useRef(false);
-    
+        
     const handleCopyGroupLink = useCallback(async (groupName: string) => {
         const link = generateGroupLink(groupName);
         const success = await copyToClipboard(link);
@@ -274,13 +271,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                             entity={item.entity}
                                             group={item.group}
                                             onTabChange={(isChanging: boolean) => {
-                                                isTabSwitching.current = isChanging;
-                                                if (isChanging) {
-                                                    // Reset after a short delay to allow for the content change
-                                                    setTimeout(() => {
-                                                        isTabSwitching.current = false;
-                                                    }, 100);
-                                                }
+                                                
                                             }}
                                             search={search}
                                         />
