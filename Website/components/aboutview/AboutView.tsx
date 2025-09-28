@@ -25,12 +25,19 @@ export const AboutView = ({}: IAboutViewProps) => {
         <Box className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-12">
             {/* Logo */}
             <Box className="flex justify-center mb-10">
-              <Box
-                component="img"
-                className="h-20 sm:h-28 md:h-32 object-contain"
-                src="/DMVLOGOHORZ.svg"
-                alt="Data Model Viewer logo"
-              />
+              <Box className="flex items-center">
+                <Box
+                  component="img"
+                  className="h-20 sm:h-28 md:h-32 object-contain"
+                  src="/DMVLOGO.svg"
+                  alt="Data Model Viewer logo"
+                />
+                <Box className="flex flex-col ml-4 mt-4 justify-center h-full">
+                  <Typography variant='h4' className='m-0 p-0 leading-8'>DATA MODEL</Typography>
+                  <Typography variant='h2' className='m-0 p-0 font-semibold leading-14'>VIEWER</Typography>
+                  <Typography variant='caption' color='text.secondary'>@ DELEGATE | CONTEXT&</Typography>
+                </Box>
+              </Box>
             </Box>
 
             {/* What is DMV */}
