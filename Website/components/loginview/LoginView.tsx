@@ -120,7 +120,14 @@ const LoginView = ({ }: LoginViewProps) => {
                         </Alert>
                     )}
                     <form onSubmit={handleSubmit} className="w-full">
-                        <FormControl className='w-full my-4' variant="outlined">
+                        <FormControl className='w-full my-4' variant="outlined"
+                            sx={{
+                                '& input:-webkit-autofill': {
+                                    WebkitBoxShadow: '0 0 0 100px var(--mui-palette-background-default) inset !important',
+                                    WebkitTextFillColor: 'var(--mui-palette-text-primary) !important',
+                                    transition: 'background-color 5000s ease-in-out 0s',
+                                },
+                            }}>
                             <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
                             <OutlinedInput
                                 className='rounded-lg'
