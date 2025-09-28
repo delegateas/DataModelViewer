@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSidebar } from '@/contexts/SidebarContext'
 import Markdown from 'react-markdown'
-import { Box, Button, Grid, IconButton, Paper, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Grid, IconButton, Paper, Typography } from '@mui/material';
 import NotchedBox from '@/components/shared/elements/NotchedBox';
 import Carousel, { CarouselItem } from '@/components/shared/elements/Carousel';
 import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
@@ -17,7 +17,7 @@ export const HomeView = ({ }: IHomeViewProps) => {
 
     const router = useRouter();
 
-    const [wikipage, setWikipage] = useState<string>('');
+    const [wikipage, setWikipage] = useState<string | undefined>('');
     const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
     const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
 
@@ -65,12 +65,24 @@ export const HomeView = ({ }: IHomeViewProps) => {
         setElement(null);
         close();
         fetch('/api/markdown')
-            .then(res => res.json())
-            .then(data => setWikipage(data.fileContent.replace(/\\n/g, '\n')));
+            .then(res => {
+                return res.json();
+            })
+            .then(data => {
+                if (data.fileContent) {
+                    setWikipage(data.fileContent.replace(/\\n/g, '\n'));
+                } else {
+                    setWikipage(undefined);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching wiki page:', error);
+                setWikipage(undefined);
+            });
     }, []);
 
     return (
-        <Box className="min-h-screen p-4">
+        <Box className="p-4" style={{ height: 'calc(100vh - var(--layout-header-desktop-height))'}}>
             <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 8 }}>
                     <Box 
@@ -112,23 +124,27 @@ export const HomeView = ({ }: IHomeViewProps) => {
                     </NotchedBox>
                 </Grid>
                 <Grid size={12}>
-                    <Paper elevation={2} className='rounded-2xl p-8'>
-                        {wikipage ? (
-                            <Markdown components={{
-                                h1: ({ ...props }) => <h1 className="text-4xl font-bold mb-4" {...props} />,
-                                h2: ({ ...props }) => <h2 className="text-3xl font-bold mb-4" {...props} />,
-                                h3: ({ ...props }) => <h3 className="text-2xl font-bold mb-4" {...props} />,
-                                h4: ({ ...props }) => <h4 className="text-xl font-bold mb-4" {...props} />,
-                                p: ({ ...props }) => <p className="mb-4" {...props} />,
-                                a: ({ ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
-                                li: ({ ...props }) => <li className="ml-6 list-disc" {...props} />,
-                                span: ({ ...props }) => <span className="font-semibold" {...props} />,
-                                img: ({ ...props }) => <img className="max-w-full h-auto my-4" {...props} />,
-                            }}>{wikipage}</Markdown>
-                        ) : (   
-                            <div>Loading wiki...</div>
-                        )}
-                    </Paper>
+                    {
+                        wikipage !== undefined && (
+                            <Paper elevation={2} className='rounded-2xl p-8'>
+                                {wikipage.length > 0 ? (
+                                    <Markdown components={{
+                                        h1: ({ ...props }) => <h1 className="text-4xl font-bold mb-4" {...props} />,
+                                        h2: ({ ...props }) => <h2 className="text-3xl font-bold mb-4" {...props} />,
+                                        h3: ({ ...props }) => <h3 className="text-2xl font-bold mb-4" {...props} />,
+                                        h4: ({ ...props }) => <h4 className="text-xl font-bold mb-4" {...props} />,
+                                        p: ({ ...props }) => <p className="mb-4" {...props} />,
+                                        a: ({ ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
+                                        li: ({ ...props }) => <li className="ml-6 list-disc" {...props} />,
+                                        span: ({ ...props }) => <span className="font-semibold" {...props} />,
+                                        img: ({ ...props }) => <img className="max-w-full h-auto my-4" {...props} />,
+                                    }}>{wikipage}</Markdown>
+                                ) : (
+                                    <Typography variant='body1' className="flex w-full items-center justify-center"><CircularProgress size={16} color='primary' className="mr-2" /> Loading wiki page...</Typography>
+                                )}
+                            </Paper>
+                        )
+                    }
                 </Grid>
             </Grid>
         </Box>
