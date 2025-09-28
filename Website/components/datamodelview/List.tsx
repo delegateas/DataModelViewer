@@ -8,7 +8,7 @@ import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { updateURL } from "@/lib/url-utils";
 import { copyToClipboard, generateGroupLink } from "@/lib/clipboard-utils";
 import { useSnackbar } from "@/contexts/SnackbarContext";
-import { debounce, Tooltip } from '@mui/material';
+import { Box, CircularProgress, debounce, Tooltip } from '@mui/material';
 
 interface IListProps {
     setCurrentIndex: (index: number) => void;
@@ -24,7 +24,7 @@ export function highlightMatch(text: string, search: string) {
 
 export const List = ({ setCurrentIndex }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
-    const { currentSection } = useDatamodelView();
+    const { currentSection, loadingSection } = useDatamodelView();
     const { groups, filtered, search } = useDatamodelData();
     const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
@@ -163,8 +163,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         }
 
         rowVirtualizer.scrollToIndex(sectionIndex, { 
-            align: 'start',
-            behavior: 'smooth'
+            align: 'start'
         });
 
     }, [flatItems]);
@@ -180,8 +179,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         }
 
         rowVirtualizer.scrollToIndex(groupIndex, { 
-            align: 'start',
-            behavior: 'smooth'
+            align: 'start'
         });
     }, [flatItems]);
 
@@ -208,85 +206,91 @@ export const List = ({ setCurrentIndex }: IListProps) => {
     }, [rowVirtualizer]);
 
     return (
-        <div ref={parentRef} style={{ height: 'calc(100vh - var(--layout-header-desktop-height))', overflow: 'auto' }} className="p-6 relative no-scrollbar">
+        <>
+            <Box className={`absolute w-full h-full flex items-center justify-center z-[100] transition-opacity duration-300 ${loadingSection ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <CircularProgress />
+            </Box>
+            <div ref={parentRef} style={{ height: 'calc(100vh - var(--layout-header-desktop-height))', overflow: 'auto' }} className="relative no-scrollbar">
 
-            {/* Show no results message when searching but no items found */}
-            {flatItems.length === 0 && search && search.length >= 3 && (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                    <div className="text-lg font-medium mb-2">No tables found</div>
-                    <div className="text-sm text-center">
-                        No attributes match your search for &quot;{search}&quot;
-                    </div>
-                </div>
-            )}
-            
-            {/* Virtualized list */}
-            <div
-                style={{
-                    height: `${rowVirtualizer.getTotalSize()}px`,
-                    width: '100%',
-                    position: 'relative',
-                    visibility: flatItems.length === 0 ? 'hidden' : 'visible'
-                }}
-            >
-                {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-                    const item = flatItems[virtualItem.index];
-
-                    return (
-                        <div
-                            key={virtualItem.key}
-                            data-index={virtualItem.index}
-                            style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                transform: `translateY(${virtualItem.start}px)`,
-                            }}
-                            ref={(el) => {
-                                if (el) {
-                                    // trigger remeasurement when content changes and load
-                                    requestAnimationFrame(() => {
-                                        handleSectionResize(virtualItem.index);
-                                    });
-                                }
-                            }}
-                        >
-                            {item.type === 'group' ? (
-                                <div className="flex items-center py-6 my-4">
-                                    <div className="flex-1 h-0.5 bg-gray-200" />
-                                    <Tooltip title="Copy link to this group">
-                                        <div 
-                                            className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
-                                            onClick={() => handleCopyGroupLink(item.group.Name)}
-                                        >
-                                            {item.group.Name}
-                                        </div>
-                                    </Tooltip>
-                                    <div className="flex-1 h-0.5 bg-gray-200" />
-                                </div>
-                            ) : (
-                                <div className="text-sm">
-                                    <Section
-                                        entity={item.entity}
-                                        group={item.group}
-                                        onTabChange={(isChanging: boolean) => {
-                                            isTabSwitching.current = isChanging;
-                                            if (isChanging) {
-                                                // Reset after a short delay to allow for the content change
-                                                setTimeout(() => {
-                                                    isTabSwitching.current = false;
-                                                }, 100);
-                                            }
-                                        }}
-                                        search={search}
-                                    />
-                                </div>
-                            )}
+                {/* Show no results message when searching but no items found */}
+                {flatItems.length === 0 && search && search.length >= 3 && (
+                    <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                        <div className="text-lg font-medium mb-2">No tables found</div>
+                        <div className="text-sm text-center">
+                            No attributes match your search for &quot;{search}&quot;
                         </div>
-                    );
-                })}
+                    </div>
+                )}
+                
+                {/* Virtualized list */}
+                <div
+                    className={`m-6 transition-opacity duration-300 ${loadingSection ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                    style={{
+                        height: `${rowVirtualizer.getTotalSize()}px`,
+                        width: '100%',
+                        position: 'relative',
+                        visibility: flatItems.length === 0 ? 'hidden' : 'visible'
+                    }}
+                >
+                    {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                        const item = flatItems[virtualItem.index];
+
+                        return (
+                            <div
+                                key={virtualItem.key}
+                                data-index={virtualItem.index}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    transform: `translateY(${virtualItem.start}px)`,
+                                }}
+                                ref={(el) => {
+                                    if (el) {
+                                        // trigger remeasurement when content changes and load
+                                        requestAnimationFrame(() => {
+                                            handleSectionResize(virtualItem.index);
+                                        });
+                                    }
+                                }}
+                            >
+                                {item.type === 'group' ? (
+                                    <div className="flex items-center py-6 my-4">
+                                        <div className="flex-1 h-0.5 bg-gray-200" />
+                                        <Tooltip title="Copy link to this group">
+                                            <div 
+                                                className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
+                                                onClick={() => handleCopyGroupLink(item.group.Name)}
+                                            >
+                                                {item.group.Name}
+                                            </div>
+                                        </Tooltip>
+                                        <div className="flex-1 h-0.5 bg-gray-200" />
+                                    </div>
+                                ) : (
+                                    <div className="text-sm">
+                                        <Section
+                                            entity={item.entity}
+                                            group={item.group}
+                                            onTabChange={(isChanging: boolean) => {
+                                                isTabSwitching.current = isChanging;
+                                                if (isChanging) {
+                                                    // Reset after a short delay to allow for the content change
+                                                    setTimeout(() => {
+                                                        isTabSwitching.current = false;
+                                                    }, 100);
+                                                }
+                                            }}
+                                            search={search}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
