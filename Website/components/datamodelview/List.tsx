@@ -159,9 +159,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             return;
         }
 
-        rowVirtualizer.scrollToIndex(sectionIndex, { 
-            align: 'start'
-        });
+        smartScrollToIndex(sectionIndex);
 
     }, [flatItems]);
 
@@ -175,9 +173,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             return;
         }
 
-        rowVirtualizer.scrollToIndex(groupIndex, { 
-            align: 'start'
-        });
+        smartScrollToIndex(groupIndex);
     }, [flatItems]);
 
     const restoreSection = useCallback(() => {
@@ -201,6 +197,23 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             }
         }
     }, [rowVirtualizer]);
+
+    const smartScrollToIndex = useCallback((index: number) => {
+        rowVirtualizer.scrollToIndex(index, { align: 'start' });
+
+        const tryFix = () => {
+            const mounted = rowVirtualizer.getVirtualItems().some(v => v.index === index);
+            if (!mounted) {
+                requestAnimationFrame(tryFix);
+                return;
+            }
+
+            requestAnimationFrame(() => {
+                rowVirtualizer.scrollToIndex(index, { align: 'start' });
+            });
+        };
+        requestAnimationFrame(tryFix);
+        }, [rowVirtualizer]);
 
     return (
         <>
