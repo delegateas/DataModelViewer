@@ -24,6 +24,14 @@ export const HomeView = ({ }: IHomeViewProps) => {
     // Carousel data
     const carouselItems: CarouselItem[] = [
         {
+            image: '/insights.jpg',
+            title: 'Insights are here!',
+            text: "Get insights into your solutions, entities and attributes with the new Insights feature. Analyze your solutions' relationships and shared components to optimize your environment. See bad practices and get recommendations to improve your data model.",
+            type: '(v2.1.0) Feature Release',
+            actionlabel: 'Go to Insights',
+            action: () => router.push('/insights')
+        },
+        {
             image: '/processes.jpg',
             title: 'Webresource support!',
             text: "View your attributes used inside your JS webresources in the Processes Explorer. Now supports the getAttribute method with more to come soon.",
