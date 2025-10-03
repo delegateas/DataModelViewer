@@ -1,7 +1,7 @@
 /// Used in github workflow to generate stubs for data
 /// This file is a stub and should not be modified directly.
 
-import { GroupType } from "@/lib/Types";
+import { GroupType, SolutionType, SolutionWarningType } from "@/lib/Types";
 
 export const LastSynched: Date = new Date();
 export const Logo: string | null = null;
@@ -77,6 +77,22 @@ export let Groups: GroupType[] = [
         "SecurityRoles": [],
         "Keys": [],
         "IconBase64": null
+      }
+    ]
+  }
+];
+
+export let SolutionWarnings: SolutionWarningType[] = [];
+
+export let Solutions: SolutionType[] = [
+  {
+    Name: "Sample Solution",
+    Components: [
+      {
+        Name: "Sample Entity",
+        SchemaName: "sample_entity",
+        Description: "A sample entity for demonstration purposes.",
+        ComponentType: 1
       }
     ]
   }

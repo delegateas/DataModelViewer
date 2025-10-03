@@ -18,8 +18,8 @@ using var loggerFactory = LoggerFactory.Create(builder =>
 var logger = loggerFactory.CreateLogger<DataverseService>();
 
 var dataverseService = new DataverseService(configuration, logger);
-var (entities, warnings) = await dataverseService.GetFilteredMetadata();
+var (entities, warnings, solutions) = await dataverseService.GetFilteredMetadata();
 
-var websiteBuilder = new WebsiteBuilder(configuration, entities, warnings);
+var websiteBuilder = new WebsiteBuilder(configuration, entities, warnings, solutions);
 websiteBuilder.AddData();
 

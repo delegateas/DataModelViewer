@@ -1,12 +1,13 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, ReactNode } from "react";
-import { EntityType, GroupType, SolutionWarningType } from "@/lib/Types";
+import { EntityType, GroupType, SolutionType, SolutionWarningType } from "@/lib/Types";
 import { useSearchParams } from "next/navigation";
 
 interface DatamodelDataState {
   groups: GroupType[];
   warnings: SolutionWarningType[];
+  solutions: SolutionType[];
   search: string;
   filtered: Array<
               | { type: 'group'; group: GroupType }
@@ -17,6 +18,7 @@ interface DatamodelDataState {
 const initialState: DatamodelDataState = {
   groups: [],
   warnings: [],
+  solutions: [],
   search: "",
   filtered: []
 };
@@ -34,6 +36,8 @@ const datamodelDataReducer = (state: DatamodelDataState, action: any): Datamodel
       return { ...state, search: action.payload };
     case "SET_FILTERED":
       return { ...state, filtered: action.payload };
+    case "SET_SOLUTIONS":
+      return { ...state, solutions: action.payload };
     case "APPEND_FILTERED":
       return { ...state, filtered: [...state.filtered, ...action.payload] };
     default:
@@ -55,6 +59,7 @@ export const DatamodelDataProvider = ({ children }: { children: ReactNode }) => 
     worker.onmessage = (e) => {
       dispatch({ type: "SET_GROUPS", payload: e.data.groups || [] });
       dispatch({ type: "SET_WARNINGS", payload: e.data.warnings || [] });
+      dispatch({ type: "SET_SOLUTIONS", payload: e.data.solutions || [] });
       worker.terminate();
     };
     worker.postMessage({});
