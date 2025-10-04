@@ -234,10 +234,10 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                 
                 {/* Virtualized list */}
                 <div
-                    className={`m-6 transition-opacity duration-300 ${loadingSection ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                    className={`mx-6 my-6 transition-opacity duration-300 ${loadingSection ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                     style={{
                         height: `${rowVirtualizer.getTotalSize()}px`,
-                        width: '100%',
+                        width: 'calc(100% - 48px)',
                         position: 'relative',
                         visibility: flatItems.length === 0 ? 'hidden' : 'visible'
                     }}
