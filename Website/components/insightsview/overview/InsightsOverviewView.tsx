@@ -80,7 +80,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                     backgroundSize: "cover",
                     color: 'primary.contrastText',
                     }}>
-                    <Stack direction="column" spacing={2} alignItems="center" justifyContent="center">
+                    <Stack direction="column" spacing={2} justifyContent="center">
                         <Typography 
                             variant="h3" 
                             className="font-bold"
@@ -100,7 +100,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                     : 'none'
                             }}
                         >
-                            All your insights in one place
+                            All your insights in one place. Keep track of your data model's health and status.<br />Stay informed about any potential issues or areas for improvement.
                         </Typography>
                     </Stack>
                 </Box>
@@ -168,7 +168,6 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
 
             {/* // TODO:
-            // Piechart custom tables vs. standard tables
             // Barchart notes enabled and other details
             // Tables with no rules */}
 
