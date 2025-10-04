@@ -164,9 +164,9 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
     };
 
     return (
-        <Paper className="p-6 rounded-2xl" elevation={2}>
-            <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 8 }}>
+        <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 8 }}>
+                <Paper className="p-6 rounded-2xl" elevation={2}>
                     <Typography variant="h4" className="mb-6 font-semibold">
                         Solution Relations
                     </Typography>
@@ -218,54 +218,54 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                             </Typography>
                         </Box>
                     )}
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 4 }}>
-                    <Box className="h-full flex flex-col my-2">
-                        <Typography variant="h6" className="mb-2">
-                            Solution Summary
-                        </Typography>
-                        {selectedSolution && (
-                            <Box className="rounded-lg p-4 flex-grow" sx={{ backgroundColor: "background.default" }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                    <Box className="p-1 w-4 h-4 rounded-md inline-block mr-1" sx={{ backgroundColor: selectedSolution.sourceSolution.color }} />{selectedSolution.sourceSolution.name} -and- <Box className="p-1 w-4 h-4 rounded-md inline-block mr-1" sx={{ backgroundColor: selectedSolution.targetSolution.color }} />{selectedSolution.targetSolution.name}
-                                </Typography>
-                                <Box className="max-h-48 overflow-y-auto">
-                                    {selectedSolution.sharedComponents.length > 0 ? (
-                                        <Box>
-                                            <Typography variant="body2" className="font-semibold" sx={{ mb: 1 }}>
-                                                Shared Components: ({selectedSolution.sharedComponents.length})
-                                            </Typography>
-                                            <ul>
-                                                {selectedSolution.sharedComponents.map(component => (
-                                                    <li key={component.SchemaName}>
-                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                            {component.Name} ({
-                                                                component.ComponentType === SolutionComponentTypeEnum.Entity
-                                                                    ? 'Entity'
-                                                                    : component.ComponentType === SolutionComponentTypeEnum.Attribute
-                                                                    ? 'Attribute'
-                                                                    : component.ComponentType === SolutionComponentTypeEnum.Relationship
-                                                                    ? 'Relationship'
-                                                                    : 'Unknown'
-                                                            })
-                                                        </Typography>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </Box>
-                                    ) : (
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                            No shared components found.
-                                        </Typography>
-                                    )}
-                                </Box>
-                            </Box>
-                        )}
-                    </Box>
-                </Grid>
+                </Paper>
             </Grid>
-        </Paper>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+                <Paper className="p-6 rounded-2xl" elevation={2}>
+                    <Typography variant="h6" className="mb-2">
+                        Solution Summary
+                    </Typography>
+                    {selectedSolution && (
+                        <Box className="rounded-lg p-4 flex-grow" sx={{ backgroundColor: "background.default" }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                <Box className="p-1 w-4 h-4 rounded-md inline-block mr-1" sx={{ backgroundColor: selectedSolution.sourceSolution.color }} />{selectedSolution.sourceSolution.name} -and- <Box className="p-1 w-4 h-4 rounded-md inline-block mr-1" sx={{ backgroundColor: selectedSolution.targetSolution.color }} />{selectedSolution.targetSolution.name}
+                            </Typography>
+                            <Box className="max-h-48 overflow-y-auto">
+                                {selectedSolution.sharedComponents.length > 0 ? (
+                                    <Box>
+                                        <Typography variant="body2" className="font-semibold" sx={{ mb: 1 }}>
+                                            Shared Components: ({selectedSolution.sharedComponents.length})
+                                        </Typography>
+                                        <ul>
+                                            {selectedSolution.sharedComponents.map(component => (
+                                                <li key={component.SchemaName}>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                        {component.Name} ({
+                                                            component.ComponentType === SolutionComponentTypeEnum.Entity
+                                                                ? 'Entity'
+                                                                : component.ComponentType === SolutionComponentTypeEnum.Attribute
+                                                                ? 'Attribute'
+                                                                : component.ComponentType === SolutionComponentTypeEnum.Relationship
+                                                                ? 'Relationship'
+                                                                : 'Unknown'
+                                                        })
+                                                    </Typography>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </Box>
+                                ) : (
+                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                        No shared components found.
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                </Paper>
+            </Grid>
+        </Grid>
     )
 }
 

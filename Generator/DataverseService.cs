@@ -64,7 +64,8 @@ namespace Generator
             var entityRootBehaviour = solutionComponents
                 .Where(x => x.ComponentType == 1)
                 .GroupBy(x => x.ObjectId)
-                .ToDictionary(g => g.Key, g => {
+                .ToDictionary(g => g.Key, g =>
+                {
                     // If any solution includes all attributes (0), use that, otherwise use the first occurrence
                     var behaviors = g.Select(x => x.RootComponentBehavior).ToList();
                     return behaviors.Contains(0) ? 0 : behaviors.First();
@@ -412,6 +413,7 @@ namespace Generator
                     description?.PrettyDescription(),
                     entity.IsAuditEnabled.Value,
                     entity.IsActivity ?? false,
+                    entity.IsCustomEntity ?? false,
                     entity.OwnershipType ?? OwnershipTypes.UserOwned,
                     entity.HasNotes ?? false,
                     attributes,

@@ -10,6 +10,7 @@ internal record Record(
     string? Description,
     bool IsAuditEnabled,
     bool IsActivity,
+    bool IsCustom,
     OwnershipTypes Ownership,
     bool IsNotesEnabled,
     List<Attribute> Attributes,

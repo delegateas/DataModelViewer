@@ -24,8 +24,8 @@ function InsightsRedirect() {
   useEffect(() => {
     const view = searchParams.get('view');
     if (!view) {
-      // Default to solutions view
-      router.replace('/insights?view=solutions');
+      // Default to overview view
+      router.replace('/insights?view=overview');
     }
   }, [router, searchParams]);
 

@@ -41,6 +41,7 @@ export type EntityType = {
     IsAuditEnabled: boolean,
     IsActivity: boolean,
     IsNotesEnabled: boolean,
+    IsCustom: boolean,
     Ownership: OwnershipType,
     Attributes: AttributeType[],
     Relationships: RelationshipType[],
