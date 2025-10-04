@@ -181,8 +181,7 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                         Solution Insights
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'primary.contrastText', mt: 1, maxWidth: 600 }}>
-                        Explore relationships between solutions in your data model. 
-                        The chord diagram below visualizes shared components between different solutions, helping you identify overlaps and dependencies.
+                        Explore your solutions and their interconnections. Identify shared components and understand how your solutions relate to each other.
                     </Typography>
                 </Box>
             </Grid>
@@ -284,7 +283,7 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                             </Box>
                         </Box>
                     ) : (
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        <Typography className="italic" variant="body2" sx={{ color: 'text.secondary' }}>
                             Select a connection in the chord diagram to see details about shared components between solutions.
                         </Typography>
                     )}
