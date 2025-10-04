@@ -1,8 +1,9 @@
 import { useDatamodelData } from '@/contexts/DatamodelDataContext'
-import { Paper, Typography, Box, Divider, Grid } from '@mui/material'
+import { Paper, Typography, Box, Grid, useTheme } from '@mui/material'
 import React, { useMemo, useState } from 'react'
 import { ResponsiveChord, RibbonDatum } from '@nivo/chord'
 import { SolutionComponentType, SolutionComponentTypeEnum } from '@/lib/Types'
+import { generateEnvelopeSVG } from '@/lib/svgart'
 
 interface InsightsSolutionViewProps {
 
@@ -10,6 +11,7 @@ interface InsightsSolutionViewProps {
 
 const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
     const { solutions } = useDatamodelData();
+    const theme = useTheme();
 
     const [selectedSolution, setSelectedSolution] = useState<{ sourceSolution: { name: string; color: string }; targetSolution: { name: string; color: string }; sharedComponents: SolutionComponentType[] } | undefined>(undefined);
 
@@ -165,6 +167,25 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
 
     return (
         <Grid container spacing={2}>
+            <Grid size={12}>
+                <Box className="px-6 py-8 mb-8 rounded-2xl relative flex justify-center h-full flex-col" sx={{ 
+                    backgroundColor: "background.default",
+                    backgroundImage: generateEnvelopeSVG(
+                        theme.palette.primary.main,
+                    ),
+                    backgroundPosition: "center",
+                    backgroundSize: "cover",
+                    color: 'primary.contrastText',
+                }}> 
+                    <Typography variant="h4" className="font-semibold">
+                        Solution Insights
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'primary.contrastText', mt: 1, maxWidth: 600 }}>
+                        Explore relationships between solutions in your data model. 
+                        The chord diagram below visualizes shared components between different solutions, helping you identify overlaps and dependencies.
+                    </Typography>
+                </Box>
+            </Grid>
             <Grid size={{ xs: 12, md: 8 }}>
                 <Paper className="p-6 rounded-2xl" elevation={2}>
                     <Typography variant="h4" className="mb-6 font-semibold">
@@ -187,7 +208,7 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                                 arcOpacity={1}
                                 arcBorderWidth={1}
                                 arcBorderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
-                                arcTooltip={_ => <></>}
+                                arcTooltip={undefined}
                                 ribbonOpacity={0.5}
                                 ribbonBorderWidth={1}
                                 ribbonBorderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
@@ -226,7 +247,7 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                     <Typography variant="h6" className="mb-2">
                         Solution Summary
                     </Typography>
-                    {selectedSolution && (
+                    {selectedSolution ? (
                         <Box className="rounded-lg p-4 flex-grow" sx={{ backgroundColor: "background.default" }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
                                 <Box className="p-1 w-4 h-4 rounded-md inline-block mr-1" sx={{ backgroundColor: selectedSolution.sourceSolution.color }} />{selectedSolution.sourceSolution.name} -and- <Box className="p-1 w-4 h-4 rounded-md inline-block mr-1" sx={{ backgroundColor: selectedSolution.targetSolution.color }} />{selectedSolution.targetSolution.name}
@@ -262,6 +283,10 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                                 )}
                             </Box>
                         </Box>
+                    ) : (
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            Select a connection in the chord diagram to see details about shared components between solutions.
+                        </Typography>
                     )}
                 </Paper>
             </Grid>

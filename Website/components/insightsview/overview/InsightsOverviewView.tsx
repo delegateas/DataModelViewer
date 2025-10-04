@@ -1,7 +1,7 @@
 import { InfoCard } from "@/components/shared/elements/InfoCard";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { ComponentIcon, InfoIcon, ProcessesIcon, SolutionIcon, WarningIcon } from "@/lib/icons";
-import { generateThemedSVG } from "@/lib/svgart";
+import { generateLiquidCheeseSVG } from "@/lib/svgart";
 import { Box, Grid, Paper, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ResponsiveBar } from "@nivo/bar";
 import { useMemo } from "react";
@@ -71,15 +71,12 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             <Grid size={{ xs: 12, md: 7 }}>
                 <Box className="px-6 py-8 mb-8 rounded-2xl relative flex items-center h-full" sx={{ 
                     backgroundColor: "background.default",
-                    backgroundImage: generateThemedSVG(
+                    backgroundImage: generateLiquidCheeseSVG(
                         theme.palette.primary.main,
-                        theme.palette.primary.light,
-                        theme.palette.primary.dark
                     ),
-                    backgroundAttachment: "fixed",
                     backgroundSize: "cover",
                     color: 'primary.contrastText',
-                    }}>
+                }}>
                     <Stack direction="column" spacing={2} justifyContent="center">
                         <Typography 
                             variant="h3" 
@@ -100,7 +97,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                     : 'none'
                             }}
                         >
-                            All your insights in one place. Keep track of your data model's health and status.<br />Stay informed about any potential issues or areas for improvement.
+                            All your insights in one place. Keep track of your data model&apos;s health and status.<br />Stay informed about any potential issues or areas for improvement.
                         </Typography>
                     </Stack>
                 </Box>
@@ -166,11 +163,6 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 />
             </Grid>
 
-
-            {/* // TODO:
-            // Barchart notes enabled and other details
-            // Tables with no rules */}
-
             <Grid size={12}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
                     <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
@@ -197,7 +189,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                             enableLabel={true}
                             labelSkipWidth={12}
                             labelSkipHeight={12}
-                            labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                            labelTextColor={{ from: 'color', modifiers: [['brighter', 3]] }}
                             legends={[
                                 {
                                     dataFrom: 'keys',
