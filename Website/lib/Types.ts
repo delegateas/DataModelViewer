@@ -12,6 +12,18 @@ export type GroupType = {
     Entities: EntityType[]
 }
 
+export type SolutionType = {
+    Name: string,
+    Components: SolutionComponentType[]
+}
+
+export type SolutionComponentType = {
+    Name: string,
+    SchemaName: string,
+    Description: string | null,
+    ComponentType: SolutionComponentTypeEnum,
+}
+
 export const enum OwnershipType {
     None = 0,
     UserOwned = 1,
@@ -29,6 +41,7 @@ export type EntityType = {
     IsAuditEnabled: boolean,
     IsActivity: boolean,
     IsNotesEnabled: boolean,
+    IsCustom: boolean,
     Ownership: OwnershipType,
     Attributes: AttributeType[],
     Relationships: RelationshipType[],
@@ -36,6 +49,12 @@ export type EntityType = {
     Keys: Key[],
     IconBase64: string | null,
     visibleAttributeSchemaNames?: string[],
+}
+
+export const enum SolutionComponentTypeEnum {
+    Entity = 1,
+    Attribute = 2,
+    Relationship = 3,
 }
 
 export const enum RequiredLevel {

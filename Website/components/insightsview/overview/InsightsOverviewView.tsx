@@ -1,0 +1,322 @@
+import { InfoCard } from "@/components/shared/elements/InfoCard";
+import { useDatamodelData } from "@/contexts/DatamodelDataContext";
+import { ComponentIcon, InfoIcon, ProcessesIcon, SolutionIcon, WarningIcon } from "@/lib/icons";
+import { generateLiquidCheeseSVG } from "@/lib/svgart";
+import { Box, Grid, Paper, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import { ResponsiveBar } from "@nivo/bar";
+import { useMemo } from "react";
+
+interface InsightsOverviewViewProps {
+
+}
+
+const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
+    const theme = useTheme();
+
+    const { groups, solutions } = useDatamodelData();
+
+    const totalAttributeUsageCount = useMemo(() => {
+        return groups.reduce((acc, group) => acc + group.Entities.reduce((acc, entity) => acc + entity.Attributes.reduce((acc, attr) => acc + attr.AttributeUsages.length, 0), 0), 0);
+    }, [groups])
+
+    const missingIconEntities = useMemo(() => {
+        const iconsMissing = groups.flatMap(group => group.Entities.filter(entity => !entity.IconBase64));
+        return iconsMissing;
+    }, [groups]);
+
+    const ungroupedEntities = useMemo(() => {
+        const ungrouped = groups.find(g => g.Name.toLowerCase() === "ungrouped");
+        return ungrouped ? ungrouped.Entities : [];
+    }, [groups]);
+
+    const barChartData = useMemo(() => {
+        // Get all entities from all groups
+        const allEntities = groups.flatMap(group => group.Entities);
+        
+        // Count entities
+        const standardEntities = allEntities.filter(entity => !entity.IsCustom);
+        const customEntities = allEntities.filter(entity => entity.IsCustom);
+        
+        // Count attributes
+        const allAttributes = allEntities.flatMap(entity => entity.Attributes);
+        const standardAttributes = allAttributes.filter(attr => !attr.IsCustomAttribute);
+        const customAttributes = allAttributes.filter(attr => attr.IsCustomAttribute);
+        
+        // Count relationships
+        const allRelationships = allEntities.flatMap(entity => entity.Relationships);
+        const standardRelationships = allRelationships.filter(rel => !rel.IsCustom);
+        const customRelationships = allRelationships.filter(rel => rel.IsCustom);
+        
+        return [
+            {
+                category: 'Entities',
+                standard: standardEntities.length,
+                custom: customEntities.length,
+            },
+            {
+                category: 'Attributes', 
+                standard: standardAttributes.length,
+                custom: customAttributes.length,
+            },
+            {
+                category: 'Relationships',
+                standard: standardRelationships.length,
+                custom: customRelationships.length,
+            }
+        ];
+    }, [groups]);
+
+    return (
+        <Grid container spacing={4}>
+            <Grid size={{ xs: 12, md: 7 }}>
+                <Box className="px-6 py-8 mb-8 rounded-2xl relative flex items-center h-full" sx={{ 
+                    backgroundColor: "background.default",
+                    backgroundImage: generateLiquidCheeseSVG(
+                        theme.palette.primary.main,
+                    ),
+                    backgroundSize: "cover",
+                    color: 'primary.contrastText',
+                }}>
+                    <Stack direction="column" spacing={2} justifyContent="center">
+                        <Typography 
+                            variant="h3" 
+                            className="font-bold"
+                            sx={{ 
+                                textShadow: theme.palette.mode === 'light' 
+                                    ? '0 1px 3px rgba(0,0,0,0.3)' 
+                                    : 'none'
+                            }}
+                        >
+                            Insights
+                        </Typography>
+                        <Typography 
+                            variant='body2' 
+                            sx={{ 
+                                textShadow: theme.palette.mode === 'light' 
+                                    ? '0 1px 2px rgba(0,0,0,0.2)' 
+                                    : 'none'
+                            }}
+                        >
+                            All your insights in one place. Keep track of your data model&apos;s health and status.<br />Stay informed about any potential issues or areas for improvement.
+                        </Typography>
+                    </Stack>
+                </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 5 }}>
+                <Paper elevation={0} className="p-4 flex rounded-2xl">
+                    <Stack className="w-full" direction="column" spacing={2} alignItems="center" justifyContent="center">
+                        {/* Ungrouped Entities */}
+                        <Tooltip title={"Entities: " + ungroupedEntities.map(entity => entity.SchemaName).join(", ")}>
+                            <Box className="text-center px-4 py-1 rounded-lg flex items-center w-full" gap={2} sx={{ backgroundColor: 'background.default' }}>
+                                <Box className="h-8 w-8" sx={{ color: 'error.main' }}>{WarningIcon}</Box>
+                                <Typography variant="h4" className="font-semibold p-0 m-0" sx={{ color: 'text.primary' }}>{ungroupedEntities.length}</Typography>
+                                <Typography variant="body2" className="p-0 m-0" sx={{ color: 'text.secondary' }}>Entities ungrouped</Typography>
+                            </Box>
+                        </Tooltip>
+                            
+                        {/* No Icon Entities */}
+                        <Tooltip title={"Entities: " + missingIconEntities.map(entity => entity.SchemaName).join(", ")}>
+                            <Box className="text-center px-4 py-1 rounded-lg flex items-center w-full" gap={2} sx={{ backgroundColor: 'background.default' }}>
+                                <Box className="h-8 w-8" sx={{ color: 'error.main' }}>{WarningIcon}</Box>
+                                <Typography variant="h4" className="font-semibold p-0 m-0" sx={{ color: 'text.primary' }}>{missingIconEntities.length}</Typography>
+                                <Typography variant="body2" className="p-0 m-0" sx={{ color: 'text.secondary' }}>Entities without icons</Typography>
+                            </Box>
+                        </Tooltip>
+                            
+                        {/* No Icon Entities */}
+                        <Tooltip title="">
+                            <Box className="text-center px-4 py-1 rounded-lg flex items-center w-full" gap={2} sx={{ backgroundColor: 'background.default' }}>
+                                <Box className="h-8 w-8" sx={{ color: 'text.disabled' }}>{InfoIcon}</Box>
+                                <Typography variant="h4" className="font-semibold p-0 m-0" sx={{ color: 'text.disabled' }}>0</Typography>
+                                <Typography variant="body2" className="p-0 m-0 italic" sx={{ color: 'text.disabled' }}>More coming soon</Typography>
+                            </Box>
+                        </Tooltip>
+                    </Stack>
+                </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+                <InfoCard 
+                    color="success.main"
+                    title="Solutions"
+                    value={solutions.length}
+                    iconSrc={SolutionIcon}
+                />
+            </Grid>
+            
+            <Grid size={{ xs: 12, md: 4 }}>
+                <InfoCard 
+                    color="primary.main"
+                    title="Components"
+                    value={solutions.reduce((acc, solution) => acc + solution.Components.length, 0)}
+                    iconSrc={ComponentIcon}
+                />
+            </Grid> 
+            
+            <Grid size={{ xs: 12, md: 4 }}>
+                <InfoCard 
+                    color="warning.main"
+                    title="Attribute Usages"
+                    value={totalAttributeUsageCount}
+                    iconSrc={ProcessesIcon}
+                />
+            </Grid>
+
+            <Grid size={12}>
+                <Paper elevation={2} className="p-6 rounded-2xl">
+                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
+                        Data Model Distribution: Standard vs Custom
+                    </Typography>
+                    <Box sx={{ height: 400 }}>
+                        <ResponsiveBar
+                            data={barChartData}
+                            keys={['standard', 'custom']}
+                            indexBy="category"
+                            margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
+                            padding={0.3}
+                            innerPadding={2}
+                            groupMode="grouped"
+                            layout="vertical"
+                            valueScale={{ type: 'linear' }}
+                            indexScale={{ type: 'band', round: true }}
+                            colors={[theme.palette.primary.main, theme.palette.secondary.main]}
+                            borderRadius={4}
+                            borderWidth={1}
+                            borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                            axisTop={null}
+                            axisRight={null}
+                            enableLabel={true}
+                            labelSkipWidth={12}
+                            labelSkipHeight={12}
+                            labelTextColor={{ from: 'color', modifiers: [['brighter', 3]] }}
+                            legends={[
+                                {
+                                    dataFrom: 'keys',
+                                    anchor: 'bottom-right',
+                                    direction: 'column',
+                                    justify: false,
+                                    translateX: 120,
+                                    translateY: 0,
+                                    itemsSpacing: 2,
+                                    itemWidth: 100,
+                                    itemHeight: 20,
+                                    itemDirection: 'left-to-right',
+                                    itemOpacity: 0.85,
+                                    symbolSize: 20,
+                                    effects: [
+                                        {
+                                            on: 'hover',
+                                            style: {
+                                                itemOpacity: 1
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]}
+                            role="application"
+                            ariaLabel="Data model distribution bar chart"
+                            barAriaLabel={e => `${e.id}: ${e.formattedValue} in category: ${e.indexValue}`}
+                            theme={{
+                                background: 'transparent',
+                                text: {
+                                    fontSize: 12,
+                                    fill: theme.palette.text.primary,
+                                    outlineWidth: 0,
+                                    outlineColor: 'transparent'
+                                },
+                                axis: {
+                                    domain: {
+                                        line: {
+                                            stroke: theme.palette.divider,
+                                            strokeWidth: 1
+                                        }
+                                    },
+                                    legend: {
+                                        text: {
+                                            fontSize: 12,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    ticks: {
+                                        line: {
+                                            stroke: theme.palette.divider,
+                                            strokeWidth: 1
+                                        },
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    }
+                                },
+                                grid: {
+                                    line: {
+                                        stroke: theme.palette.divider,
+                                        strokeWidth: 1,
+                                        strokeDasharray: '4 4'
+                                    }
+                                },
+                                legends: {
+                                    title: {
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    text: {
+                                        fontSize: 11,
+                                        fill: theme.palette.text.primary
+                                    },
+                                    ticks: {
+                                        line: {},
+                                        text: {
+                                            fontSize: 10,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    }
+                                },
+                                annotations: {
+                                    text: {
+                                        fontSize: 13,
+                                        fill: theme.palette.text.primary,
+                                        outlineWidth: 2,
+                                        outlineColor: theme.palette.background.default,
+                                        outlineOpacity: 1
+                                    },
+                                    link: {
+                                        stroke: theme.palette.text.primary,
+                                        strokeWidth: 1,
+                                        outlineWidth: 2,
+                                        outlineColor: theme.palette.background.default,
+                                        outlineOpacity: 1
+                                    },
+                                    outline: {
+                                        stroke: theme.palette.text.primary,
+                                        strokeWidth: 2,
+                                        outlineWidth: 2,
+                                        outlineColor: theme.palette.background.default,
+                                        outlineOpacity: 1
+                                    },
+                                    symbol: {
+                                        fill: theme.palette.text.primary,
+                                        outlineWidth: 2,
+                                        outlineColor: theme.palette.background.default,
+                                        outlineOpacity: 1
+                                    }
+                                },
+                                tooltip: {
+                                    container: {
+                                        background: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Paper>
+            </Grid>              
+        </Grid>
+    )
+}
+
+export default InsightsOverviewView;

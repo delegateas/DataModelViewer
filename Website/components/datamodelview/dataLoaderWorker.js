@@ -1,5 +1,5 @@
-import { Groups, SolutionWarnings } from '../../generated/Data';
+import { Groups, SolutionWarnings, Solutions } from '../../generated/Data';
 
 self.onmessage = function() {
-    self.postMessage({ groups: Groups, warnings: SolutionWarnings });
+    self.postMessage({ groups: Groups, warnings: SolutionWarnings, solutions: Solutions });
 }; 

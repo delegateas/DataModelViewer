@@ -54,16 +54,24 @@ namespace Generator
             webResourceAnalyzer = new WebResourceAnalyzer(client, configuration);
         }
 
-        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>)> GetFilteredMetadata()
+        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<Solution>)> GetFilteredMetadata()
         {
             var warnings = new List<SolutionWarning>(); // used to collect warnings for the insights dashboard
-            var (publisherPrefix, solutionIds) = await GetSolutionIds();
-            var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type, rootcomponentbehavior)
+            var (publisherPrefix, solutionIds, solutionEntities) = await GetSolutionIds();
+            var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type, rootcomponentbehavior, solutionid)
 
-            var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).Select(x => x.ObjectId).ToList();
-            var entityRootBehaviour = solutionComponents.Where(x => x.ComponentType == 1).ToDictionary(x => x.ObjectId, x => x.RootComponentBehavior);
+            var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).Select(x => x.ObjectId).Distinct().ToList();
+            var entityRootBehaviour = solutionComponents
+                .Where(x => x.ComponentType == 1)
+                .GroupBy(x => x.ObjectId)
+                .ToDictionary(g => g.Key, g =>
+                {
+                    // If any solution includes all attributes (0), use that, otherwise use the first occurrence
+                    var behaviors = g.Select(x => x.RootComponentBehavior).ToList();
+                    return behaviors.Contains(0) ? 0 : behaviors.First();
+                });
             var attributesInSolution = solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId).ToHashSet();
-            var rolesInSolution = solutionComponents.Where(x => x.ComponentType == 20).Select(x => x.ObjectId).ToList();
+            var rolesInSolution = solutionComponents.Where(x => x.ComponentType == 20).Select(x => x.ObjectId).Distinct().ToList();
 
             var entitiesInSolutionMetadata = await GetEntityMetadata(entitiesInSolution);
 
@@ -154,6 +162,8 @@ namespace Generator
                         .Select(usage =>
                             new AttributeWarning($"{attributeDict.Key} was used inside a {usage.ComponentType} component [{usage.Name}]. However, the entity {entityKey} could not be resolved in the provided solutions.")))));
 
+            // Create solutions with their components
+            var solutions = await CreateSolutions(solutionEntities, solutionComponents, allEntityMetadata);
 
             return (records
                 .Select(x =>
@@ -173,7 +183,142 @@ namespace Generator
                         entityIconMap,
                         attributeUsages,
                         configuration);
-                }), warnings);
+                }),
+                warnings,
+                solutions);
+        }
+
+        private Task<IEnumerable<Solution>> CreateSolutions(
+            List<Entity> solutionEntities,
+            IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId)> solutionComponents,
+            List<EntityMetadata> allEntityMetadata)
+        {
+            var solutions = new List<Solution>();
+
+            // Create lookup dictionaries for faster access
+            var entityLookup = allEntityMetadata.ToDictionary(e => e.MetadataId ?? Guid.Empty, e => e);
+
+            // Group components by solution
+            var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId);
+
+            foreach (var solutionGroup in componentsBySolution)
+            {
+                var solutionId = solutionGroup.Key;
+                var solutionEntity = solutionEntities.FirstOrDefault(s => s.GetAttributeValue<Guid>("solutionid") == solutionId.Id);
+
+                if (solutionEntity == null) continue;
+
+                var solutionName = solutionEntity.GetAttributeValue<string>("friendlyname") ??
+                                  solutionEntity.GetAttributeValue<string>("uniquename") ??
+                                  "Unknown Solution";
+
+                var components = new List<SolutionComponent>();
+
+                foreach (var component in solutionGroup)
+                {
+                    var solutionComponent = CreateSolutionComponent(component, entityLookup, allEntityMetadata);
+                    if (solutionComponent != null)
+                    {
+                        components.Add(solutionComponent);
+                    }
+                }
+
+                solutions.Add(new Solution(solutionName, components));
+            }
+
+            return Task.FromResult(solutions.AsEnumerable());
+        }
+
+        private SolutionComponent? CreateSolutionComponent(
+            (Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId) component,
+            Dictionary<Guid, EntityMetadata> entityLookup,
+            List<EntityMetadata> allEntityMetadata)
+        {
+            try
+            {
+                switch (component.ComponentType)
+                {
+                    case 1: // Entity
+                        // Try to find entity by MetadataId first, then by searching all entities
+                        if (entityLookup.TryGetValue(component.ObjectId, out var entityMetadata))
+                        {
+                            return new SolutionComponent(
+                                entityMetadata.DisplayName?.UserLocalizedLabel?.Label ?? entityMetadata.SchemaName,
+                                entityMetadata.SchemaName,
+                                entityMetadata.Description?.UserLocalizedLabel?.Label ?? string.Empty,
+                                SolutionComponentType.Entity);
+                        }
+
+                        // Entity lookup by ObjectId is complex in Dataverse, so we'll skip the fallback for now
+                        // The primary lookup by MetadataId should handle most cases
+                        break;
+
+                    case 2: // Attribute
+                        // Search for attribute across all entities
+                        foreach (var entity in allEntityMetadata)
+                        {
+                            var attribute = entity.Attributes?.FirstOrDefault(a => a.MetadataId == component.ObjectId);
+                            if (attribute != null)
+                            {
+                                return new SolutionComponent(
+                                    attribute.DisplayName?.UserLocalizedLabel?.Label ?? attribute.SchemaName,
+                                    attribute.SchemaName,
+                                    attribute.Description?.UserLocalizedLabel?.Label ?? string.Empty,
+                                    SolutionComponentType.Attribute);
+                            }
+                        }
+                        break;
+
+                    case 3: // Relationship (if you want to add this to the enum later)
+                        // Search for relationships across all entities
+                        foreach (var entity in allEntityMetadata)
+                        {
+                            // Check one-to-many relationships
+                            var oneToMany = entity.OneToManyRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
+                            if (oneToMany != null)
+                            {
+                                return new SolutionComponent(
+                                    oneToMany.SchemaName,
+                                    oneToMany.SchemaName,
+                                    $"One-to-Many: {entity.SchemaName} -> {oneToMany.ReferencingEntity}",
+                                    SolutionComponentType.Relationship);
+                            }
+
+                            // Check many-to-one relationships
+                            var manyToOne = entity.ManyToOneRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
+                            if (manyToOne != null)
+                            {
+                                return new SolutionComponent(
+                                    manyToOne.SchemaName,
+                                    manyToOne.SchemaName,
+                                    $"Many-to-One: {entity.SchemaName} -> {manyToOne.ReferencedEntity}",
+                                    SolutionComponentType.Relationship);
+                            }
+
+                            // Check many-to-many relationships
+                            var manyToMany = entity.ManyToManyRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
+                            if (manyToMany != null)
+                            {
+                                return new SolutionComponent(
+                                    manyToMany.SchemaName,
+                                    manyToMany.SchemaName,
+                                    $"Many-to-Many: {manyToMany.Entity1LogicalName} <-> {manyToMany.Entity2LogicalName}",
+                                    SolutionComponentType.Relationship);
+                            }
+                        }
+                        break;
+
+                    case 20: // Security Role - skip for now as not in enum
+                    case 92: // SDK Message Processing Step (Plugin) - skip for now as not in enum
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning($"Failed to create solution component for ObjectId {component.ObjectId}, ComponentType {component.ComponentType}: {ex.Message}");
+            }
+
+            return null;
         }
 
         private static Record MakeRecord(
@@ -268,6 +413,7 @@ namespace Generator
                     description?.PrettyDescription(),
                     entity.IsAuditEnabled.Value,
                     entity.IsActivity ?? false,
+                    entity.IsCustomEntity ?? false,
                     entity.OwnershipType ?? OwnershipTypes.UserOwned,
                     entity.HasNotes ?? false,
                     attributes,
@@ -376,7 +522,7 @@ namespace Generator
             return metadata;
         }
 
-        private async Task<(string PublisherPrefix, List<Guid> SolutionIds)> GetSolutionIds()
+        private async Task<(string PublisherPrefix, List<Guid> SolutionIds, List<Entity> SolutionEntities)> GetSolutionIds()
         {
             var solutionNameArg = configuration["DataverseSolutionNames"];
             if (solutionNameArg == null)
@@ -387,7 +533,7 @@ namespace Generator
 
             var resp = await client.RetrieveMultipleAsync(new QueryExpression("solution")
             {
-                ColumnSet = new ColumnSet("publisherid"),
+                ColumnSet = new ColumnSet("publisherid", "friendlyname", "uniquename", "solutionid"),
                 Criteria = new FilterExpression(LogicalOperator.And)
                 {
                     Conditions =
@@ -406,14 +552,14 @@ namespace Generator
 
             var publisher = await client.RetrieveAsync("publisher", publisherIds[0], new ColumnSet("customizationprefix"));
 
-            return (publisher.GetAttributeValue<string>("customizationprefix"), resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList());
+            return (publisher.GetAttributeValue<string>("customizationprefix"), resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList(), resp.Entities.ToList());
         }
 
-        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior)>> GetSolutionComponents(List<Guid> solutionIds)
+        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId)>> GetSolutionComponents(List<Guid> solutionIds)
         {
             var entityQuery = new QueryExpression("solutioncomponent")
             {
-                ColumnSet = new ColumnSet("objectid", "componenttype", "rootcomponentbehavior"),
+                ColumnSet = new ColumnSet("objectid", "componenttype", "rootcomponentbehavior", "solutionid"),
                 Criteria = new FilterExpression(LogicalOperator.And)
                 {
                     Conditions =
@@ -427,7 +573,7 @@ namespace Generator
             return
                 (await client.RetrieveMultipleAsync(entityQuery))
                 .Entities
-                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1))
+                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1, e.GetAttributeValue<EntityReference>("solutionid")))
                 .ToList();
         }
 
