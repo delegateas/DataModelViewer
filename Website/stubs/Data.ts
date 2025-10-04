@@ -18,6 +18,7 @@ export let Groups: GroupType[] = [
         "IsAuditEnabled": true,
         "IsActivity": false,
         "IsNotesEnabled": true,
+        "IsCustom": true,
         "Ownership": 1,
         "Attributes": [
           {
