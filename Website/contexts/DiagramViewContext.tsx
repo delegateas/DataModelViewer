@@ -5,6 +5,8 @@ interface DiagramActions {
   setZoom: (zoom: number) => void;
   setIsPanning: (isPanning: boolean) => void;
   setTranslate: (translate: { x: number; y: number }) => void;
+  addEntity: (position?: { x: number; y: number }, label?: string) => void;
+  getGraph: () => dia.Graph | null;
 }
 
 export interface DiagramState extends DiagramActions {
@@ -23,6 +25,8 @@ const initialState: DiagramState = {
   setZoom: () => { throw new Error("setZoom not initialized yet!"); },
   setIsPanning: () => { throw new Error("setIsPanning not initialized yet!"); },
   setTranslate: () => { throw new Error("setTranslate not initialized yet!"); },
+  addEntity: () => { throw new Error("addEntity not initialized yet!"); },
+  getGraph: () => { throw new Error("getGraph not initialized yet!"); },
 }
 
 type DiagramViewAction =
@@ -61,10 +65,21 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         dispatch({ type: 'SET_TRANSLATE', payload: translate });
     }
 
+    // Refs to store graph and paper instances
+    const graphRef = useRef<dia.Graph | null>(null);
+    const paperRef = useRef<dia.Paper | null>(null);
+
     useEffect(() => {
         if (!diagramViewState.canvas.current) return;
         
         const graph = new dia.Graph({}, { cellNamespace: shapes });
+        graphRef.current = graph;
+        
+        // Theme-aware colors using MUI CSS variables
+        const gridMinorColor = "var(--mui-palette-border-main)";
+        const gridMajorColor = "var(--mui-palette-border-main)";
+        const backgroundColor = 'var(--mui-palette-background-default)';
+
         const paper = new dia.Paper({
             model: graph,
             width: '100%',
@@ -73,12 +88,12 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             drawGrid: {
                 name: 'doubleMesh',
                 args: [
-                    { color: '#f0f0f0', thickness: 1 }, // Minor grid lines
-                    { color: '#d0d0d0', thickness: 2, scaleFactor: 5 } // Major grid lines
+                    { color: gridMinorColor, thickness: 1 }, // Minor grid lines
+                    { color: gridMajorColor, thickness: 2, scaleFactor: 5 } // Major grid lines
                 ]
             },
             background: {
-                color: '#fafafa'
+                color: backgroundColor
             },
             interactive: true,
             snapToGrid: true,
@@ -87,6 +102,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             cellViewNamespace: shapes
         });
 
+        paperRef.current = paper;
         diagramViewState.canvas.current.appendChild(paper.el);
         
         // Variables for panning and zooming
@@ -218,6 +234,8 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
+
+
         // Add event listeners
         const canvas = diagramViewState.canvas.current;
         canvas.addEventListener('mousedown', handleMouseDown);
@@ -239,8 +257,64 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         };
     }, []);
 
+    // Context functions
+    const addEntity = (position?: { x: number; y: number }, label?: string) => {
+        if (graphRef.current && paperRef.current) {
+            const x = position?.x ?? 100;
+            const y = position?.y ?? 100;
+            
+            // Convert position if it's in screen coordinates
+            const paperPoint = paperRef.current.clientToLocalPoint({ x, y });
+            
+            // Theme-aware entity colors using MUI CSS variables
+            const colors = [
+                { fill: 'var(--mui-palette-primary-main)', stroke: 'var(--mui-palette-primary-dark)' },
+                { fill: 'var(--mui-palette-success-main)', stroke: 'var(--mui-palette-success-dark)' },
+                { fill: 'var(--mui-palette-warning-main)', stroke: 'var(--mui-palette-warning-dark)' },
+                { fill: 'var(--mui-palette-error-main)', stroke: 'var(--mui-palette-error-dark)' },
+                { fill: 'var(--mui-palette-secondary-main)', stroke: 'var(--mui-palette-secondary-dark)' },
+                { fill: 'var(--mui-palette-info-main)', stroke: 'var(--mui-palette-info-dark)' },
+            ];
+            
+            const colorIndex = graphRef.current.getCells().length % colors.length;
+            const color = colors[colorIndex];
+            const entityLabel = label || `Entity ${graphRef.current.getCells().length + 1}`;
+            
+            // Theme-aware text color using MUI variables
+            const textColor = 'var(--mui-palette-primary-contrastText)';
+            
+            const rect = new shapes.standard.Rectangle({
+                position: { x: paperPoint.x - 60, y: paperPoint.y - 40 },
+                size: { width: 120, height: 80 },
+                attrs: {
+                    body: {
+                        fill: color.fill,
+                        stroke: color.stroke,
+                        strokeWidth: 2,
+                        rx: 8,
+                        ry: 8
+                    },
+                    label: {
+                        text: entityLabel,
+                        fill: textColor,
+                        fontSize: 14,
+                        fontFamily: 'Arial, sans-serif'
+                    }
+                }
+            });
+            
+            graphRef.current.addCell(rect);
+            return rect;
+        }
+        return null;
+    };
+
+    const getGraph = () => {
+        return graphRef.current;
+    };
+
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning, setTranslate }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning, setTranslate, addEntity, getGraph }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

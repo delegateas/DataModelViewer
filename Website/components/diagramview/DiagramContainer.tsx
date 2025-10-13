@@ -9,7 +9,6 @@ interface IDiagramContainerProps {
 }
 
 export default function DiagramContainer({ }: IDiagramContainerProps) {
-    
     const { canvas } = useDiagramView();
 
     return (
