@@ -83,7 +83,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             { id: 'Notes Enabled', label: 'Notes Enabled', value: notesEnabled },
             { id: 'Notes Disabled', label: 'Notes Disabled', value: notesDisabled },
         ].filter(item => item.value > 0); // Only show categories with values
-    }, [groups, theme.palette]);
+    }, [groups]);
 
     const attributeTypeData = useMemo(() => {
         const allEntities = groups.flatMap(group => group.Entities);
