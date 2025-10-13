@@ -1,7 +1,4 @@
 import { EntityType } from '@/lib/Types';
-import { EntityElement } from '@/components/diagramview/elements/EntityElement';
-
-export type DiagramType = 'simple' | 'detailed';
 
 export interface GridLayoutOptions {
   containerWidth: number;
@@ -10,7 +7,6 @@ export interface GridLayoutOptions {
   entityHeight: number;
   padding: number;
   margin: number;
-  diagramType?: DiagramType;
 }
 
 export interface GridPosition {
@@ -29,23 +25,7 @@ export interface GridLayoutResult {
 /**
  * Calculates the actual height of an entity based on its visible attributes and diagram type
  */
-export const calculateEntityHeight = (entity: EntityType, diagramType: DiagramType = 'detailed'): number => {
-  // For simple diagrams, use fixed small dimensions
-  if (diagramType === 'simple') {
-    return 80; // Fixed height for simple entities
-  }
-  
-  // For detailed diagrams, calculate based on content
-  const { visibleItems } = EntityElement.getVisibleItemsAndPorts(entity);
-  const itemHeight = 28;
-  const itemYSpacing = 8;
-  const addButtonHeight = 32; // Space for add button
-  const headerHeight = 80;
-  const startY = headerHeight + itemYSpacing * 2;
-  
-  // Calculate height including the add button
-  return startY + visibleItems.length * (itemHeight + itemYSpacing) + addButtonHeight + itemYSpacing;
-};
+export const calculateEntityHeight = (): number => { return 80; };
 
 /**
  * Calculates optimal grid layout for entities based on screen aspect ratio
@@ -78,7 +58,7 @@ export const calculateGridLayout = (
     const maxY = Math.max(...existingPositions.map(pos => pos.y + pos.height));
     
     // Get sample entity dimensions for spacing calculations
-    const sampleDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] }, options.diagramType);
+    const sampleDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] });
     
     // Start new entities to the right of existing ones, or on the next row
     startColumn = Math.floor((maxX + padding - margin) / (sampleDimensions.width + padding));
@@ -90,7 +70,7 @@ export const calculateGridLayout = (
   }
 
   // Determine how many columns can fit based on actual entity dimensions
-  const sampleEntityDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] }, options.diagramType);
+  const sampleEntityDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] });
   const actualEntityWidth = sampleEntityDimensions.width;
   const maxColumns = Math.max(1, Math.floor((containerWidth - margin * 2 + padding) / (actualEntityWidth + padding)));
   
@@ -101,7 +81,7 @@ export const calculateGridLayout = (
 
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
-    const entityDimensions = estimateEntityDimensions(entity, options.diagramType);
+    const entityDimensions = estimateEntityDimensions(entity);
     const height = entityDimensions.height;
     const width = entityDimensions.width;
     
@@ -154,7 +134,7 @@ export const calculateGridLayout = (
     }
   }
 
-  const sampleDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] }, options.diagramType);
+  const sampleDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] });
   const gridWidth = Math.min(entities.length, maxColumns) * sampleDimensions.width + (Math.min(entities.length, maxColumns) - 1) * padding;
   const gridHeight = (currentRow + 1) * (sampleDimensions.height + padding) - padding;
 
@@ -171,30 +151,17 @@ export const calculateGridLayout = (
 /**
  * Estimates entity dimensions based on content and diagram type
  */
-export const estimateEntityDimensions = (entity: EntityType, diagramType: DiagramType = 'detailed'): { width: number; height: number } => {
-  if (diagramType === 'simple') {
-    // Fixed dimensions for simple entities
+export const estimateEntityDimensions = (entity: EntityType): { width: number; height: number } => {
     return {
       width: 200,
       height: 80
     };
-  }
-  
-  // Base dimensions for detailed entities
-  const baseWidth = 480; // Match the entity width used in EntityElement
-  const height = calculateEntityHeight(entity, diagramType); // Use actual calculated height
-  
-  return {
-    width: baseWidth,
-    height: height
-  };
 };
 
 /**
  * Gets default layout options based on diagram type
  */
-export const getDefaultLayoutOptions = (diagramType: DiagramType = 'detailed'): GridLayoutOptions => {
-  if (diagramType === 'simple') {
+export const getDefaultLayoutOptions = (): GridLayoutOptions => {
     return {
       containerWidth: 1920,
       containerHeight: 1080,
@@ -202,17 +169,5 @@ export const getDefaultLayoutOptions = (diagramType: DiagramType = 'detailed'): 
       entityHeight: 80, // Smaller height for simple entities
       padding: 40, // Less padding for simple diagrams
       margin: 40, // Less margin for simple diagrams
-      diagramType: 'simple'
     };
-  }
-  
-  return {
-    containerWidth: 1920, // Use a wider default container
-    containerHeight: 1080, // Use a taller default container
-    entityWidth: 480,
-    entityHeight: 400, // This will be overridden by actual calculation
-    padding: 80, // Reduced padding for better space utilization
-    margin: 80,
-    diagramType: 'detailed'
-  };
 }; 

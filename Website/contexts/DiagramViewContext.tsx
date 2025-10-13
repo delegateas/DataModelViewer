@@ -1,33 +1,60 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useDiagram, DiagramState, DiagramActions } from '@/hooks/useDiagram';
+import React, { createContext, useContext, ReactNode, useReducer } from 'react';
 
-interface DiagramViewContextType extends DiagramState, DiagramActions {}
-
-const DiagramViewContext = createContext<DiagramViewContextType | null>(null);
-
-interface DiagramViewProviderProps {
-  children: ReactNode;
+interface DiagramActions {
+  setZoom: (zoom: number) => void;
+  setIsPanning: (isPanning: boolean) => void;
 }
 
-export const DiagramViewProvider: React.FC<DiagramViewProviderProps> = ({ children }) => {
-  const diagramViewState = useDiagram();
+export interface DiagramState extends DiagramActions {
+  zoom: number;
+  isPanning: boolean;
+}
 
-  return (
-    <DiagramViewContext.Provider value={diagramViewState}>
-      {children}
-    </DiagramViewContext.Provider>
-  );
-};
+const initialState: DiagramState = {
+  zoom: 1,
+  isPanning: false,
+  
+  setZoom: () => { throw new Error("setZoom not initialized yet!"); },
+  setIsPanning: () => { throw new Error("setIsPanning not initialized yet!"); },
+}
 
-export const useDiagramViewContext = (): DiagramViewContextType => {
-  const context = useContext(DiagramViewContext);
-  if (!context) {
-    throw new Error('useDiagramViewContext must be used within a DiagramViewProvider');
+type DiagramViewAction =
+  | { type: 'SET_ZOOM', payload: number }
+  | { type: 'SET_IS_PANNING', payload: boolean };
+
+const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): DiagramState => {
+  switch (action.type) {
+    case 'SET_ZOOM':
+      return { ...state, zoom: action.payload }
+    case 'SET_IS_PANNING':
+      return { ...state, isPanning: action.payload }
+    default:
+      return state;
   }
-  return context;
-};
+}
 
-export const useDiagramViewContextSafe = (): DiagramViewContextType | null => {
-  const context = useContext(DiagramViewContext);
-  return context;
-}; 
+const DiagramViewContext = createContext<DiagramState>(initialState);
+const DiagramViewDispatcher = createContext<React.Dispatch<DiagramViewAction>>(() => { });
+
+export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
+    const [diagramViewState, dispatch] = useReducer(diagramViewReducer, initialState);
+
+    const setZoom = (zoom: number) => {
+        dispatch({ type: 'SET_ZOOM', payload: zoom });
+    }
+
+    const setIsPanning = (isPanning: boolean) => {
+        dispatch({ type: 'SET_IS_PANNING', payload: isPanning });
+    }
+
+    return (
+        <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning }}>
+            <DiagramViewDispatcher.Provider value={dispatch}>
+                {children}
+            </DiagramViewDispatcher.Provider>
+        </DiagramViewContext.Provider>
+    )
+}
+
+export const useDiagramView = () => useContext(DiagramViewContext);
+export const useDiagramViewDispatch = () => useContext(DiagramViewDispatcher);

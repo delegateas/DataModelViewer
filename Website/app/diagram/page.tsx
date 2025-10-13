@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <Suspense>
       <DiagramViewProvider>
-        <Layout>
+        <Layout ignoreMargins={true}>
           <DiagramView />
         </Layout>
       </DiagramViewProvider>

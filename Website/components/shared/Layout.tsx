@@ -12,9 +12,10 @@ interface LayoutProps {
   children: ReactNode;
   className?: string;
   showSidebarContent?: boolean;
+  ignoreMargins?: boolean;
 }
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children, ignoreMargins = false }: LayoutProps) => {
   const { isOpen: sidebarOpen, close } = useSidebar();
   const isMobile = useIsMobile();
   const { isAuthenticated } = useAuth();
@@ -50,7 +51,7 @@ const Layout = ({ children }: LayoutProps) => {
       <Box className="flex flex-col flex-1 min-w-0 relative h-screen">
         <Header />
         <Box className="flex-1 overflow-y-auto" sx={{ backgroundColor: 'background.default' }}>
-          <Container maxWidth="xl" className='h-full w-full'>
+          <Container maxWidth="xl" disableGutters={ignoreMargins} className="h-full w-full" sx={ignoreMargins ? { padding: 0, margin: 0 } : {}}>
             {children}
           </Container>
         </Box>
