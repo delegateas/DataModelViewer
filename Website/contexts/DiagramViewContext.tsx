@@ -224,49 +224,6 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
         canvas.addEventListener('wheel', handleWheel, { passive: false });
-
-        // Add some sample elements
-        const rect = new shapes.standard.Rectangle({
-            position: { x: 100, y: 50 },
-            size: { width: 120, height: 80 },
-            attrs: {
-                body: {
-                    fill: '#3b82f6',
-                    stroke: '#1e40af',
-                    strokeWidth: 2,
-                    rx: 8,
-                    ry: 8
-                },
-                label: {
-                    text: 'Sample Entity',
-                    fill: 'white',
-                    fontSize: 14,
-                    fontFamily: 'Arial, sans-serif'
-                }
-            }
-        });
-
-        const rect2 = new shapes.standard.Rectangle({
-            position: { x: 300, y: 200 },
-            size: { width: 120, height: 80 },
-            attrs: {
-                body: {
-                    fill: '#10b981',
-                    stroke: '#059669',
-                    strokeWidth: 2,
-                    rx: 8,
-                    ry: 8
-                },
-                label: {
-                    text: 'Another Entity',
-                    fill: 'white',
-                    fontSize: 14,
-                    fontFamily: 'Arial, sans-serif'
-                }
-            }
-        });
-
-        graph.addCells([rect, rect2]);
         
         // Unfreeze and render the paper to make it interactive
         paper.render();
