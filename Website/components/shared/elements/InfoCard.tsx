@@ -46,7 +46,7 @@ export const InfoCard = ({
     return (
         <Paper elevation={2} className="p-4 flex rounded-2xl items-center justify-between overflow-hidden">
             <Box className="flex flex-col ml-4">
-                <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
+                <Typography variant="subtitle1" className="text-nowrap" sx={{ color: 'text.secondary' }}>
                     {title}
                 </Typography>
                 <Typography variant="h4" className='py-2 font-semibold' sx={{ color: 'text.primary' }}>

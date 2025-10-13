@@ -4,6 +4,7 @@ import { ComponentIcon, InfoIcon, ProcessesIcon, SolutionIcon, WarningIcon } fro
 import { generateLiquidCheeseSVG } from "@/lib/svgart";
 import { Box, Grid, Paper, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ResponsiveBar } from "@nivo/bar";
+import { ResponsivePie } from "@nivo/pie";
 import { useMemo } from "react";
 
 interface InsightsOverviewViewProps {
@@ -65,6 +66,42 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             }
         ];
     }, [groups]);
+
+    const entityFeaturesData = useMemo(() => {
+        const allEntities = groups.flatMap(group => group.Entities);
+        
+        const auditEnabled = allEntities.filter(entity => entity.IsAuditEnabled).length;
+        const auditDisabled = allEntities.filter(entity => !entity.IsAuditEnabled).length;
+        const activities = allEntities.filter(entity => entity.IsActivity).length;
+        const notesEnabled = allEntities.filter(entity => entity.IsNotesEnabled).length;
+        const notesDisabled = allEntities.filter(entity => !entity.IsNotesEnabled).length;
+
+        return [
+            { id: 'Audit Enabled', label: 'Audit Enabled', value: auditEnabled },
+            { id: 'Audit Disabled', label: 'Audit Disabled', value: auditDisabled },
+            { id: 'Activities', label: 'Activities', value: activities },
+            { id: 'Notes Enabled', label: 'Notes Enabled', value: notesEnabled },
+            { id: 'Notes Disabled', label: 'Notes Disabled', value: notesDisabled },
+        ].filter(item => item.value > 0); // Only show categories with values
+    }, [groups]);
+
+    const attributeTypeData = useMemo(() => {
+        const allEntities = groups.flatMap(group => group.Entities);
+        const allAttributes = allEntities.flatMap(entity => entity.Attributes);
+        
+        // Count attribute types
+        const attributeTypeCounts = allAttributes.reduce((acc, attr) => {
+            const type = attr.AttributeType;
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        return Object.entries(attributeTypeCounts).map(([type, count]) => ({
+            id: type.replace('Attribute', ''),
+            label: type.replace('Attribute', ''),
+            value: count
+        }));
+    }, [groups, theme.palette]);
 
     return (
         <Grid container spacing={4}>
@@ -180,7 +217,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                             layout="vertical"
                             valueScale={{ type: 'linear' }}
                             indexScale={{ type: 'band', round: true }}
-                            colors={[theme.palette.primary.main, theme.palette.secondary.main]}
+                            colors={{ scheme: "blues" }}
                             borderRadius={4}
                             borderWidth={1}
                             borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
@@ -189,7 +226,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                             enableLabel={true}
                             labelSkipWidth={12}
                             labelSkipHeight={12}
-                            labelTextColor={{ from: 'color', modifiers: [['brighter', 3]] }}
+                            labelTextColor={{ from: 'color', modifiers: [['darker', 3]] }}
                             legends={[
                                 {
                                     dataFrom: 'keys',
@@ -303,6 +340,104 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                         outlineColor: theme.palette.background.default,
                                         outlineOpacity: 1
                                     }
+                                },
+                                tooltip: {
+                                    container: {
+                                        background: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                <Paper elevation={2} className="p-6 rounded-2xl">
+                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
+                        Entity Features Distribution
+                    </Typography>
+                    <Box sx={{ height: 400 }}>
+                        <ResponsivePie
+                            data={entityFeaturesData}
+                            margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                            innerRadius={0.5}
+                            padAngle={0.7}
+                            cornerRadius={3}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "blues" }}
+                            borderWidth={1}
+                            borderColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 0.2]
+                                ]
+                            }}
+                            arcLinkLabelsTextColor={theme.palette.text.primary}
+                            arcLinkLabelsThickness={2}
+                            arcLinkLabelsColor={{ from: 'color' }}
+                            arcLabelsSkipAngle={10}
+                            arcLabelsTextColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 2]
+                                ]
+                            }}
+                            theme={{
+                                background: 'transparent',
+                                text: {
+                                    fontSize: 12,
+                                    fill: theme.palette.text.primary,
+                                },
+                                tooltip: {
+                                    container: {
+                                        background: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                <Paper elevation={2} className="p-6 rounded-2xl">
+                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
+                        Attribute Types Distribution
+                    </Typography>
+                    <Box sx={{ height: 400 }}>
+                        <ResponsivePie
+                            data={attributeTypeData}
+                            margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                            innerRadius={0.5}
+                            padAngle={0.7}
+                            cornerRadius={3}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "blues" }}
+                            borderWidth={1}
+                            borderColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 0.2]
+                                ]
+                            }}
+                            arcLinkLabelsTextColor={theme.palette.text.primary}
+                            arcLinkLabelsThickness={2}
+                            arcLinkLabelsColor={{ from: 'color' }}
+                            arcLabelsSkipAngle={10}
+                            arcLabelsTextColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 2]
+                                ]
+                            }}
+                            theme={{
+                                background: 'transparent',
+                                text: {
+                                    fontSize: 12,
+                                    fill: theme.palette.text.primary,
                                 },
                                 tooltip: {
                                     container: {
