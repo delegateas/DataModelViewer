@@ -1,22 +1,17 @@
-## [2.1.0] - 2025-10-04
+## [2.1.1] - 2025-10-13
 
 ### Features
 
-* Merge pull request #66 from delegateas/features/insights-page ([0836827](https://github.com/delegateas/DataModelViewer/commit/0836827))
-* insights overview page with alerts, and highlight numbers ([33b5cf7](https://github.com/delegateas/DataModelViewer/commit/33b5cf7))
-* News post for insights page ([e69bb0f](https://github.com/delegateas/DataModelViewer/commit/e69bb0f))
-* Chord diagram to show solution relations ([1914be8](https://github.com/delegateas/DataModelViewer/commit/1914be8))
-* frontend preperations for solutions ([8251d81](https://github.com/delegateas/DataModelViewer/commit/8251d81))
+* Merge pull request #67 from delegateas/features/insights-patch-01 ([fb98ecc](https://github.com/delegateas/DataModelViewer/commit/fb98ecc))
+* additional pie charts with feature and attribute distributions ([690ae86](https://github.com/delegateas/DataModelViewer/commit/690ae86))
 
 ### Bug Fixes
 
-* builderror ([9b4afaa](https://github.com/delegateas/DataModelViewer/commit/9b4afaa))
-* removed horz scroll overflow on the list component ([0b3289f](https://github.com/delegateas/DataModelViewer/commit/0b3289f))
-* security improvement. Redirect to login for ended sessions for all routes ([d353ac8](https://github.com/delegateas/DataModelViewer/commit/d353ac8))
+* dont skip labels for small pie bits ([25cfc26](https://github.com/delegateas/DataModelViewer/commit/25cfc26))
 
 ### Other Changes
 
-* description change on solution insight ([968c795](https://github.com/delegateas/DataModelViewer/commit/968c795))
-* ESLint fixes and touchups ([b3d9d14](https://github.com/delegateas/DataModelViewer/commit/b3d9d14))
+* removed unnes memo dependency ([9b1aff8](https://github.com/delegateas/DataModelViewer/commit/9b1aff8))
+* removed textwrap from infocard ([ed96a67](https://github.com/delegateas/DataModelViewer/commit/ed96a67))
 
 
