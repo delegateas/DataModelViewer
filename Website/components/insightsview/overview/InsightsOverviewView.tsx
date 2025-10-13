@@ -96,7 +96,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             return acc;
         }, {} as Record<string, number>);
 
-        return Object.entries(attributeTypeCounts).map(([type, count], index) => ({
+        return Object.entries(attributeTypeCounts).map(([type, count]) => ({
             id: type.replace('Attribute', ''),
             label: type.replace('Attribute', ''),
             value: count
@@ -374,7 +374,6 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                     ['darker', 0.2]
                                 ]
                             }}
-                            arcLinkLabelsSkipAngle={10}
                             arcLinkLabelsTextColor={theme.palette.text.primary}
                             arcLinkLabelsThickness={2}
                             arcLinkLabelsColor={{ from: 'color' }}
@@ -424,7 +423,6 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                     ['darker', 0.2]
                                 ]
                             }}
-                            arcLinkLabelsSkipAngle={10}
                             arcLinkLabelsTextColor={theme.palette.text.primary}
                             arcLinkLabelsThickness={2}
                             arcLinkLabelsColor={{ from: 'color' }}
