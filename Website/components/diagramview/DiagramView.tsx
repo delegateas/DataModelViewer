@@ -3,7 +3,7 @@
 import { useSidebar } from "@/contexts/SidebarContext";
 import React, { useEffect } from "react";
 import { SidebarDiagramView } from "./SidebarDiagramView";
-import { Box } from "@mui/material";
+import DiagramContainer from "./DiagramContainer";
 
 interface IDiagramViewProps {
 
@@ -18,8 +18,6 @@ export default function DiagramView({ }: IDiagramViewProps) {
     }, [])
 
     return (
-        <Box>
-            Hello
-        </Box>
+        <DiagramContainer />
     );
 }
