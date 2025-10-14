@@ -50,10 +50,6 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           value: '~20'
         }
         {
-          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-          value: 'false'
-        }
-        {
           name: 'ADO_ORGANIZATION_URL'
           value: adoOrganizationUrl
         }
