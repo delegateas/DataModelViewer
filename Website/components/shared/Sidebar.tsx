@@ -191,7 +191,7 @@ const Sidebar = ({ }: SidebarProps) => {
                     </Link>
                   </Badge>
                 </Box>
-                </Tooltip>
+              </Tooltip>
             ))}
         </Box>
         {isOpen && element != null && (

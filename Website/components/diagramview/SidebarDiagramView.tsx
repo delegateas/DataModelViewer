@@ -35,41 +35,43 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     ];
 
     return (
-        <Box className="w-full h-full p-4">
-            <Typography 
-                variant="h6" 
-                className="font-semibold"
-                sx={{ color: 'text.primary' }}
-            >
-                Diagram Tools
-            </Typography>
+        <Box className="w-full h-full">
+            <Box className="max-h-16 h-16 p-4 border-b" sx={{ borderColor: 'border.main' }}>
+                <Typography 
+                    variant="h6" 
+                    className="font-semibold"
+                    sx={{ color: 'text.primary' }}
+                >
+                    Diagram Tools
+                </Typography>
+            </Box>
 
-            <Divider className='my-2' />
+            <Box className="p-4 space-y-2">
+                <Typography variant='body1'>
+                    Elements
+                </Typography>
+                
+                <Grid container spacing={1}>
+                    {diagramTools.map((tool) => (
+                        <Grid size={6} key={tool.id}>
+                            <Tooltip title={tool.label} placement="top">
+                                <Box
+                                    onClick={tool.action}
+                                    className='h-12 w-12 p-2 hover:cursor-pointer'
+                                    sx={{ color: "primary.main", backgroundColor: "transparent" }}
+                                >
+                                    {tool.icon}
+                                </Box>
+                            </Tooltip>
+                        </Grid>
+                    ))}
+                </Grid>
 
-            <Typography variant='body1'>
-                Elements
-            </Typography>
-            
-            <Grid container spacing={1}>
-                {diagramTools.map((tool) => (
-                    <Grid size={6} key={tool.id}>
-                        <Tooltip title={tool.label} placement="top">
-                            <Box
-                                onClick={tool.action}
-                                className='h-12 w-12 p-2 hover:cursor-pointer'
-                                sx={{ color: "primary.main", backgroundColor: "transparent" }}
-                            >
-                                {tool.icon}
-                            </Box>
-                        </Tooltip>
-                    </Grid>
-                ))}
-            </Grid>
-
-            <EntitySelectionPane 
-                open={entityPaneOpen} 
-                onClose={handleClosePane} 
-            />
+                <EntitySelectionPane 
+                    open={entityPaneOpen} 
+                    onClose={handleClosePane} 
+                />
+            </Box>
         </Box>
     );
 }

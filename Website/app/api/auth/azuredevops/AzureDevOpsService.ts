@@ -2,7 +2,7 @@ import { managedAuth } from './ManagedIdentityAuthService';
 
 interface CreateFileOptions {
     filePath: string;
-    content: string; // Will be JSON.stringify'd
+    content: string;
     commitMessage?: string;
     branch?: string;
     repositoryName?: string; // Optional override
@@ -99,8 +99,7 @@ export async function createFileInRepo(options: CreateFileOptions): Promise<GitC
         const repositoryId = await getRepositoryId(repositoryName);
 
         // Convert content to JSON string and then to base64
-        const jsonContent = JSON.stringify(content, null, 2);
-        const base64Content = Buffer.from(jsonContent).toString('base64');
+        const base64Content = Buffer.from(content).toString('base64');
 
         // Get the latest commit ID for the branch (needed for push operation)
         const refsUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryId}/refs?filter=heads/${branch}&api-version=7.0`;

@@ -48,7 +48,7 @@ class ManagedIdentityAuth {
 
     async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<Response> {
         const token = await this.getAccessToken();
-        
+         
         return fetch(url, {
             ...options,
             headers: {
