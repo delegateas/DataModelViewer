@@ -2,7 +2,7 @@ import { managedAuth } from './ManagedIdentityAuthService';
 
 interface CreateFileOptions {
     filePath: string;
-    content: any; // Will be JSON.stringify'd
+    content: string; // Will be JSON.stringify'd
     commitMessage?: string;
     branch?: string;
     repositoryName?: string; // Optional override
@@ -38,7 +38,7 @@ interface GitCommitResponse {
 }
 
 class AzureDevOpsError extends Error {
-    constructor(message: string, public statusCode?: number, public response?: any) {
+    constructor(message: string, public statusCode?: number, public response?: unknown) {
         super(message);
         this.name = 'AzureDevOpsError';
     }
@@ -183,7 +183,7 @@ export async function createFileInRepo(options: CreateFileOptions): Promise<GitC
  * @param options Configuration for file loading
  * @returns Promise with parsed JSON content
  */
-export async function loadFileFromRepo<T = any>(options: LoadFileOptions): Promise<T> {
+export async function loadFileFromRepo<T>(options: LoadFileOptions): Promise<T> {
     const {
         filePath,
         branch = 'main',
