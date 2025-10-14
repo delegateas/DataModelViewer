@@ -67,6 +67,16 @@ steps:
     workingDirectory: $(Build.SourcesDirectory)/Website
     displayName: "Build Next.js app"
 
+  - script: |
+      Write-Host "Cleaning up node_modules before packaging..."
+      Remove-Item -Path "$(Build.SourcesDirectory)/Website/.next/standalone/node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -Path "$(Build.SourcesDirectory)/Website/node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+      
+      # List contents to verify
+      Write-Host "Contents of standalone folder:"
+      Get-ChildItem "$(Build.SourcesDirectory)/Website/.next/standalone" -Recurse | Select-Object Name, Length
+    workingDirectory: $(Build.SourcesDirectory)/Website
+    displayName: "Clean node_modules"
 
   - task: ArchiveFiles@2
     inputs:
