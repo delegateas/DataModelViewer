@@ -58,7 +58,7 @@ export const calculateGridLayout = (
     const maxY = Math.max(...existingPositions.map(pos => pos.y + pos.height));
     
     // Get sample entity dimensions for spacing calculations
-    const sampleDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] });
+    const sampleDimensions = estimateEntityDimensions();
     
     // Start new entities to the right of existing ones, or on the next row
     startColumn = Math.floor((maxX + padding - margin) / (sampleDimensions.width + padding));
@@ -70,7 +70,7 @@ export const calculateGridLayout = (
   }
 
   // Determine how many columns can fit based on actual entity dimensions
-  const sampleEntityDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] });
+  const sampleEntityDimensions = estimateEntityDimensions();
   const actualEntityWidth = sampleEntityDimensions.width;
   const maxColumns = Math.max(1, Math.floor((containerWidth - margin * 2 + padding) / (actualEntityWidth + padding)));
   
@@ -80,8 +80,7 @@ export const calculateGridLayout = (
   let currentRow = startRow;
 
   for (let i = 0; i < entities.length; i++) {
-    const entity = entities[i];
-    const entityDimensions = estimateEntityDimensions(entity);
+    const entityDimensions = estimateEntityDimensions();
     const height = entityDimensions.height;
     const width = entityDimensions.width;
     
@@ -134,7 +133,7 @@ export const calculateGridLayout = (
     }
   }
 
-  const sampleDimensions = estimateEntityDimensions(entities[0] || { Attributes: [] });
+  const sampleDimensions = estimateEntityDimensions();
   const gridWidth = Math.min(entities.length, maxColumns) * sampleDimensions.width + (Math.min(entities.length, maxColumns) - 1) * padding;
   const gridHeight = (currentRow + 1) * (sampleDimensions.height + padding) - padding;
 
@@ -151,7 +150,7 @@ export const calculateGridLayout = (
 /**
  * Estimates entity dimensions based on content and diagram type
  */
-export const estimateEntityDimensions = (entity: EntityType): { width: number; height: number } => {
+export const estimateEntityDimensions = (): { width: number; height: number } => {
     return {
       width: 200,
       height: 80

@@ -1,6 +1,5 @@
-import { Box, IconButton, Tooltip, Typography, Grid, Divider } from '@mui/material';
+import { Box, Tooltip, Typography, Grid, Divider } from '@mui/material';
 import React, { useState } from 'react';
-import { useDiagramView } from '@/contexts/DiagramViewContext';
 import { AddSquareIcon } from '@/lib/icons';
 import { EntitySelectionPane } from './panes/EntitySelectionPane';
 
