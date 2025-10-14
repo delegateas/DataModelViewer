@@ -1,5 +1,13 @@
 import { dia } from '@joint/core';
 
+interface SerializedEntity {
+    id: string;
+    type: string;
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    label: string;
+}
+
 export interface SerializedDiagram {
     id: string;
     name: string;
@@ -11,13 +19,7 @@ export interface SerializedDiagram {
         translate: { x: number; y: number };
         canvasSize: { width: number; height: number };
     };
-    entities: Array<{
-        id: string;
-        type: string;
-        position: { x: number; y: number };
-        size: { width: number; height: number };
-        label: string;
-    }>;
+    entities: SerializedEntity[];
 }
 
 export class DiagramSerializationService {
@@ -31,7 +33,7 @@ export class DiagramSerializationService {
         }
 
         const cells = graph.getCells();
-        const entities: any[] = [];
+        const entities: SerializedEntity[] = [];
 
         cells.forEach((cell) => {
             if (cell.isElement()) {
@@ -42,7 +44,7 @@ export class DiagramSerializationService {
                 const attrs = element.attributes.attrs || {};
                 
                 entities.push({
-                    id: element.id,
+                    id: element.id.toString(),
                     type: element.attributes.type || 'standard.Rectangle',
                     position: { x: position.x, y: position.y },
                     size: { width: size.width, height: size.height },
@@ -66,7 +68,7 @@ export class DiagramSerializationService {
         };
     }
 
-    static async saveDiagram(diagramData: SerializedDiagram): Promise<any> {
+    static async saveDiagram(diagramData: SerializedDiagram): Promise<object> {
         const response = await fetch('/api/diagram/save', {
             method: 'POST',
             headers: {

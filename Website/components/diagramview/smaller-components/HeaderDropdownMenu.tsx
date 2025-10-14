@@ -6,7 +6,6 @@ import {
     MenuItem,
     ListItemIcon,
     ListItemText,
-    Divider,
     Typography
 } from '@mui/material';
 import HeaderMenuItem from './HeaderMenuItem';
@@ -81,7 +80,7 @@ export const HeaderDropdownMenu: React.FC<HeaderDropdownMenuProps> = ({
                     borderRadius: '16px',
                 }}
             >
-                {menuItems.map((item, index) => (
+                {menuItems.map((item) => (
                     <MenuItem
                         key={item.id}
                         onClick={() => handleMenuItemClick(item.action)}

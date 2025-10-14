@@ -19,14 +19,8 @@ export const useDiagramSave = () => {
             const result = await DiagramSerializationService.saveDiagram(diagramData);
             
             console.log('Diagram saved successfully:', result);
-            
-            // TODO: Show success notification to user
-            alert(`Diagram saved successfully as ${result.fileName}`);
-            
         } catch (error) {
             console.error('Error saving diagram:', error);
-            // TODO: Show error notification to user
-            alert(`Failed to save diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsSaving(false);
             setShowSaveModal(false);

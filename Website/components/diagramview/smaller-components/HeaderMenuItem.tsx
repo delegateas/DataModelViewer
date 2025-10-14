@@ -1,4 +1,4 @@
-import { Tooltip, Box, Badge, alpha, Typography, Button } from '@mui/material';
+import { Tooltip, Box, Badge, alpha, Typography } from '@mui/material';
 import React from 'react'
 
 interface IHeaderMenuItemProps {
