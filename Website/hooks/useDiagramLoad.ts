@@ -16,8 +16,6 @@ export const useDiagramLoad = () => {
             setAvailableDiagrams(diagrams);
         } catch (error) {
             console.error('Error loading diagram list:', error);
-            // TODO: Show error notification to user
-            alert(`Failed to load diagram list: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsLoadingList(false);
         }
@@ -40,20 +38,13 @@ export const useDiagramLoad = () => {
                 setLoadedDiagram,
                 diagramData.name || 'Untitled',
                 'cloud',
-                filePath // Pass the filePath for cloud diagrams
+                filePath
             );
-            
-            console.log('Diagram loaded successfully from cloud:', diagramData.name);
-            
-            // TODO: Show success notification to user
-            alert(`Diagram "${diagramData.name}" loaded successfully`);
             
             setShowLoadModal(false);
             
         } catch (error) {
             console.error('Error loading diagram from cloud:', error);
-            // TODO: Show error notification to user
-            alert(`Failed to load diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsLoading(false);
         }
@@ -76,18 +67,10 @@ export const useDiagramLoad = () => {
                 setLoadedDiagram,
                 file.name.replace('.json', ''),
                 'file',
-                undefined // No filePath for local files
+                undefined
             );
-            
-            console.log('Diagram loaded successfully from file:', diagramData.name);
-            
-            // TODO: Show success notification to user
-            alert(`Diagram "${diagramData.name}" loaded successfully from file`);
-            
         } catch (error) {
             console.error('Error loading diagram from file:', error);
-            // TODO: Show error notification to user
-            alert(`Failed to load diagram from file: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsLoading(false);
         }

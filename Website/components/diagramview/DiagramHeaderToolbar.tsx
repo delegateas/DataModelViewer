@@ -9,7 +9,8 @@ import { LoadDiagramModal } from './modals/LoadDiagramModal';
 import { useDiagramSave } from '@/hooks/useDiagramSave';
 import { useDiagramLoad } from '@/hooks/useDiagramLoad';
 import { useDiagramView } from '@/contexts/DiagramViewContext';
-import { CheckRounded, ErrorRounded } from '@mui/icons-material';
+import { useRepositoryInfo } from '@/hooks/useRepositoryInfo';
+import { CheckRounded, ErrorRounded, WarningRounded } from '@mui/icons-material';
 
 interface IDiagramHeaderToolbarProps {
     // No props needed - actions are handled internally
@@ -28,6 +29,7 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
         openLoadModal, 
         closeLoadModal 
     } = useDiagramLoad();
+    const { isCloudConfigured, isLoading: isRepoInfoLoading } = useRepositoryInfo();
 
     const theme = useTheme();
 
@@ -45,21 +47,21 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
             label: 'Save to Cloud',
             icon: CloudSaveIcon,
             action: saveDiagramToCloud,
-            disabled: isSaving || !hasLoadedDiagram || loadedDiagramSource !== 'cloud',
+            disabled: !isCloudConfigured || isSaving || !hasLoadedDiagram || loadedDiagramSource !== 'cloud',
         },
         {
             id: 'save-new',
             label: 'Create in Cloud',
             icon: CloudNewIcon,
             action: saveDiagramLocally,
-            disabled: isSaving
+            disabled: !isCloudConfigured || isSaving
         },
         {
             id: 'load',
             label: 'Load from Cloud',
             icon: CloudLoadIcon,
             action: openLoadModal, 
-            disabled: isLoading,
+            disabled: !isCloudConfigured || isLoading,
             dividerAfter: true,
         },
         {
@@ -84,7 +86,44 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
                     />
                 </Box>
 
-                <Chip size='small' icon={!hasLoadedDiagram ? <ErrorRounded /> : <CheckRounded />} label={hasLoadedDiagram ? 'Diagram Loaded' : 'No Diagram Loaded'} sx={{ backgroundColor: alpha(hasLoadedDiagram ? theme.palette.primary.main : theme.palette.error.main, 0.5) }} />
+                <Box className="flex gap-2">
+                    <Chip 
+                        size='small' 
+                        icon={!hasLoadedDiagram ? <ErrorRounded /> : <CheckRounded />} 
+                        label={hasLoadedDiagram ? 'Diagram Loaded' : 'No Diagram Loaded'} 
+                        color="error"
+                        sx={{ 
+                            backgroundColor: alpha(hasLoadedDiagram ? theme.palette.primary.main : theme.palette.error.main, 0.5),
+                            '& .MuiChip-icon': { color: hasLoadedDiagram ? theme.palette.primary.contrastText : theme.palette.error.contrastText }
+                        }} 
+                    />
+
+                    {!isRepoInfoLoading && !isCloudConfigured && (
+                        <Chip 
+                            size='small' 
+                            icon={<WarningRounded />} 
+                            label="Cloud Storage Disabled" 
+                            color="warning"
+                            sx={{ 
+                                backgroundColor: alpha(theme.palette.warning.main, 0.5),
+                                '& .MuiChip-icon': { color: theme.palette.warning.contrastText }
+                            }} 
+                        />
+                    )}
+
+                    {!isRepoInfoLoading && isCloudConfigured && (
+                        <Chip 
+                            size='small' 
+                            icon={<CheckRounded />} 
+                            label="Cloud Storage Ready" 
+                            color="success"
+                            sx={{ 
+                                backgroundColor: alpha(theme.palette.success.main, 0.5),
+                                '& .MuiChip-icon': { color: theme.palette.success.contrastText }
+                            }} 
+                        />
+                    )}
+                </Box>
             </Box>
 
             <SaveDiagramModal 
