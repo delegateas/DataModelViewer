@@ -4,7 +4,7 @@ export async function GET() {
     try {
         // Extract organization name from the URL
         const organizationUrl = process.env.ADO_ORGANIZATION_URL || '';
-        const repositoryName = process.env.AdoRepositoryName || '';
+        const repositoryName = process.env.ADO_REPOSITORY_NAME || '';
         
         // Parse organization name from URL (e.g., "https://dev.azure.com/MedlemX/" -> "MedlemX")
         let organizationName = '';

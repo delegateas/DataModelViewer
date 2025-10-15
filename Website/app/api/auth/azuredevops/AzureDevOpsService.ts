@@ -292,7 +292,7 @@ export async function pullFileFromRepo<T>(options: LoadFileOptions): Promise<T> 
         const fileData: GitFileResponse = await response.json();
 
         if (!fileData.content) {
-            throw new AzureDevOpsError(`File content is empty: ${filePath}`);
+            throw new AzureDevOpsError(`... File content is empty: ${fileUrl}`);
         }
 
         // Decode base64 content and parse JSON

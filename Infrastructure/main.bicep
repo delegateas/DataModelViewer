@@ -58,7 +58,7 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           value: adoProjectName
         }
         {
-          name: 'AdoRepositoryName'
+          name: 'ADO_REPOSITORY_NAME'
           value: adoRepositoryName
         }
       ]
