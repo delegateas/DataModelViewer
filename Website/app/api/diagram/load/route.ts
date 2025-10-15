@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
         // Load diagram from Azure DevOps repository
         const diagramData = await pullFileFromRepo({
             filePath,
-            branch: 'main'
+            branch: 'main',
+            repositoryName: process.env.ADO_REPOSITORY_NAME || ''
         });
 
         return NextResponse.json(diagramData);

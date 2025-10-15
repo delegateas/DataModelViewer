@@ -14,7 +14,8 @@ export async function GET() {
         // List files in the diagrams folder from Azure DevOps
         const files = await listFilesFromRepo({
             filePath: 'diagrams',
-            branch: 'main'
+            branch: 'main',
+            repositoryName: process.env.ADO_REPOSITORY_NAME || ''
         });
 
         // Filter for .json files and extract metadata

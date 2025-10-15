@@ -47,14 +47,35 @@ class ManagedIdentityAuth {
     }
 
     async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<Response> {
-        const token = await this.getAccessToken();
+        // Use PAT for local development, Managed Identity for production
+        const pat = process.env.ADO_PAT;
+        const isLocal = process.env.NODE_ENV === 'development' || pat;
+        
+        let authHeaders: Record<string, string>;
+        
+        if (isLocal && pat) {
+            console.log('Using PAT authentication for local development');
+            const basic = Buffer.from(`:${pat}`).toString('base64');
+            authHeaders = {
+                'Authorization': `Basic ${basic}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-TFS-FedAuthRedirect': 'Suppress'
+            };
+        } else {
+            const token = await this.getAccessToken();
+            authHeaders = {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+        }
          
         return fetch(url, {
             ...options,
             headers: {
                 ...options.headers,
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                ...authHeaders
             }
         });
     }

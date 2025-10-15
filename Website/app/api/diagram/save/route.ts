@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
             content: JSON.stringify(enrichedData, null, 2),
             commitMessage,
             branch: 'main',
+            repositoryName: process.env.ADO_REPOSITORY_NAME || '',
             isUpdate: Boolean(diagramData.overwriteFilePath)
         });
 
