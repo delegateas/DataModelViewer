@@ -7,6 +7,7 @@ export interface DiagramSaveData {
     version: string;
     createdAt: string;
     updatedAt: string;
+    overwriteFilePath?: string; // Optional path for overwriting existing files
     metadata: {
         zoom: number;
         translate: { x: number; y: number };
@@ -33,24 +34,48 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Generate file path based on diagram name and timestamp
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const fileName = `${diagramData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.json`;
-        const filePath = `diagrams/${fileName}`;
+        // Generate file path - use overwrite path if provided, otherwise create new
+        let fileName: string;
+        let filePath: string;
+        
+        if (diagramData.overwriteFilePath) {
+            // Overwriting existing file
+            filePath = diagramData.overwriteFilePath;
+            fileName = filePath.split('/').pop() || 'diagram.json';
+        } else {
+            // Creating new file
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            fileName = `${diagramData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.json`;
+            filePath = `diagrams/${fileName}`;
+        }
+
+        let newVersion = '1.0.0'; // Default for new diagrams
+        if (diagramData.overwriteFilePath) {
+            const currentVersion = diagramData.version || '1.0.0';
+            const versionParts = currentVersion.split('.').map(Number);
+            
+            // Increment patch version (x.y.z -> x.y.z+1)
+            versionParts[2] = (versionParts[2] || 0) + 1;
+            newVersion = versionParts.join('.');
+        }
 
         // Add metadata
         const enrichedData: DiagramSaveData = {
             ...diagramData,
-            version: '1.0.0',
+            version: newVersion,
             updatedAt: new Date().toISOString(),
             createdAt: diagramData.createdAt || new Date().toISOString()
         };
 
         // Save to Azure DevOps repository
+        const commitMessage = diagramData.overwriteFilePath 
+            ? `Update diagram: ${diagramData.name}`
+            : `Save diagram: ${diagramData.name}`;
+            
         const result = await createFileInRepo({
             filePath,
             content: JSON.stringify(enrichedData, null, 2),
-            commitMessage: `Save diagram: ${diagramData.name}`,
+            commitMessage,
             branch: 'main'
         });
 

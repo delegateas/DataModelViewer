@@ -7,6 +7,8 @@ interface DiagramActions {
   setTranslate: (translate: { x: number; y: number }) => void;
   addEntity: (position?: { x: number; y: number }, label?: string) => void;
   getGraph: () => dia.Graph | null;
+  setLoadedDiagram: (filename: string | null, source: 'cloud' | 'file' | null, filePath?: string | null) => void;
+  clearDiagram: () => void;
 }
 
 export interface DiagramState extends DiagramActions {
@@ -14,6 +16,10 @@ export interface DiagramState extends DiagramActions {
   zoom: number;
   isPanning: boolean;
   translate: { x: number; y: number };
+  loadedDiagramFilename: string | null;
+  loadedDiagramSource: 'cloud' | 'file' | null;
+  loadedDiagramFilePath: string | null;
+  hasLoadedDiagram: boolean;
 }
 
 const initialState: DiagramState = {
@@ -21,18 +27,26 @@ const initialState: DiagramState = {
   isPanning: false,
   translate: { x: 0, y: 0 },
   canvas: React.createRef<HTMLDivElement>(),
+  loadedDiagramFilename: null,
+  loadedDiagramSource: null,
+  loadedDiagramFilePath: null,
+  hasLoadedDiagram: false,
 
   setZoom: () => { throw new Error("setZoom not initialized yet!"); },
   setIsPanning: () => { throw new Error("setIsPanning not initialized yet!"); },
   setTranslate: () => { throw new Error("setTranslate not initialized yet!"); },
   addEntity: () => { throw new Error("addEntity not initialized yet!"); },
   getGraph: () => { throw new Error("getGraph not initialized yet!"); },
+  setLoadedDiagram: () => { throw new Error("setLoadedDiagram not initialized yet!"); },
+  clearDiagram: () => { throw new Error("clearDiagram not initialized yet!"); },
 }
 
 type DiagramViewAction =
   | { type: 'SET_ZOOM', payload: number }
   | { type: 'SET_IS_PANNING', payload: boolean }
-  | { type: 'SET_TRANSLATE', payload: { x: number; y: number } };
+  | { type: 'SET_TRANSLATE', payload: { x: number; y: number } }
+  | { type: 'SET_LOADED_DIAGRAM', payload: { filename: string | null; source: 'cloud' | 'file' | null; filePath?: string | null } }
+  | { type: 'CLEAR_DIAGRAM' };
 
 const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): DiagramState => {
   switch (action.type) {
@@ -42,6 +56,22 @@ const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): Dia
       return { ...state, isPanning: action.payload }
     case 'SET_TRANSLATE':
       return { ...state, translate: action.payload }
+    case 'SET_LOADED_DIAGRAM':
+      return { 
+        ...state, 
+        loadedDiagramFilename: action.payload.filename,
+        loadedDiagramSource: action.payload.source,
+        loadedDiagramFilePath: action.payload.filePath || null,
+        hasLoadedDiagram: action.payload.filename !== null
+      }
+    case 'CLEAR_DIAGRAM':
+      return { 
+        ...state, 
+        loadedDiagramFilename: null,
+        loadedDiagramSource: null,
+        loadedDiagramFilePath: null,
+        hasLoadedDiagram: false
+      }
     default:
       return state;
   }
@@ -63,6 +93,18 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
 
     const setTranslate = (translate: { x: number; y: number }) => {
         dispatch({ type: 'SET_TRANSLATE', payload: translate });
+    }
+
+    const setLoadedDiagram = (filename: string | null, source: 'cloud' | 'file' | null, filePath?: string | null) => {
+        dispatch({ type: 'SET_LOADED_DIAGRAM', payload: { filename, source, filePath } });
+    }
+
+    const clearDiagram = () => {
+        // Clear the graph if it exists
+        if (graphRef.current) {
+            graphRef.current.clear();
+        }
+        dispatch({ type: 'CLEAR_DIAGRAM' });
     }
 
     // Refs to store graph and paper instances
@@ -314,7 +356,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning, setTranslate, addEntity, getGraph }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning, setTranslate, addEntity, getGraph, setLoadedDiagram, clearDiagram }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

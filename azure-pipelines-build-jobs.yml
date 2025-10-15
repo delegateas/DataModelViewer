@@ -67,21 +67,6 @@ steps:
     workingDirectory: $(Build.SourcesDirectory)/Website
     displayName: "Build Next.js app"
 
-  - script: |
-      echo "Cleaning up node_modules before packaging..."
-      rm -rf "$(Build.SourcesDirectory)/Website/.next/standalone/node_modules" || true
-      rm -rf "$(Build.SourcesDirectory)/Website/node_modules" || true
-      
-      # List contents to verify
-      echo "Contents of standalone folder:"
-      ls -la "$(Build.SourcesDirectory)/Website/.next/standalone/"
-      
-      # Check the size of the directory
-      echo "Size of standalone folder:"
-      du -sh "$(Build.SourcesDirectory)/Website/.next/standalone/"
-    workingDirectory: $(Build.SourcesDirectory)/Website
-    displayName: "Clean node_modules"
-
   - task: ArchiveFiles@2
     inputs:
       rootFolderOrFile: "$(Build.SourcesDirectory)/Website/.next/standalone"

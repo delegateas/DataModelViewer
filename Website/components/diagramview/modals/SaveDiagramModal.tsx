@@ -8,12 +8,12 @@ import {
     Typography,
 } from '@mui/material';
 
-interface SaveProgressModalProps {
+interface SaveDiagramModalProps {
     open: boolean;
     onClose?: () => void;
 }
 
-export const SaveProgressModal: React.FC<SaveProgressModalProps> = ({ open, onClose }) => {
+export const SaveDiagramModal = ({ open, onClose }: SaveDiagramModalProps) => {
     const [repositoryInfo, setRepositoryInfo] = useState<string>('Loading...');
 
     useEffect(() => {

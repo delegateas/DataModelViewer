@@ -85,9 +85,11 @@ export const HeaderDropdownMenu: React.FC<HeaderDropdownMenuProps> = ({
                         key={item.id}
                         onClick={() => handleMenuItemClick(item.action)}
                         disabled={item.disabled}
+                        divider={item.dividerAfter}
+                        sx={{ borderWidth: 2 }}
                     >
                         {item.icon && (
-                            <ListItemIcon className='mr-2'>
+                            <ListItemIcon className='mr-2 w-7 h-7'>
                                 {item.icon}
                             </ListItemIcon>
                         )}
