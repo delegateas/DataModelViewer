@@ -1,7 +1,7 @@
 'use client';
 
-import React, { use } from 'react';
-import { Box, Chip, Typography, useTheme, alpha } from '@mui/material';
+import React from 'react';
+import { Box, Chip, useTheme, alpha } from '@mui/material';
 import { HeaderDropdownMenu, MenuItemConfig } from './smaller-components/HeaderDropdownMenu';
 import { CloudNewIcon, CloudSaveIcon, FileMenuIcon, LoadIcon, LocalSaveIcon, NewIcon } from '@/lib/icons';
 import { SaveDiagramModal } from './modals/SaveDiagramModal';

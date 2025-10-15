@@ -24,6 +24,14 @@ export const HomeView = ({ }: IHomeViewProps) => {
     // Carousel data
     const carouselItems: CarouselItem[] = [
         {
+            image: '/documentation.jpg',
+            title: 'Connect to your Azure DevOps!',
+            text: 'The diagram tool is the first to take advantage of the new integration. Save and load your diagrams directly from your Azure DevOps repository to keep version control on your diagrams. Check out the documentation to get started.',
+            type: '(v2.2.0) Feature',
+            actionlabel: 'Go to Diagrams',
+            action: () => router.push('/diagram')
+        },
+        {
             image: '/insights.jpg',
             title: 'Insights are here!',
             text: "Get insights into your solutions, entities and attributes with the new Insights feature. Analyze your solutions' relationships and shared components to optimize your environment. See bad practices and get recommendations to improve your data model.",
@@ -44,14 +52,6 @@ export const HomeView = ({ }: IHomeViewProps) => {
             title: 'Data Model Viewer 2.0.0!',
             text: "The UI has been refreshed for an even cleaner, more modern look with enhanced functionality. And we've upgraded the tech stack to ensure easier maintainability.",
             type: '(v2.0.0) Announcement'
-        },
-        {
-            image: '/documentation.jpg',
-            title: 'Home WIKI ADO Page',
-            text: 'Display your own wiki page from your ADO instance. Use it, to give your organisation a special introduction to DMV. Now also supports images!',
-            type: '(v1.4.1) Feature',
-            actionlabel: 'Read how',
-            action: () => window.open("https://github.com/delegateas/DataModelViewer", '_blank')
         }
     ];
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { managedAuth } from './ManagedIdentityAuthService';
 
 interface CreateFileOptions {
@@ -126,8 +127,8 @@ export async function listFilesFromRepo(options: LoadFileOptions): Promise<GitIt
 
         // Filter for files only (not folders) and return as GitItem array
         return data.value
-            .filter((item: any) => !item.isFolder)
-            .map((item: any) => ({
+            .filter(item => !item.isFolder)
+            .map(item => ({
                 objectId: item.objectId,
                 gitObjectType: item.gitObjectType,
                 commitId: item.commitId,

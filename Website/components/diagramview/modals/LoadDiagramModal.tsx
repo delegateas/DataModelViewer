@@ -20,10 +20,7 @@ import {
 import {
     CloudDownload as CloudIcon,
     Upload as UploadIcon,
-    Description as FileIcon,
     Close as CloseIcon,
-    DocumentScannerRounded,
-    FolderRounded,
     PolylineRounded
 } from '@mui/icons-material';
 import { DiagramFile } from '@/lib/diagram/services/diagram-deserialization';
