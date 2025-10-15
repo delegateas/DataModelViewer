@@ -127,8 +127,8 @@ export async function listFilesFromRepo(options: LoadFileOptions): Promise<GitIt
 
         // Filter for files only (not folders) and return as GitItem array
         return data.value
-            .filter(item => !item.isFolder)
-            .map(item => ({
+            .filter((item: any) => !item.isFolder)
+            .map((item: any) => ({
                 objectId: item.objectId,
                 gitObjectType: item.gitObjectType,
                 commitId: item.commitId,
