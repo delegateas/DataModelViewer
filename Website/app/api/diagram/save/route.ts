@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createFileInRepo } from '../../auth/azuredevops/AzureDevOpsService';
+import { commitFileToRepo } from '../../auth/azuredevops/AzureDevOpsService';
 
 export interface DiagramSaveData {
     id: string;
@@ -72,11 +72,12 @@ export async function POST(request: NextRequest) {
             ? `Update diagram: ${diagramData.name}`
             : `Save diagram: ${diagramData.name}`;
             
-        const result = await createFileInRepo({
+        const result = await commitFileToRepo({
             filePath,
             content: JSON.stringify(enrichedData, null, 2),
             commitMessage,
-            branch: 'main'
+            branch: 'main',
+            isUpdate: Boolean(diagramData.overwriteFilePath)
         });
 
         return NextResponse.json({

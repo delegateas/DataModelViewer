@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadFileFromRepo } from '../../auth/azuredevops/AzureDevOpsService';
+import { pullFileFromRepo } from '../../auth/azuredevops/AzureDevOpsService';
 
 export async function POST(request: NextRequest) {
     try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Load diagram from Azure DevOps repository
-        const diagramData = await loadFileFromRepo({
+        const diagramData = await pullFileFromRepo({
             filePath,
             branch: 'main'
         });

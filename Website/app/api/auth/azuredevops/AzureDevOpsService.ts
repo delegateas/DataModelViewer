@@ -6,12 +6,24 @@ interface CreateFileOptions {
     commitMessage?: string;
     branch?: string;
     repositoryName?: string; // Optional override
+    isUpdate?: boolean; // Flag to indicate if this is updating an existing file
 }
 
 interface LoadFileOptions {
     filePath: string;
     branch?: string;
     repositoryName?: string; // Optional override
+}
+
+interface GitItem {
+    objectId: string;
+    gitObjectType: string;
+    commitId: string;
+    path: string;
+    isFolder: boolean;
+    contentMetadata?: {
+        size: number;
+    };
 }
 
 interface GitFileResponse {
@@ -72,18 +84,79 @@ async function getRepositoryId(repositoryName?: string): Promise<string> {
     }
 }
 
+
+/**
+ * Lists files in the Azure DevOps Git repository
+ * @param options Configuration for file retrieval
+ * @returns Promise with array of file items
+ */
+export async function listFilesFromRepo(options: LoadFileOptions): Promise<GitItem[]> {
+    const {
+        filePath,
+        branch = 'main',
+        repositoryName
+    } = options;
+
+    try {
+        // Get ADO configuration
+        const config = managedAuth.getConfig();
+        
+        // Get repository ID from environment variable or parameter
+        const repositoryId = await getRepositoryId(repositoryName);
+
+        // Construct the API URL for listing items in a folder
+        const normalizedPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+        const itemsUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryId}/items?scopePath=/${normalizedPath}&version=${branch}&recursionLevel=OneLevel&api-version=7.0`;
+
+        const response = await managedAuth.makeAuthenticatedRequest(itemsUrl);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new AzureDevOpsError(`Folder not found: ${filePath}`, 404);
+            }
+            const errorText = await response.text();
+            throw new AzureDevOpsError(`Failed to list files: ${response.status} - ${errorText}`, response.status);
+        }
+
+        const data = await response.json();
+        
+        if (!data.value || !Array.isArray(data.value)) {
+            return [];
+        }
+
+        // Filter for files only (not folders) and return as GitItem array
+        return data.value
+            .filter((item: any) => !item.isFolder)
+            .map((item: any) => ({
+                objectId: item.objectId,
+                gitObjectType: item.gitObjectType,
+                commitId: item.commitId,
+                path: item.path,
+                isFolder: item.isFolder,
+                contentMetadata: item.contentMetadata
+            }));
+
+    } catch (error) {
+        if (error instanceof AzureDevOpsError) {
+            throw error;
+        }
+        throw new AzureDevOpsError(`Unexpected error listing files: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
 /**
  * Creates a JSON file in the Azure DevOps Git repository
  * @param options Configuration for file creation
  * @returns Promise with commit information
  */
-export async function createFileInRepo(options: CreateFileOptions): Promise<GitCommitResponse> {
+export async function commitFileToRepo(options: CreateFileOptions): Promise<GitCommitResponse> {
     const {
         filePath,
         content,
         commitMessage = `Add ${filePath}`,
         branch = 'main',
-        repositoryName
+        repositoryName,
+        isUpdate = false
     } = options;
 
     try {
@@ -134,7 +207,7 @@ export async function createFileInRepo(options: CreateFileOptions): Promise<GitC
                     },
                     changes: [
                         {
-                            changeType: "add",
+                            changeType: isUpdate ? "edit" : "add",
                             item: {
                                 path: filePath.startsWith('/') ? filePath : `/${filePath}`
                             },
@@ -182,7 +255,7 @@ export async function createFileInRepo(options: CreateFileOptions): Promise<GitC
  * @param options Configuration for file loading
  * @returns Promise with parsed JSON content
  */
-export async function loadFileFromRepo<T>(options: LoadFileOptions): Promise<T> {
+export async function pullFileFromRepo<T>(options: LoadFileOptions): Promise<T> {
     const {
         filePath,
         branch = 'main',
@@ -273,5 +346,5 @@ export async function getRepositoryInfo(repositoryName?: string): Promise<{ id: 
 }
 
 // Export types for external use
-export type { CreateFileOptions, LoadFileOptions, GitCommitResponse, GitFileResponse };
+export type { CreateFileOptions, LoadFileOptions, GitCommitResponse, GitFileResponse, GitItem };
 export { AzureDevOpsError };
