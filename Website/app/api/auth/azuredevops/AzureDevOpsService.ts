@@ -277,7 +277,7 @@ export async function pullFileFromRepo<T>(options: LoadFileOptions): Promise<T> 
 
         // Construct the API URL for getting file content
         const normalizedPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
-        const fileUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryId}/items?path=/${normalizedPath}&version=${branch}&includeContent=true&api-version=7.0`;
+        const fileUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryId}/items?path=/${normalizedPath}&versionDescriptor.version=${branch}&versionDescriptor.versionType=branch&includeContent=true&api-version=7.0`;
 
         const response = await managedAuth.makeAuthenticatedRequest(fileUrl);
 
