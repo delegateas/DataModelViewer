@@ -57,6 +57,7 @@ export const LoadDiagramModal = ({
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
+            onClose();
         }
     };
 

@@ -2,6 +2,7 @@ import { Box, Tooltip, Typography, Grid } from '@mui/material';
 import React, { useState } from 'react';
 import { AddSquareIcon } from '@/lib/icons';
 import { EntitySelectionPane } from './panes/EntitySelectionPane';
+import { useDiagramView } from '@/contexts/DiagramViewContext';
 
 interface ISidebarDiagramViewProps { 
 
@@ -16,6 +17,8 @@ interface DiagramTool {
 
 export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     const [entityPaneOpen, setEntityPaneOpen] = useState(false);
+
+    const { loadedDiagramFilename, loadedDiagramSource } = useDiagramView();
 
     const handleAddEntity = () => {
         setEntityPaneOpen(true);
@@ -35,7 +38,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     ];
 
     return (
-        <Box className="w-full h-full">
+        <Box className="w-full h-full flex flex-col justify-between">
             <Box className="max-h-16 h-16 p-4 border-b" sx={{ borderColor: 'border.main' }}>
                 <Typography 
                     variant="h6" 
@@ -46,7 +49,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 </Typography>
             </Box>
 
-            <Box className="p-4 space-y-2">
+            <Box className="p-4 flex-grow">
                 <Typography variant='body1'>
                     Elements
                 </Typography>
@@ -71,6 +74,15 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                     open={entityPaneOpen} 
                     onClose={handleClosePane} 
                 />
+            </Box>
+            
+            <Box className="border-t p-4" sx={{ borderColor: 'border.main' }}>
+                <Typography variant='body2' className='mt-4 font-semibold'>
+                    Loaded Diagram: ({loadedDiagramSource})
+                </Typography>
+                <Typography variant='caption'>
+                    {loadedDiagramFilename}
+                </Typography>
             </Box>
         </Box>
     );

@@ -3,7 +3,7 @@
 import React, { use } from 'react';
 import { Box, Chip, Typography, useTheme, alpha } from '@mui/material';
 import { HeaderDropdownMenu, MenuItemConfig } from './smaller-components/HeaderDropdownMenu';
-import { CloudLoadIcon, CloudNewIcon, CloudSaveIcon, FileMenuIcon, LocalSaveIcon, NewIcon } from '@/lib/icons';
+import { CloudNewIcon, CloudSaveIcon, FileMenuIcon, LoadIcon, LocalSaveIcon, NewIcon } from '@/lib/icons';
 import { SaveDiagramModal } from './modals/SaveDiagramModal';
 import { LoadDiagramModal } from './modals/LoadDiagramModal';
 import { useDiagramSave } from '@/hooks/useDiagramSave';
@@ -40,6 +40,13 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
             icon: NewIcon,
             action: createNewDiagram,
             disabled: false,
+        },
+        {
+            id: 'load',
+            label: 'Load',
+            icon: LoadIcon,
+            action: openLoadModal, 
+            disabled: !isCloudConfigured || isLoading,
             dividerAfter: true,
         },
         {
@@ -54,14 +61,7 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
             label: 'Create in Cloud',
             icon: CloudNewIcon,
             action: saveDiagramLocally,
-            disabled: !isCloudConfigured || isSaving
-        },
-        {
-            id: 'load',
-            label: 'Load from Cloud',
-            icon: CloudLoadIcon,
-            action: openLoadModal, 
-            disabled: !isCloudConfigured || isLoading,
+            disabled: !isCloudConfigured || isSaving,
             dividerAfter: true,
         },
         {
