@@ -1,4 +1,4 @@
-import { Box, Tooltip, Typography, Grid } from '@mui/material';
+import { Box, Tooltip, Typography, Grid, TextField } from '@mui/material';
 import React, { useState } from 'react';
 import { AddSquareIcon } from '@/lib/icons';
 import { EntitySelectionPane } from './panes/EntitySelectionPane';
@@ -18,7 +18,7 @@ interface DiagramTool {
 export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     const [entityPaneOpen, setEntityPaneOpen] = useState(false);
 
-    const { loadedDiagramFilename, loadedDiagramSource } = useDiagramView();
+    const { loadedDiagramFilename, loadedDiagramSource, hasLoadedDiagram, diagramName, setDiagramName } = useDiagramView();
 
     const handleAddEntity = () => {
         setEntityPaneOpen(true);
@@ -26,6 +26,10 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
 
     const handleClosePane = () => {
         setEntityPaneOpen(false);
+    };
+
+    const handleDiagramNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setDiagramName(event.target.value);
     };
 
     const diagramTools: DiagramTool[] = [
@@ -40,13 +44,15 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
     return (
         <Box className="w-full h-full flex flex-col justify-between">
             <Box className="max-h-16 h-16 p-4 border-b" sx={{ borderColor: 'border.main' }}>
-                <Typography 
-                    variant="h6" 
-                    className="font-semibold"
-                    sx={{ color: 'text.primary' }}
-                >
-                    Diagram Tools
-                </Typography>
+                <TextField
+                    fullWidth
+                    size="small"
+                    label="Diagram Name"
+                    value={diagramName}
+                    onChange={handleDiagramNameChange}
+                    disabled={hasLoadedDiagram}
+                    variant="outlined"
+                />
             </Box>
 
             <Box className="p-4 flex-grow">

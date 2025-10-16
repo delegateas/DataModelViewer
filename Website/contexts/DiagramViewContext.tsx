@@ -7,8 +7,11 @@ interface DiagramActions {
   setTranslate: (translate: { x: number; y: number }) => void;
   addEntity: (position?: { x: number; y: number }, label?: string) => void;
   getGraph: () => dia.Graph | null;
+  getPaper: () => dia.Paper | null;
+  applyZoomAndPan: (zoom: number, translate: { x: number; y: number }) => void;
   setLoadedDiagram: (filename: string | null, source: 'cloud' | 'file' | null, filePath?: string | null) => void;
   clearDiagram: () => void;
+  setDiagramName: (name: string) => void;
 }
 
 export interface DiagramState extends DiagramActions {
@@ -20,6 +23,7 @@ export interface DiagramState extends DiagramActions {
   loadedDiagramSource: 'cloud' | 'file' | null;
   loadedDiagramFilePath: string | null;
   hasLoadedDiagram: boolean;
+  diagramName: string;
 }
 
 const initialState: DiagramState = {
@@ -31,14 +35,18 @@ const initialState: DiagramState = {
   loadedDiagramSource: null,
   loadedDiagramFilePath: null,
   hasLoadedDiagram: false,
+  diagramName: 'untitled',
 
   setZoom: () => { throw new Error("setZoom not initialized yet!"); },
   setIsPanning: () => { throw new Error("setIsPanning not initialized yet!"); },
   setTranslate: () => { throw new Error("setTranslate not initialized yet!"); },
   addEntity: () => { throw new Error("addEntity not initialized yet!"); },
   getGraph: () => { throw new Error("getGraph not initialized yet!"); },
+  getPaper: () => { throw new Error("getPaper not initialized yet!"); },
+  applyZoomAndPan: () => { throw new Error("applyZoomAndPan not initialized yet!"); },
   setLoadedDiagram: () => { throw new Error("setLoadedDiagram not initialized yet!"); },
   clearDiagram: () => { throw new Error("clearDiagram not initialized yet!"); },
+  setDiagramName: () => { throw new Error("setDiagramName not initialized yet!"); },
 }
 
 type DiagramViewAction =
@@ -46,7 +54,8 @@ type DiagramViewAction =
   | { type: 'SET_IS_PANNING', payload: boolean }
   | { type: 'SET_TRANSLATE', payload: { x: number; y: number } }
   | { type: 'SET_LOADED_DIAGRAM', payload: { filename: string | null; source: 'cloud' | 'file' | null; filePath?: string | null } }
-  | { type: 'CLEAR_DIAGRAM' };
+  | { type: 'CLEAR_DIAGRAM' }
+  | { type: 'SET_DIAGRAM_NAME', payload: string };
 
 const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): DiagramState => {
   switch (action.type) {
@@ -62,7 +71,8 @@ const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): Dia
         loadedDiagramFilename: action.payload.filename,
         loadedDiagramSource: action.payload.source,
         loadedDiagramFilePath: action.payload.filePath || null,
-        hasLoadedDiagram: action.payload.filename !== null
+        hasLoadedDiagram: action.payload.filename !== null,
+        diagramName: action.payload.filename || 'untitled'
       }
     case 'CLEAR_DIAGRAM':
       return { 
@@ -70,8 +80,11 @@ const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): Dia
         loadedDiagramFilename: null,
         loadedDiagramSource: null,
         loadedDiagramFilePath: null,
-        hasLoadedDiagram: false
+        hasLoadedDiagram: false,
+        diagramName: 'untitled'
       }
+    case 'SET_DIAGRAM_NAME':
+      return { ...state, diagramName: action.payload }
     default:
       return state;
   }
@@ -105,6 +118,10 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             graphRef.current.clear();
         }
         dispatch({ type: 'CLEAR_DIAGRAM' });
+    }
+
+    const setDiagramName = (name: string) => {
+        dispatch({ type: 'SET_DIAGRAM_NAME', payload: name });
     }
 
     // Refs to store graph and paper instances
@@ -355,8 +372,30 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         return graphRef.current;
     };
 
+    const getPaper = () => {
+        return paperRef.current;
+    };
+
+    const applyZoomAndPan = (zoom: number, translate: { x: number; y: number }) => {
+        if (paperRef.current) {
+            // Apply the transform matrix to the paper
+            paperRef.current.matrix({
+                a: zoom,
+                b: 0,
+                c: 0,
+                d: zoom,
+                e: translate.x,
+                f: translate.y
+            });
+            
+            // Update the context state
+            setZoom(zoom);
+            setTranslate(translate);
+        }
+    };
+
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning, setTranslate, addEntity, getGraph, setLoadedDiagram, clearDiagram }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning, setTranslate, addEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

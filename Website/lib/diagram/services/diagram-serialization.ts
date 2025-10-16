@@ -6,7 +6,8 @@ export class DiagramSerializationService {
     static serializeDiagram(
         graph: dia.Graph | null,
         zoom: number,
-        translate: { x: number; y: number }
+        translate: { x: number; y: number },
+        diagramName: string
     ): SerializedDiagram {
         if (!graph) {
             throw new Error('No diagram graph available');
@@ -35,7 +36,7 @@ export class DiagramSerializationService {
 
         return {
             id: crypto.randomUUID(),
-            name: `Diagram_${new Date().toISOString().split('T')[0]}`,
+            name: diagramName,
             version: '1.0.0',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),

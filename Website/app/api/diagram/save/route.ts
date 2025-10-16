@@ -1,25 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { commitFileToRepo } from '../../auth/azuredevops/AzureDevOpsService';
+import { SerializedDiagram } from '@/lib/diagram/models/serialized-diagram';
 
-export interface DiagramSaveData {
-    id: string;
-    name: string;
-    version: string;
-    createdAt: string;
-    updatedAt: string;
-    overwriteFilePath?: string; // Optional path for overwriting existing files
-    metadata: {
-        zoom: number;
-        translate: { x: number; y: number };
-        canvasSize?: { width: number; height: number };
-    };
-    entities: Array<{
-        id: string;
-        type: string;
-        position: { x: number; y: number };
-        size: { width: number; height: number };
-        label: string;
-    }>;
+interface DiagramSaveData extends SerializedDiagram {
+    overwriteFilePath?: string;
 }
 
 export async function POST(request: NextRequest) {

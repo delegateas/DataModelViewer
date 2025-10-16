@@ -3,7 +3,7 @@ import { useDiagramView } from '@/contexts/DiagramViewContext';
 import { DiagramDeserializationService, DiagramFile } from '@/lib/diagram/services/diagram-deserialization';
 
 export const useDiagramLoad = () => {
-    const { getGraph, setZoom, setTranslate, setLoadedDiagram } = useDiagramView();
+    const { getGraph, applyZoomAndPan, setLoadedDiagram } = useDiagramView();
     const [isLoading, setIsLoading] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [availableDiagrams, setAvailableDiagrams] = useState<DiagramFile[]>([]);
@@ -33,8 +33,7 @@ export const useDiagramLoad = () => {
             DiagramDeserializationService.deserializeDiagram(
                 diagramData,
                 graph,
-                setZoom,
-                setTranslate,
+                applyZoomAndPan,
                 setLoadedDiagram,
                 diagramData.name || 'Untitled',
                 'cloud',
@@ -62,8 +61,7 @@ export const useDiagramLoad = () => {
             DiagramDeserializationService.deserializeDiagram(
                 diagramData,
                 graph,
-                setZoom,
-                setTranslate,
+                applyZoomAndPan,
                 setLoadedDiagram,
                 file.name.replace('.json', ''),
                 'file',

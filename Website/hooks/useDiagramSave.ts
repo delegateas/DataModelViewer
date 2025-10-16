@@ -3,7 +3,7 @@ import { useDiagramView } from '@/contexts/DiagramViewContext';
 import { DiagramSerializationService } from '@/lib/diagram/services/diagram-serialization';
 
 export const useDiagramSave = () => {
-    const { getGraph, zoom, translate, clearDiagram, setLoadedDiagram, loadedDiagramFilename, loadedDiagramSource, loadedDiagramFilePath } = useDiagramView();
+    const { getGraph, zoom, translate, clearDiagram, setLoadedDiagram, loadedDiagramFilename, loadedDiagramSource, loadedDiagramFilePath, diagramName } = useDiagramView();
     const [isSaving, setIsSaving] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
 
@@ -15,7 +15,7 @@ export const useDiagramSave = () => {
         
         try {
             const graph = getGraph();
-            const diagramData = DiagramSerializationService.serializeDiagram(graph, zoom, translate);
+            const diagramData = DiagramSerializationService.serializeDiagram(graph, zoom, translate, diagramName);
             
             // If we have a loaded diagram from cloud, preserve its name for overwriting
             if (loadedDiagramSource === 'cloud' && loadedDiagramFilename) {
@@ -29,8 +29,6 @@ export const useDiagramSave = () => {
             // Track that this diagram is now loaded from cloud with the correct file path
             const resultFilePath = result.filePath || overwriteFilePath;
             setLoadedDiagram(diagramData.name, 'cloud', resultFilePath);
-            
-            console.log('Diagram saved to cloud successfully:', result);
         } catch (error) {
             console.error('Error saving diagram to cloud:', error);
         } finally {
@@ -46,7 +44,7 @@ export const useDiagramSave = () => {
         
         try {
             const graph = getGraph();
-            const diagramData = DiagramSerializationService.serializeDiagram(graph, zoom, translate);
+            const diagramData = DiagramSerializationService.serializeDiagram(graph, zoom, translate, diagramName);
             const downloadResult = DiagramSerializationService.downloadDiagramAsJson(diagramData);
             
             // Track that this diagram is now loaded as a file

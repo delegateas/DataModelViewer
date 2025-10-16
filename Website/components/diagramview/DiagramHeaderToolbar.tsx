@@ -60,7 +60,7 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
             id: 'save-new',
             label: 'Create in Cloud',
             icon: CloudNewIcon,
-            action: saveDiagramLocally,
+            action: saveDiagramToCloud,
             disabled: !isCloudConfigured || isSaving,
             dividerAfter: true,
         },

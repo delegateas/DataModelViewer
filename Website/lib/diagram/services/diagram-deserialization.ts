@@ -42,8 +42,7 @@ export class DiagramDeserializationService {
     static deserializeDiagram(
         diagramData: SerializedDiagram,
         graph: dia.Graph | null,
-        setZoom: (zoom: number) => void,
-        setTranslate: (translate: { x: number; y: number }) => void,
+        applyZoomAndPan: (zoom: number, translate: { x: number; y: number }) => void,
         setLoadedDiagram: (filename: string | null, source: 'cloud' | 'file' | null, filePath?: string | null) => void,
         filename: string,
         source: 'cloud' | 'file',
@@ -56,29 +55,14 @@ export class DiagramDeserializationService {
         // Clear existing diagram
         graph.clear();
 
-        // Restore zoom and pan
-        setZoom(diagramData.metadata.zoom);
-        setTranslate(diagramData.metadata.translate);
+        // Restore zoom and pan - apply directly to the paper
+        applyZoomAndPan(diagramData.metadata.zoom, diagramData.metadata.translate);
 
         // Set loaded diagram info
         setLoadedDiagram(filename, source, filePath);
 
-        // Theme-aware entity colors using MUI CSS variables (same as addEntity)
-        const colors = [
-            { fill: 'var(--mui-palette-primary-main)', stroke: 'var(--mui-palette-primary-dark)' },
-            { fill: 'var(--mui-palette-success-main)', stroke: 'var(--mui-palette-success-dark)' },
-            { fill: 'var(--mui-palette-warning-main)', stroke: 'var(--mui-palette-warning-dark)' },
-            { fill: 'var(--mui-palette-error-main)', stroke: 'var(--mui-palette-error-dark)' },
-            { fill: 'var(--mui-palette-secondary-main)', stroke: 'var(--mui-palette-secondary-dark)' },
-            { fill: 'var(--mui-palette-info-main)', stroke: 'var(--mui-palette-info-dark)' },
-        ];
-        
-        const textColor = 'var(--mui-palette-primary-contrastText)';
-
         // Recreate entities
         diagramData.entities.forEach((entityData: SerializedEntity, index: number) => {
-            const colorIndex = index % colors.length;
-            const color = colors[colorIndex];
 
             const rect = new shapes.standard.Rectangle({
                 id: entityData.id,
@@ -86,15 +70,12 @@ export class DiagramDeserializationService {
                 size: entityData.size,
                 attrs: {
                     body: {
-                        fill: color.fill,
-                        stroke: color.stroke,
                         strokeWidth: 2,
                         rx: 8,
                         ry: 8
                     },
                     label: {
                         text: entityData.label,
-                        fill: textColor,
                         fontSize: 14,
                         fontFamily: 'Arial, sans-serif'
                     }
