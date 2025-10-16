@@ -76,7 +76,6 @@ export const useDiagramLoad = () => {
 
     const openLoadModal = () => {
         setShowLoadModal(true);
-        loadAvailableDiagrams();
     };
 
     const closeLoadModal = () => {
@@ -90,6 +89,7 @@ export const useDiagramLoad = () => {
         availableDiagrams,
         loadDiagramFromCloud,
         loadDiagramFromFile,
+        loadAvailableDiagrams,
         openLoadModal,
         closeLoadModal
     };

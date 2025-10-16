@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -12,8 +12,6 @@ import {
     ListItemButton,
     ListItemText,
     ListItemIcon,
-    Divider,
-    Button,
     CircularProgress,
     IconButton
 } from '@mui/material';
@@ -21,9 +19,14 @@ import {
     CloudDownload as CloudIcon,
     Upload as UploadIcon,
     Close as CloseIcon,
-    PolylineRounded
+    PolylineRounded,
+    ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { DiagramFile } from '@/lib/diagram/services/diagram-deserialization';
+import { ClickableCard } from '@/components/shared/elements/ClickableCard';
+import { AzureDevOpsIcon, LoadIcon } from '@/lib/icons';
+import { useDiagramView } from '@/contexts/DiagramViewContext';
+import { useRepositoryInfo } from '@/hooks/useRepositoryInfo';
 
 interface LoadDiagramModalProps {
     open: boolean;
@@ -33,6 +36,7 @@ interface LoadDiagramModalProps {
     isLoading: boolean;
     onLoadFromCloud: (filePath: string) => void;
     onLoadFromFile: (file: File) => void;
+    onLoadAvailableDiagrams: () => void;
 }
 
 export const LoadDiagramModal = ({
@@ -42,9 +46,12 @@ export const LoadDiagramModal = ({
     isLoadingList,
     isLoading,
     onLoadFromCloud,
-    onLoadFromFile
+    onLoadFromFile,
+    onLoadAvailableDiagrams
 }: LoadDiagramModalProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [showCloudDiagrams, setShowCloudDiagrams] = useState(false);
+    const { isCloudConfigured } = useRepositoryInfo();
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -60,6 +67,20 @@ export const LoadDiagramModal = ({
 
     const handleUploadClick = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleCloudClick = () => {
+        setShowCloudDiagrams(true);
+        onLoadAvailableDiagrams();
+    };
+
+    const handleBackToOptions = () => {
+        setShowCloudDiagrams(false);
+    };
+
+    const handleCloseModal = () => {
+        setShowCloudDiagrams(false);
+        onClose();
     };
 
     const formatDate = (dateString: string) => {
@@ -80,8 +101,8 @@ export const LoadDiagramModal = ({
     return (
         <Dialog
             open={open}
-            onClose={onClose}
-            maxWidth="md"
+            onClose={handleCloseModal}
+            maxWidth="sm"
             fullWidth
             slotProps={{
                 paper: {
@@ -89,35 +110,52 @@ export const LoadDiagramModal = ({
                         borderRadius: 3,
                         backgroundColor: 'background.paper',
                         backgroundImage: 'none',
-                        minHeight: '500px'
+                        minHeight: showCloudDiagrams ? '500px' : '300px'
                     }
                 }
             }}
         >
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-                <Typography variant="h6">Load Diagram</Typography>
-                <IconButton onClick={onClose} size="small">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {showCloudDiagrams && (
+                        <IconButton onClick={handleBackToOptions} size="small">
+                            <ArrowBackIcon />
+                        </IconButton>
+                    )}
+                    <Typography variant="h6">
+                        {showCloudDiagrams ? 'Select from Azure DevOps' : 'Load Diagram'}
+                    </Typography>
+                </Box>
+                <IconButton onClick={handleCloseModal} size="small">
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
 
             <DialogContent sx={{ px: 3, pb: 3 }}>
-                <Box className="space-y-4">
-                    {/* Upload from file section */}
-                    <Box>
-                        <Typography variant="subtitle1" className="mb-2 font-semibold">
-                            Load from File
-                        </Typography>
-                        <Button
-                            variant='contained'
-                            startIcon={<UploadIcon />}
+                {!showCloudDiagrams ? (
+                    // Main options view
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {/* Load from Device Card */}
+                        <ClickableCard
+                            title="Load from Device"
+                            description="Choose a diagram file from your computer"
+                            icon={LoadIcon}
                             onClick={handleUploadClick}
                             disabled={isLoading}
-                            fullWidth
-                            sx={{ mb: 2 }}
-                        >
-                            Choose local File...
-                        </Button>
+                            color="primary.main"
+                        />
+
+                        {/* Load from Azure DevOps Card */}
+                        <ClickableCard
+                            title="Load from Azure DevOps"
+                            description="Browse diagrams stored in your repository"
+                            icon={AzureDevOpsIcon}
+                            onClick={handleCloudClick}
+                            disabled={isLoading || !isCloudConfigured}
+                            color="secondary.main"
+                        />
+
+                        {/* Hidden file input */}
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -126,15 +164,9 @@ export const LoadDiagramModal = ({
                             style={{ display: 'none' }}
                         />
                     </Box>
-
-                    <Divider />
-
-                    {/* Cloud diagrams section */}
+                ) : (
+                    // Cloud diagrams list view
                     <Box>
-                        <Typography variant="subtitle1" className="mb-2 font-semibold">
-                            Load from Cloud
-                        </Typography>
-
                         {isLoadingList ? (
                             <Box className="flex justify-center items-center py-8" gap={2}>
                                 <CircularProgress size={32} />
@@ -150,7 +182,7 @@ export const LoadDiagramModal = ({
                                 </Typography>
                             </Box>
                         ) : (
-                            <List sx={{ maxHeight: '300px', overflow: 'auto' }}>
+                            <List sx={{ maxHeight: '350px', overflow: 'auto' }}>
                                 {availableDiagrams.map((diagram) => (
                                     <ListItem key={diagram.path} disablePadding>
                                         <ListItemButton
@@ -186,7 +218,7 @@ export const LoadDiagramModal = ({
                             </List>
                         )}
                     </Box>
-                </Box>
+                )}
             </DialogContent>
         </Dialog>
     );

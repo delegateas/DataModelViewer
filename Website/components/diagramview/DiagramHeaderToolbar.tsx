@@ -25,7 +25,8 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
         showLoadModal, 
         availableDiagrams, 
         loadDiagramFromCloud, 
-        loadDiagramFromFile, 
+        loadDiagramFromFile,
+        loadAvailableDiagrams,
         openLoadModal, 
         closeLoadModal 
     } = useDiagramLoad();
@@ -46,7 +47,7 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
             label: 'Load',
             icon: LoadIcon,
             action: openLoadModal, 
-            disabled: !isCloudConfigured || isLoading,
+            disabled: isLoading,
             dividerAfter: true,
         },
         {
@@ -139,6 +140,7 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
                 isLoading={isLoading}
                 onLoadFromCloud={loadDiagramFromCloud}
                 onLoadFromFile={loadDiagramFromFile}
+                onLoadAvailableDiagrams={loadAvailableDiagrams}
             />
         </>
     );
