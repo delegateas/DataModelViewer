@@ -1,23 +1,25 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Chip, useTheme, alpha } from '@mui/material';
 import { HeaderDropdownMenu, MenuItemConfig } from './smaller-components/HeaderDropdownMenu';
-import { CloudNewIcon, CloudSaveIcon, FileMenuIcon, LoadIcon, LocalSaveIcon, NewIcon } from '@/lib/icons';
+import { ArchiveIcon, CloudNewIcon, CloudSaveIcon, FileMenuIcon, LoadIcon, LocalSaveIcon, NewIcon } from '@/lib/icons';
 import { SaveDiagramModal } from './modals/SaveDiagramModal';
 import { LoadDiagramModal } from './modals/LoadDiagramModal';
+import { VersionHistorySidepane } from './panes/VersionHistorySidepane';
 import { useDiagramSave } from '@/hooks/useDiagramSave';
 import { useDiagramLoad } from '@/hooks/useDiagramLoad';
 import { useDiagramView } from '@/contexts/DiagramViewContext';
 import { useRepositoryInfo } from '@/hooks/useRepositoryInfo';
 import { CheckRounded, ErrorRounded, WarningRounded } from '@mui/icons-material';
+import HeaderMenuItem from './smaller-components/HeaderMenuItem';
 
 interface IDiagramHeaderToolbarProps {
     // No props needed - actions are handled internally
 }
 
 export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
-    const { hasLoadedDiagram, loadedDiagramSource} = useDiagramView();
+    const { hasLoadedDiagram, loadedDiagramSource, loadedDiagramFilePath} = useDiagramView();
     const { isSaving, showSaveModal, saveDiagramToCloud, saveDiagramLocally, closeSaveModal, createNewDiagram } = useDiagramSave();
     const { 
         isLoading, 
@@ -31,6 +33,7 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
         closeLoadModal 
     } = useDiagramLoad();
     const { isCloudConfigured, isLoading: isRepoInfoLoading } = useRepositoryInfo();
+    const [showVersionHistory, setShowVersionHistory] = useState(false);
 
     const theme = useTheme();
 
@@ -77,13 +80,21 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
     return (
         <>
             <Box className="border-b w-full h-16 max-h-16 p-2 flex items-center justify-between" gap={2} sx={{ bgcolor: 'background.paper', borderColor: 'border.main' }}>
-                <Box className="flex">
+                <Box className="flex gap-2">
                     <HeaderDropdownMenu
                         triggerIcon={FileMenuIcon}
                         triggerLabel="File"
                         triggerTooltip="File operations"
                         menuItems={fileMenuItems}
-                        isNew={true}
+                    />
+
+                    <HeaderMenuItem
+                        icon={ArchiveIcon}
+                        label="Version History"
+                        tooltip="View version history"
+                        action={() => setShowVersionHistory(true)}
+                        new={false}
+                        disabled={!hasLoadedDiagram || !loadedDiagramFilePath}
                     />
                 </Box>
 
@@ -141,6 +152,11 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
                 onLoadFromCloud={loadDiagramFromCloud}
                 onLoadFromFile={loadDiagramFromFile}
                 onLoadAvailableDiagrams={loadAvailableDiagrams}
+            />
+
+            <VersionHistorySidepane
+                open={showVersionHistory}
+                onClose={() => setShowVersionHistory(false)}
             />
         </>
     );

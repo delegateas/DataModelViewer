@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { commitFileToRepo } from '../../auth/azuredevops/AzureDevOpsService';
+import { commitFileToRepo } from '../../services/AzureDevOpsService';
 import { SerializedDiagram } from '@/lib/diagram/models/serialized-diagram';
 
 interface DiagramSaveData extends SerializedDiagram {

@@ -61,6 +61,7 @@ export const HeaderDropdownMenu: React.FC<HeaderDropdownMenuProps> = ({
                 action={handleMenuClick}
                 new={isNew}
                 disabled={disabled}
+                isDropdown={true}
             />
 
             <Menu

@@ -1,3 +1,4 @@
+import { ChevronRight, ChevronRightRounded } from '@mui/icons-material';
 import { Tooltip, Box, Badge, alpha, Typography } from '@mui/material';
 import React from 'react'
 
@@ -7,12 +8,13 @@ interface IHeaderMenuItemProps {
     tooltip?: string;
     new?: boolean;
     disabled?: boolean;
+    isDropdown?: boolean;
     action?: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
-const HeaderMenuItem = ({ icon, label, tooltip, new: isNew, disabled, action }: IHeaderMenuItemProps) => {
+const HeaderMenuItem = ({ icon, label, tooltip, new: isNew, disabled, action, isDropdown }: IHeaderMenuItemProps) => {
     return (
-        <Tooltip title={tooltip} placement="right" arrow>
+        <Tooltip title={tooltip} placement="bottom" arrow>
             <Badge variant='dot' color='primary' invisible={!isNew} sx={{'& .MuiBadge-badge': {top: 8, right: 8}}}>
                 <Box
                     component="button"
@@ -40,11 +42,16 @@ const HeaderMenuItem = ({ icon, label, tooltip, new: isNew, disabled, action }: 
                         }}
                     >
                         <Box className="h-6 w-6">
-                        {icon}
+                            {icon}
                         </Box>
                         <Typography variant="body2" className="text-xs text-center">
                             {label}
                         </Typography>
+                        {isDropdown && (
+                            <Box className="h-4 w-4 flex items-center justify-center">
+                                <ChevronRightRounded fontSize="small" className='rotate-90 h-4 w-4' />
+                            </Box>
+                        )}
                     </Box>
                 </Box>
             </Badge>

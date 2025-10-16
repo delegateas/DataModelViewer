@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { managedAuth } from './ManagedIdentityAuthService';
+import { managedAuth } from '../auth/azuredevops/ManagedIdentityAuthService';
 
 interface CreateFileOptions {
     filePath: string;
@@ -48,6 +48,35 @@ interface GitCommitResponse {
         date: string;
     };
     comment: string;
+}
+
+interface FileVersionOptions {
+    filePath: string;
+    repositoryName?: string;
+    maxVersions?: number; // Optional limit on number of versions to return
+}
+
+interface FileVersion {
+    commitId: string;
+    author: {
+        name: string;
+        email: string;
+        date: string;
+    };
+    committer: {
+        name: string;
+        email: string;
+        date: string;
+    };
+    comment: string;
+    changeType: string; // add, edit, delete, etc.
+    objectId: string;
+}
+
+interface LoadFileVersionOptions {
+    filePath: string;
+    commitId: string;
+    repositoryName?: string;
 }
 
 class AzureDevOpsError extends Error {
@@ -271,6 +300,156 @@ export async function pullFileFromRepo<T>(options: LoadFileOptions): Promise<T> 
     }
 }
 
+/**
+ * Lists all versions (commits) of a specific file in the Azure DevOps Git repository
+ * @param options Configuration for file version retrieval
+ * @returns Promise with array of file versions
+ */
+export async function listFileVersions(options: FileVersionOptions): Promise<FileVersion[]> {
+    const {
+        filePath,
+        repositoryName,
+        maxVersions = 50 // Default to 50 versions
+    } = options;
+
+    try {
+        // Get ADO configuration
+        const config = managedAuth.getConfig();
+        
+        // Validate inputs
+        if (!filePath) {
+            throw new AzureDevOpsError('File path is required');
+        }
+
+        // Construct the API URL for getting file commit history
+        const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+        const commitsUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryName}/commits?searchCriteria.$top=${maxVersions}&searchCriteria.itemPath=${normalizedPath}&api-version=7.0`;
+
+        console.log(commitsUrl)
+
+        const response = await managedAuth.makeAuthenticatedRequest(commitsUrl);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new AzureDevOpsError(`File not found: ${filePath}`, 404);
+            }
+            const errorText = await response.text();
+            throw new AzureDevOpsError(`Failed to get file versions: ${response.status} - ${errorText}`, response.status);
+        }
+
+        const commitsData = await response.json();
+        
+        if (!commitsData.value || !Array.isArray(commitsData.value)) {
+            return [];
+        }
+
+        // Get detailed change information for each commit
+        const versions: FileVersion[] = [];
+        
+        for (const commit of commitsData.value) {
+            try {
+                // Get the changes for this specific commit to determine the change type
+                const changesUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryName}/commits/${commit.commitId}/changes?api-version=7.0`;
+                const changesResponse = await managedAuth.makeAuthenticatedRequest(changesUrl);
+                
+                if (changesResponse.ok) {
+                    const changesData = await changesResponse.json();
+                    const fileChange = changesData.changes?.find((change: any) => 
+                        change.item?.path === normalizedPath
+                    );
+                    
+                    if (fileChange) {
+                        versions.push({
+                            commitId: commit.commitId,
+                            author: commit.author,
+                            committer: commit.committer,
+                            comment: commit.comment,
+                            changeType: fileChange.changeType || 'edit',
+                            objectId: fileChange.item?.objectId || commit.commitId
+                        });
+                    }
+                } else {
+                    // Fallback: add commit without detailed change info
+                    versions.push({
+                        commitId: commit.commitId,
+                        author: commit.author,
+                        committer: commit.committer,
+                        comment: commit.comment,
+                        changeType: 'edit', // Default assumption
+                        objectId: commit.commitId
+                    });
+                }
+            } catch (error) {
+                // Continue with other commits if one fails
+                console.warn(`Failed to get changes for commit ${commit.commitId}:`, error);
+            }
+        }
+
+        return versions;
+
+    } catch (error) {
+        if (error instanceof AzureDevOpsError) {
+            throw error;
+        }
+        throw new AzureDevOpsError(`Unexpected error listing file versions: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * Loads a specific version of a file from the Azure DevOps Git repository
+ * @param options Configuration for file version loading
+ * @returns Promise with parsed JSON content from the specified version
+ */
+export async function pullFileVersion<T>(options: LoadFileVersionOptions): Promise<T> {
+    const {
+        filePath,
+        commitId,
+        repositoryName
+    } = options;
+
+    try {
+        // Get ADO configuration
+        const config = managedAuth.getConfig();
+        
+        // Validate inputs
+        if (!filePath || !commitId) {
+            throw new AzureDevOpsError('File path and commit ID are required');
+        }
+
+        // Construct the API URL for getting file content at specific commit
+        const normalizedPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+        const fileUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryName}/items?path=/${normalizedPath}&versionDescriptor.version=${commitId}&versionDescriptor.versionType=commit&includeContent=true&api-version=7.0`;
+
+        const response = await managedAuth.makeAuthenticatedRequest(fileUrl);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new AzureDevOpsError(`File not found at commit ${commitId}: ${filePath}`, 404);
+            }
+            const errorText = await response.text();
+            throw new AzureDevOpsError(`Failed to load file version: ${response.status} - ${errorText}`, response.status);
+        }
+
+        const fileData: GitFileResponse = await response.json();
+
+        if (!fileData.content) {
+            throw new AzureDevOpsError(`File content is empty at commit ${commitId}: ${filePath}`);
+        }
+        
+        try {
+            return JSON.parse(fileData.content) as T;
+        } catch (parseError) {
+            throw new AzureDevOpsError(`Failed to parse JSON content: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+        }
+
+    } catch (error) {
+        if (error instanceof AzureDevOpsError) {
+            throw error;
+        }
+        throw new AzureDevOpsError(`Unexpected error loading file version: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
 // Helper function to get repository information using environment variable
 export async function getRepositoryInfo(repositoryName?: string): Promise<{ id: string; name: string; webUrl: string }> {
     try {
@@ -306,5 +485,14 @@ export async function getRepositoryInfo(repositoryName?: string): Promise<{ id: 
 }
 
 // Export types for external use
-export type { CreateFileOptions, LoadFileOptions, GitCommitResponse, GitFileResponse, GitItem };
+export type { 
+    CreateFileOptions, 
+    LoadFileOptions, 
+    FileVersionOptions,
+    LoadFileVersionOptions,
+    GitCommitResponse, 
+    GitFileResponse, 
+    GitItem,
+    FileVersion
+};
 export { AzureDevOpsError };

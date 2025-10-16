@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listFilesFromRepo, type GitItem } from '../../auth/azuredevops/AzureDevOpsService';
+import { listFilesFromRepo, type GitItem } from '../../services/AzureDevOpsService';
 
 interface DiagramMetadata {
     path: string;

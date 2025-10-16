@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pullFileFromRepo } from '../../auth/azuredevops/AzureDevOpsService';
+import { pullFileFromRepo } from '../../services/AzureDevOpsService';
 
 export async function POST(request: NextRequest) {
     try {
