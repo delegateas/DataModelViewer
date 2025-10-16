@@ -1,29 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
     Drawer, 
     Box, 
     Typography, 
-    List, 
-    ListItem, 
-    ListItemButton, 
-    ListItemText, 
-    Accordion, 
-    AccordionSummary, 
-    AccordionDetails,
     IconButton,
-    Divider
+    Divider,
+    Paper
 } from '@mui/material';
 import { 
-    Close as CloseIcon, 
-    ExpandMore as ExpandMoreIcon,
-    FolderOpen as GroupIcon,
-    TableChart as EntityIcon
+    Close as CloseIcon
 } from '@mui/icons-material';
 import { useDatamodelData } from '@/contexts/DatamodelDataContext';
 import { useDiagramView } from '@/contexts/DiagramViewContext';
 import { GroupType, EntityType } from '@/lib/Types';
+import { EntityGroupAccordion } from '@/components/shared/elements/EntityGroupAccordion';
 
 interface EntitySelectionPaneProps {
     open: boolean;
@@ -33,9 +25,9 @@ interface EntitySelectionPaneProps {
 export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) => {
     const { groups } = useDatamodelData();
     const { addEntity, zoom, translate } = useDiagramView();
-    const [expandedGroups, setExpandedGroups] = useState<Map<string, boolean>>(new Map());
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-    const handleEntitySelect = (entity: EntityType) => {
+    const handleEntitySelect = useCallback((entity: EntityType, groupName: string) => {
         // Add entity at center of current view
         const centerX = (-translate.x / zoom) + (400 / zoom);
         const centerY = (-translate.y / zoom) + (300 / zoom);
@@ -45,7 +37,19 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
         
         // Close the pane after selection
         onClose();
-    };
+    }, [translate, zoom, addEntity, onClose]);
+
+    const handleGroupToggle = useCallback((groupName: string) => {
+        setExpandedGroups(prev => {
+            const newExpanded = new Set(prev);
+            if (newExpanded.has(groupName)) {
+                newExpanded.delete(groupName);
+            } else {
+                newExpanded.add(groupName);
+            }
+            return newExpanded;
+        });
+    }, []);
 
     return (
         <Drawer
@@ -76,93 +80,18 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
                         No entity groups found. Please load datamodel data first.
                     </Typography>
                 ) : (
-                    <List sx={{ p: 0 }}>
+                    <Paper className="border rounded-lg" sx={{ borderColor: 'border.main' }} variant="outlined">
                         {groups.map((group: GroupType) => (
-                            <Accordion 
-                                disableGutters
+                            <EntityGroupAccordion
                                 key={group.Name}
-                                expanded={expandedGroups.get(group.Name) || false}
-                                onChange={(_, isExpanded) => {
-                                    setExpandedGroups(prev => {
-                                        const newMap = new Map(prev);
-                                        if (isExpanded) {
-                                            newMap.set(group.Name, true);
-                                        } else {
-                                            newMap.delete(group.Name);
-                                        }
-                                        return newMap;
-                                    });
-                                }}
-                                sx={{ 
-                                    boxShadow: 'none', 
-                                    '&:before': { display: 'none' },
-                                    '& .MuiAccordionSummary-root': { 
-                                        minHeight: 48,
-                                        '&.Mui-expanded': { minHeight: 48 }
-                                    }
-                                }}
-                            >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    sx={{
-                                        '& .MuiAccordionSummary-content': {
-                                            alignItems: 'center',
-                                            gap: 1
-                                        }
-                                    }}
-                                >
-                                    <GroupIcon sx={{ color: 'text.secondary' }} />
-                                    <Typography variant="body2" fontWeight="medium">
-                                        {group.Name}
-                                    </Typography>
-                                    <Typography 
-                                        variant="caption" 
-                                        color="text.secondary"
-                                        sx={{ ml: 'auto', mr: 1 }}
-                                    >
-                                        ({group.Entities.length} entities)
-                                    </Typography>
-                                </AccordionSummary>
-                                <AccordionDetails sx={{ pt: 0 }}>
-                                    <List sx={{ p: 0 }}>
-                                        {group.Entities.map((entity: EntityType) => (
-                                            <ListItem key={entity.SchemaName} disablePadding>
-                                                <ListItemButton
-                                                    onClick={() => handleEntitySelect(entity)}
-                                                    sx={{ 
-                                                        borderRadius: 1,
-                                                        '&:hover': {
-                                                            backgroundColor: 'action.hover'
-                                                        }
-                                                    }}
-                                                >
-                                                    <EntityIcon 
-                                                        sx={{ 
-                                                            mr: 2, 
-                                                            color: 'primary.main',
-                                                            fontSize: 20
-                                                        }} 
-                                                    />
-                                                    <ListItemText
-                                                        primary={entity.DisplayName}
-                                                        secondary={entity.SchemaName}
-                                                        primaryTypographyProps={{
-                                                            variant: 'body2',
-                                                            fontWeight: 'medium'
-                                                        }}
-                                                        secondaryTypographyProps={{
-                                                            variant: 'caption',
-                                                            color: 'text.secondary'
-                                                        }}
-                                                    />
-                                                </ListItemButton>
-                                            </ListItem>
-                                        ))}
-                                    </List>
-                                </AccordionDetails>
-                            </Accordion>
+                                group={group}
+                                isExpanded={expandedGroups.has(group.Name)}
+                                onToggle={handleGroupToggle}
+                                onEntityClick={handleEntitySelect}
+                                showGroupClickIcon={false}
+                            />
                         ))}
-                    </List>
+                    </Paper>
                 )}
             </Box>
         </Drawer>

@@ -1,4 +1,4 @@
-import { Box, Tooltip, Typography, Grid, TextField } from '@mui/material';
+import { Box, Tooltip, Typography, Grid, TextField, Divider } from '@mui/material';
 import React, { useState } from 'react';
 import { AddSquareIcon } from '@/lib/icons';
 import { EntitySelectionPane } from './panes/EntitySelectionPane';
@@ -59,6 +59,8 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 <Typography variant='body1'>
                     Elements
                 </Typography>
+
+                <Divider className="my-2" />
                 
                 <Grid container spacing={1}>
                     {diagramTools.map((tool) => (
@@ -66,7 +68,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                             <Tooltip title={tool.label} placement="top">
                                 <Box
                                     onClick={tool.action}
-                                    className='h-12 w-12 p-2 hover:cursor-pointer'
+                                    className='h-8 w-8 hover:cursor-pointer'
                                     sx={{ color: "primary.main", backgroundColor: "transparent" }}
                                 >
                                     {tool.icon}
