@@ -127,6 +127,11 @@ export const AboutView = ({}: IAboutViewProps) => {
               </Box>
             </Paper>
 
+            {/* Credits */}
+            <Box className="text-center">
+              <Typography>Icons by <b>480 Design</b> <a target='_blank' className='underline text-blue-400' href="https://www.figma.com/@480design">Figma</a> </Typography>
+            </Box>
+
             {/* Version */}
             <Box className="text-center text-sm mt-8">
               <Typography variant="body2" sx={{ color: 'text.disabled' }}>
