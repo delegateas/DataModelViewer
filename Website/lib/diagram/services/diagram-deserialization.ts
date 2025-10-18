@@ -1,6 +1,7 @@
 import { dia, shapes } from '@joint/core';
 import { SerializedDiagram } from '../models/serialized-diagram';
 import { SerializedEntity } from '../models/serialized-entity';
+import { EntityElement } from '@/components/diagramview/diagram-elements/EntityElement';
 
 export interface DiagramFile {
     path: string;
@@ -64,25 +65,14 @@ export class DiagramDeserializationService {
         // Recreate entities
         diagramData.entities.forEach((entityData: SerializedEntity, index: number) => {
 
-            const rect = new shapes.standard.Rectangle({
+            const entity = new EntityElement({
                 id: entityData.id,
                 position: entityData.position,
                 size: entityData.size,
-                attrs: {
-                    body: {
-                        strokeWidth: 2,
-                        rx: 8,
-                        ry: 8
-                    },
-                    label: {
-                        text: entityData.label,
-                        fontSize: 14,
-                        fontFamily: 'Arial, sans-serif'
-                    }
-                }
+                title: entityData.label
             });
 
-            graph.addCell(rect);
+            graph.addCell(entity);
         });
     }
 

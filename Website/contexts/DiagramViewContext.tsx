@@ -1,5 +1,6 @@
 import { dia, shapes } from '@joint/core';
 import React, { createContext, useContext, ReactNode, useReducer, useEffect, useRef } from 'react';
+import { createEntity, EntityElement, EntityElementView } from '@/components/diagramview/diagram-elements/EntityElement';
 
 interface DiagramActions {
   setZoom: (zoom: number) => void;
@@ -158,7 +159,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             snapToGrid: true,
             frozen: true,
             async: true,
-            cellViewNamespace: shapes
+            cellViewNamespace: { ...shapes, diagram: { EntityElement, EntityElementView } }
         });
 
         paperRef.current = paper;
@@ -345,45 +346,17 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 entityY = centerPaperPoint.y;
             }
             
-            // Theme-aware entity colors using MUI CSS variables
-            const colors = [
-                { fill: 'var(--mui-palette-primary-main)', stroke: 'var(--mui-palette-primary-dark)' },
-                { fill: 'var(--mui-palette-success-main)', stroke: 'var(--mui-palette-success-dark)' },
-                { fill: 'var(--mui-palette-warning-main)', stroke: 'var(--mui-palette-warning-dark)' },
-                { fill: 'var(--mui-palette-error-main)', stroke: 'var(--mui-palette-error-dark)' },
-                { fill: 'var(--mui-palette-secondary-main)', stroke: 'var(--mui-palette-secondary-dark)' },
-                { fill: 'var(--mui-palette-info-main)', stroke: 'var(--mui-palette-info-dark)' },
-            ];
-            
-            const colorIndex = graphRef.current.getCells().length % colors.length;
-            const color = colors[colorIndex];
             const entityLabel = label || `Entity ${graphRef.current.getCells().length + 1}`;
             
-            // Theme-aware text color using MUI variables
-            const textColor = 'var(--mui-palette-primary-contrastText)';
-            
-            const rect = new shapes.standard.Rectangle({
-                position: { x: entityX - 60, y: entityY - 40 },
-                size: { width: 120, height: 80 },
-                attrs: {
-                    body: {
-                        fill: color.fill,
-                        stroke: color.stroke,
-                        strokeWidth: 2,
-                        rx: 8,
-                        ry: 8
-                    },
-                    label: {
-                        text: entityLabel,
-                        fill: textColor,
-                        fontSize: 14,
-                        fontFamily: 'Arial, sans-serif'
-                    }
-                }
+            // Create the new entity using our custom EntityElement
+            const entity = createEntity({
+                position: { x: entityX - 60, y: entityY - 40 }, // Center the entity (120x80 default size)
+                title: entityLabel,
+                size: { width: 120, height: 80 }
             });
             
-            graphRef.current.addCell(rect);
-            return rect;
+            graphRef.current.addCell(entity);
+            return entity;
         }
         return null;
     };

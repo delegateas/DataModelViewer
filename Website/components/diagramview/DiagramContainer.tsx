@@ -1,15 +1,47 @@
 'use client';
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 import { useDiagramView } from "@/contexts/DiagramViewContext";
+import { EntityContextMenu } from "./smaller-components/EntityContextMenu";
 
 interface IDiagramContainerProps {
 
 }
 
 export default function DiagramContainer({ }: IDiagramContainerProps) {
-    const { canvas } = useDiagramView();
+    const { canvas, getGraph, getPaper } = useDiagramView();
+    const [contextMenu, setContextMenu] = useState<{
+        open: boolean;
+        position: { top: number; left: number } | null;
+        entityId?: string;
+    }>({
+        open: false,
+        position: null
+    });
+
+    useEffect(() => {
+        const handleEntityContextMenu = (evt: CustomEvent) => {
+            const { entityId, x, y } = evt.detail;
+            setContextMenu({
+                open: true,
+                position: { top: y, left: x },
+                entityId: entityId
+            });
+        };
+        window.addEventListener('entityContextMenu', handleEntityContextMenu as EventListener);
+
+        return () => {
+            window.removeEventListener('entityContextMenu', handleEntityContextMenu as EventListener);
+        };
+    }, []);
+
+    const handleCloseContextMenu = () => {
+        setContextMenu({
+            open: false,
+            position: null
+        });
+    };
 
     return (
         <Box sx={{ 
@@ -28,6 +60,12 @@ export default function DiagramContainer({ }: IDiagramContainerProps) {
                     overflow: 'hidden',
                     position: 'relative'
                 }} 
+            />
+            <EntityContextMenu
+                open={contextMenu.open}
+                anchorPosition={contextMenu.position}
+                onClose={handleCloseContextMenu}
+                entityId={contextMenu.entityId}
             />
         </Box>
     );
