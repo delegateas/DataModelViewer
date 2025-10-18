@@ -5,14 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Layout from "@/components/shared/Layout";
 import InsightsView from "@/components/insightsview/InsightsView";
 import { Suspense } from "react";
-import { DatamodelDataProvider } from "@/contexts/DatamodelDataContext";
 
 export default function Insights() {
   return (
     <Suspense>
-        <DatamodelDataProvider>
-            <InsightsRedirect />
-        </DatamodelDataProvider>
+      <InsightsRedirect />
     </Suspense>
   )
 }

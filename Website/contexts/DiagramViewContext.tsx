@@ -319,11 +319,31 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     // Context functions
     const addEntity = (position?: { x: number; y: number }, label?: string) => {
         if (graphRef.current && paperRef.current) {
-            const x = position?.x ?? 100;
-            const y = position?.y ?? 100;
+            let entityX: number;
+            let entityY: number;
             
-            // Convert position if it's in screen coordinates
-            const paperPoint = paperRef.current.clientToLocalPoint({ x, y });
+            if (position) {
+                // If position is provided, use it as-is (already in paper coordinates)
+                entityX = position.x;
+                entityY = position.y;
+            } else {
+                // Calculate the center of the current viewport
+                const canvasElement = diagramViewState.canvas.current!;
+                const canvasRect = canvasElement.getBoundingClientRect();
+                
+                // Get the center point of the visible canvas in screen coordinates
+                const centerScreenX = canvasRect.left + (canvasRect.width / 2);
+                const centerScreenY = canvasRect.top + (canvasRect.height / 2);
+                
+                // Convert screen coordinates to paper coordinates
+                const centerPaperPoint = paperRef.current.clientToLocalPoint({ 
+                    x: centerScreenX, 
+                    y: centerScreenY 
+                });
+                
+                entityX = centerPaperPoint.x;
+                entityY = centerPaperPoint.y;
+            }
             
             // Theme-aware entity colors using MUI CSS variables
             const colors = [
@@ -343,7 +363,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             const textColor = 'var(--mui-palette-primary-contrastText)';
             
             const rect = new shapes.standard.Rectangle({
-                position: { x: paperPoint.x - 60, y: paperPoint.y - 40 },
+                position: { x: entityX - 60, y: entityY - 40 },
                 size: { width: 120, height: 80 },
                 attrs: {
                     body: {

@@ -28,12 +28,9 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
     const handleEntitySelect = useCallback((entity: EntityType, groupName: string) => {
-        // Add entity at center of current view
-        const centerX = (-translate.x / zoom) + (400 / zoom);
-        const centerY = (-translate.y / zoom) + (300 / zoom);
         
         // Use DisplayName for the entity label
-        addEntity({ x: centerX, y: centerY }, entity.DisplayName);
+        addEntity(undefined, entity.DisplayName);
         
         // Close the pane after selection
         onClose();

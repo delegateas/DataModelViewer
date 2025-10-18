@@ -202,14 +202,14 @@ export const LoadDiagramModal = ({
                                             <ListItemText
                                                 primary={diagram.name}
                                                 secondary={
-                                                    <Box>
+                                                    <React.Fragment>
                                                         <Typography variant="caption" component="div">
                                                             Updated: {formatDate(diagram.updatedAt)}
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary">
                                                             Size: {formatFileSize(diagram.size)}
                                                         </Typography>
-                                                    </Box>
+                                                    </React.Fragment>
                                                 }
                                             />
                                         </ListItemButton>
