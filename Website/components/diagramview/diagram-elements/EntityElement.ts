@@ -1,4 +1,5 @@
 import { dia, util } from '@joint/core';
+import { DiagramEventDispatcher } from '../events/DiagramEvents';
 
 export const EntityElementView = dia.ElementView.extend({
     
@@ -14,10 +15,37 @@ export const EntityElementView = dia.ElementView.extend({
         dia.ElementView.prototype.initialize.call(this, options);
         this.listenTo(this.model, 'change:label', this.updateTitle);
         this.updateTitle();
+        
+        // Listen for drag end events to mark this entity as having been dragged
+        this._dragEndHandler = (evt: CustomEvent) => {
+            const { entityIds } = evt.detail;
+            if (entityIds.includes(String(this.model.id))) {
+                this._wasDragged = true;
+            }
+        };
+        window.addEventListener('entityDragEnd', this._dragEndHandler as EventListener);
+    },
+    
+    remove: function() {
+        if (this._dragEndHandler) {
+            window.removeEventListener('entityDragEnd', this._dragEndHandler as EventListener);
+        }
+        dia.ElementView.prototype.remove.call(this);
     },
 
     onEntityClick: function(evt: MouseEvent) {
+        // Don't select if this was part of a drag operation (otherwise click would fire post drag, meaning the selection would just be this entity)
+        if (this._wasDragged) {
+            this._wasDragged = false;
+            return;
+        }
+
         this.preventDefaultInteraction(evt);
+
+        DiagramEventDispatcher.dispatch('entitySelect', {
+            entityId: String(this.model.id),
+            ctrlKey: evt.ctrlKey
+        });
     },
 
     onTitleDoubleClick: function(evt: Event) {
@@ -37,15 +65,14 @@ export const EntityElementView = dia.ElementView.extend({
         evt.preventDefault();
         evt.stopPropagation();
 
-        const customEvent = new CustomEvent('entityContextMenu', {
-            detail: {
-                entityId: this.model.id,
-                x: evt.clientX,
-                y: evt.clientY
-            }
+        DiagramEventDispatcher.dispatch('entityContextMenu', {
+            entityId: String(this.model.id),
+            x: evt.clientX,
+            y: evt.clientY
         });
-        window.dispatchEvent(customEvent);
     },
+
+
 
     updateTitle: function() {
         const label = this.model.get('label') || 'Entity';

@@ -4,13 +4,14 @@ import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 import { useDiagramView } from "@/contexts/DiagramViewContext";
 import { EntityContextMenu } from "./smaller-components/EntityContextMenu";
+import { EntityContextMenuEvent, EntitySelectEvent, DiagramEventDispatcher } from "./events/DiagramEvents";
 
 interface IDiagramContainerProps {
 
 }
 
 export default function DiagramContainer({ }: IDiagramContainerProps) {
-    const { canvas, getGraph, getPaper } = useDiagramView();
+    const { canvas, selectEntity } = useDiagramView();
     const [contextMenu, setContextMenu] = useState<{
         open: boolean;
         position: { top: number; left: number } | null;
@@ -21,7 +22,7 @@ export default function DiagramContainer({ }: IDiagramContainerProps) {
     });
 
     useEffect(() => {
-        const handleEntityContextMenu = (evt: CustomEvent) => {
+        const handleEntityContextMenu = (evt: EntityContextMenuEvent) => {
             const { entityId, x, y } = evt.detail;
             setContextMenu({
                 open: true,
@@ -29,12 +30,20 @@ export default function DiagramContainer({ }: IDiagramContainerProps) {
                 entityId: entityId
             });
         };
-        window.addEventListener('entityContextMenu', handleEntityContextMenu as EventListener);
+
+        const handleEntitySelect = (evt: EntitySelectEvent) => {
+            const { entityId, ctrlKey } = evt.detail;
+            selectEntity(entityId, ctrlKey);
+        };
+
+        DiagramEventDispatcher.addEventListener('entityContextMenu', handleEntityContextMenu);
+        DiagramEventDispatcher.addEventListener('entitySelect', handleEntitySelect);
 
         return () => {
-            window.removeEventListener('entityContextMenu', handleEntityContextMenu as EventListener);
+            DiagramEventDispatcher.removeEventListener('entityContextMenu', handleEntityContextMenu);
+            DiagramEventDispatcher.removeEventListener('entitySelect', handleEntitySelect);
         };
-    }, []);
+    }, [selectEntity]);
 
     const handleCloseContextMenu = () => {
         setContextMenu({

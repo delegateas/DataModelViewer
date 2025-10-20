@@ -50,3 +50,6 @@ const ComponentName = ({ }: ComponentNameProps) => {
 export default ComponentName;
 ``` 
 
+# Index files
+You must not create index.ts files for component folders.
+
