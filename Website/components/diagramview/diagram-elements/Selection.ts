@@ -97,6 +97,7 @@ export default class EntitySelection {
         );
 
         this.cleanupOverlay();
+        this.teardownSelectionElement();
 
         // Ignore tiny clicks (treat as no selection)
         if (selRect.width < 3 && selRect.height < 3) return;
@@ -119,7 +120,7 @@ export default class EntitySelection {
         this.elements.reset(inside);
 
         // If nothing selected, clear selection element
-        if (inside.length === 0) {
+        if (inside.length === 1) {
             this.teardownSelectionElement();
             return;
         }
@@ -139,10 +140,6 @@ export default class EntitySelection {
             // Put it behind the children (so you can still click children if needed)
             this.selectionElement.toBack();
         } else {
-            const prev = this.selectionElement.getEmbeddedCells();
-            prev.forEach((c) => this.selectionElement!.unembed(c));
-            prev.forEach((c) => this.paper.findViewByModel(c)?.setInteractivity(true));
-
             this.selectionElement.position(groupBBox.x, groupBBox.y);
             this.selectionElement.resize(groupBBox.width, groupBBox.height);
             // Ensure it’s behind again (in case z-order changed)
