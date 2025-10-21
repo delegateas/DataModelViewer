@@ -1,7 +1,7 @@
 import { dia, shapes, mvc } from '@joint/core';
 import React, { createContext, useContext, ReactNode, useReducer, useEffect, useRef } from 'react';
 import { createEntity, EntityElement, EntityElementView } from '@/components/diagramview/diagram-elements/EntityElement';
-import { DiagramEventDispatcher } from '@/components/diagramview/events/DiagramEvents';
+import EntitySelection, { SelectionElement } from '@/components/diagramview/diagram-elements/Selection';
 
 interface DiagramActions {
   setZoom: (zoom: number) => void;
@@ -160,22 +160,12 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     // Refs to store graph and paper instances
     const graphRef = useRef<dia.Graph | null>(null);
     const paperRef = useRef<dia.Paper | null>(null);
-
-    // Selection collection for coordinated multi-entity operations
-    // This Collection is updated synchronously whenever selections change,
-    // enabling reliable multi-selection dragging without timing issues
-    const selectionCollectionRef = useRef<mvc.Collection | null>(null);
-
-
-
+   
     useEffect(() => {
         if (!diagramViewState.canvas.current) return;
         
         const graph = new dia.Graph({}, { cellNamespace: shapes });
         graphRef.current = graph;
-        
-        // Initialize selection collection
-        selectionCollectionRef.current = new mvc.Collection();
         
         // Theme-aware colors using MUI CSS variables
         const gridMinorColor = "var(--mui-palette-border-main)";
@@ -198,158 +188,24 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 color: backgroundColor
             },
             interactive: { 
-                elementMove: false
+                elementMove: true
             },
             snapToGrid: true,
             frozen: true,
             async: true,
-            cellViewNamespace: { ...shapes, diagram: { EntityElement, EntityElementView } }
+            cellViewNamespace: { ...shapes, diagram: { EntityElement, EntityElementView }, selection: { SelectionElement } }
         });
 
         paperRef.current = paper;
         diagramViewState.canvas.current.appendChild(paper.el);
-        
-        // Multi-entity drag handling
-        let isDraggingSelection = false;
-        const selectionCollection = selectionCollectionRef.current!;
 
-        // Handle element pointerdown to start potential multi-selection drag
-        paper.on('element:pointerdown', (elementView: any, evt: any) => {
-            const entityId = String(elementView.model.id);
-            
-            // Check if this entity is in the selection collection
-            const isInCollection = selectionCollection.get(entityId) !== undefined;
-            const isMultiSelect = isInCollection && selectionCollection.length > 1;
-
-            
-            if (isMultiSelect && !evt.ctrlKey) {
-                // Multi-selection drag - only for non-ctrl clicks to allow ctrl+click deselection
-                evt.stopPropagation();
-                evt.preventDefault();
-                
-                isDraggingSelection = true;
-                
-                // Store initial positions for all entities in the collection
-                const initialPositions = new Map();
-                selectionCollection.each((cell: any) => {
-                    const position = cell.get('position');
-                    initialPositions.set(cell.id, { x: position.x, y: position.y });
-                });
-                
-                const startX = evt.clientX;
-                const startY = evt.clientY;
-                
-                // Handle drag movement
-                const handleSelectionDrag = (moveEvt: MouseEvent) => {
-                    if (!isDraggingSelection) return;
-                    
-                    moveEvt.preventDefault();
-                    
-                    // Calculate deltas
-                    const deltaX = moveEvt.clientX - startX;
-                    const deltaY = moveEvt.clientY - startY;
-                    
-                    // Convert to paper coordinates and snap to grid
-                    const paperDeltaX = deltaX / currentZoom;
-                    const paperDeltaY = deltaY / currentZoom;
-                    
-                    const gridSize = 20;
-                    const snappedDeltaX = Math.round(paperDeltaX / gridSize) * gridSize;
-                    const snappedDeltaY = Math.round(paperDeltaY / gridSize) * gridSize;
-                    
-                    // Move all cells in the selection collection together
-                    selectionCollection.each((cell: any) => {
-                        const initialPos = initialPositions.get(cell.id);
-                        if (initialPos) {
-                            cell.set('position', {
-                                x: initialPos.x + snappedDeltaX,
-                                y: initialPos.y + snappedDeltaY
-                            });
-                        }
-                    });
-                };
-                
-                // Handle drag end
-                const handleSelectionDragEnd = () => {
-                    if (!isDraggingSelection) return;
-                    
-                    isDraggingSelection = false;
-                    
-                    // Get entity IDs from collection
-                    const draggedEntityIds: string[] = [];
-                    selectionCollection.each((cell: any) => {
-                        draggedEntityIds.push(String(cell.id));
-                    });
-                    
-                    // Notify about drag end
-                    DiagramEventDispatcher.dispatch('entityDragEnd', {
-                        entityIds: draggedEntityIds
-                    });
-                    
-                    // Clean up event listeners
-                    document.removeEventListener('mousemove', handleSelectionDrag);
-                    document.removeEventListener('mouseup', handleSelectionDragEnd);
-                };
-                
-                // Add event listeners for this drag operation
-                document.addEventListener('mousemove', handleSelectionDrag);
-                document.addEventListener('mouseup', handleSelectionDragEnd);
-            } else if (!evt.ctrlKey) {
-                // Single entity drag - only for non-ctrl clicks to allow ctrl+click selection
-                evt.stopPropagation();
-                evt.preventDefault();
-                
-                const cell = elementView.model;
-                const startX = evt.clientX;
-                const startY = evt.clientY;
-                const initialPosition = cell.get('position');
-                
-                // Handle single entity drag
-                const handleSingleDrag = (moveEvt: MouseEvent) => {
-                    moveEvt.preventDefault();
-                    
-                    // Calculate deltas
-                    const deltaX = moveEvt.clientX - startX;
-                    const deltaY = moveEvt.clientY - startY;
-                    
-                    // Convert to paper coordinates and snap to grid
-                    const paperDeltaX = deltaX / currentZoom;
-                    const paperDeltaY = deltaY / currentZoom;
-                    
-                    const gridSize = 20;
-                    const snappedDeltaX = Math.round(paperDeltaX / gridSize) * gridSize;
-                    const snappedDeltaY = Math.round(paperDeltaY / gridSize) * gridSize;
-                    
-                    // Move the single entity
-                    cell.set('position', {
-                        x: initialPosition.x + snappedDeltaX,
-                        y: initialPosition.y + snappedDeltaY
-                    });
-                };
-                
-                // Handle single drag end
-                const handleSingleDragEnd = () => {
-                    // Clean up event listeners
-                    document.removeEventListener('mousemove', handleSingleDrag);
-                    document.removeEventListener('mouseup', handleSingleDragEnd);
-                };
-                
-                // Add event listeners for single entity drag
-                document.addEventListener('mousemove', handleSingleDrag);
-                document.addEventListener('mouseup', handleSingleDragEnd);
-            } else {
-                // Ctrl+click - let the event pass through to the EntityElement click handler
-            }
-        });
+        const selection = new EntitySelection(paper);
         
+        // Update all entity views with selection callbacks when entities are added
         // Variables for panning, zooming and selection
         let isPanning = false;
-        let isSelecting = false;
         let panStartX = 0;
         let panStartY = 0;
-        let selectionStartX = 0;
-        let selectionStartY = 0;
-        let selectionRect: HTMLDivElement | null = null;
         let currentZoom = diagramViewState.zoom;
         let currentTranslate = { ...diagramViewState.translate };
 
@@ -362,36 +218,6 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 panStartY = evt.clientY;
                 setIsPanning(true);
                 diagramViewState.canvas.current!.style.cursor = 'grabbing';
-            } else {
-                // Check if click is on empty space (not on an entity)
-                const elementFromPoint = document.elementFromPoint(evt.clientX, evt.clientY);
-                const isOnEntity = elementFromPoint?.closest('.entity-container');
-                
-                if (!isOnEntity) {
-                    // Start drag selection
-                    evt.preventDefault();
-                    isSelecting = true;
-                    selectionStartX = evt.clientX;
-                    selectionStartY = evt.clientY;
-                    
-                    // Clear current selection if not holding Ctrl
-                    if (!evt.ctrlKey) {
-                        clearSelection();
-                    }
-                    
-                    // Create selection rectangle
-                    selectionRect = document.createElement('div');
-                    selectionRect.style.position = 'fixed';
-                    selectionRect.style.border = '2px dashed var(--mui-palette-primary-main)';
-                    selectionRect.style.backgroundColor = 'var(--mui-palette-action-selected)';
-                    selectionRect.style.pointerEvents = 'none';
-                    selectionRect.style.zIndex = '1000';
-                    selectionRect.style.left = evt.clientX + 'px';
-                    selectionRect.style.top = evt.clientY + 'px';
-                    selectionRect.style.width = '0px';
-                    selectionRect.style.height = '0px';
-                    document.body.appendChild(selectionRect);
-                }
             }
         };
 
@@ -421,19 +247,6 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 
                 panStartX = evt.clientX;
                 panStartY = evt.clientY;
-            } else if (isSelecting && selectionRect) {
-                evt.preventDefault();
-                
-                // Update selection rectangle
-                const left = Math.min(selectionStartX, evt.clientX);
-                const top = Math.min(selectionStartY, evt.clientY);
-                const width = Math.abs(evt.clientX - selectionStartX);
-                const height = Math.abs(evt.clientY - selectionStartY);
-                
-                selectionRect.style.left = left + 'px';
-                selectionRect.style.top = top + 'px';
-                selectionRect.style.width = width + 'px';
-                selectionRect.style.height = height + 'px';
             }
         };
 
@@ -444,68 +257,6 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 isPanning = false;
                 setIsPanning(false);
                 diagramViewState.canvas.current!.style.cursor = 'default';
-            } else if (isSelecting && selectionRect) {
-                evt.preventDefault();
-                isSelecting = false;
-                
-                // Get selection rectangle bounds
-                const rect = selectionRect.getBoundingClientRect();
-                
-                // Find entities within selection rectangle
-                const canvasRect = diagramViewState.canvas.current!.getBoundingClientRect();
-                const allEntities = graph.getCells().filter(cell => cell.get('type') === 'diagram.EntityElement');
-                const selectedEntities: string[] = [];
-                
-                allEntities.forEach(entity => {
-                    const view = paper.findViewByModel(entity);
-                    if (view) {
-                        const entityRect = view.el.getBoundingClientRect();
-                        
-                        // Check if entity intersects with selection rectangle
-                        const intersects = !(
-                            entityRect.right < rect.left ||
-                            entityRect.left > rect.right ||
-                            entityRect.bottom < rect.top ||
-                            entityRect.top > rect.bottom
-                        );
-                        
-                        if (intersects) {
-                            selectedEntities.push(String(entity.id));
-                        }
-                    }
-                });
-                
-                // Update selection
-                if (selectedEntities.length > 0) {
-                    if (evt.ctrlKey) {
-                        // Add to existing selection by toggling each entity
-                        selectedEntities.forEach(entityId => {
-                            selectEntity(entityId, true);
-                        });
-                    } else {
-                        // Set new selection
-                        dispatch({ type: 'SET_SELECTION', payload: selectedEntities });
-                        
-                        // Update selection collection immediately
-                        if (selectionCollectionRef.current && graphRef.current) {
-                            const selectedCells = selectedEntities.map(id => graphRef.current!.getCell(id)).filter(Boolean);
-                            selectionCollectionRef.current.reset(selectedCells);
-                        }
-                        
-                        // Update visual state
-                        allEntities.forEach(entity => {
-                            const isSelected = selectedEntities.includes(String(entity.id));
-                            entity.attr('container/style/border', isSelected ? 
-                                '2px solid var(--mui-palette-secondary-main)' : 
-                                '2px solid var(--mui-palette-primary-main)'
-                            );
-                        });
-                    }
-                }
-                
-                // Remove selection rectangle
-                document.body.removeChild(selectionRect);
-                selectionRect = null;
             }
         };
 
@@ -580,28 +331,11 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
-        // Key handler for canceling selection
-        const handleKeyDown = (evt: KeyboardEvent) => {
-            if (evt.key === 'Escape') {
-                // Cancel selection
-                if (isSelecting && selectionRect) {
-                    isSelecting = false;
-                    document.body.removeChild(selectionRect);
-                    selectionRect = null;
-                }
-                // Clear current selection
-                clearSelection();
-            }
-        };
-
-
-
         // Add event listeners
         const canvas = diagramViewState.canvas.current;
         canvas.addEventListener('mousedown', handleMouseDown);
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
-        document.addEventListener('keydown', handleKeyDown);
         canvas.addEventListener('wheel', handleWheel, { passive: false });
         
         // Unfreeze and render the paper to make it interactive
@@ -613,13 +347,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             canvas.removeEventListener('mousedown', handleMouseDown);
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
-            document.removeEventListener('keydown', handleKeyDown);
             canvas.removeEventListener('wheel', handleWheel);
-            
-            // Clean up any remaining selection rectangle
-            if (selectionRect && selectionRect.parentNode) {
-                document.body.removeChild(selectionRect);
-            }
             
             paper.remove();
         };
@@ -740,12 +468,6 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         
         // Update state
         dispatch({ type: 'SELECT_ENTITY', payload: { entityId, multiSelect: ctrlClick } });
-        
-        // Update collection with the new selection immediately
-        if (selectionCollectionRef.current && graphRef.current) {
-            const selectedCells = newSelectedEntities.map(id => graphRef.current!.getCell(id)).filter(Boolean);
-            selectionCollectionRef.current.reset(selectedCells);
-        }
     };
 
     const clearSelection = () => {
@@ -758,14 +480,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 entity.attr('container/style/border', '2px solid var(--mui-palette-primary-main)');
             });
         }
-        
-        // Update selection collection immediately - clear it
-        if (selectionCollectionRef.current) {
-            selectionCollectionRef.current.reset([]);
-        }
     };
-
-
 
     return (
         <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning, setTranslate, addEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection }}>

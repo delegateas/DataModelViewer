@@ -1,11 +1,8 @@
 import { dia, util } from '@joint/core';
-import { DiagramEventDispatcher } from '../events/DiagramEvents';
 
 export const EntityElementView = dia.ElementView.extend({
     
     events: {
-        'click': 'onEntityClick',
-        'dblclick': 'onTitleDoubleClick',
         'mouseenter': 'onMouseEnter',
         'mouseleave': 'onMouseLeave',
         'contextmenu': 'onContextMenu'
@@ -13,71 +10,58 @@ export const EntityElementView = dia.ElementView.extend({
 
     initialize: function(options?: any) {
         dia.ElementView.prototype.initialize.call(this, options);
-        this.listenTo(this.model, 'change:label', this.updateTitle);
         this.updateTitle();
         
-        // Listen for drag end events to mark this entity as having been dragged
-        this._dragEndHandler = (evt: CustomEvent) => {
-            const { entityIds } = evt.detail;
-            if (entityIds.includes(String(this.model.id))) {
-                this._wasDragged = true;
-            }
-        };
-        window.addEventListener('entityDragEnd', this._dragEndHandler as EventListener);
-    },
-    
-    remove: function() {
-        if (this._dragEndHandler) {
-            window.removeEventListener('entityDragEnd', this._dragEndHandler as EventListener);
-        }
-        dia.ElementView.prototype.remove.call(this);
-    },
-
-    onEntityClick: function(evt: MouseEvent) {
-        // Don't select if this was part of a drag operation (otherwise click would fire post drag, meaning the selection would just be this entity)
-        if (this._wasDragged) {
-            this._wasDragged = false;
-            return;
-        }
-
-        this.preventDefaultInteraction(evt);
-
-        DiagramEventDispatcher.dispatch('entitySelect', {
-            entityId: String(this.model.id),
-            ctrlKey: evt.ctrlKey
-        });
-    },
-
-    onTitleDoubleClick: function(evt: Event) {
-        evt.preventDefault();
-        evt.stopPropagation();
+        // Drag state
+        this.isDragging = false;
+        this.dragStartPosition = null;
+        this.initialPosition = null;
+        this.dragMoveHandler = null;
+        this.dragEndHandler = null;
     },
 
     onMouseEnter: function() {
+        // Change cursor and highlight entity
         this.model.attr('container/style/cursor', 'move');
+        this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-default)');
     },
 
     onMouseLeave: function() {
+        // Change cursor back and remove highlight  
         this.model.attr('container/style/cursor', 'default');
+        this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-paper)');
     },
 
     onContextMenu: function(evt: MouseEvent) {
         evt.preventDefault();
         evt.stopPropagation();
 
-        DiagramEventDispatcher.dispatch('entityContextMenu', {
-            entityId: String(this.model.id),
-            x: evt.clientX,
-            y: evt.clientY
+        // Dispatch a custom event for context menu
+        const contextMenuEvent = new CustomEvent('entityContextMenu', {
+            detail: { 
+                entityId: String(this.model.id), 
+                x: evt.clientX, 
+                y: evt.clientY 
+            }
         });
+        window.dispatchEvent(contextMenuEvent);
     },
-
-
 
     updateTitle: function() {
         const label = this.model.get('label') || 'Entity';
         this.model.attr('title/html', label);
     },
+
+    remove: function() {
+        // Clean up any remaining event listeners
+        if (this.dragMoveHandler) {
+            document.removeEventListener('mousemove', this.dragMoveHandler);
+        }
+        if (this.dragEndHandler) {
+            document.removeEventListener('mouseup', this.dragEndHandler);
+        }
+        dia.ElementView.prototype.remove.call(this);
+    }
 });
 
 export const EntityElement = dia.Element.define('diagram.EntityElement', {
@@ -119,7 +103,7 @@ export const EntityElement = dia.Element.define('diagram.EntityElement', {
             <div 
                 xmlns="http://www.w3.org/1999/xhtml" 
                 @selector="container"
-                class="entity-container"
+                class="entity-container duration-300 transition-colors"
             >
                 <span @selector="title" class="entity-title"></span>
             </div>
