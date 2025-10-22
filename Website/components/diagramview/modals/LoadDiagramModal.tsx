@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import {
     CloudDownload as CloudIcon,
-    Upload as UploadIcon,
     Close as CloseIcon,
     PolylineRounded,
     ArrowBack as ArrowBackIcon
@@ -25,7 +24,6 @@ import {
 import { DiagramFile } from '@/lib/diagram/services/diagram-deserialization';
 import { ClickableCard } from '@/components/shared/elements/ClickableCard';
 import { AzureDevOpsIcon, LoadIcon } from '@/lib/icons';
-import { useDiagramView } from '@/contexts/DiagramViewContext';
 import { useRepositoryInfo } from '@/hooks/useRepositoryInfo';
 
 interface LoadDiagramModalProps {

@@ -1,4 +1,5 @@
 import { SelectObjectEvent } from '@/components/diagramview/events/SelectObjectEvent';
+import { EntityType } from '../Types';
 
 /**
  * Event bridge class that provides a simple interface for both React and Joint.js components
@@ -16,8 +17,7 @@ export class DiagramEventBridge {
         return DiagramEventBridge.instance;
     }
 
-    // Event dispatching methods - can be called from anywhere
-    dispatchEntitySelect(entityId: string, entityData: any) {
+    dispatchEntitySelect(entityId: string, entityData: EntityType) {
         const event = new CustomEvent<SelectObjectEvent>('selectObject', {
             detail: {
                 type: 'entity',
@@ -28,7 +28,7 @@ export class DiagramEventBridge {
         window.dispatchEvent(event);
     }
 
-    dispatchSelectionChange(entities: any[]) {
+    dispatchSelectionChange(entities: EntityType[]) {
         const event = new CustomEvent<SelectObjectEvent>('selectObject', {
             detail: {
                 type: 'selection',

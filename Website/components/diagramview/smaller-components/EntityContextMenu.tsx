@@ -13,8 +13,7 @@ interface EntityContextMenuProps {
 export const EntityContextMenu: React.FC<EntityContextMenuProps> = ({
     anchorPosition,
     open,
-    onClose,
-    entityId
+    onClose
 }) => {
     return (
         <Menu

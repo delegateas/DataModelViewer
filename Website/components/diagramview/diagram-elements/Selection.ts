@@ -1,6 +1,6 @@
 import { dia, g, mvc, V, VElement } from "@joint/core";
-import { SelectObjectEvent } from "../events/SelectObjectEvent";
 import { diagramEvents } from "@/lib/diagram/DiagramEventBridge";
+import { EntityElementView } from "./EntityElement";
 
 export const SelectionElement = dia.Element.define('selection.SelectionElement', {
     size: { width: 100, height: 100 },
@@ -161,7 +161,7 @@ export default class EntitySelection {
 
         inside.forEach((el) => {
             this.selectionElement!.embed(el);
-            (el.findView(this.paper) as any).onSelect();
+            (el.findView(this.paper) as EntityElementView).onSelect();
         });
 
         // Optional visual affordance when active
@@ -188,7 +188,7 @@ export default class EntitySelection {
             this.selectionElement.unembed(k);
             this.paper.findViewByModel(k)?.setInteractivity(true);
             // Call onDeselect to remove selection styling
-            (k.findView(this.paper) as any).onDeselect();
+            (k.findView(this.paper) as EntityElementView).onDeselect();
         }
 
         // Now it's safe to remove just the container
@@ -213,7 +213,7 @@ export default class EntitySelection {
     public clear() {
         // Call onDeselect on all currently selected elements
         this.elements.toArray().forEach(el => {
-            (el.findView(this.paper) as any).onDeselect();
+            (el.findView(this.paper) as EntityElementView).onDeselect();
         });
         
         this.elements.reset([]);

@@ -1,4 +1,4 @@
-import { dia, shapes } from '@joint/core';
+import { dia } from '@joint/core';
 import { SerializedDiagram } from '../models/serialized-diagram';
 import { SerializedEntity } from '../models/serialized-entity';
 import { EntityElement } from '@/components/diagramview/diagram-elements/EntityElement';
@@ -63,7 +63,7 @@ export class DiagramDeserializationService {
         setLoadedDiagram(filename, source, filePath);
 
         // Recreate entities
-        diagramData.entities.forEach((entityData: SerializedEntity, index: number) => {
+        diagramData.entities.forEach((entityData: SerializedEntity) => {
 
             const entity = new EntityElement({
                 id: entityData.id,

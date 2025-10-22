@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { 
     Drawer, 
     Box, 
@@ -79,7 +79,7 @@ export const RelatedEntitiesPane = ({ open, onClose, entity }: RelatedEntitiesPa
         return relatedGroups;
     }, [entity, groups]);
 
-    const handleEntityClick = useCallback((clickedEntity: EntityType, groupName: string) => {
+    const handleEntityClick = useCallback((clickedEntity: EntityType) => {
         addEntity(
             clickedEntity,
             undefined,

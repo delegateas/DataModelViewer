@@ -1,7 +1,22 @@
-import { dia, util } from '@joint/core';
-import { SelectObjectEvent } from '../events/SelectObjectEvent';
+import { dia, mvc, util } from '@joint/core';
 import { EntityType } from '@/lib/Types';
 import { diagramEvents } from '@/lib/diagram/DiagramEventBridge';
+
+export type EntityElement = dia.Element & {
+    get(key: 'entityData'): EntityType | undefined;
+    get(key: 'label'): string | undefined;
+};
+export type EntityElementView = dia.ElementView<EntityElement> & {
+    onSelect(): void;
+    onDeselect(): void;
+};
+
+interface IEntityOptions extends mvc.ViewBaseOptions {
+    position?: { x: number; y: number };
+    title?: string;
+    size?: { width: number; height: number };
+    entityData?: EntityType;
+};
 
 export const EntityElementView = dia.ElementView.extend({
     
@@ -13,7 +28,7 @@ export const EntityElementView = dia.ElementView.extend({
         'pointerup': 'onPointerUp',
     },
 
-    initialize: function(options?: any) {
+    initialize: function(options?: IEntityOptions) {
         dia.ElementView.prototype.initialize.call(this, options);
         this.updateTitle();
         this.isSelected = false; // Track selection state
@@ -49,7 +64,7 @@ export const EntityElementView = dia.ElementView.extend({
         );
     },
 
-    onPointerDown: function(evt: PointerEvent) {
+    onPointerDown: function() {
         this.model.attr('container/style/cursor', 'grabbing');
         
         diagramEvents.dispatchEntitySelect(
@@ -58,7 +73,7 @@ export const EntityElementView = dia.ElementView.extend({
         );
     },
 
-    onPointerUp: function(evt: PointerEvent) {
+    onPointerUp: function() {
         this.model.attr('container/style/cursor', 'move');
     },
 
@@ -146,12 +161,7 @@ export const EntityElement = dia.Element.define('diagram.EntityElement', {
     `
 });
 
-export function createEntity(options: {
-    position?: { x: number; y: number };
-    title?: string;
-    size?: { width: number; height: number };
-    entityData?: EntityType;
-} = {}) {
+export function createEntity(options: IEntityOptions = {}) {
     const label = options.title || 'New Entity';
     const entity = new EntityElement({
         position: options.position || { x: 0, y: 0 },

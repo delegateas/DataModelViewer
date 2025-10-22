@@ -10,12 +10,10 @@ import {
     ListItem,
     ListItemText,
     Divider,
-    CircularProgress,
     Alert,
     Chip,
     Skeleton,
     Button,
-    Tooltip
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useDiagramView } from '@/contexts/DiagramViewContext';

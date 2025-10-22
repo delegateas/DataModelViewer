@@ -4,7 +4,6 @@ import { SidebarProvider } from "@/contexts/SidebarContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { DatamodelViewProvider } from "@/contexts/DatamodelViewContext";
 import { SnackbarProvider } from "@/contexts/SnackbarContext";
 import { DatamodelDataProvider } from "@/contexts/DatamodelDataContext";
 

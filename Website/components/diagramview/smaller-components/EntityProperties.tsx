@@ -1,5 +1,5 @@
 import { EntityType } from '@/lib/Types';
-import { ExtensionRounded, AccountTreeRounded } from '@mui/icons-material';
+import { ExtensionRounded } from '@mui/icons-material';
 import { Box, Divider, Typography, Button } from '@mui/material';
 import React, { useState } from 'react';
 import { RelatedEntitiesPane } from '@/components/diagramview/panes/RelatedEntitiesPane';

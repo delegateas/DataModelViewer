@@ -1,7 +1,6 @@
 import { EntityType, GroupType } from "@/lib/Types";
 import { useSidebar } from '@/contexts/SidebarContext';
-import { cn } from "@/lib/utils";
-import { Box, InputAdornment, Paper, Typography, CircularProgress } from '@mui/material';
+import { Box, InputAdornment, Paper } from '@mui/material';
 import { SearchRounded } from '@mui/icons-material';
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { TextField } from "@mui/material";
@@ -13,7 +12,6 @@ import { EntityGroupAccordion } from "@/components/shared/elements/EntityGroupAc
 interface ISidebarDatamodelViewProps { 
 
 }
-
 
 export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const { currentSection, currentGroup, scrollToSection, scrollToGroup, loadingSection } = useDatamodelView();
