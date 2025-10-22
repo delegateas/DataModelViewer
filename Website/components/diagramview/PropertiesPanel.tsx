@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react'
-import { SelectObjectEvent } from './events/SelectObjectEvent';
+import React, { useState, useEffect, useRef } from 'react'
 import { Box, Divider, IconButton } from '@mui/material';
 import { CloseIcon } from '@/lib/icons';
 import EntityProperties from './smaller-components/EntityProperties';
+import { SelectionProperties } from './smaller-components/SelectionProperties';
+import { diagramEvents } from '@/lib/diagram/DiagramEventBridge';
+import { SelectObjectEvent } from './events/SelectObjectEvent';
 
 interface IPropertiesPanelProps {
 
@@ -10,29 +12,36 @@ interface IPropertiesPanelProps {
 
 export default function PropertiesPanel({ }: IPropertiesPanelProps) {
     const [object, setObject] = useState<SelectObjectEvent | null>(null);
+    const objectRef = useRef<SelectObjectEvent | null>(null);
     const [isOpen, setIsOpen] = useState<boolean>(false);
 
     const close = () => {
         setIsOpen(false);
         setObject(null);
-    }
+    };
 
     useEffect(() => {
-        const handleObjectSelection = (evt: CustomEvent<SelectObjectEvent>) => {
-            console.log("Object selected:", evt.detail);
-            setObject(evt.detail);
+        objectRef.current = object;
+    }, [object]);
+
+    useEffect(() => {
+        const cleanup = diagramEvents.onSelectionEvent((event) => {
+            if (event.type === 'entity' && objectRef.current?.type === 'selection') {
+                return;
+            }
+            setObject(event);
             setIsOpen(true);
-        };
-        window.addEventListener('selectObject', handleObjectSelection as EventListener);
-        return () => {
-            window.removeEventListener('selectObject', handleObjectSelection as EventListener);
-        };
+        });
+
+        return cleanup;
     }, []);
 
     const getProperties = () => {
         switch (object?.type) {
             case 'entity':
-                return <EntityProperties entity={object.data} />;
+                return <EntityProperties entity={object.data?.[0]} closePane={close} />;
+            case 'selection':
+                return <SelectionProperties selectedEntities={object.data ?? []} />;
         }
     }
 

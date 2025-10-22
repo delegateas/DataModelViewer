@@ -1,6 +1,7 @@
 import { dia, util } from '@joint/core';
 import { SelectObjectEvent } from '../events/SelectObjectEvent';
 import { EntityType } from '@/lib/Types';
+import { diagramEvents } from '@/lib/diagram/DiagramEventBridge';
 
 export const EntityElementView = dia.ElementView.extend({
     
@@ -41,27 +42,20 @@ export const EntityElementView = dia.ElementView.extend({
         evt.stopPropagation();
 
         // Dispatch a custom event for context menu
-        const contextMenuEvent = new CustomEvent('entityContextMenu', {
-            detail: { 
-                entityId: String(this.model.id), 
-                x: evt.clientX, 
-                y: evt.clientY 
-            }
-        });
-        window.dispatchEvent(contextMenuEvent);
+        diagramEvents.dispatchEntityContextMenu(
+            String(this.model.id), 
+            evt.clientX, 
+            evt.clientY
+        );
     },
 
     onPointerDown: function(evt: PointerEvent) {
         this.model.attr('container/style/cursor', 'grabbing');
         
-        const contextMenuEvent = new CustomEvent<SelectObjectEvent>('selectObject', {
-            detail: { 
-                type: 'entity',
-                objectId: String(this.model.id),
-                data: this.model.get('entityData')
-            }
-        });
-        window.dispatchEvent(contextMenuEvent);
+        diagramEvents.dispatchEntitySelect(
+            String(this.model.id),
+            this.model.get('entityData')
+        );
     },
 
     onPointerUp: function(evt: PointerEvent) {

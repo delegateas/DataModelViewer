@@ -2,6 +2,7 @@ import { dia, shapes } from '@joint/core';
 import React, { createContext, useContext, ReactNode, useReducer, useEffect, useRef } from 'react';
 import { createEntity, EntityElement, EntityElementView } from '@/components/diagramview/diagram-elements/EntityElement';
 import EntitySelection, { SelectionElement } from '@/components/diagramview/diagram-elements/Selection';
+import { SmartLayout } from '@/components/diagramview/layout/SmartLayout';
 import { EntityType } from '@/lib/Types';
 
 interface DiagramActions {
@@ -19,6 +20,8 @@ interface DiagramActions {
     selectEntity: (entityId: string, ctrlClick?: boolean) => void;
     clearSelection: () => void;
     isEntityInDiagram: (entity: EntityType) => boolean;
+    applySmartLayout: (entities: EntityType[]) => void;
+    getSelectedEntities: () => EntityType[];
 }
 
 export interface DiagramState extends DiagramActions {
@@ -62,6 +65,8 @@ const initialState: DiagramState = {
     selectEntity: () => { throw new Error("selectEntity not initialized yet!"); },
     clearSelection: () => { throw new Error("clearSelection not initialized yet!"); },
     isEntityInDiagram: () => { throw new Error("isEntityInDiagram not initialized yet!"); },
+    applySmartLayout: () => { throw new Error("applySmartLayout not initialized yet!"); },
+    getSelectedEntities: () => { throw new Error("getSelectedEntities not initialized yet!"); },
 }
 
 type DiagramViewAction =
@@ -536,8 +541,84 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         return diagramViewState.entitiesInDiagram.has(entity.SchemaName);
     };
 
+    const applySmartLayout = (entities: EntityType[]) => {
+        if (graphRef.current && paperRef.current) {
+            // Get all entity elements from the graph
+            const entityElements = graphRef.current.getCells().filter(
+                cell => cell.get('type') === 'diagram.EntityElement'
+            ) as InstanceType<typeof EntityElement>[];
+
+            if (entityElements.length === 0) {
+                console.warn('No entities found to layout');
+                return;
+            }
+
+            const layoutEntities = entityElements.filter(el => {
+                const entityData = el.get('entityData') as EntityType;
+                return entities.some(e => e.SchemaName === entityData.SchemaName);
+            });
+
+            if (layoutEntities.length === 0) {
+                console.warn('No matching entities found in diagram for layout');
+                return;
+            }
+
+            // Create and apply the smart layout
+            const smartLayout = new SmartLayout(paperRef.current, layoutEntities);
+            smartLayout.applyLayout();
+
+            console.log('Smart layout applied to', layoutEntities.length, 'entities');
+
+            // Optional: Log connection statistics for debugging
+            const stats = smartLayout.getConnectionStats();
+            console.log('Entity connection stats:', stats);
+
+            // Recalculate selection bounding box after layout change
+            if (selectionRef.current) {
+                selectionRef.current.recalculateBoundingBox();
+            }
+        } else {
+            console.error('Graph or Paper not initialized');
+        }
+    };
+
+    const getSelectedEntities = (): EntityType[] => {
+        if (!graphRef.current) {
+            return [];
+        }
+
+        // Get currently selected entity IDs from state
+        const selectedEntityIds = diagramViewState.selectedEntities;
+        
+        if (selectedEntityIds.length === 0) {
+            // If no individual entity selection, check for area selection
+            if (selectionRef.current) {
+                const selectedElements = selectionRef.current.getSelected();
+                return selectedElements
+                    .filter(el => el.get('type') === 'diagram.EntityElement')
+                    .map(el => el.get('entityData') as EntityType)
+                    .filter(data => data != null);
+            }
+            return [];
+        }
+
+        // Get entities by their IDs
+        const entities: EntityType[] = [];
+        for (const entityId of selectedEntityIds) {
+            const element = graphRef.current.getCell(entityId);
+            if (element && element.get('type') === 'diagram.EntityElement') {
+                const entityData = element.get('entityData') as EntityType;
+                if (entityData) {
+                    entities.push(entityData);
+                }
+            }
+        }
+
+        return entities;
+    };
+
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection, applySmartLayout, getSelectedEntities }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

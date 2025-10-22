@@ -5,6 +5,7 @@ import { Box } from "@mui/material";
 import { useDiagramView } from "@/contexts/DiagramViewContext";
 import { EntityContextMenu } from "./smaller-components/EntityContextMenu";
 import PropertiesPanel from "./PropertiesPanel";
+import { diagramEvents } from "@/lib/diagram/DiagramEventBridge";
 
 interface IDiagramContainerProps {
 
@@ -21,21 +22,17 @@ export default function DiagramContainer({ }: IDiagramContainerProps) {
         position: null
     });
 
+    // Use the event bridge for diagram events
     useEffect(() => {
-        const handleEntityContextMenu = (evt: CustomEvent) => {
-            const { entityId, x, y } = evt.detail;
+        const cleanup = diagramEvents.onContextMenuEvent((entityId, x, y) => {
             setContextMenu({
                 open: true,
                 position: { top: y, left: x },
                 entityId: entityId
             });
-        };
+        });
 
-        window.addEventListener('entityContextMenu', handleEntityContextMenu as EventListener);
-
-        return () => {
-            window.removeEventListener('entityContextMenu', handleEntityContextMenu as EventListener);
-        };
+        return cleanup;
     }, []);
 
     const handleCloseContextMenu = () => {

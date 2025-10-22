@@ -3,14 +3,15 @@ import { ExtensionRounded, AccountTreeRounded } from '@mui/icons-material';
 import { Box, Divider, Typography, Button } from '@mui/material';
 import React, { useState } from 'react';
 import { RelatedEntitiesPane } from '@/components/diagramview/panes/RelatedEntitiesPane';
-import { PathConnectionIcon } from '@/lib/icons';
+import { BinIcon, PathConnectionIcon } from '@/lib/icons';
 import { useDiagramView } from '@/contexts/DiagramViewContext';
 
 interface IEntityPropertiesProps {
     entity: EntityType | undefined;
+    closePane: () => void;
 }
 
-export default function EntityProperties({ entity }: IEntityPropertiesProps) {
+export default function EntityProperties({ entity, closePane }: IEntityPropertiesProps) {
     const [relatedEntitiesPaneOpen, setRelatedEntitiesPaneOpen] = useState(false);
     const { removeEntity } = useDiagramView();
 
@@ -56,8 +57,8 @@ export default function EntityProperties({ entity }: IEntityPropertiesProps) {
                 variant="outlined"
                 color='error'
                 className='self-end'
-                startIcon={<Box className="w-6 h-6">{PathConnectionIcon}</Box>}
-                onClick={() => { removeEntity(entity.SchemaName); setRelatedEntitiesPaneOpen(false);}}
+                startIcon={<Box className="w-6 h-6">{BinIcon}</Box>}
+                onClick={() => { removeEntity(entity.SchemaName); closePane(); }}
                 fullWidth
             >
                 Remove Entity

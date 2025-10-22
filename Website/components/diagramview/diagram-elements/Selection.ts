@@ -1,4 +1,6 @@
 import { dia, g, mvc, V, VElement } from "@joint/core";
+import { SelectObjectEvent } from "../events/SelectObjectEvent";
+import { diagramEvents } from "@/lib/diagram/DiagramEventBridge";
 
 export const SelectionElement = dia.Element.define('selection.SelectionElement', {
     size: { width: 100, height: 100 },
@@ -99,6 +101,7 @@ export default class EntitySelection {
 
         this.cleanupOverlay();
         this.teardownSelectionElement();
+        diagramEvents.dispatchClear();
 
         // Ignore tiny clicks (treat as no selection)
         if (selRect.width < 3 && selRect.height < 3) return;
@@ -163,6 +166,15 @@ export default class EntitySelection {
 
         // Optional visual affordance when active
         this.selectionElement.attr(['body', 'stroke'], '#2F80ED');
+        
+        // Dispatch selection event for properties panel
+        if (inside.length > 1) {
+            const selectedEntities = inside
+                .map(el => el.get('entityData'))
+                .filter(data => data != null);
+                
+            diagramEvents.dispatchSelectionChange(selectedEntities);
+        }
     };
 
     // --- Helpers ---------------------------------------------------------------
@@ -208,6 +220,35 @@ export default class EntitySelection {
         if (this.selectionElement) {
             this.selectionElement.remove();
             this.selectionElement = null;
+        }
+    }
+
+    
+    // Public API: recalculate selection bounding box after entity positions change
+    public recalculateBoundingBox() {
+        const selected = this.elements.toArray();
+        
+        if (selected.length <= 1) {
+            // If we have 1 or fewer elements, clear the selection element
+            this.teardownSelectionElement();
+            return;
+        }
+
+        // Recalculate the bounding box for all selected elements
+        const groupBBox = selected
+            .map((el) => el.getBBox({ deep: true, useModelGeometry: true }))
+            .reduce((acc, r) => acc ? acc.union(r) : r, null as g.Rect | null) as g.Rect;
+
+        if (groupBBox === null) {
+            return;
+        }
+
+        // Update the selection element position and size
+        if (this.selectionElement) {
+            this.selectionElement.position(groupBBox.x, groupBBox.y);
+            this.selectionElement.resize(groupBBox.width, groupBBox.height);
+            // Ensure it's behind again (in case z-order changed)
+            this.selectionElement.toBack();
         }
     }
 }
