@@ -9,6 +9,7 @@ interface DiagramActions {
     setIsPanning: (isPanning: boolean) => void;
     setTranslate: (translate: { x: number; y: number }) => void;
     addEntity: (entityData: EntityType, position?: { x: number; y: number }, label?: string) => void;
+    removeEntity: (entitySchemaName: string) => void;
     getGraph: () => dia.Graph | null;
     getPaper: () => dia.Paper | null;
     applyZoomAndPan: (zoom: number, translate: { x: number; y: number }) => void;
@@ -51,6 +52,7 @@ const initialState: DiagramState = {
     setIsPanning: () => { throw new Error("setIsPanning not initialized yet!"); },
     setTranslate: () => { throw new Error("setTranslate not initialized yet!"); },
     addEntity: () => { throw new Error("addEntity not initialized yet!"); },
+    removeEntity: () => { throw new Error("removeEntity not initialized yet!"); },
     getGraph: () => { throw new Error("getGraph not initialized yet!"); },
     getPaper: () => { throw new Error("getPaper not initialized yet!"); },
     applyZoomAndPan: () => { throw new Error("applyZoomAndPan not initialized yet!"); },
@@ -419,6 +421,32 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         return null;
     };
 
+    const removeEntity = (entitySchemaName: string) => {
+        if (graphRef.current) {
+            const entityElement = graphRef.current.getElements().find(el => {
+                const elementType = el.get('type');
+                const entityData = el.get('entityData');
+                
+                const isEntityElement = elementType === 'diagram.EntityElement';
+                const hasMatchingSchema = entityData?.SchemaName === entitySchemaName;
+                
+                return isEntityElement && hasMatchingSchema;
+            });
+
+            if (entityElement) {
+                // Remove all links connected to this entity
+                const connectedLinks = graphRef.current.getConnectedLinks(entityElement);
+                connectedLinks.forEach(link => link.remove());
+                // Remove the entity element from the graph
+                entityElement.remove();
+                // Dispatch action to update the entities map in state
+                dispatch({ type: 'REMOVE_ENTITY_FROM_DIAGRAM', payload: entitySchemaName });
+            } else {
+                console.warn('Entity not found in diagram:', entitySchemaName);
+            }
+        }
+    };
+
     const getGraph = () => {
         return graphRef.current;
     };
@@ -509,7 +537,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

@@ -4,6 +4,7 @@ import { Box, Divider, Typography, Button } from '@mui/material';
 import React, { useState } from 'react';
 import { RelatedEntitiesPane } from '@/components/diagramview/panes/RelatedEntitiesPane';
 import { PathConnectionIcon } from '@/lib/icons';
+import { useDiagramView } from '@/contexts/DiagramViewContext';
 
 interface IEntityPropertiesProps {
     entity: EntityType | undefined;
@@ -11,6 +12,7 @@ interface IEntityPropertiesProps {
 
 export default function EntityProperties({ entity }: IEntityPropertiesProps) {
     const [relatedEntitiesPaneOpen, setRelatedEntitiesPaneOpen] = useState(false);
+    const { removeEntity } = useDiagramView();
 
     if (!entity) {
         return (
@@ -40,14 +42,26 @@ export default function EntityProperties({ entity }: IEntityPropertiesProps) {
             {/* Related Entities Button */}
             {hasRelatedEntities && (
                 <Button
-                    variant="outlined"
-                    startIcon={<Box className="w-6 h-6" sx={{ color: 'primary.main' }}>{PathConnectionIcon}</Box>}
+                    variant="contained"
+                    startIcon={<Box className="w-6 h-6">{PathConnectionIcon}</Box>}
                     onClick={() => setRelatedEntitiesPaneOpen(true)}
                     fullWidth
                 >
                     View Related Entities
                 </Button>
             )}
+
+            
+            <Button
+                variant="outlined"
+                color='error'
+                className='self-end'
+                startIcon={<Box className="w-6 h-6">{PathConnectionIcon}</Box>}
+                onClick={() => { removeEntity(entity.SchemaName); setRelatedEntitiesPaneOpen(false);}}
+                fullWidth
+            >
+                Remove Entity
+            </Button>
 
             <RelatedEntitiesPane
                 open={relatedEntitiesPaneOpen}

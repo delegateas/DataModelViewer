@@ -36,7 +36,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         {
             id: 'add-entity',
             label: 'Add Entity',
-            icon: <Box className="rounded-md border flex items-center justify-center h-6" sx={{ borderColor: 'border.main' }}></Box>,
+            icon: <Box className="rounded-md border flex items-center justify-center h-6" sx={{ borderColor: 'text.primary' }}></Box>,
             action: handleAddEntity
         },
     ];
