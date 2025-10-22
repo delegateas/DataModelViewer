@@ -25,7 +25,7 @@ interface RelatedEntitiesPaneProps {
 
 export const RelatedEntitiesPane = ({ open, onClose, entity }: RelatedEntitiesPaneProps) => {
     const { groups } = useDatamodelData();
-    const { addEntity } = useDiagramView();
+    const { addEntity, isEntityInDiagram } = useDiagramView();
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
     // Find related entities using memoization for performance
@@ -81,9 +81,9 @@ export const RelatedEntitiesPane = ({ open, onClose, entity }: RelatedEntitiesPa
 
     const handleEntityClick = useCallback((clickedEntity: EntityType, groupName: string) => {
         addEntity(
+            clickedEntity,
             undefined,
-            clickedEntity.DisplayName,
-            clickedEntity
+            clickedEntity.DisplayName
         );
     }, [addEntity]);
 
@@ -141,6 +141,7 @@ export const RelatedEntitiesPane = ({ open, onClose, entity }: RelatedEntitiesPa
                                 onToggle={handleGroupToggle}
                                 onEntityClick={handleEntityClick}
                                 showGroupClickIcon={false}
+                                isDisabled={isEntityInDiagram}
                             />
                         ))}
                     </Paper>

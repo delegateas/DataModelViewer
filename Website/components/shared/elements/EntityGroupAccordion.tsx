@@ -32,6 +32,7 @@ interface EntityGroupAccordionProps {
     highlightText?: (text: string, searchTerm: string) => React.ReactNode;
     isEntityMatch?: (entity: EntityType) => boolean;
     showGroupClickIcon?: boolean;
+    isDisabled?: (entity: EntityType) => boolean;
 }
 
 export const EntityGroupAccordion = ({
@@ -46,7 +47,8 @@ export const EntityGroupAccordion = ({
     searchTerm = '',
     highlightText,
     isEntityMatch,
-    showGroupClickIcon = false
+    showGroupClickIcon = false,
+    isDisabled
 }: EntityGroupAccordionProps) => {
     const theme = useTheme();
     const isCurrentGroup = currentGroup?.toLowerCase() === group.Name.toLowerCase();
@@ -136,6 +138,7 @@ export const EntityGroupAccordion = ({
                         const isCurrentSection = currentSection?.toLowerCase() === entity.SchemaName.toLowerCase();
                         const isMatch = isEntityMatch ? isEntityMatch(entity) : false;
                         const isLoading = loadingSection === entity.SchemaName;
+                        const isCurrentDisabled = isDisabled && isDisabled(entity);
                         
                         // If searching and this entity doesn't match, don't render it
                         if (searchTerm.trim() && !isMatch) {
@@ -146,15 +149,16 @@ export const EntityGroupAccordion = ({
                             <Button
                                 className={cn(
                                     "flex items-center gap-2 rounded-lg px-3 py-1 cursor-pointer transition-colors text-xs font-medium mx-1 justify-start",
-                                    isMatch ? "ring-1" : ""
+                                    isMatch ? "ring-1" : "",
+                                    isCurrentDisabled ? "opacity-50" : ""
                                 )}
                                 sx={{ 
                                     borderColor: 'accent.main',
                                     backgroundColor: isCurrentSection ? alpha(theme.palette.primary.main, 0.1) : 'transparent' 
                                 }}
                                 key={entity.SchemaName}
-                                onClick={() => handleEntityButtonClick(entity)}
-                                disabled={isLoading}
+                                onClick={() => !isCurrentDisabled && handleEntityButtonClick(entity)}
+                                disabled={isLoading || isCurrentDisabled}
                             >
                                 {entity.IconBase64 ? (
                                     isCurrentSection ? (
@@ -187,10 +191,15 @@ export const EntityGroupAccordion = ({
                                     />
                                 )}
                                 <Typography className="truncate text-xs flex-1" variant="body2" sx={{
-                                    color: isCurrentSection ? 'primary' : 'text.secondary',
+                                    color: isCurrentSection ? 'primary' : isCurrentDisabled ? 'text.disabled' : 'text.secondary',
                                 }}>
                                     {isMatch && highlightText ? highlightText(entity.DisplayName, searchTerm) : entity.DisplayName}
                                 </Typography>
+                                {isCurrentDisabled && (
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '10px', ml: 'auto' }}>
+                                        In Diagram
+                                    </Typography>
+                                )}
                                 {isLoading && (
                                     <CircularProgress 
                                         size={12} 

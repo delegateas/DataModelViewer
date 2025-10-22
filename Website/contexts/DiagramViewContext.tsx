@@ -5,57 +5,61 @@ import EntitySelection, { SelectionElement } from '@/components/diagramview/diag
 import { EntityType } from '@/lib/Types';
 
 interface DiagramActions {
-  setZoom: (zoom: number) => void;
-  setIsPanning: (isPanning: boolean) => void;
-  setTranslate: (translate: { x: number; y: number }) => void;
-  addEntity: (position?: { x: number; y: number }, label?: string, entityData?: EntityType) => void;
-  getGraph: () => dia.Graph | null;
-  getPaper: () => dia.Paper | null;
-  applyZoomAndPan: (zoom: number, translate: { x: number; y: number }) => void;
-  setLoadedDiagram: (filename: string | null, source: 'cloud' | 'file' | null, filePath?: string | null) => void;
-  clearDiagram: () => void;
-  setDiagramName: (name: string) => void;
-  selectEntity: (entityId: string, ctrlClick?: boolean) => void;
-  clearSelection: () => void;
+    setZoom: (zoom: number) => void;
+    setIsPanning: (isPanning: boolean) => void;
+    setTranslate: (translate: { x: number; y: number }) => void;
+    addEntity: (entityData: EntityType, position?: { x: number; y: number }, label?: string) => void;
+    getGraph: () => dia.Graph | null;
+    getPaper: () => dia.Paper | null;
+    applyZoomAndPan: (zoom: number, translate: { x: number; y: number }) => void;
+    setLoadedDiagram: (filename: string | null, source: 'cloud' | 'file' | null, filePath?: string | null) => void;
+    clearDiagram: () => void;
+    setDiagramName: (name: string) => void;
+    selectEntity: (entityId: string, ctrlClick?: boolean) => void;
+    clearSelection: () => void;
+    isEntityInDiagram: (entity: EntityType) => boolean;
 }
 
 export interface DiagramState extends DiagramActions {
-  canvas: React.MutableRefObject<HTMLDivElement | null>;
-  zoom: number;
-  isPanning: boolean;
-  translate: { x: number; y: number };
-  loadedDiagramFilename: string | null;
-  loadedDiagramSource: 'cloud' | 'file' | null;
-  loadedDiagramFilePath: string | null;
-  hasLoadedDiagram: boolean;
-  diagramName: string;
-  selectedEntities: string[];
+    canvas: React.MutableRefObject<HTMLDivElement | null>;
+    zoom: number;
+    isPanning: boolean;
+    translate: { x: number; y: number };
+    loadedDiagramFilename: string | null;
+    loadedDiagramSource: 'cloud' | 'file' | null;
+    loadedDiagramFilePath: string | null;
+    hasLoadedDiagram: boolean;
+    diagramName: string;
+    selectedEntities: string[];
+    entitiesInDiagram: Map<string, EntityType>;
 }
 
 const initialState: DiagramState = {
-  zoom: 1,
-  isPanning: false,
-  translate: { x: 0, y: 0 },
-  canvas: React.createRef<HTMLDivElement>(),
-  loadedDiagramFilename: null,
-  loadedDiagramSource: null,
-  loadedDiagramFilePath: null,
-  hasLoadedDiagram: false,
-  diagramName: 'untitled',
-  selectedEntities: [],
+    zoom: 1,
+    isPanning: false,
+    translate: { x: 0, y: 0 },
+    canvas: React.createRef<HTMLDivElement>(),
+    loadedDiagramFilename: null,
+    loadedDiagramSource: null,
+    loadedDiagramFilePath: null,
+    hasLoadedDiagram: false,
+    diagramName: 'untitled',
+    selectedEntities: [],
+    entitiesInDiagram: new Map<string, EntityType>(),
 
-  setZoom: () => { throw new Error("setZoom not initialized yet!"); },
-  setIsPanning: () => { throw new Error("setIsPanning not initialized yet!"); },
-  setTranslate: () => { throw new Error("setTranslate not initialized yet!"); },
-  addEntity: () => { throw new Error("addEntity not initialized yet!"); },
-  getGraph: () => { throw new Error("getGraph not initialized yet!"); },
-  getPaper: () => { throw new Error("getPaper not initialized yet!"); },
-  applyZoomAndPan: () => { throw new Error("applyZoomAndPan not initialized yet!"); },
-  setLoadedDiagram: () => { throw new Error("setLoadedDiagram not initialized yet!"); },
-  clearDiagram: () => { throw new Error("clearDiagram not initialized yet!"); },
-  setDiagramName: () => { throw new Error("setDiagramName not initialized yet!"); },
-  selectEntity: () => { throw new Error("selectEntity not initialized yet!"); },
-  clearSelection: () => { throw new Error("clearSelection not initialized yet!"); },
+    setZoom: () => { throw new Error("setZoom not initialized yet!"); },
+    setIsPanning: () => { throw new Error("setIsPanning not initialized yet!"); },
+    setTranslate: () => { throw new Error("setTranslate not initialized yet!"); },
+    addEntity: () => { throw new Error("addEntity not initialized yet!"); },
+    getGraph: () => { throw new Error("getGraph not initialized yet!"); },
+    getPaper: () => { throw new Error("getPaper not initialized yet!"); },
+    applyZoomAndPan: () => { throw new Error("applyZoomAndPan not initialized yet!"); },
+    setLoadedDiagram: () => { throw new Error("setLoadedDiagram not initialized yet!"); },
+    clearDiagram: () => { throw new Error("clearDiagram not initialized yet!"); },
+    setDiagramName: () => { throw new Error("setDiagramName not initialized yet!"); },
+    selectEntity: () => { throw new Error("selectEntity not initialized yet!"); },
+    clearSelection: () => { throw new Error("clearSelection not initialized yet!"); },
+    isEntityInDiagram: () => { throw new Error("isEntityInDiagram not initialized yet!"); },
 }
 
 type DiagramViewAction =
@@ -67,7 +71,9 @@ type DiagramViewAction =
   | { type: 'SET_DIAGRAM_NAME', payload: string }
   | { type: 'SELECT_ENTITY', payload: { entityId: string; multiSelect: boolean } }
   | { type: 'CLEAR_SELECTION' }
-  | { type: 'SET_SELECTION', payload: string[] };
+  | { type: 'SET_SELECTION', payload: string[] }
+  | { type: 'ADD_ENTITY_TO_DIAGRAM', payload: EntityType }
+  | { type: 'REMOVE_ENTITY_FROM_DIAGRAM', payload: string };
 
 const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): DiagramState => {
   switch (action.type) {
@@ -93,7 +99,8 @@ const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): Dia
         loadedDiagramSource: null,
         loadedDiagramFilePath: null,
         hasLoadedDiagram: false,
-        diagramName: 'untitled'
+        diagramName: 'untitled',
+        entitiesInDiagram: new Map<string, EntityType>()
       }
     case 'SET_DIAGRAM_NAME':
       return { ...state, diagramName: action.payload }
@@ -119,6 +126,14 @@ const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): Dia
       return { ...state, selectedEntities: [] }
     case 'SET_SELECTION':
       return { ...state, selectedEntities: action.payload }
+    case 'ADD_ENTITY_TO_DIAGRAM':
+      const newEntitiesMap = new Map(state.entitiesInDiagram);
+      newEntitiesMap.set(action.payload.SchemaName, action.payload);
+      return { ...state, entitiesInDiagram: newEntitiesMap }
+    case 'REMOVE_ENTITY_FROM_DIAGRAM':
+      const updatedEntitiesMap = new Map(state.entitiesInDiagram);
+      updatedEntitiesMap.delete(action.payload);
+      return { ...state, entitiesInDiagram: updatedEntitiesMap }
     default:
       return state;
   }
@@ -356,7 +371,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     // Context functions
-    const addEntity = (position?: { x: number; y: number }, label?: string, entityData?: EntityType) => {
+    const addEntity = (entityData: EntityType, position?: { x: number; y: number }, label?: string) => {
         if (graphRef.current && paperRef.current) {
             let entityX: number;
             let entityY: number;
@@ -395,6 +410,10 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             });
             
             graphRef.current.addCell(entity);
+            
+            // Dispatch action to update the entities map in state
+            dispatch({ type: 'ADD_ENTITY_TO_DIAGRAM', payload: entityData });
+            
             return entity;
         }
         return null;
@@ -485,8 +504,12 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const isEntityInDiagram = (entity: EntityType) => {
+        return diagramViewState.entitiesInDiagram.has(entity.SchemaName);
+    };
+
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, setZoom, setIsPanning, setTranslate, addEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

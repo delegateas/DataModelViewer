@@ -28,7 +28,7 @@ interface EntitySelectionPaneProps {
 
 export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) => {
     const { groups } = useDatamodelData();
-    const { addEntity } = useDiagramView();
+    const { addEntity, isEntityInDiagram } = useDiagramView();
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [selectedEntities, setSelectedEntities] = useState<EntityType[]>([]);
 
@@ -47,7 +47,7 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
 
     const handleSubmit = () => {
         selectedEntities.forEach(entity => {
-            addEntity(undefined, entity.DisplayName, entity);
+            addEntity(entity, undefined, entity.DisplayName);
         });
         setSelectedEntities([]);
         onClose();
@@ -126,6 +126,7 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
                                 onToggle={handleGroupToggle}
                                 onEntityClick={handleEntitySelect}
                                 showGroupClickIcon={false}
+                                isDisabled={isEntityInDiagram}
                             />
                         ))}
                     </Paper>
