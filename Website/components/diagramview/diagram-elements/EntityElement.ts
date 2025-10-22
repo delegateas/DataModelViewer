@@ -1,35 +1,39 @@
 import { dia, util } from '@joint/core';
+import { SelectObjectEvent } from '../events/SelectObjectEvent';
+import { EntityType } from '@/lib/Types';
 
 export const EntityElementView = dia.ElementView.extend({
     
     events: {
         'mouseenter': 'onMouseEnter',
         'mouseleave': 'onMouseLeave',
-        'contextmenu': 'onContextMenu'
+        'contextmenu': 'onContextMenu',
+        'pointerdown': 'onPointerDown',
+        'pointerup': 'onPointerUp',
     },
 
     initialize: function(options?: any) {
         dia.ElementView.prototype.initialize.call(this, options);
         this.updateTitle();
-        
-        // Drag state
-        this.isDragging = false;
-        this.dragStartPosition = null;
-        this.initialPosition = null;
-        this.dragMoveHandler = null;
-        this.dragEndHandler = null;
+        this.isSelected = false; // Track selection state
     },
 
     onMouseEnter: function() {
-        // Change cursor and highlight entity
-        this.model.attr('container/style/cursor', 'move');
-        this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-default)');
+        // Only apply hover effects if not selected
+        if (!this.isSelected) {
+            this.model.attr('container/style/cursor', 'move');
+            this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-default)');
+            this.model.attr('container/style/borderColor', 'var(--mui-palette-primary-main)');
+        }
     },
 
     onMouseLeave: function() {
-        // Change cursor back and remove highlight  
-        this.model.attr('container/style/cursor', 'default');
-        this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-paper)');
+        // Only remove hover effects if not selected
+        if (!this.isSelected) {
+            this.model.attr('container/style/cursor', 'default');
+            this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-paper)');
+            this.model.attr('container/style/borderColor', 'var(--mui-palette-border-main)');
+        }
     },
 
     onContextMenu: function(evt: MouseEvent) {
@@ -45,6 +49,43 @@ export const EntityElementView = dia.ElementView.extend({
             }
         });
         window.dispatchEvent(contextMenuEvent);
+    },
+
+    onPointerDown: function(evt: PointerEvent) {
+        this.model.attr('container/style/cursor', 'grabbing');
+        
+        const contextMenuEvent = new CustomEvent<SelectObjectEvent>('selectObject', {
+            detail: { 
+                type: 'entity',
+                objectId: String(this.model.id),
+                data: this.model.get('entityData')
+            }
+        });
+        window.dispatchEvent(contextMenuEvent);
+    },
+
+    onPointerUp: function(evt: PointerEvent) {
+        this.model.attr('container/style/cursor', 'move');
+    },
+
+    onSelect: function() {
+        // Apply the same styling as hover but for selection
+        this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-default)');
+        this.model.attr('container/style/borderColor', 'var(--mui-palette-primary-main)');
+        this.model.attr('container/style/cursor', 'move');
+        
+        // Mark as selected for state tracking
+        this.isSelected = true;
+    },
+
+    onDeselect: function() {
+        // Remove selection styling back to normal state
+        this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-paper)');
+        this.model.attr('container/style/borderColor', 'var(--mui-palette-border-main)');
+        this.model.attr('container/style/cursor', 'default');
+        
+        // Mark as not selected
+        this.isSelected = false;
     },
 
     updateTitle: function() {
@@ -76,7 +117,7 @@ export const EntityElement = dia.Element.define('diagram.EntityElement', {
                 width: '100%',
                 height: '100%',
                 backgroundColor: 'var(--mui-palette-background-paper)',
-                border: '2px solid var(--mui-palette-primary-main)',
+                border: '2px solid var(--mui-palette-border-main)',
                 borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
@@ -115,12 +156,14 @@ export function createEntity(options: {
     position?: { x: number; y: number };
     title?: string;
     size?: { width: number; height: number };
+    entityData?: EntityType;
 } = {}) {
     const label = options.title || 'New Entity';
     const entity = new EntityElement({
         position: options.position || { x: 0, y: 0 },
         size: options.size || { width: 120, height: 80 },
-        label
+        label,
+        entityData: options.entityData
     });
 
     return entity;

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 import { useDiagramView } from "@/contexts/DiagramViewContext";
 import { EntityContextMenu } from "./smaller-components/EntityContextMenu";
+import PropertiesPanel from "./PropertiesPanel";
 
 interface IDiagramContainerProps {
 
@@ -50,7 +51,8 @@ export default function DiagramContainer({ }: IDiagramContainerProps) {
             height: '100%', 
             overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            position: 'relative'
         }}>
             <div 
                 ref={canvas} 
@@ -68,6 +70,7 @@ export default function DiagramContainer({ }: IDiagramContainerProps) {
                 onClose={handleCloseContextMenu}
                 entityId={contextMenu.entityId}
             />
+            <PropertiesPanel />
         </Box>
     );
 }

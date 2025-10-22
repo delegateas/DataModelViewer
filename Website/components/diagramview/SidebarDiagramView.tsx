@@ -1,4 +1,4 @@
-import { Box, Tooltip, Typography, Grid, TextField, Divider } from '@mui/material';
+import { Box, Tooltip, Typography, Grid, TextField, Divider, Button } from '@mui/material';
 import React, { useState } from 'react';
 import { AddSquareIcon } from '@/lib/icons';
 import { EntitySelectionPane } from './panes/EntitySelectionPane';
@@ -36,7 +36,7 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         {
             id: 'add-entity',
             label: 'Add Entity',
-            icon: AddSquareIcon,
+            icon: <Box className="rounded-md border flex items-center justify-center h-6" sx={{ borderColor: 'border.main' }}></Box>,
             action: handleAddEntity
         },
     ];
@@ -64,11 +64,11 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 
                 <Grid container spacing={1}>
                     {diagramTools.map((tool) => (
-                        <Grid size={6} key={tool.id}>
+                        <Grid size={3} key={tool.id}>
                             <Tooltip title={tool.label} placement="top">
                                 <Box
                                     onClick={tool.action}
-                                    className='h-8 w-8 hover:cursor-pointer'
+                                    className='hover:cursor-pointer w-full h-full'
                                     sx={{ color: "primary.main", backgroundColor: "transparent" }}
                                 >
                                     {tool.icon}

@@ -1,13 +1,14 @@
-import { dia, shapes, mvc } from '@joint/core';
+import { dia, shapes } from '@joint/core';
 import React, { createContext, useContext, ReactNode, useReducer, useEffect, useRef } from 'react';
 import { createEntity, EntityElement, EntityElementView } from '@/components/diagramview/diagram-elements/EntityElement';
 import EntitySelection, { SelectionElement } from '@/components/diagramview/diagram-elements/Selection';
+import { EntityType } from '@/lib/Types';
 
 interface DiagramActions {
   setZoom: (zoom: number) => void;
   setIsPanning: (isPanning: boolean) => void;
   setTranslate: (translate: { x: number; y: number }) => void;
-  addEntity: (position?: { x: number; y: number }, label?: string) => void;
+  addEntity: (position?: { x: number; y: number }, label?: string, entityData?: EntityType) => void;
   getGraph: () => dia.Graph | null;
   getPaper: () => dia.Paper | null;
   applyZoomAndPan: (zoom: number, translate: { x: number; y: number }) => void;
@@ -128,6 +129,7 @@ const DiagramViewDispatcher = createContext<React.Dispatch<DiagramViewAction>>((
 
 export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     const [diagramViewState, dispatch] = useReducer(diagramViewReducer, initialState);
+    const selectionRef = useRef<EntitySelection | null>(null);
 
     const setZoom = (zoom: number) => {
         dispatch({ type: 'SET_ZOOM', payload: zoom });
@@ -199,7 +201,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         paperRef.current = paper;
         diagramViewState.canvas.current.appendChild(paper.el);
 
-        const selection = new EntitySelection(paper);
+        selectionRef.current = new EntitySelection(paper);
         
         // Update all entity views with selection callbacks when entities are added
         // Variables for panning, zooming and selection
@@ -354,7 +356,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     // Context functions
-    const addEntity = (position?: { x: number; y: number }, label?: string) => {
+    const addEntity = (position?: { x: number; y: number }, label?: string, entityData?: EntityType) => {
         if (graphRef.current && paperRef.current) {
             let entityX: number;
             let entityY: number;
@@ -388,7 +390,8 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             const entity = createEntity({
                 position: { x: entityX - 60, y: entityY - 40 }, // Center the entity (120x80 default size)
                 title: entityLabel,
-                size: { width: 120, height: 80 }
+                size: { width: 120, height: 80 },
+                entityData
             });
             
             graphRef.current.addCell(entity);

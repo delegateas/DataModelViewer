@@ -4,6 +4,7 @@ export const SelectionElement = dia.Element.define('selection.SelectionElement',
     size: { width: 100, height: 100 },
     attrs: {
     body: {
+        cursor: 'move',
         refWidth: '100%',
         refHeight: '100%',
         stroke: '#2F80ED',
@@ -130,6 +131,10 @@ export default class EntitySelection {
             .map((el) => el.getBBox({ deep: true, useModelGeometry: true }))
             .reduce((acc, r) => acc ? acc.union(r) : r, null as g.Rect | null) as g.Rect;
 
+        if (groupBBox === null) {
+            return;
+        }
+
         // Create or update the SelectionElement sized/positioned to the bounding box
         if (!this.selectionElement) {
             this.selectionElement = new SelectionElement({
@@ -151,7 +156,10 @@ export default class EntitySelection {
         const prev = this.selectionElement.getEmbeddedCells();
         prev.forEach((c) => this.selectionElement!.unembed(c));
 
-        inside.forEach((el) => this.selectionElement!.embed(el));
+        inside.forEach((el) => {
+            this.selectionElement!.embed(el);
+            (el.findView(this.paper) as any).onSelect();
+        });
 
         // Optional visual affordance when active
         this.selectionElement.attr(['body', 'stroke'], '#2F80ED');
@@ -167,6 +175,8 @@ export default class EntitySelection {
         for (const k of kids) {
             this.selectionElement.unembed(k);
             this.paper.findViewByModel(k)?.setInteractivity(true);
+            // Call onDeselect to remove selection styling
+            (k.findView(this.paper) as any).onDeselect();
         }
 
         // Now it's safe to remove just the container
@@ -189,10 +199,15 @@ export default class EntitySelection {
 
     // Public API (optional): clear selection
     public clear() {
+        // Call onDeselect on all currently selected elements
+        this.elements.toArray().forEach(el => {
+            (el.findView(this.paper) as any).onDeselect();
+        });
+        
         this.elements.reset([]);
         if (this.selectionElement) {
-        this.selectionElement.remove();
-        this.selectionElement = null;
+            this.selectionElement.remove();
+            this.selectionElement = null;
         }
     }
 }
