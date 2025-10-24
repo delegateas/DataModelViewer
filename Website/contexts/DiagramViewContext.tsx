@@ -3,7 +3,10 @@ import React, { createContext, useContext, ReactNode, useReducer, useEffect, use
 import { createEntity, EntityElement, EntityElementView } from '@/components/diagramview/diagram-elements/EntityElement';
 import EntitySelection, { SelectionElement } from '@/components/diagramview/diagram-elements/Selection';
 import { SmartLayout } from '@/components/diagramview/layout/SmartLayout';
-import { EntityType } from '@/lib/Types';
+import { EntityType, ExtendedEntityInformationType } from '@/lib/Types';
+import { AvoidRouter } from '@/components/diagramview/avoid-router/shared/avoidrouter';
+import { initializeRouter } from '@/components/diagramview/avoid-router/shared/initialization';
+import { createRelationshipLink, RelationshipLink, RelationshipLinkView } from '@/components/diagramview/diagram-elements/RelationshipLink';
 
 interface DiagramActions {
     setZoom: (zoom: number) => void;
@@ -184,11 +187,18 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     // Refs to store graph and paper instances
     const graphRef = useRef<dia.Graph | null>(null);
     const paperRef = useRef<dia.Paper | null>(null);
+    
    
     useEffect(() => {
         if (!diagramViewState.canvas.current) return;
         
-        const graph = new dia.Graph({}, { cellNamespace: shapes });
+        const graph = new dia.Graph({}, { 
+            cellNamespace: { 
+                ...shapes, 
+                diagram: { EntityElement, RelationshipLink }, 
+                selection: { SelectionElement } 
+            } 
+        });
         graphRef.current = graph;
         
         // Theme-aware colors using MUI CSS variables
@@ -217,7 +227,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             snapToGrid: true,
             frozen: true,
             async: true,
-            cellViewNamespace: { ...shapes, diagram: { EntityElement, EntityElementView }, selection: { SelectionElement } }
+            cellViewNamespace: { ...shapes, diagram: { EntityElement, EntityElementView, RelationshipLink, RelationshipLinkView }, selection: { SelectionElement } }
         });
 
         paperRef.current = paper;
@@ -355,6 +365,16 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
+        initializeRouter(graph, paper).then(() => {
+            const router = new AvoidRouter(graph, {
+                shapeBufferDistance: 20,
+                idealNudgingDistance: 10,
+            });
+
+            router.addGraphListeners();
+            router.routeAll();
+        });
+
         // Add event listeners
         const canvas = diagramViewState.canvas.current;
         canvas.addEventListener('mousedown', handleMouseDown);
@@ -376,6 +396,79 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             paper.remove();
         };
     }, []);
+
+    // True if an entity has a lookup attribute targeting targetSchema
+    const hasLookupTo = (entity: EntityType, targetSchema: string): boolean => {
+        return entity.Attributes?.some(a => a.AttributeType === "LookupAttribute" &&
+            (a as any).Targets?.some((t: ExtendedEntityInformationType) =>
+                t?.Name?.toLowerCase() === targetSchema.toLowerCase()
+            )
+        ) ?? false;
+    };
+
+    // True if an entity declares a relationship to targetSchema
+    const hasRelationshipTo = (entity: EntityType, targetSchema: string): boolean => {
+        if (!entity.Relationships) return false;
+
+        const needle = targetSchema.toLowerCase();
+        return entity.Relationships.some(r => {
+            const tableHit = r.TableSchema?.toLowerCase() === needle;
+            const nameHit = r.Name?.toLowerCase() === needle;
+            const schemaHit = r.RelationshipSchema?.toLowerCase()?.includes(needle);
+            return tableHit || nameHit || schemaHit;
+        });
+    };
+
+    // Decide if two entities should be linked (undirected)
+    const shouldLinkEntities = (a: EntityType, b: EntityType): boolean => {
+        if (!a || !b) return false;
+        if (a.SchemaName === b.SchemaName) return false;
+
+        // Link if either side references the other via lookup or relationship
+        const aToB = hasLookupTo(a, b.SchemaName) || hasRelationshipTo(a, b.SchemaName);
+        const bToA = hasLookupTo(b, a.SchemaName) || hasRelationshipTo(b, a.SchemaName);
+
+        return aToB || bToA;
+    };
+
+    // Do we already have an (undirected) link between two element ids?
+    const linkExistsBetween = (graph: dia.Graph, aId: string, bId: string): boolean => {
+        const links = graph.getLinks();
+        return links.some(l => {
+            const s = l.get('source');
+            const t = l.get('target');
+            const sId = typeof s?.id === 'string' ? s.id : s?.id?.toString?.();
+            const tId = typeof t?.id === 'string' ? t.id : t?.id?.toString?.();
+            return (sId === aId && tId === bId) || (sId === bId && tId === aId);
+        });
+    };
+
+    // Create a simple undirected link between two entity elements
+    const createUndirectedLink = (graph: dia.Graph, sourceEl: dia.Element, targetEl: dia.Element) => {
+        const link = createRelationshipLink(sourceEl.id, targetEl.id);
+        graph.addCell(link);
+    };
+
+    // Find + add links between a *new* entity element and all existing ones
+    const linkNewEntityToExisting = (graph: dia.Graph, newEl: dia.Element) => {
+        const newData = newEl.get('entityData') as EntityType;
+        if (!newData) return;
+
+        const existing = graph.getElements().filter(el =>
+            el.get('type') === 'diagram.EntityElement' && el.id !== newEl.id
+        );
+
+        for (const el of existing) {
+            const otherData = el.get('entityData') as EntityType;
+            if (!otherData) continue;
+
+            if (shouldLinkEntities(newData, otherData)) {
+                if (!linkExistsBetween(graph, newEl.id.toString(), el.id.toString())) {
+                    createUndirectedLink(graph, newEl, el);
+                }
+            }
+        }
+    };
 
     // Context functions
     const addEntity = (entityData: EntityType, position?: { x: number; y: number }, label?: string) => {
@@ -417,6 +510,8 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             });
             
             graphRef.current.addCell(entity);
+
+            linkNewEntityToExisting(graphRef.current, entity);
             
             // Dispatch action to update the entities map in state
             dispatch({ type: 'ADD_ENTITY_TO_DIAGRAM', payload: entityData });
