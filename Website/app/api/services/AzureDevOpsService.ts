@@ -325,8 +325,6 @@ export async function listFileVersions(options: FileVersionOptions): Promise<Fil
         const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
         const commitsUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryName}/commits?searchCriteria.$top=${maxVersions}&searchCriteria.itemPath=${normalizedPath}&api-version=7.0`;
 
-        console.log(commitsUrl)
-
         const response = await managedAuth.makeAuthenticatedRequest(commitsUrl);
 
         if (!response.ok) {

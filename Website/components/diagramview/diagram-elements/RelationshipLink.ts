@@ -1,7 +1,10 @@
+import { diagramEvents } from "@/lib/diagram/DiagramEventBridge";
+import { RelationshipInformation } from "@/lib/diagram/models/relationship-information";
 import { dia } from "@joint/core";
 
 export const RelationshipLink = dia.Link.define('diagram.RelationshipLink', {
     connector: { name: 'jumpover', args: { type: "arc", radius: 10 } },
+    z: 1,
     markup: [
         {
             tagName: 'path',
@@ -26,9 +29,7 @@ export const RelationshipLink = dia.Link.define('diagram.RelationshipLink', {
         line: {
             connection: true,
             stroke: 'var(--mui-palette-primary-main)',
-            strokeWidth: 1,
-            sourceMarker: { 'type': 'path', 'd': '' },
-            targetMarker: { 'type': 'path', 'd': '' }
+            strokeWidth: 1
         },
         wrapper: {
             connection: true,
@@ -41,6 +42,29 @@ export const RelationshipLink = dia.Link.define('diagram.RelationshipLink', {
 
 export const RelationshipLinkView = dia.LinkView.extend({
     
+    events: {
+        'pointerdown': 'onPointerDown',
+        'mouseenter': 'onMouseEnter',
+        'mouseleave': 'onMouseLeave',
+    },
+
+    onMouseEnter: function() {
+        this.model.attr('line/strokeWidth', 2);
+    },
+
+    onMouseLeave: function() {
+        this.model.attr('line/strokeWidth', 1);
+    },
+
+    onPointerDown: function(evt: PointerEvent) {
+        evt.stopPropagation();
+        evt.preventDefault();
+
+        diagramEvents.dispatchRelationshipSelect(
+            String(this.model.id),
+            this.model.get('relationshipInformation')
+        );
+    }
 });
 
 export const createRelationshipLink = (sourceId: dia.Cell.ID, targetId: dia.Cell.ID) => {
@@ -48,4 +72,44 @@ export const createRelationshipLink = (sourceId: dia.Cell.ID, targetId: dia.Cell
         source: { id: sourceId },
         target: { id: targetId }
     });
+}
+
+const circleMarker = {
+  type: 'circle',
+  r: 3,
+  cx: 4,
+  z: 1,
+  fill: 'var(--mui-palette-background-default)',
+  stroke: 'var(--mui-palette-primary-main)',
+  'stroke-width': 1
+};
+
+// Create a directed relationship link with proper markers
+export const createDirectedRelationshipLink = (
+    sourceId: dia.Cell.ID, 
+    targetId: dia.Cell.ID, 
+    direction: '1-M' | 'M-1' | 'M-M',
+    relationshipInformation: RelationshipInformation
+) => {
+    const link = new RelationshipLink({
+        source: { id: sourceId },
+        target: { id: targetId },
+        relationshipInformation
+    });
+
+    // Set markers based on relationship direction
+    switch (direction) {
+        case '1-M':
+            link.attr('line/targetMarker', circleMarker);
+            break;
+        case 'M-1':
+            link.attr('line/sourceMarker', circleMarker);
+            break;
+        case 'M-M':
+            link.attr('line/sourceMarker', circleMarker);
+            link.attr('line/targetMarker', circleMarker);
+            break;
+    }
+
+    return link;
 }

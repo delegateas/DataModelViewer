@@ -6,7 +6,8 @@ import { SmartLayout } from '@/components/diagramview/layout/SmartLayout';
 import { EntityType, ExtendedEntityInformationType } from '@/lib/Types';
 import { AvoidRouter } from '@/components/diagramview/avoid-router/shared/avoidrouter';
 import { initializeRouter } from '@/components/diagramview/avoid-router/shared/initialization';
-import { createRelationshipLink, RelationshipLink, RelationshipLinkView } from '@/components/diagramview/diagram-elements/RelationshipLink';
+import { createRelationshipLink, createDirectedRelationshipLink, RelationshipLink, RelationshipLinkView } from '@/components/diagramview/diagram-elements/RelationshipLink';
+import { RelationshipInformation } from '@/lib/diagram/models/relationship-information';
 
 interface DiagramActions {
     setZoom: (zoom: number) => void;
@@ -397,6 +398,75 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         };
     }, []);
 
+    // Determine the relationship direction between two entities
+    const getRelationshipDirection = (sourceEntity: EntityType, targetEntity: EntityType): '1-M' | 'M-1' | 'M-M' | null => {
+        if (!sourceEntity || !targetEntity) return null;
+
+        let sourceToTargetType: 'none' | '1' | 'M' = 'none';
+        let targetToSourceType: 'none' | '1' | 'M' = 'none';
+
+        // Check if source has a lookup to target (source is "many", target is "one")
+        if (hasLookupTo(sourceEntity, targetEntity.SchemaName)) {
+            sourceToTargetType = 'M';
+            targetToSourceType = '1';
+        }
+
+        // Check if target has a lookup to source (target is "many", source is "one")
+        if (hasLookupTo(targetEntity, sourceEntity.SchemaName)) {
+            targetToSourceType = 'M';
+            sourceToTargetType = '1';
+        }
+
+        // Check relationships from source entity
+        if (sourceEntity.Relationships) {
+            const sourceRelationship = sourceEntity.Relationships.find(r => 
+                r.TableSchema?.toLowerCase() === targetEntity.SchemaName.toLowerCase()
+            );
+            
+            if (sourceRelationship) {
+                if (sourceRelationship.IsManyToMany) {
+                    return 'M-M';
+                }
+                // For 1-to-many relationships defined in the source entity,
+                // the source is typically the "1" side and target is the "many" side
+                if (sourceToTargetType === 'none') {
+                    sourceToTargetType = '1';
+                    targetToSourceType = 'M';
+                }
+            }
+        }
+
+        // Check relationships from target entity
+        if (targetEntity.Relationships) {
+            const targetRelationship = targetEntity.Relationships.find(r => 
+                r.TableSchema?.toLowerCase() === sourceEntity.SchemaName.toLowerCase()
+            );
+            
+            if (targetRelationship) {
+                if (targetRelationship.IsManyToMany) {
+                    return 'M-M';
+                }
+                // For 1-to-many relationships defined in the target entity,
+                // the target is typically the "1" side and source is the "many" side
+                if (targetToSourceType === 'none') {
+                    targetToSourceType = '1';
+                    sourceToTargetType = 'M';
+                }
+            }
+        }
+
+        // Determine final direction
+        if (sourceToTargetType === '1' && targetToSourceType === 'M') {
+            return '1-M'; // Source is one, target is many
+        } else if (sourceToTargetType === 'M' && targetToSourceType === '1') {
+            return 'M-1'; // Source is many, target is one
+        } else if (sourceToTargetType === 'M' && targetToSourceType === 'M') {
+            return 'M-M'; // Both are many
+        }
+
+        return null; // Unable to determine or no relationship
+    };
+
     // True if an entity has a lookup attribute targeting targetSchema
     const hasLookupTo = (entity: EntityType, targetSchema: string): boolean => {
         return entity.Attributes?.some(a => a.AttributeType === "LookupAttribute" &&
@@ -443,10 +513,31 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    // Create a simple undirected link between two entity elements
-    const createUndirectedLink = (graph: dia.Graph, sourceEl: dia.Element, targetEl: dia.Element) => {
-        const link = createRelationshipLink(sourceEl.id, targetEl.id);
-        graph.addCell(link);
+    // Create a directed link between two entity elements based on their relationship
+    const createDirectedLink = (graph: dia.Graph, sourceEl: dia.Element, targetEl: dia.Element) => {
+        const sourceData = sourceEl.get('entityData') as EntityType;
+        const targetData = targetEl.get('entityData') as EntityType;
+        
+        if (!sourceData || !targetData) return;
+
+        const direction = getRelationshipDirection(sourceData, targetData);
+        
+        if (direction) {
+            const info: RelationshipInformation = {
+                sourceEntitySchemaName: sourceData.SchemaName,
+                sourceEntityDisplayName: sourceData.DisplayName,
+                targetEntitySchemaName: targetData.SchemaName,
+                targetEntityDisplayName: targetData.DisplayName,
+                RelationshipType: direction,
+                RelationshipSchemaName: "" // TODO: found inside the 
+            };
+            const link = createDirectedRelationshipLink(sourceEl.id, targetEl.id, direction, info);
+            graph.addCell(link);
+        } else {
+            // Fallback to undirected link if direction cannot be determined
+            const link = createRelationshipLink(sourceEl.id, targetEl.id);
+            graph.addCell(link);
+        }
     };
 
     // Find + add links between a *new* entity element and all existing ones
@@ -464,7 +555,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
 
             if (shouldLinkEntities(newData, otherData)) {
                 if (!linkExistsBetween(graph, newEl.id.toString(), el.id.toString())) {
-                    createUndirectedLink(graph, newEl, el);
+                    createDirectedLink(graph, newEl, el);
                 }
             }
         }
@@ -499,11 +590,16 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 entityY = centerPaperPoint.y;
             }
             
+            // Snap entity position to grid (grid size is 20px)
+            const gridSize = 20;
+            const snappedX = Math.round((entityX - 60) / gridSize) * gridSize; // Center the entity (120px width)
+            const snappedY = Math.round((entityY - 40) / gridSize) * gridSize; // Center the entity (80px height)
+            
             const entityLabel = label || `Entity ${graphRef.current.getCells().length + 1}`;
             
             // Create the new entity using our custom EntityElement
             const entity = createEntity({
-                position: { x: entityX - 60, y: entityY - 40 }, // Center the entity (120x80 default size)
+                position: { x: snappedX, y: snappedY },
                 title: entityLabel,
                 size: { width: 120, height: 80 },
                 entityData
@@ -661,12 +757,6 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             // Create and apply the smart layout
             const smartLayout = new SmartLayout(paperRef.current, layoutEntities);
             smartLayout.applyLayout();
-
-            console.log('Smart layout applied to', layoutEntities.length, 'entities');
-
-            // Optional: Log connection statistics for debugging
-            const stats = smartLayout.getConnectionStats();
-            console.log('Entity connection stats:', stats);
 
             // Recalculate selection bounding box after layout change
             if (selectionRef.current) {

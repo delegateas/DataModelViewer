@@ -1,5 +1,6 @@
 import { SelectObjectEvent } from '@/components/diagramview/events/SelectObjectEvent';
-import { EntityType } from '../Types';
+import { EntityType, RelationshipType } from '../Types';
+import { RelationshipInformation } from './models/relationship-information';
 
 /**
  * Event bridge class that provides a simple interface for both React and Joint.js components
@@ -23,6 +24,17 @@ export class DiagramEventBridge {
                 type: 'entity',
                 objectId: entityId,
                 data: [entityData]
+            }
+        });
+        window.dispatchEvent(event);
+    }
+
+    dispatchRelationshipSelect(relationshipId: string, relationshipData: RelationshipInformation) {
+        const event = new CustomEvent<SelectObjectEvent>('selectObject', {
+            detail: {
+                type: 'relationship',
+                objectId: relationshipId,
+                data: [relationshipData]
             }
         });
         window.dispatchEvent(event);

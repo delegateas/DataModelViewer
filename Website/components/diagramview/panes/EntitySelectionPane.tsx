@@ -30,28 +30,10 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
     const { groups } = useDatamodelData();
     const { addEntity, isEntityInDiagram } = useDiagramView();
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-    const [selectedEntities, setSelectedEntities] = useState<EntityType[]>([]);
 
     const handleEntitySelect = useCallback((entity: EntityType) => {
-        setSelectedEntities(prev => {
-            if (prev.find(e => e.SchemaName === entity.SchemaName)) {
-                return prev;
-            }
-            return [...prev, entity];
-        });
+        addEntity(entity, undefined, entity.DisplayName);
     }, []);
-
-    const handleEntityDeselect = useCallback((entity: EntityType) => {
-        setSelectedEntities(prev => prev.filter(e => e.SchemaName !== entity.SchemaName));
-    }, []);
-
-    const handleSubmit = () => {
-        selectedEntities.forEach(entity => {
-            addEntity(entity, undefined, entity.DisplayName);
-        });
-        setSelectedEntities([]);
-        onClose();
-    }
 
     const handleGroupToggle = useCallback((groupName: string) => {
         setExpandedGroups(prev => {
@@ -87,29 +69,6 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
                     </IconButton>
                 </Box>
                 
-                <Divider sx={{ mb: 2 }} />
-
-                <Box>
-                    <Typography variant="body2" color="text.secondary">
-                        Selected:
-                    </Typography>
-                    {selectedEntities.map((entity) => (
-                        <Chip variant='outlined' size='small' className="m-0.5" key={entity.SchemaName} icon={
-                            entity.IconBase64 ? <div 
-                                className="h-4 w-4 ml-1"
-                                style={{
-                                    maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
-                                    maskSize: 'contain',
-                                    maskRepeat: 'no-repeat',
-                                    maskPosition: 'center',
-                                    backgroundColor: 'currentColor'
-                                }}
-                            /> : <ExtensionRounded />} deleteIcon={<CloseRounded className='w-4 h-4' />} 
-                            label={entity.DisplayName} 
-                            onDelete={() => handleEntityDeselect(entity)} />
-                    ))}
-                </Box>
-                
                 <Divider sx={{ my: 2 }} />
                 
                 {groups.length === 0 ? (
@@ -131,12 +90,6 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
                         ))}
                     </Paper>
                 )}
-                
-                <Divider sx={{ my: 2 }} />
-
-                <Button onClick={handleSubmit} variant="contained" color="primary" fullWidth disabled={selectedEntities.length === 0}>
-                    Add Selected Entities
-                </Button>
             </Box>
         </Drawer>
     );

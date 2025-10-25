@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Box, Divider, IconButton } from '@mui/material';
-import { CloseIcon } from '@/lib/icons';
 import EntityProperties from './smaller-components/EntityProperties';
 import { SelectionProperties } from './smaller-components/SelectionProperties';
 import { diagramEvents } from '@/lib/diagram/DiagramEventBridge';
 import { SelectObjectEvent } from './events/SelectObjectEvent';
+import { EntityType } from '@/lib/Types';
+import { RelationshipInformation } from '@/lib/diagram/models/relationship-information';
+import RelationshipProperties from './smaller-components/RelationshipProperties';
+import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 
 interface IPropertiesPanelProps {
 
@@ -13,12 +16,23 @@ interface IPropertiesPanelProps {
 export default function PropertiesPanel({ }: IPropertiesPanelProps) {
     const [object, setObject] = useState<SelectObjectEvent | null>(null);
     const objectRef = useRef<SelectObjectEvent | null>(null);
+    const userClosedRef = useRef<boolean>(false);
+    const [isForcedClosed, setIsForcedClosed] = useState<boolean>(false);
     const [isOpen, setIsOpen] = useState<boolean>(false);
 
-    const close = () => {
-        setIsOpen(false);
-        setObject(null);
-    };
+    const togglePane = () => {
+        if (isForcedClosed) {
+            setIsForcedClosed(false);
+            setIsOpen(true);
+        } else {
+            setIsForcedClosed(true);
+            setIsOpen(false);
+        }
+    }
+
+    useEffect(() => {
+        userClosedRef.current = isForcedClosed;
+    }, [isForcedClosed])
 
     useEffect(() => {
         objectRef.current = object;
@@ -30,7 +44,7 @@ export default function PropertiesPanel({ }: IPropertiesPanelProps) {
                 return;
             }
             setObject(event);
-            setIsOpen(true);
+            setIsOpen(true && !userClosedRef.current);
         });
 
         return cleanup;
@@ -39,19 +53,42 @@ export default function PropertiesPanel({ }: IPropertiesPanelProps) {
     const getProperties = () => {
         switch (object?.type) {
             case 'entity':
-                return <EntityProperties entity={object.data?.[0]} closePane={close} />;
+                return <EntityProperties entity={object.data?.[0] as EntityType} closePane={close} />;
+            case 'relationship':
+                return <RelationshipProperties relationships={object.data as RelationshipInformation[]} />;
             case 'selection':
-                return <SelectionProperties selectedEntities={object.data ?? []} />;
+                return <SelectionProperties selectedEntities={object.data as EntityType[]} />;
         }
     }
 
     return (
-        <Box className={`h-full transition-all duration-300 absolute right-0 top-0 border-l ${isOpen ? 'w-64' : 'w-0'}`} sx={{ borderColor: 'border.main', backgroundColor: 'background.paper' }}>
-            <IconButton className='w-12 h-12 m-1' onClick={close}>{CloseIcon}</IconButton>
+        <Box className={`h-full transition-all duration-300 absolute right-0 top-0 border-l ${isOpen ? 'w-64' : 'w-4'}`} sx={{ borderColor: 'border.main', backgroundColor: 'background.paper' }}>
+            <IconButton 
+                size='xsmall' 
+                onClick={togglePane} 
+                sx={{
+                position: 'absolute',
+                left: '-12px',
+                top: '24px',
+                border: 1,
+                borderColor: 'border.main',
+                bgcolor: 'background.paper',
+                zIndex: 50,
+                '&:hover': {
+                    bgcolor: 'background.paper',
+                }
+                }}
+            >
+                {isOpen ? <ChevronRightRounded /> : <ChevronLeftRounded />}
+            </IconButton>
             <Divider className='w-full' />
-            <Box className='p-4'>
-                {getProperties()}
-            </Box>
+            {
+                isOpen && (
+                    <Box className='p-4'>
+                        {getProperties()}
+                    </Box>
+                )
+            }
         </Box>
     )
 }

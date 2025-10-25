@@ -34,7 +34,7 @@ export class AvoidRouter {
 
     static async load(): Promise<void> {
         if (AvoidRouter.isLoaded) {
-            console.log('Avoid library is already initialized');
+            console.warn('Avoid library is already initialized');
             return;
         }
         

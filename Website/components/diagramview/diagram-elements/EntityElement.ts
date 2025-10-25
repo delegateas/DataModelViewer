@@ -116,6 +116,7 @@ export const EntityElementView = dia.ElementView.extend({
 
 export const EntityElement = dia.Element.define('diagram.EntityElement', {
     size: { width: 120, height: 80 },
+    z: 10,
     attrs: {
         foreignObject: {
             width: 'calc(w)',

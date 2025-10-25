@@ -26,7 +26,7 @@ export async function initializeRouter(graph: dia.Graph, paper: dia.Paper) {
                     });
                     break;
                 default:
-                    console.log('Unknown response command', command);
+                    console.warn('Unknown response command', command);
                     break;
             }
         };
@@ -73,7 +73,6 @@ export async function initializeRouter(graph: dia.Graph, paper: dia.Paper) {
         });
 
         graph.on('add', (cell) => {
-            console.log("Adding cell:", cell);
             routerWorker.postMessage({
                 command: RouterRequestEvent.Add,
                 cell: cell.toJSON()

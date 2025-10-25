@@ -32,20 +32,16 @@ const WorkerSelectionElement = dia.Element.define('selection.SelectionElement', 
 onmessage = async(e) => {
     await routerLoaded;
 
-    console.log("Worker received message:", e.data);
-
     const { command, ...data } = e.data; // Remove array destructuring
     switch (command) {
         case RouterRequestEvent.Reset: {
             const { cells } = data;
-            console.log("Resetting graph with", cells?.length, "cells");
             graph.resetCells(cells || [], { fromBrowser: true });
             router.routeAll();
             break;
         }
         case RouterRequestEvent.Change: {
             const { cell } = data;
-            console.log("Changing cell:", cell.id);
             const model = graph.getCell(cell.id);
             if (!model) {
                 console.warn(`Cell with id ${cell.id} not found in worker graph, skipping change event`);
@@ -71,7 +67,6 @@ onmessage = async(e) => {
         }
         case RouterRequestEvent.Remove: {
             const { id } = data;
-            console.log("Removing cell:", id);
             const model = graph.getCell(id);
             if (!model) break;
             model.remove({ fromBrowser: true });
@@ -79,12 +74,11 @@ onmessage = async(e) => {
         }
         case RouterRequestEvent.Add: {
             const { cell } = data;
-            console.log("Adding cell:", cell.id);
             graph.addCell(cell, { fromBrowser: true });
             break;
         }
         default:
-            console.log('Unknown command', command);
+            console.warn('Unknown command', command);
             break;
     }
 };
