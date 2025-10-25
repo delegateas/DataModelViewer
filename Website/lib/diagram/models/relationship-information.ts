@@ -3,6 +3,6 @@ export type RelationshipInformation = {
     sourceEntityDisplayName: string,
     targetEntitySchemaName: string,
     targetEntityDisplayName: string,
-    RelationshipType: '1-M' | 'M-1' | 'M-M',
+    RelationshipType: '1-M' | 'M-1' | 'M-M' | 'SELF',
     RelationshipSchemaName: string,
 }

@@ -147,6 +147,39 @@ export const EntityElement = dia.Element.define('diagram.EntityElement', {
                 wordBreak: 'break-word'
             }
         }
+    },
+    ports: {
+        groups: {
+            top: {
+                position: { name: 'top' }, 
+                label: { position: 'outside' },
+                markup: [{ tagName: 'circle', selector: 'portBody', attributes: { r: 4 } }],
+                attrs: {
+                portBody: {
+                    magnet: 'true',
+                    stroke: '#888',
+                    fill: '#fff'
+                }
+                }
+            },
+            right: {
+                position: { name: 'right' },
+                label: { position: 'outside' },
+                markup: [{ tagName: 'circle', selector: 'portBody', attributes: { r: 4 } }],
+                attrs: {
+                portBody: {
+                    magnet: 'true',
+                    stroke: '#888',
+                    fill: '#fff'
+                }
+                }
+            }
+        },
+
+        items: [
+            { id: 'self-in',  group: 'top',   attrs: { portBody: { display: 'none' } } },
+            { id: 'self-out', group: 'right', attrs: { portBody: { display: 'none' } } }
+        ]
     }
 }, {
     markup: util.svg/* xml */`

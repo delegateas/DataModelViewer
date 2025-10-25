@@ -88,7 +88,7 @@ const circleMarker = {
 export const createDirectedRelationshipLink = (
     sourceId: dia.Cell.ID, 
     targetId: dia.Cell.ID, 
-    direction: '1-M' | 'M-1' | 'M-M',
+    direction: '1-M' | 'M-1' | 'M-M' | 'SELF',
     relationshipInformation: RelationshipInformation
 ) => {
     const link = new RelationshipLink({
@@ -109,6 +109,16 @@ export const createDirectedRelationshipLink = (
             link.attr('line/sourceMarker', circleMarker);
             link.attr('line/targetMarker', circleMarker);
             break;
+        case 'SELF':
+            // Self-referencing relationship - create a loop with markers
+            link.attr('line/sourceMarker', circleMarker);
+            link.attr('line/targetMarker', circleMarker);
+            break;
+    }
+
+    if (sourceId === targetId) {
+        link.set('source', { id: sourceId, port: 'self-out' });
+        link.set('target', { id: targetId, port: 'self-in' });
     }
 
     return link;

@@ -399,8 +399,22 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     // Determine the relationship direction between two entities
-    const getRelationshipDirection = (sourceEntity: EntityType, targetEntity: EntityType): '1-M' | 'M-1' | 'M-M' | null => {
+    const getRelationshipDirection = (sourceEntity: EntityType, targetEntity: EntityType): '1-M' | 'M-1' | 'M-M' | 'SELF' | null => {
         if (!sourceEntity || !targetEntity) return null;
+
+        // Handle self-referencing relationships
+        if (sourceEntity.SchemaName === targetEntity.SchemaName) {
+            // Check if entity has self-referencing lookup or relationship
+            const hasSelfLookup = hasLookupTo(sourceEntity, sourceEntity.SchemaName);
+            const hasSelfRelationship = sourceEntity.Relationships?.some(r => 
+                r.TableSchema?.toLowerCase() === sourceEntity.SchemaName.toLowerCase()
+            );
+            
+            if (hasSelfLookup || hasSelfRelationship) {
+                return 'SELF';
+            }
+            return null;
+        }
 
         let sourceToTargetType: 'none' | '1' | 'M' = 'none';
         let targetToSourceType: 'none' | '1' | 'M' = 'none';
@@ -489,10 +503,17 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    // Decide if two entities should be linked (undirected)
+    // Decide if two entities should be linked (including self-referencing)
     const shouldLinkEntities = (a: EntityType, b: EntityType): boolean => {
         if (!a || !b) return false;
-        if (a.SchemaName === b.SchemaName) return false;
+        
+        // Allow self-referencing relationships
+        if (a.SchemaName === b.SchemaName) {
+            // Check if entity has self-referencing lookup or relationship
+            const hasSelfLookup = hasLookupTo(a, a.SchemaName);
+            const hasSelfRelationship = hasRelationshipTo(a, a.SchemaName);
+            return hasSelfLookup || hasSelfRelationship;
+        }
 
         // Link if either side references the other via lookup or relationship
         const aToB = hasLookupTo(a, b.SchemaName) || hasRelationshipTo(a, b.SchemaName);
@@ -501,7 +522,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         return aToB || bToA;
     };
 
-    // Do we already have an (undirected) link between two element ids?
+    // Do we already have a link between two element ids (including self-referencing)?
     const linkExistsBetween = (graph: dia.Graph, aId: string, bId: string): boolean => {
         const links = graph.getLinks();
         return links.some(l => {
@@ -509,6 +530,13 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             const t = l.get('target');
             const sId = typeof s?.id === 'string' ? s.id : s?.id?.toString?.();
             const tId = typeof t?.id === 'string' ? t.id : t?.id?.toString?.();
+            
+            // Handle self-referencing links (same source and target)
+            if (aId === bId) {
+                return sId === aId && tId === bId;
+            }
+            
+            // Handle regular links (bidirectional check)
             return (sId === aId && tId === bId) || (sId === bId && tId === aId);
         });
     };
@@ -529,7 +557,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 targetEntitySchemaName: targetData.SchemaName,
                 targetEntityDisplayName: targetData.DisplayName,
                 RelationshipType: direction,
-                RelationshipSchemaName: "" // TODO: found inside the 
+                RelationshipSchemaName: "" // TODO: found inside the relationship definitions (but what about lookups?)
             };
             const link = createDirectedRelationshipLink(sourceEl.id, targetEl.id, direction, info);
             graph.addCell(link);
@@ -540,11 +568,21 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // Find + add links between a *new* entity element and all existing ones
+    // Find + add links between a *new* entity element and all existing ones (including self-referencing)
     const linkNewEntityToExisting = (graph: dia.Graph, newEl: dia.Element) => {
         const newData = newEl.get('entityData') as EntityType;
         if (!newData) return;
 
+        // Check for self-referencing relationship first
+        if (shouldLinkEntities(newData, newData)) {
+            console.log("Self-referencing relationship detected");
+            // Entity has self-referencing relationship
+            if (!linkExistsBetween(graph, newEl.id.toString(), newEl.id.toString())) {
+                createDirectedLink(graph, newEl, newEl);
+            }
+        }
+
+        // Then check relationships with other entities
         const existing = graph.getElements().filter(el =>
             el.get('type') === 'diagram.EntityElement' && el.id !== newEl.id
         );
