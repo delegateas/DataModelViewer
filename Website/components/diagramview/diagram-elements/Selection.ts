@@ -48,10 +48,18 @@ export default class EntitySelection {
         this.isDragging = true;
         this.dragStart = new g.Point(x, y);
 
-        // Create transient overlay rect directly in the paper’s SVG layer
+        // Get the paper's current transformation matrix
+        const matrix = this.paper.matrix();
+        
+        // Apply transformation to get visual coordinates relative to the paper's SVG
+        const transformedX = matrix.a * x + matrix.e;
+        const transformedY = matrix.d * y + matrix.f;
+        
+        // Create transient overlay rect directly in the paper's SVG layer
         const svgRoot = this.paper.svg as unknown as SVGSVGElement;
         const rect = V('rect', {
-            x, y,
+            x: transformedX, 
+            y: transformedY,
             width: 1,
             height: 1,
             'pointer-events': 'none',
@@ -72,10 +80,19 @@ export default class EntitySelection {
         const p0 = this.dragStart;
         const p1 = new g.Point(x, y);
 
-        const minX = Math.min(p0.x, p1.x);
-        const minY = Math.min(p0.y, p1.y);
-        const width = Math.max(1, Math.abs(p1.x - p0.x));
-        const height = Math.max(1, Math.abs(p1.y - p0.y));
+        // Get the paper's current transformation matrix
+        const matrix = this.paper.matrix();
+        
+        // Apply transformation to get visual coordinates relative to the paper's SVG
+        const transformedP0X = matrix.a * p0.x + matrix.e;
+        const transformedP0Y = matrix.d * p0.y + matrix.f;
+        const transformedP1X = matrix.a * p1.x + matrix.e;
+        const transformedP1Y = matrix.d * p1.y + matrix.f;
+
+        const minX = Math.min(transformedP0X, transformedP1X);
+        const minY = Math.min(transformedP0Y, transformedP1Y);
+        const width = Math.max(1, Math.abs(transformedP1X - transformedP0X));
+        const height = Math.max(1, Math.abs(transformedP1Y - transformedP0Y));
 
         this.overlayRect.attr({
             x: minX, y: minY, width, height
