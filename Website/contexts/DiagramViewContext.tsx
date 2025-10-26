@@ -503,23 +503,132 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    // Decide if two entities should be linked (including self-referencing)
-    const shouldLinkEntities = (a: EntityType, b: EntityType): boolean => {
-        if (!a || !b) return false;
-        
-        // Allow self-referencing relationships
-        if (a.SchemaName === b.SchemaName) {
-            // Check if entity has self-referencing lookup or relationship
-            const hasSelfLookup = hasLookupTo(a, a.SchemaName);
-            const hasSelfRelationship = hasRelationshipTo(a, a.SchemaName);
-            return hasSelfLookup || hasSelfRelationship;
+    // Collect ALL relationships between two entities
+    // All relationships are normalized to be relative to sourceEntity -> targetEntity direction
+    const getAllRelationshipsBetween = (sourceEntity: EntityType, targetEntity: EntityType): RelationshipInformation[] => {
+        if (!sourceEntity || !targetEntity) return [];
+
+        const relationships: RelationshipInformation[] = [];
+        const isSelfReferencing = sourceEntity.SchemaName === targetEntity.SchemaName;
+
+        // Collect lookup-based relationships from source to target
+        // These are: source (many) -> target (one)
+        if (sourceEntity.Attributes) {
+            sourceEntity.Attributes.forEach(attr => {
+                if (attr.AttributeType === 'LookupAttribute') {
+                    const lookupAttr = attr as any;
+                    if (lookupAttr.Targets) {
+                        lookupAttr.Targets.forEach((target: ExtendedEntityInformationType) => {
+                            if (target.Name?.toLowerCase() === targetEntity.SchemaName.toLowerCase()) {
+                                relationships.push({
+                                    sourceEntitySchemaName: sourceEntity.SchemaName,
+                                    sourceEntityDisplayName: sourceEntity.DisplayName,
+                                    targetEntitySchemaName: targetEntity.SchemaName,
+                                    targetEntityDisplayName: targetEntity.DisplayName,
+                                    RelationshipType: isSelfReferencing ? 'SELF' : 'M-1',
+                                    RelationshipSchemaName: '',
+                                    RelationshipName: `${attr.DisplayName} (from ${sourceEntity.DisplayName})`,
+                                    IsLookup: true,
+                                    LookupAttributeName: attr.SchemaName,
+                                    IsManyToMany: false
+                                });
+                            }
+                        });
+                    }
+                }
+            });
         }
 
-        // Link if either side references the other via lookup or relationship
-        const aToB = hasLookupTo(a, b.SchemaName) || hasRelationshipTo(a, b.SchemaName);
-        const bToA = hasLookupTo(b, a.SchemaName) || hasRelationshipTo(b, a.SchemaName);
+        // Collect explicit relationships from source entity
+        if (sourceEntity.Relationships) {
+            sourceEntity.Relationships.forEach(rel => {
+                if (rel.TableSchema?.toLowerCase() === targetEntity.SchemaName.toLowerCase()) {
+                    const direction = rel.IsManyToMany ? 'M-M' : (isSelfReferencing ? 'SELF' : '1-M');
+                    relationships.push({
+                        sourceEntitySchemaName: sourceEntity.SchemaName,
+                        sourceEntityDisplayName: sourceEntity.DisplayName,
+                        targetEntitySchemaName: targetEntity.SchemaName,
+                        targetEntityDisplayName: targetEntity.DisplayName,
+                        RelationshipType: direction,
+                        RelationshipSchemaName: rel.RelationshipSchema,
+                        RelationshipName: `${rel.LookupDisplayName || rel.Name} (from ${sourceEntity.DisplayName})`,
+                        IsLookup: false,
+                        IsManyToMany: rel.IsManyToMany
+                    });
+                }
+            });
+        }
 
-        return aToB || bToA;
+        // If not self-referencing, also check relationships from target to source
+        // These need to be normalized to show from source's perspective
+        if (!isSelfReferencing) {
+            // Collect lookup-based relationships from target to source
+            // These are: source (one) <- target (many), normalized to: source (1) -> target (M) = 1-M
+            if (targetEntity.Attributes) {
+                targetEntity.Attributes.forEach(attr => {
+                    if (attr.AttributeType === 'LookupAttribute') {
+                        const lookupAttr = attr as any;
+                        if (lookupAttr.Targets) {
+                            lookupAttr.Targets.forEach((target: ExtendedEntityInformationType) => {
+                                if (target.Name?.toLowerCase() === sourceEntity.SchemaName.toLowerCase()) {
+                                    // Normalize to source -> target perspective
+                                    // Target has lookup to source, meaning source is "one", target is "many"
+                                    // From source perspective: source (1) <- target (M) = 1-M relationship
+                                    relationships.push({
+                                        sourceEntitySchemaName: sourceEntity.SchemaName,
+                                        sourceEntityDisplayName: sourceEntity.DisplayName,
+                                        targetEntitySchemaName: targetEntity.SchemaName,
+                                        targetEntityDisplayName: targetEntity.DisplayName,
+                                        RelationshipType: '1-M',
+                                        RelationshipSchemaName: '',
+                                        RelationshipName: `${attr.DisplayName} (from ${targetEntity.DisplayName})`,
+                                        IsLookup: true,
+                                        LookupAttributeName: attr.SchemaName,
+                                        IsManyToMany: false
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            // Collect explicit relationships from target entity
+            if (targetEntity.Relationships) {
+                targetEntity.Relationships.forEach(rel => {
+                    if (rel.TableSchema?.toLowerCase() === sourceEntity.SchemaName.toLowerCase()) {
+                        // Don't duplicate M-M relationships (they would be in both entities)
+                        const isDuplicate = rel.IsManyToMany && relationships.some(r =>
+                            r.IsManyToMany && r.RelationshipSchemaName === rel.RelationshipSchema
+                        );
+
+                        if (!isDuplicate) {
+                            // Normalize to source -> target perspective
+                            const direction = rel.IsManyToMany ? 'M-M' : 'M-1';
+                            relationships.push({
+                                sourceEntitySchemaName: sourceEntity.SchemaName,
+                                sourceEntityDisplayName: sourceEntity.DisplayName,
+                                targetEntitySchemaName: targetEntity.SchemaName,
+                                targetEntityDisplayName: targetEntity.DisplayName,
+                                RelationshipType: direction,
+                                RelationshipSchemaName: rel.RelationshipSchema,
+                                RelationshipName: `${rel.LookupDisplayName || rel.Name} (from ${targetEntity.DisplayName})`,
+                                IsLookup: false,
+                                IsManyToMany: rel.IsManyToMany
+                            });
+                        }
+                    }
+                });
+            }
+        }
+
+        return relationships;
+    };
+
+    // Decide if two entities should be linked (including self-referencing)
+    const shouldLinkEntities = (a: EntityType, b: EntityType): boolean => {
+        const relationships = getAllRelationshipsBetween(a, b);
+        return relationships.length > 0;
     };
 
     // Do we already have a link between two element ids (including self-referencing)?
@@ -545,27 +654,21 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     const createDirectedLink = (graph: dia.Graph, sourceEl: dia.Element, targetEl: dia.Element) => {
         const sourceData = sourceEl.get('entityData') as EntityType;
         const targetData = targetEl.get('entityData') as EntityType;
-        
+
         if (!sourceData || !targetData) return;
 
-        const direction = getRelationshipDirection(sourceData, targetData);
-        
-        if (direction) {
-            const info: RelationshipInformation = {
-                sourceEntitySchemaName: sourceData.SchemaName,
-                sourceEntityDisplayName: sourceData.DisplayName,
-                targetEntitySchemaName: targetData.SchemaName,
-                targetEntityDisplayName: targetData.DisplayName,
-                RelationshipType: direction,
-                RelationshipSchemaName: "" // TODO: found inside the relationship definitions (but what about lookups?)
-            };
-            const link = createDirectedRelationshipLink(sourceEl.id, targetEl.id, direction, info);
-            graph.addCell(link);
-        } else {
-            // Fallback to undirected link if direction cannot be determined
-            const link = createRelationshipLink(sourceEl.id, targetEl.id);
-            graph.addCell(link);
-        }
+        // Get all relationships between the two entities
+        const allRelationships = getAllRelationshipsBetween(sourceData, targetData);
+
+        // Determine the primary direction based on the first/strongest relationship
+        // Priority: M-M > SELF > M-1 > 1-M
+        const direction = allRelationships.find(r => r.RelationshipType === 'M-M')?.RelationshipType
+            || allRelationships.find(r => r.RelationshipType === 'SELF')?.RelationshipType
+            || allRelationships.find(r => r.RelationshipType === 'M-1')?.RelationshipType
+            || allRelationships[0].RelationshipType;
+
+        const link = createDirectedRelationshipLink(sourceEl.id, targetEl.id, direction, allRelationships);
+        graph.addCell(link);
     };
 
     // Find + add links between a *new* entity element and all existing ones (including self-referencing)

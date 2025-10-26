@@ -60,9 +60,12 @@ export const RelationshipLinkView = dia.LinkView.extend({
         evt.stopPropagation();
         evt.preventDefault();
 
+        // Get the relationships array from the model
+        const relationships = this.model.get('relationshipInformationList') || [this.model.get('relationshipInformation')].filter(Boolean);
+
         diagramEvents.dispatchRelationshipSelect(
             String(this.model.id),
-            this.model.get('relationshipInformation')
+            relationships
         );
     }
 });
@@ -86,15 +89,17 @@ const circleMarker = {
 
 // Create a directed relationship link with proper markers
 export const createDirectedRelationshipLink = (
-    sourceId: dia.Cell.ID, 
-    targetId: dia.Cell.ID, 
+    sourceId: dia.Cell.ID,
+    targetId: dia.Cell.ID,
     direction: '1-M' | 'M-1' | 'M-M' | 'SELF',
-    relationshipInformation: RelationshipInformation
+    relationshipInformationList: RelationshipInformation[]
 ) => {
     const link = new RelationshipLink({
         source: { id: sourceId },
         target: { id: targetId },
-        relationshipInformation
+        relationshipInformationList,
+        // Keep the first one for backward compatibility
+        relationshipInformation: relationshipInformationList[0]
     });
 
     // Set markers based on relationship direction

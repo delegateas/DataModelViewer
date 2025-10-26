@@ -84,7 +84,7 @@ export default function PropertiesPanel({ }: IPropertiesPanelProps) {
             <Divider className='w-full' />
             {
                 isOpen && (
-                    <Box className='p-4'>
+                    <Box className='p-4 h-full'>
                         {getProperties()}
                     </Box>
                 )

@@ -1,5 +1,5 @@
 import { SelectObjectEvent } from '@/components/diagramview/events/SelectObjectEvent';
-import { EntityType, RelationshipType } from '../Types';
+import { EntityType } from '../Types';
 import { RelationshipInformation } from './models/relationship-information';
 
 /**
@@ -29,12 +29,15 @@ export class DiagramEventBridge {
         window.dispatchEvent(event);
     }
 
-    dispatchRelationshipSelect(relationshipId: string, relationshipData: RelationshipInformation) {
+    dispatchRelationshipSelect(relationshipId: string, relationshipData: RelationshipInformation | RelationshipInformation[]) {
+        // Ensure data is always an array
+        const dataArray = Array.isArray(relationshipData) ? relationshipData : [relationshipData];
+
         const event = new CustomEvent<SelectObjectEvent>('selectObject', {
             detail: {
                 type: 'relationship',
                 objectId: relationshipId,
-                data: [relationshipData]
+                data: dataArray
             }
         });
         window.dispatchEvent(event);
