@@ -39,7 +39,7 @@ export const EntityElementView = dia.ElementView.extend({
         if (!this.isSelected) {
             this.model.attr('container/style/cursor', 'move');
             this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-default)');
-            this.model.attr('container/style/borderColor', 'var(--mui-palette-primary-main)');
+            this.model.attr('container/style/border', '2px solid var(--mui-palette-primary-main)');
         }
     },
 
@@ -48,7 +48,7 @@ export const EntityElementView = dia.ElementView.extend({
         if (!this.isSelected) {
             this.model.attr('container/style/cursor', 'default');
             this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-paper)');
-            this.model.attr('container/style/borderColor', 'var(--mui-palette-border-main)');
+            this.model.attr('container/style/border', '2px solid var(--mui-palette-border-main)');
         }
     },
 
@@ -80,7 +80,7 @@ export const EntityElementView = dia.ElementView.extend({
     onSelect: function () {
         // Apply the same styling as hover but for selection
         this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-default)');
-        this.model.attr('container/style/borderColor', 'var(--mui-palette-primary-main)');
+        this.model.attr('container/style/border', '2px solid var(--mui-palette-primary-main)');
         this.model.attr('container/style/cursor', 'move');
 
         // Mark as selected for state tracking
@@ -90,7 +90,7 @@ export const EntityElementView = dia.ElementView.extend({
     onDeselect: function () {
         // Remove selection styling back to normal state
         this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-paper)');
-        this.model.attr('container/style/borderColor', 'var(--mui-palette-border-main)');
+        this.model.attr('container/style/border', '2px solid var(--mui-palette-border-main)');
         this.model.attr('container/style/cursor', 'default');
 
         // Mark as not selected

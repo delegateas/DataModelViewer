@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { Box, Chip, useTheme, alpha } from '@mui/material';
 import { HeaderDropdownMenu, MenuItemConfig } from './smaller-components/HeaderDropdownMenu';
-import { ArchiveIcon, CloudNewIcon, CloudSaveIcon, FileMenuIcon, LoadIcon, LocalSaveIcon, NewIcon } from '@/lib/icons';
+import { ArchiveIcon, CloudNewIcon, CloudSaveIcon, FileMenuIcon, LoadIcon, LocalSaveIcon, NewIcon, CloudExportIcon, ExportIcon } from '@/lib/icons';
 import { SaveDiagramModal } from './modals/SaveDiagramModal';
 import { LoadDiagramModal } from './modals/LoadDiagramModal';
+import { ExportOptionsModal } from './modals/ExportOptionsModal';
 import { VersionHistorySidepane } from './panes/VersionHistorySidepane';
 import { useDiagramSave } from '@/hooks/useDiagramSave';
 import { useDiagramLoad } from '@/hooks/useDiagramLoad';
+import { useDiagramExport } from '@/hooks/useDiagramExport';
 import { useDiagramView } from '@/contexts/DiagramViewContext';
 import { useRepositoryInfo } from '@/hooks/useRepositoryInfo';
 import { CheckRounded, ErrorRounded, WarningRounded } from '@mui/icons-material';
@@ -21,17 +23,18 @@ interface IDiagramHeaderToolbarProps {
 export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
     const { hasLoadedDiagram, loadedDiagramSource, loadedDiagramFilePath} = useDiagramView();
     const { isSaving, showSaveModal, saveDiagramToCloud, saveDiagramLocally, closeSaveModal, createNewDiagram } = useDiagramSave();
-    const { 
-        isLoading, 
-        isLoadingList, 
-        showLoadModal, 
-        availableDiagrams, 
-        loadDiagramFromCloud, 
+    const {
+        isLoading,
+        isLoadingList,
+        showLoadModal,
+        availableDiagrams,
+        loadDiagramFromCloud,
         loadDiagramFromFile,
         loadAvailableDiagrams,
-        openLoadModal, 
-        closeLoadModal 
+        openLoadModal,
+        closeLoadModal
     } = useDiagramLoad();
+    const { isExporting, showExportModal, exportTarget, exportDiagramLocallyAsPng, exportDiagramToCloudAsPng, performExport, closeExportModal } = useDiagramExport();
     const { isCloudConfigured, isLoading: isRepoInfoLoading } = useRepositoryInfo();
     const [showVersionHistory, setShowVersionHistory] = useState(false);
 
@@ -73,7 +76,22 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
             label: 'Download',
             icon: LocalSaveIcon,
             action: saveDiagramLocally,
-            disabled: isSaving
+            disabled: isSaving,
+            dividerAfter: true,
+        },
+        {
+            id: 'export-cloud',
+            label: 'Export to Cloud',
+            icon: CloudExportIcon,
+            action: exportDiagramToCloudAsPng,
+            disabled: !isCloudConfigured || isExporting,
+        },
+        {
+            id: 'export-local',
+            label: 'Download PNG',
+            icon: ExportIcon,
+            action: exportDiagramLocallyAsPng,
+            disabled: isExporting,
         },
     ];
 
@@ -157,6 +175,13 @@ export const DiagramHeaderToolbar = ({ }: IDiagramHeaderToolbarProps) => {
             <VersionHistorySidepane
                 open={showVersionHistory}
                 onClose={() => setShowVersionHistory(false)}
+            />
+
+            <ExportOptionsModal
+                open={showExportModal}
+                onClose={closeExportModal}
+                onExport={performExport}
+                isExportingToCloud={exportTarget === 'cloud'}
             />
         </>
     );

@@ -24,6 +24,7 @@
     "@tanstack/react-virtual": "^3.13.12",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "html2canvas": "^1.4.1",
     "jose": "^5.9.6",
     "libavoid-js": "^0.4.5",
     "next": "^15.5.3",

@@ -8,6 +8,7 @@ interface CreateFileOptions {
     branch?: string;
     repositoryName?: string; // Optional override
     isUpdate?: boolean; // Flag to indicate if this is updating an existing file
+    isBinary?: boolean; // Flag to indicate content is binary data encoded as latin1 string
 }
 
 interface LoadFileOptions {
@@ -154,20 +155,25 @@ export async function commitFileToRepo(options: CreateFileOptions): Promise<GitC
         commitMessage = `Add ${filePath}`,
         branch = 'main',
         repositoryName,
-        isUpdate = false
+        isUpdate = false,
+        isBinary = false
     } = options;
 
     try {
         // Get ADO configuration
         const config = managedAuth.getConfig();
-        
+
         // Validate inputs
         if (!filePath || content === undefined) {
             throw new AzureDevOpsError('File path and content are required');
         }
 
-        // Convert content to JSON string and then to base64
-        const base64Content = Buffer.from(content).toString('base64');
+        // Convert content to base64
+        // For binary data, content is latin1 encoded string, so we need to use latin1 encoding
+        // For text data, use default utf8 encoding
+        const base64Content = isBinary
+            ? Buffer.from(content, 'latin1').toString('base64')
+            : Buffer.from(content).toString('base64');
 
         // Get the latest commit ID for the branch (needed for push operation)
         const refsUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryName}/refs?filter=heads/${branch}&api-version=7.0`;
