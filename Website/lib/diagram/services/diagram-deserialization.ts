@@ -3,8 +3,8 @@ import { SerializedDiagram } from '../models/serialized-diagram';
 import { SerializedEntity } from '../models/serialized-entity';
 import { createEntity } from '@/components/diagramview/diagram-elements/EntityElement';
 import { createRelationshipLink } from '@/components/diagramview/diagram-elements/RelationshipLink';
-import { useDatamodelData } from '@/contexts/DatamodelDataContext';
 import { getAllRelationshipsBetween } from '../relationship-helpers';
+import { EntityType } from '@/lib/Types';
 
 export interface DiagramFile {
     path: string;
@@ -46,8 +46,10 @@ export class DiagramDeserializationService {
     static deserializeDiagram(
         diagramData: SerializedDiagram,
         graph: dia.Graph | null,
+        getEntityDataBySchemaName: (schemaName: string) => EntityType | undefined,
         applyZoomAndPan: (zoom: number, translate: { x: number; y: number }) => void,
         setLoadedDiagram: (filename: string | null, source: 'cloud' | 'file' | null, filePath?: string | null) => void,
+        addEntityToDiagram: (entity: EntityType) => void,
         filename: string,
         source: 'cloud' | 'file',
         filePath?: string
@@ -55,8 +57,6 @@ export class DiagramDeserializationService {
         if (!graph) {
             throw new Error('No diagram graph available for deserialization');
         }
-
-        const { getEntityDataBySchemaName } = useDatamodelData();
 
         // Clear existing diagram
         graph.clear();
@@ -70,13 +70,19 @@ export class DiagramDeserializationService {
         // Recreate entities
         diagramData.entities.forEach((entityData: SerializedEntity) => {
             const data = getEntityDataBySchemaName(entityData.schemaName);
+            if (!data) {
+                console.warn(`Entity data not found for schema: ${entityData.schemaName}`);
+                return;
+            }
+
             const entity = createEntity({
                 position: entityData.position,
                 size: entityData.size,
                 title: entityData.label,
-                entityData: data!
+                entityData: data
             });
             entity.set('id', entityData.id);
+            addEntityToDiagram(data);
 
             graph.addCell(entity);
         });
@@ -86,7 +92,13 @@ export class DiagramDeserializationService {
             diagramData.links.forEach((linkData) => {
                 const source = getEntityDataBySchemaName(linkData.sourceSchemaName);
                 const target = getEntityDataBySchemaName(linkData.targetSchemaName);
-                const relations = getAllRelationshipsBetween(source!, target!).map((rel) => {
+
+                if (!source || !target) {
+                    console.warn(`Source or target entity not found for link: ${linkData.sourceSchemaName} -> ${linkData.targetSchemaName}`);
+                    return;
+                }
+
+                const relations = getAllRelationshipsBetween(source, target).map((rel) => {
                     const relInfo = linkData.relationships.find(r => r.schemaName === rel.RelationshipSchemaName);
                     return {
                         ...rel,

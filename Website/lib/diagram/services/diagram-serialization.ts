@@ -34,7 +34,7 @@ export class DiagramSerializationService {
                     type: element.attributes.type || 'standard.Rectangle',
                     position: { x: position.x, y: position.y },
                     size: { width: size.width, height: size.height },
-                    label: attrs.label?.text || attrs.body?.text || `Entity ${entities.length + 1}`,
+                    label: element.get('label') || attrs.body?.text || `Entity ${entities.length + 1}`,
                     schemaName: element.get('entityData').SchemaName
                 });
             } else if (cell.isLink()) {

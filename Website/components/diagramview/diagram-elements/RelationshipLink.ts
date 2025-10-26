@@ -138,6 +138,11 @@ export const createRelationshipLink = (
     if (relationshipInformationList.some(rel => rel.isIncluded === undefined)) {
         link.attr("line/strokeDasharray", "5 5");
         link.attr("line/stroke", "var(--mui-palette-warning-main)");
+    } else if (relationshipInformationList.every(rel => rel.isIncluded === false)) {
+        link.attr('line/style/strokeDasharray', '1 1');
+        link.attr('line/style/stroke', 'var(--mui-palette-text-secondary)');
+        link.attr('line/targetMarker', null);
+        link.attr('line/sourceMarker', null);
     }
 
     return link;

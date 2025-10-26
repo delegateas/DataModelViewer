@@ -9,7 +9,6 @@ import { initializeRouter } from '@/components/diagramview/avoid-router/shared/i
 import { createRelationshipLink, RelationshipLink, RelationshipLinkView, updateLinkMarkers } from '@/components/diagramview/diagram-elements/RelationshipLink';
 import { getAllRelationshipsBetween, linkExistsBetween } from '@/lib/diagram/relationship-helpers';
 import { RelationshipInformation } from '@/lib/diagram/models/relationship-information';
-import { link } from 'fs';
 
 interface DiagramActions {
     setZoom: (zoom: number) => void;
