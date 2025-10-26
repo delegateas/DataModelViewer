@@ -1,9 +1,9 @@
-import { Box, Tooltip, Typography, Grid, TextField, Divider } from '@mui/material';
+import { Box, Tooltip, Typography, Grid, TextField, Divider, Alert } from '@mui/material';
 import React, { useState } from 'react';
 import { EntitySelectionPane } from './panes/EntitySelectionPane';
 import { useDiagramView } from '@/contexts/DiagramViewContext';
 
-interface ISidebarDiagramViewProps { 
+interface ISidebarDiagramViewProps {
 
 }
 
@@ -54,13 +54,16 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 />
             </Box>
 
-            <Box className="p-4 flex-grow">
+            <Box className="p-4 flex-grow flex flex-col" gap={2}>
+
+                <Alert severity='warning'>The diagram tool is still under development.</Alert>
+
                 <Typography variant='body1'>
-                    Elements
+                    Metadata Elements
                 </Typography>
 
-                <Divider className="my-2" />
-                
+                <Divider />
+
                 <Grid container spacing={1}>
                     {diagramTools.map((tool) => (
                         <Grid size={3} key={tool.id}>
@@ -77,12 +80,18 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                     ))}
                 </Grid>
 
-                <EntitySelectionPane 
-                    open={entityPaneOpen} 
-                    onClose={handleClosePane} 
+                <Typography variant='body1' className='mt-8'>
+                    Elements
+                </Typography>
+
+                <Divider />
+
+                <EntitySelectionPane
+                    open={entityPaneOpen}
+                    onClose={handleClosePane}
                 />
             </Box>
-            
+
             <Box className="border-t p-4" sx={{ borderColor: 'border.main' }}>
                 <Typography variant='body2' className='mt-4 font-semibold'>
                     Loaded Diagram: ({loadedDiagramSource})
