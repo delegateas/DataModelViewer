@@ -21,13 +21,13 @@ export default function EntityProperties({ entity, closePane }: IEntityPropertie
         )
     }
 
-    const hasRelatedEntities = entity.Relationships.length > 0 || 
+    const hasRelatedEntities = entity.Relationships.length > 0 ||
         entity.Attributes.some(attr => attr.AttributeType === 'LookupAttribute' && attr.Targets.length > 0);
 
     return (
         <Box className="flex flex-col" gap={2}>
-            {entity.IconBase64 ? 
-                <div 
+            {entity.IconBase64 ?
+                <div
                     className="h-8 w-8 self-center"
                     style={{
                         maskImage: `url(data:image/svg+xml;base64,${entity.IconBase64})`,
@@ -39,7 +39,7 @@ export default function EntityProperties({ entity, closePane }: IEntityPropertie
                 /> : <ExtensionRounded />}
             <Typography variant="h6" className='self-center'>{entity?.DisplayName ?? 'Unknown Entity'}</Typography>
             <Divider />
-            
+
             {/* Related Entities Button */}
             {hasRelatedEntities && (
                 <Button
@@ -52,11 +52,12 @@ export default function EntityProperties({ entity, closePane }: IEntityPropertie
                 </Button>
             )}
 
-            
+
             <Button
                 variant="outlined"
                 color='error'
                 className='self-end'
+                type='button'
                 startIcon={<Box className="w-6 h-6">{BinIcon}</Box>}
                 onClick={() => { removeEntity(entity.SchemaName); closePane(); }}
                 fullWidth

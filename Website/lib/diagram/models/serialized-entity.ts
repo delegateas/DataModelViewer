@@ -4,6 +4,5 @@ export interface SerializedEntity {
     position: { x: number; y: number };
     size: { width: number; height: number };
     label: string;
-    includedRelationships: string[];
-    excludedRelationships: string[];
+    schemaName: string;
 }

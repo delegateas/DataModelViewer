@@ -16,8 +16,10 @@ interface IPropertiesPanelProps {
 export default function PropertiesPanel({ }: IPropertiesPanelProps) {
     const [object, setObject] = useState<SelectObjectEvent | null>(null);
     const objectRef = useRef<SelectObjectEvent | null>(null);
-    const userClosedRef = useRef<boolean>(false);
+
     const [isForcedClosed, setIsForcedClosed] = useState<boolean>(false);
+    const userClosedRef = useRef<boolean>(false);
+
     const [isOpen, setIsOpen] = useState<boolean>(false);
 
     const togglePane = () => {
@@ -55,7 +57,7 @@ export default function PropertiesPanel({ }: IPropertiesPanelProps) {
             case 'entity':
                 return <EntityProperties entity={object.data?.[0] as EntityType} closePane={close} />;
             case 'relationship':
-                return <RelationshipProperties relationships={object.data as RelationshipInformation[]} />;
+                return <RelationshipProperties relationships={object.data as RelationshipInformation[]} linkId={object.objectId} />;
             case 'selection':
                 return <SelectionProperties selectedEntities={object.data as EntityType[]} />;
         }
@@ -63,20 +65,20 @@ export default function PropertiesPanel({ }: IPropertiesPanelProps) {
 
     return (
         <Box className={`h-full transition-all duration-300 absolute right-0 top-0 border-l ${isOpen ? 'w-64' : 'w-4'}`} sx={{ borderColor: 'border.main', backgroundColor: 'background.paper' }}>
-            <IconButton 
-                size='xsmall' 
-                onClick={togglePane} 
+            <IconButton
+                size='xsmall'
+                onClick={togglePane}
                 sx={{
-                position: 'absolute',
-                left: '-12px',
-                top: '24px',
-                border: 1,
-                borderColor: 'border.main',
-                bgcolor: 'background.paper',
-                zIndex: 50,
-                '&:hover': {
+                    position: 'absolute',
+                    left: '-12px',
+                    top: '24px',
+                    border: 1,
+                    borderColor: 'border.main',
                     bgcolor: 'background.paper',
-                }
+                    zIndex: 50,
+                    '&:hover': {
+                        bgcolor: 'background.paper',
+                    }
                 }}
             >
                 {isOpen ? <ChevronRightRounded /> : <ChevronLeftRounded />}

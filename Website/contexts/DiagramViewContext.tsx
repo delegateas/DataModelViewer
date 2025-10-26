@@ -6,9 +6,10 @@ import { SmartLayout } from '@/components/diagramview/layout/SmartLayout';
 import { EntityType } from '@/lib/Types';
 import { AvoidRouter } from '@/components/diagramview/avoid-router/shared/avoidrouter';
 import { initializeRouter } from '@/components/diagramview/avoid-router/shared/initialization';
-import { createDirectedRelationshipLink, RelationshipLink, RelationshipLinkView } from '@/components/diagramview/diagram-elements/RelationshipLink';
+import { createRelationshipLink, RelationshipLink, RelationshipLinkView, updateLinkMarkers } from '@/components/diagramview/diagram-elements/RelationshipLink';
 import { getAllRelationshipsBetween, linkExistsBetween } from '@/lib/diagram/relationship-helpers';
 import { RelationshipInformation } from '@/lib/diagram/models/relationship-information';
+import { link } from 'fs';
 
 interface DiagramActions {
     setZoom: (zoom: number) => void;
@@ -27,6 +28,7 @@ interface DiagramActions {
     isEntityInDiagram: (entity: EntityType) => boolean;
     applySmartLayout: (entities: EntityType[]) => void;
     getSelectedEntities: () => EntityType[];
+    toggleRelationshipLink: (linkId: string, relationshipSchemaName: string, include: boolean) => void;
 }
 
 export interface DiagramState extends DiagramActions {
@@ -72,83 +74,84 @@ const initialState: DiagramState = {
     isEntityInDiagram: () => { throw new Error("isEntityInDiagram not initialized yet!"); },
     applySmartLayout: () => { throw new Error("applySmartLayout not initialized yet!"); },
     getSelectedEntities: () => { throw new Error("getSelectedEntities not initialized yet!"); },
+    toggleRelationshipLink: () => { throw new Error("toggleRelationshipLink not initialized yet!"); }
 }
 
 type DiagramViewAction =
-  | { type: 'SET_ZOOM', payload: number }
-  | { type: 'SET_IS_PANNING', payload: boolean }
-  | { type: 'SET_TRANSLATE', payload: { x: number; y: number } }
-  | { type: 'SET_LOADED_DIAGRAM', payload: { filename: string | null; source: 'cloud' | 'file' | null; filePath?: string | null } }
-  | { type: 'CLEAR_DIAGRAM' }
-  | { type: 'SET_DIAGRAM_NAME', payload: string }
-  | { type: 'SELECT_ENTITY', payload: { entityId: string; multiSelect: boolean } }
-  | { type: 'CLEAR_SELECTION' }
-  | { type: 'SET_SELECTION', payload: string[] }
-  | { type: 'ADD_ENTITY_TO_DIAGRAM', payload: EntityType }
-  | { type: 'REMOVE_ENTITY_FROM_DIAGRAM', payload: string };
+    | { type: 'SET_ZOOM', payload: number }
+    | { type: 'SET_IS_PANNING', payload: boolean }
+    | { type: 'SET_TRANSLATE', payload: { x: number; y: number } }
+    | { type: 'SET_LOADED_DIAGRAM', payload: { filename: string | null; source: 'cloud' | 'file' | null; filePath?: string | null } }
+    | { type: 'CLEAR_DIAGRAM' }
+    | { type: 'SET_DIAGRAM_NAME', payload: string }
+    | { type: 'SELECT_ENTITY', payload: { entityId: string; multiSelect: boolean } }
+    | { type: 'CLEAR_SELECTION' }
+    | { type: 'SET_SELECTION', payload: string[] }
+    | { type: 'ADD_ENTITY_TO_DIAGRAM', payload: EntityType }
+    | { type: 'REMOVE_ENTITY_FROM_DIAGRAM', payload: string };
 
 const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): DiagramState => {
-  switch (action.type) {
-    case 'SET_ZOOM':
-      return { ...state, zoom: action.payload }
-    case 'SET_IS_PANNING':
-      return { ...state, isPanning: action.payload }
-    case 'SET_TRANSLATE':
-      return { ...state, translate: action.payload }
-    case 'SET_LOADED_DIAGRAM':
-      return { 
-        ...state, 
-        loadedDiagramFilename: action.payload.filename,
-        loadedDiagramSource: action.payload.source,
-        loadedDiagramFilePath: action.payload.filePath || null,
-        hasLoadedDiagram: action.payload.filename !== null,
-        diagramName: action.payload.filename || 'untitled'
-      }
-    case 'CLEAR_DIAGRAM':
-      return { 
-        ...state, 
-        loadedDiagramFilename: null,
-        loadedDiagramSource: null,
-        loadedDiagramFilePath: null,
-        hasLoadedDiagram: false,
-        diagramName: 'untitled',
-        entitiesInDiagram: new Map<string, EntityType>()
-      }
-    case 'SET_DIAGRAM_NAME':
-      return { ...state, diagramName: action.payload }
-    case 'SELECT_ENTITY':
-      const { entityId, multiSelect } = action.payload;
-      if (multiSelect) {
-        // Ctrl+click: toggle the entity in selection
-        const currentSelection = [...state.selectedEntities];
-        const index = currentSelection.indexOf(entityId);
-        if (index >= 0) {
-          // Remove from selection (ctrl+click on selected entity)
-          currentSelection.splice(index, 1);
-        } else {
-          // Add to selection (ctrl+click on unselected entity)
-          currentSelection.push(entityId);
-        }
-        return { ...state, selectedEntities: currentSelection };
-      } else {
-        // Regular click: replace selection with single entity
-        return { ...state, selectedEntities: [entityId] };
-      }
-    case 'CLEAR_SELECTION':
-      return { ...state, selectedEntities: [] }
-    case 'SET_SELECTION':
-      return { ...state, selectedEntities: action.payload }
-    case 'ADD_ENTITY_TO_DIAGRAM':
-      const newEntitiesMap = new Map(state.entitiesInDiagram);
-      newEntitiesMap.set(action.payload.SchemaName, action.payload);
-      return { ...state, entitiesInDiagram: newEntitiesMap }
-    case 'REMOVE_ENTITY_FROM_DIAGRAM':
-      const updatedEntitiesMap = new Map(state.entitiesInDiagram);
-      updatedEntitiesMap.delete(action.payload);
-      return { ...state, entitiesInDiagram: updatedEntitiesMap }
-    default:
-      return state;
-  }
+    switch (action.type) {
+        case 'SET_ZOOM':
+            return { ...state, zoom: action.payload }
+        case 'SET_IS_PANNING':
+            return { ...state, isPanning: action.payload }
+        case 'SET_TRANSLATE':
+            return { ...state, translate: action.payload }
+        case 'SET_LOADED_DIAGRAM':
+            return {
+                ...state,
+                loadedDiagramFilename: action.payload.filename,
+                loadedDiagramSource: action.payload.source,
+                loadedDiagramFilePath: action.payload.filePath || null,
+                hasLoadedDiagram: action.payload.filename !== null,
+                diagramName: action.payload.filename || 'untitled'
+            }
+        case 'CLEAR_DIAGRAM':
+            return {
+                ...state,
+                loadedDiagramFilename: null,
+                loadedDiagramSource: null,
+                loadedDiagramFilePath: null,
+                hasLoadedDiagram: false,
+                diagramName: 'untitled',
+                entitiesInDiagram: new Map<string, EntityType>()
+            }
+        case 'SET_DIAGRAM_NAME':
+            return { ...state, diagramName: action.payload }
+        case 'SELECT_ENTITY':
+            const { entityId, multiSelect } = action.payload;
+            if (multiSelect) {
+                // Ctrl+click: toggle the entity in selection
+                const currentSelection = [...state.selectedEntities];
+                const index = currentSelection.indexOf(entityId);
+                if (index >= 0) {
+                    // Remove from selection (ctrl+click on selected entity)
+                    currentSelection.splice(index, 1);
+                } else {
+                    // Add to selection (ctrl+click on unselected entity)
+                    currentSelection.push(entityId);
+                }
+                return { ...state, selectedEntities: currentSelection };
+            } else {
+                // Regular click: replace selection with single entity
+                return { ...state, selectedEntities: [entityId] };
+            }
+        case 'CLEAR_SELECTION':
+            return { ...state, selectedEntities: [] }
+        case 'SET_SELECTION':
+            return { ...state, selectedEntities: action.payload }
+        case 'ADD_ENTITY_TO_DIAGRAM':
+            const newEntitiesMap = new Map(state.entitiesInDiagram);
+            newEntitiesMap.set(action.payload.SchemaName, action.payload);
+            return { ...state, entitiesInDiagram: newEntitiesMap }
+        case 'REMOVE_ENTITY_FROM_DIAGRAM':
+            const updatedEntitiesMap = new Map(state.entitiesInDiagram);
+            updatedEntitiesMap.delete(action.payload);
+            return { ...state, entitiesInDiagram: updatedEntitiesMap }
+        default:
+            return state;
+    }
 }
 
 const DiagramViewContext = createContext<DiagramState>(initialState);
@@ -189,20 +192,20 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     // Refs to store graph and paper instances
     const graphRef = useRef<dia.Graph | null>(null);
     const paperRef = useRef<dia.Paper | null>(null);
-    
-   
+
+
     useEffect(() => {
         if (!diagramViewState.canvas.current) return;
-        
-        const graph = new dia.Graph({}, { 
-            cellNamespace: { 
-                ...shapes, 
-                diagram: { EntityElement, RelationshipLink }, 
-                selection: { SelectionElement } 
-            } 
+
+        const graph = new dia.Graph({}, {
+            cellNamespace: {
+                ...shapes,
+                diagram: { EntityElement, RelationshipLink },
+                selection: { SelectionElement }
+            }
         });
         graphRef.current = graph;
-        
+
         // Theme-aware colors using MUI CSS variables
         const gridMinorColor = "var(--mui-palette-border-main)";
         const gridMajorColor = "var(--mui-palette-border-main)";
@@ -223,7 +226,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             background: {
                 color: backgroundColor
             },
-            interactive: { 
+            interactive: {
                 elementMove: true
             },
             snapToGrid: true,
@@ -236,7 +239,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         diagramViewState.canvas.current.appendChild(paper.el);
 
         selectionRef.current = new EntitySelection(paper);
-        
+
         // Update all entity views with selection callbacks when entities are added
         // Variables for panning, zooming and selection
         let isPanning = false;
@@ -263,11 +266,11 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 evt.preventDefault();
                 const deltaX = evt.clientX - panStartX;
                 const deltaY = evt.clientY - panStartY;
-                
+
                 // Update current translate position
                 currentTranslate.x += deltaX;
                 currentTranslate.y += deltaY;
-                
+
                 // Apply the full transform (scale + translate)
                 paper.matrix({
                     a: currentZoom,
@@ -277,10 +280,10 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                     e: currentTranslate.x,
                     f: currentTranslate.y
                 });
-                
+
                 // Update context state
                 setTranslate({ ...currentTranslate });
-                
+
                 panStartX = evt.clientX;
                 panStartY = evt.clientY;
             }
@@ -301,25 +304,25 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             if (evt.ctrlKey) {
                 // Zoom functionality
                 evt.preventDefault();
-                
+
                 const zoomFactor = evt.deltaY > 0 ? 0.9 : 1.1;
                 const newZoom = Math.max(0.1, Math.min(3, currentZoom * zoomFactor));
-                
+
                 if (newZoom !== currentZoom) {
                     // Get mouse position relative to canvas
                     const rect = diagramViewState.canvas.current!.getBoundingClientRect();
                     const mouseX = evt.clientX - rect.left;
                     const mouseY = evt.clientY - rect.top;
-                    
+
                     // Calculate zoom center offset
                     const zoomRatio = newZoom / currentZoom;
-                    
+
                     // Adjust translation to zoom around mouse position
                     currentTranslate.x = mouseX - (mouseX - currentTranslate.x) * zoomRatio;
                     currentTranslate.y = mouseY - (mouseY - currentTranslate.y) * zoomRatio;
-                    
+
                     currentZoom = newZoom;
-                    
+
                     // Apply the full transform (scale + translate)
                     paper.matrix({
                         a: currentZoom,
@@ -329,7 +332,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                         e: currentTranslate.x,
                         f: currentTranslate.y
                     });
-                    
+
                     // Update context state
                     setZoom(newZoom);
                     setTranslate({ ...currentTranslate });
@@ -337,9 +340,9 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
             } else {
                 // Scroll functionality
                 evt.preventDefault();
-                
+
                 const scrollSpeed = 50;
-                
+
                 // Handle scrolling with priority for horizontal scroll
                 if (evt.deltaX !== 0) {
                     // Horizontal scroll wheel (if available) - only move horizontally
@@ -351,7 +354,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                     // Regular scroll = vertical scrolling only
                     currentTranslate.y -= evt.deltaY > 0 ? scrollSpeed : -scrollSpeed;
                 }
-                
+
                 // Apply the full transform (scale + translate)
                 paper.matrix({
                     a: currentZoom,
@@ -361,7 +364,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                     e: currentTranslate.x,
                     f: currentTranslate.y
                 });
-                
+
                 // Update context state
                 setTranslate({ ...currentTranslate });
             }
@@ -383,18 +386,18 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
         canvas.addEventListener('wheel', handleWheel, { passive: false });
-        
+
         // Unfreeze and render the paper to make it interactive
         paper.render();
         paper.unfreeze();
-        
+
         return () => {
             // Remove event listeners
             canvas.removeEventListener('mousedown', handleMouseDown);
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
             canvas.removeEventListener('wheel', handleWheel);
-            
+
             paper.remove();
         };
     }, []);
@@ -406,7 +409,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
 
         if (!sourceData || !targetData) return;
 
-        const link = createDirectedRelationshipLink(sourceEl.id, targetEl.id, allRelationships);
+        const link = createRelationshipLink(sourceEl.id, sourceData.SchemaName, targetEl.id, targetData.SchemaName, allRelationships);
         graph.addCell(link);
     };
 
@@ -414,7 +417,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     const linkNewEntityToExisting = (graph: dia.Graph, newEl: dia.Element) => {
         const newData = newEl.get('entityData') as EntityType;
         if (!newData) return;
-        
+
         const selfReferencingRelationships = getAllRelationshipsBetween(newData, newData);
 
         // Check for self-referencing relationship first
@@ -448,7 +451,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         if (graphRef.current && paperRef.current) {
             let entityX: number;
             let entityY: number;
-            
+
             if (position) {
                 // If position is provided, use it as-is (already in paper coordinates)
                 entityX = position.x;
@@ -457,28 +460,28 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 // Calculate the center of the current viewport
                 const canvasElement = diagramViewState.canvas.current!;
                 const canvasRect = canvasElement.getBoundingClientRect();
-                
+
                 // Get the center point of the visible canvas in screen coordinates
                 const centerScreenX = canvasRect.left + (canvasRect.width / 2);
                 const centerScreenY = canvasRect.top + (canvasRect.height / 2);
-                
+
                 // Convert screen coordinates to paper coordinates
-                const centerPaperPoint = paperRef.current.clientToLocalPoint({ 
-                    x: centerScreenX, 
-                    y: centerScreenY 
+                const centerPaperPoint = paperRef.current.clientToLocalPoint({
+                    x: centerScreenX,
+                    y: centerScreenY
                 });
-                
+
                 entityX = centerPaperPoint.x;
                 entityY = centerPaperPoint.y;
             }
-            
+
             // Snap entity position to grid (grid size is 20px)
             const gridSize = 20;
             const snappedX = Math.round((entityX - 60) / gridSize) * gridSize; // Center the entity (120px width)
             const snappedY = Math.round((entityY - 40) / gridSize) * gridSize; // Center the entity (80px height)
-            
+
             const entityLabel = label || `Entity ${graphRef.current.getCells().length + 1}`;
-            
+
             // Create the new entity using our custom EntityElement
             const entity = createEntity({
                 position: { x: snappedX, y: snappedY },
@@ -486,14 +489,14 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 size: { width: 120, height: 80 },
                 entityData
             });
-            
+
             graphRef.current.addCell(entity);
 
             linkNewEntityToExisting(graphRef.current, entity);
-            
+
             // Dispatch action to update the entities map in state
             dispatch({ type: 'ADD_ENTITY_TO_DIAGRAM', payload: entityData });
-            
+
             return entity;
         }
         return null;
@@ -501,29 +504,69 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
 
     const removeEntity = (entitySchemaName: string) => {
         if (graphRef.current) {
-            const entityElement = graphRef.current.getElements().find(el => {
-                const elementType = el.get('type');
-                const entityData = el.get('entityData');
-                
-                const isEntityElement = elementType === 'diagram.EntityElement';
-                const hasMatchingSchema = entityData?.SchemaName === entitySchemaName;
-                
-                return isEntityElement && hasMatchingSchema;
-            });
+            try {
+                const entityElement = graphRef.current.getElements().find(el => {
+                    const elementType = el.get('type');
+                    const entityData = el.get('entityData');
 
-            if (entityElement) {
-                // Remove all links connected to this entity
-                const connectedLinks = graphRef.current.getConnectedLinks(entityElement);
-                connectedLinks.forEach(link => link.remove());
-                // Remove the entity element from the graph
-                entityElement.remove();
-                // Dispatch action to update the entities map in state
-                dispatch({ type: 'REMOVE_ENTITY_FROM_DIAGRAM', payload: entitySchemaName });
-            } else {
-                console.warn('Entity not found in diagram:', entitySchemaName);
+                    const isEntityElement = elementType === 'diagram.EntityElement';
+                    const hasMatchingSchema = entityData?.SchemaName === entitySchemaName;
+
+                    return isEntityElement && hasMatchingSchema;
+                });
+
+                if (entityElement) {
+                    const connectedLinks = graphRef.current.getConnectedLinks(entityElement);
+
+                    connectedLinks.forEach((link) => {
+                        try {
+                            link.remove();
+                        } catch (linkError) {
+                            console.error('Error removing link:', link.id, linkError);
+                        }
+                    });
+
+                    entityElement.remove();
+                    dispatch({ type: 'REMOVE_ENTITY_FROM_DIAGRAM', payload: entitySchemaName });
+                } else {
+                    console.warn('Entity not found in diagram:', entitySchemaName);
+                }
+            } catch (error) {
+                console.error('Error in removeEntity:', error);
             }
         }
     };
+
+    const toggleRelationshipLink = (id: string, relationshipSchemaName: string, include: boolean) => {
+        if (graphRef.current) {
+            const linkElement = graphRef.current.getLinks().find(link =>
+                link.get('type') === 'diagram.RelationshipLink' && link.id === id
+            ) as RelationshipLink | undefined;
+
+            if (!linkElement) {
+                console.warn('Relationship link not found in diagram:', id);
+                return;
+            }
+
+            const relations = linkElement.get('relationshipInformationList') as RelationshipInformation[];
+            const updatedRelations = relations.map(rel =>
+                rel.RelationshipSchemaName === relationshipSchemaName ? { ...rel, isIncluded: include } : rel
+            );
+            linkElement.set('relationshipInformationList', updatedRelations);
+
+            const allExcluded = updatedRelations.every(r => r.isIncluded === false);
+            if (allExcluded) {
+                linkElement.attr('line/style/strokeDasharray', '1 1');
+                linkElement.attr('line/style/stroke', 'var(--mui-palette-text-secondary)');
+                linkElement.attr('line/targetMarker', null);
+                linkElement.attr('line/sourceMarker', null);
+            } else {
+                linkElement.attr('line/style/strokeDasharray', '');
+                linkElement.attr('line/style/stroke', 'var(--mui-palette-primary-main)');
+                updateLinkMarkers(linkElement);
+            }
+        }
+    }
 
     const getGraph = () => {
         return graphRef.current;
@@ -544,7 +587,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 e: translate.x,
                 f: translate.y
             });
-            
+
             // Update the context state
             setZoom(zoom);
             setTranslate(translate);
@@ -569,15 +612,15 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
 
         if (graphRef.current) {
             const allEntities = graphRef.current.getCells().filter(cell => cell.get('type') === 'diagram.EntityElement');
-            
+
             if (ctrlClick) {
                 // Ctrl+click: toggle the entity in selection - use calculated new state
                 const willBeSelected = newSelectedEntities.includes(entityId);
-                
+
                 const entity = graphRef.current.getCell(entityId);
                 if (entity) {
-                    const borderColor = willBeSelected ? 
-                        '2px solid var(--mui-palette-secondary-main)' : 
+                    const borderColor = willBeSelected ?
+                        '2px solid var(--mui-palette-secondary-main)' :
                         '2px solid var(--mui-palette-primary-main)';
                     entity.attr('container/style/border', borderColor);
                 }
@@ -586,21 +629,21 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 allEntities.forEach(entity => {
                     entity.attr('container/style/border', '2px solid var(--mui-palette-primary-main)');
                 });
-                
+
                 const entity = graphRef.current.getCell(entityId);
                 if (entity) {
                     entity.attr('container/style/border', '2px solid var(--mui-palette-secondary-main)');
                 }
             }
         }
-        
+
         // Update state
         dispatch({ type: 'SELECT_ENTITY', payload: { entityId, multiSelect: ctrlClick } });
     };
 
     const clearSelection = () => {
         dispatch({ type: 'CLEAR_SELECTION' });
-        
+
         // Clear visual selection state on all entities
         if (graphRef.current) {
             const allEntities = graphRef.current.getCells().filter(cell => cell.get('type') === 'diagram.EntityElement');
@@ -656,7 +699,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
 
         // Get currently selected entity IDs from state
         const selectedEntityIds = diagramViewState.selectedEntities;
-        
+
         if (selectedEntityIds.length === 0) {
             // If no individual entity selection, check for area selection
             if (selectionRef.current) {
@@ -685,7 +728,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection, applySmartLayout, getSelectedEntities }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, toggleRelationshipLink, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection, applySmartLayout, getSelectedEntities }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

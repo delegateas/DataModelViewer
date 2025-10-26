@@ -1,4 +1,5 @@
 import { SerializedEntity } from "./serialized-entity";
+import { SerializedLink } from "./serialized-link";
 
 export interface SerializedDiagram {
     id: string;
@@ -12,4 +13,5 @@ export interface SerializedDiagram {
         canvasSize: { width: number; height: number };
     };
     entities: SerializedEntity[];
+    links: SerializedLink[];
 }

@@ -3,6 +3,6 @@ import { EntityType } from "@/lib/Types";
 
 export type SelectObjectEvent = {
     type: 'none' | 'entity' | 'selection' | 'relationship';
-    objectId: string | null;
+    objectId: string | undefined;
     data?: EntityType[] | RelationshipInformation[];
 }

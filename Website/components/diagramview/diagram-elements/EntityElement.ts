@@ -3,7 +3,7 @@ import { EntityType } from '@/lib/Types';
 import { diagramEvents } from '@/lib/diagram/DiagramEventBridge';
 
 export type EntityElement = dia.Element & {
-    get(key: 'entityData'): EntityType | undefined;
+    get(key: 'entityData'): EntityType;
     get(key: 'label'): string | undefined;
 };
 export type EntityElementView = dia.ElementView<EntityElement> & {
@@ -19,7 +19,7 @@ interface IEntityOptions extends mvc.ViewBaseOptions {
 };
 
 export const EntityElementView = dia.ElementView.extend({
-    
+
     events: {
         'mouseenter': 'onMouseEnter',
         'mouseleave': 'onMouseLeave',
@@ -28,13 +28,13 @@ export const EntityElementView = dia.ElementView.extend({
         'pointerup': 'onPointerUp',
     },
 
-    initialize: function(options?: IEntityOptions) {
+    initialize: function (options?: IEntityOptions) {
         dia.ElementView.prototype.initialize.call(this, options);
         this.updateTitle();
         this.isSelected = false; // Track selection state
     },
 
-    onMouseEnter: function() {
+    onMouseEnter: function () {
         // Only apply hover effects if not selected
         if (!this.isSelected) {
             this.model.attr('container/style/cursor', 'move');
@@ -43,7 +43,7 @@ export const EntityElementView = dia.ElementView.extend({
         }
     },
 
-    onMouseLeave: function() {
+    onMouseLeave: function () {
         // Only remove hover effects if not selected
         if (!this.isSelected) {
             this.model.attr('container/style/cursor', 'default');
@@ -52,57 +52,57 @@ export const EntityElementView = dia.ElementView.extend({
         }
     },
 
-    onContextMenu: function(evt: MouseEvent) {
+    onContextMenu: function (evt: MouseEvent) {
         evt.preventDefault();
         evt.stopPropagation();
 
         // Dispatch a custom event for context menu
         diagramEvents.dispatchEntityContextMenu(
-            String(this.model.id), 
-            evt.clientX, 
+            String(this.model.id),
+            evt.clientX,
             evt.clientY
         );
     },
 
-    onPointerDown: function() {
+    onPointerDown: function () {
         this.model.attr('container/style/cursor', 'grabbing');
-        
+
         diagramEvents.dispatchEntitySelect(
             String(this.model.id),
             this.model.get('entityData')
         );
     },
 
-    onPointerUp: function() {
+    onPointerUp: function () {
         this.model.attr('container/style/cursor', 'move');
     },
 
-    onSelect: function() {
+    onSelect: function () {
         // Apply the same styling as hover but for selection
         this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-default)');
         this.model.attr('container/style/borderColor', 'var(--mui-palette-primary-main)');
         this.model.attr('container/style/cursor', 'move');
-        
+
         // Mark as selected for state tracking
         this.isSelected = true;
     },
 
-    onDeselect: function() {
+    onDeselect: function () {
         // Remove selection styling back to normal state
         this.model.attr('container/style/backgroundColor', 'var(--mui-palette-background-paper)');
         this.model.attr('container/style/borderColor', 'var(--mui-palette-border-main)');
         this.model.attr('container/style/cursor', 'default');
-        
+
         // Mark as not selected
         this.isSelected = false;
     },
 
-    updateTitle: function() {
+    updateTitle: function () {
         const label = this.model.get('label') || 'Entity';
         this.model.attr('title/html', label);
     },
 
-    remove: function() {
+    remove: function () {
         // Clean up any remaining event listeners
         if (this.dragMoveHandler) {
             document.removeEventListener('mousemove', this.dragMoveHandler);
@@ -151,15 +151,15 @@ export const EntityElement = dia.Element.define('diagram.EntityElement', {
     ports: {
         groups: {
             top: {
-                position: { name: 'top' }, 
+                position: { name: 'top' },
                 label: { position: 'outside' },
                 markup: [{ tagName: 'circle', selector: 'portBody', attributes: { r: 4 } }],
                 attrs: {
-                portBody: {
-                    magnet: 'true',
-                    stroke: '#888',
-                    fill: '#fff'
-                }
+                    portBody: {
+                        magnet: 'true',
+                        stroke: '#888',
+                        fill: '#fff'
+                    }
                 }
             },
             right: {
@@ -167,17 +167,17 @@ export const EntityElement = dia.Element.define('diagram.EntityElement', {
                 label: { position: 'outside' },
                 markup: [{ tagName: 'circle', selector: 'portBody', attributes: { r: 4 } }],
                 attrs: {
-                portBody: {
-                    magnet: 'true',
-                    stroke: '#888',
-                    fill: '#fff'
-                }
+                    portBody: {
+                        magnet: 'true',
+                        stroke: '#888',
+                        fill: '#fff'
+                    }
                 }
             }
         },
 
         items: [
-            { id: 'self-in',  group: 'top',   attrs: { portBody: { display: 'none' } } },
+            { id: 'self-in', group: 'top', attrs: { portBody: { display: 'none' } } },
             { id: 'self-out', group: 'right', attrs: { portBody: { display: 'none' } } }
         ]
     }

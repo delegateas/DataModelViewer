@@ -2,6 +2,12 @@ import { diagramEvents } from "@/lib/diagram/DiagramEventBridge";
 import { RelationshipInformation } from "@/lib/diagram/models/relationship-information";
 import { dia } from "@joint/core";
 
+export type RelationshipLink = dia.Link & {
+    get(key: 'relationshipInformationList'): RelationshipInformation[];
+    get(key: 'sourceSchemaName'): string;
+    get(key: 'targetSchemaName'): string;
+};
+
 export const RelationshipLink = dia.Link.define('diagram.RelationshipLink', {
     connector: { name: 'jumpover', args: { type: "arc", radius: 10 } },
     z: 1,
@@ -39,29 +45,28 @@ export const RelationshipLink = dia.Link.define('diagram.RelationshipLink', {
     }
 });
 
-
 export const RelationshipLinkView = dia.LinkView.extend({
-    
+
     events: {
         'pointerdown': 'onPointerDown',
         'mouseenter': 'onMouseEnter',
         'mouseleave': 'onMouseLeave',
     },
 
-    onMouseEnter: function() {
+    onMouseEnter: function () {
         this.model.attr('line/strokeWidth', 2);
     },
 
-    onMouseLeave: function() {
+    onMouseLeave: function () {
         this.model.attr('line/strokeWidth', 1);
     },
 
-    onPointerDown: function(evt: PointerEvent) {
+    onPointerDown: function (evt: PointerEvent) {
         evt.stopPropagation();
         evt.preventDefault();
 
         // Get the relationships array from the model
-        const relationships = this.model.get('relationshipInformationList') || [this.model.get('relationshipInformation')].filter(Boolean);
+        const relationships = this.model.get('relationshipInformationList') || [];
 
         diagramEvents.dispatchRelationshipSelect(
             String(this.model.id),
@@ -70,38 +75,31 @@ export const RelationshipLinkView = dia.LinkView.extend({
     }
 });
 
-export const createRelationshipLink = (sourceId: dia.Cell.ID, targetId: dia.Cell.ID) => {
-    return new RelationshipLink({
-        source: { id: sourceId },
-        target: { id: targetId }
-    });
-}
-
 const circleMarker = {
-  type: 'circle',
-  r: 3,
-  cx: 4,
-  z: 1,
-  fill: 'var(--mui-palette-background-default)',
-  stroke: 'var(--mui-palette-primary-main)',
-  'stroke-width': 1
+    type: 'circle',
+    r: 3,
+    cx: 4,
+    z: 1,
+    fill: 'var(--mui-palette-background-default)',
+    stroke: 'var(--mui-palette-primary-main)',
+    'stroke-width': 1
 };
 
-// Create a directed relationship link with proper markers
-export const createDirectedRelationshipLink = (
-    sourceId: dia.Cell.ID,
-    targetId: dia.Cell.ID,
-    relationshipInformationList: RelationshipInformation[]
-) => {
-    const link = new RelationshipLink({
-        source: { id: sourceId },
-        target: { id: targetId },
-        relationshipInformationList,
-        // Keep the first one for backward compatibility
-        relationshipInformation: relationshipInformationList[0]
-    });
+/**
+ * Calculate and set markers on a link based on included relationships only
+ */
+export const updateLinkMarkers = (link: dia.Link) => {
+    const relationshipInformationList = link.get('relationshipInformationList') as RelationshipInformation[] || [];
 
-    relationshipInformationList.forEach((relInfo) => {
+    // Filter to only included relationships (default to true if not specified)
+    const includedRelationships = relationshipInformationList.filter(rel => rel.isIncluded !== false);
+
+    // Clear existing markers first
+    link.attr('line/targetMarker', null);
+    link.attr('line/sourceMarker', null);
+
+    // Set markers based on included relationships
+    includedRelationships.forEach((relInfo) => {
         if (relInfo.RelationshipType === '1-M') {
             link.attr('line/targetMarker', circleMarker);
         } else if (relInfo.RelationshipType === 'M-1' || relInfo.RelationshipType === 'SELF') {
@@ -111,10 +109,35 @@ export const createDirectedRelationshipLink = (
             link.attr('line/sourceMarker', circleMarker);
         }
     });
+};
+
+// Create a directed relationship link with proper markers
+export const createRelationshipLink = (
+    sourceId: dia.Cell.ID,
+    sourceSchemaName: string,
+    targetId: dia.Cell.ID,
+    targetSchemaName: string,
+    relationshipInformationList: RelationshipInformation[]
+) => {
+    const link = new RelationshipLink({
+        source: { id: sourceId },
+        target: { id: targetId },
+        sourceSchemaName,
+        targetSchemaName,
+        relationshipInformationList,
+    });
+
+    // Calculate markers based on included relationships only
+    updateLinkMarkers(link);
 
     if (sourceId === targetId) {
         link.set('source', { id: sourceId, port: 'self-out' });
         link.set('target', { id: targetId, port: 'self-in' });
+    }
+
+    if (relationshipInformationList.some(rel => rel.isIncluded === undefined)) {
+        link.attr("line/strokeDasharray", "5 5");
+        link.attr("line/stroke", "var(--mui-palette-warning-main)");
     }
 
     return link;

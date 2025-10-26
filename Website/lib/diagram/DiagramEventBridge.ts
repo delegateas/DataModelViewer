@@ -8,9 +8,9 @@ import { RelationshipInformation } from './models/relationship-information';
  */
 export class DiagramEventBridge {
     private static instance: DiagramEventBridge;
-    
-    private constructor() {}
-    
+
+    private constructor() { }
+
     static getInstance(): DiagramEventBridge {
         if (!DiagramEventBridge.instance) {
             DiagramEventBridge.instance = new DiagramEventBridge();
@@ -47,7 +47,7 @@ export class DiagramEventBridge {
         const event = new CustomEvent<SelectObjectEvent>('selectObject', {
             detail: {
                 type: 'selection',
-                objectId: null,
+                objectId: undefined,
                 data: entities
             }
         });
@@ -58,7 +58,7 @@ export class DiagramEventBridge {
         const event = new CustomEvent<SelectObjectEvent>('selectObject', {
             detail: {
                 type: 'none',
-                objectId: null,
+                objectId: undefined,
                 data: []
             }
         });
@@ -90,9 +90,9 @@ export class DiagramEventBridge {
         const handler = (evt: CustomEvent<SelectObjectEvent>) => {
             callback(evt.detail);
         };
-        
+
         this.addEventListener('selectObject', handler);
-        
+
         // Return cleanup function
         return () => this.removeEventListener('selectObject', handler);
     }
@@ -103,9 +103,9 @@ export class DiagramEventBridge {
             const { entityId, x, y } = evt.detail;
             callback(entityId, x, y);
         };
-        
+
         this.addEventListener('entityContextMenu', handler);
-        
+
         // Return cleanup function
         return () => this.removeEventListener('entityContextMenu', handler);
     }

@@ -23,6 +23,7 @@ export const getAllRelationshipsBetween = (sourceEntity: EntityType, targetEntit
             }
             seenSchemas.add(rel.RelationshipSchemaName);
         }
+        rel.isIncluded = true;
         relationships.push(rel);
     };
 
@@ -39,9 +40,7 @@ export const getAllRelationshipsBetween = (sourceEntity: EntityType, targetEntit
                     targetEntityDisplayName: targetEntity.DisplayName,
                     RelationshipType: direction,
                     RelationshipSchemaName: rel.RelationshipSchema,
-                    RelationshipName: `${rel.LookupDisplayName || rel.Name} (from ${sourceEntity.DisplayName})`,
-                    IsLookup: false,
-                    IsManyToMany: rel.IsManyToMany
+                    IsManyToMany: rel.IsManyToMany,
                 });
             }
         });
@@ -63,9 +62,7 @@ export const getAllRelationshipsBetween = (sourceEntity: EntityType, targetEntit
                     targetEntityDisplayName: targetEntity.DisplayName,
                     RelationshipType: direction,
                     RelationshipSchemaName: rel.RelationshipSchema,
-                    RelationshipName: `${rel.LookupDisplayName || rel.Name} (from ${targetEntity.DisplayName})`,
-                    IsLookup: false,
-                    IsManyToMany: rel.IsManyToMany
+                    IsManyToMany: rel.IsManyToMany,
                 });
             }
         });

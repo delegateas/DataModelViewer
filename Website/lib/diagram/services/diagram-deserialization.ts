@@ -1,7 +1,10 @@
 import { dia } from '@joint/core';
 import { SerializedDiagram } from '../models/serialized-diagram';
 import { SerializedEntity } from '../models/serialized-entity';
-import { EntityElement } from '@/components/diagramview/diagram-elements/EntityElement';
+import { createEntity } from '@/components/diagramview/diagram-elements/EntityElement';
+import { createRelationshipLink } from '@/components/diagramview/diagram-elements/RelationshipLink';
+import { useDatamodelData } from '@/contexts/DatamodelDataContext';
+import { getAllRelationshipsBetween } from '../relationship-helpers';
 
 export interface DiagramFile {
     path: string;
@@ -53,6 +56,8 @@ export class DiagramDeserializationService {
             throw new Error('No diagram graph available for deserialization');
         }
 
+        const { getEntityDataBySchemaName } = useDatamodelData();
+
         // Clear existing diagram
         graph.clear();
 
@@ -64,42 +69,68 @@ export class DiagramDeserializationService {
 
         // Recreate entities
         diagramData.entities.forEach((entityData: SerializedEntity) => {
-
-            const entity = new EntityElement({
-                id: entityData.id,
+            const data = getEntityDataBySchemaName(entityData.schemaName);
+            const entity = createEntity({
                 position: entityData.position,
                 size: entityData.size,
-                title: entityData.label
+                title: entityData.label,
+                entityData: data!
             });
+            entity.set('id', entityData.id);
 
             graph.addCell(entity);
         });
+
+        // Recreate links with relationship information (if available)
+        if (diagramData.links && diagramData.links.length > 0) {
+            diagramData.links.forEach((linkData) => {
+                const source = getEntityDataBySchemaName(linkData.sourceSchemaName);
+                const target = getEntityDataBySchemaName(linkData.targetSchemaName);
+                const relations = getAllRelationshipsBetween(source!, target!).map((rel) => {
+                    const relInfo = linkData.relationships.find(r => r.schemaName === rel.RelationshipSchemaName);
+                    return {
+                        ...rel,
+                        isIncluded: relInfo ? relInfo.isIncluded : undefined
+                    };
+                });
+                const link = createRelationshipLink(
+                    linkData.sourceId,
+                    linkData.sourceSchemaName,
+                    linkData.targetId,
+                    linkData.targetSchemaName,
+                    relations
+                );
+                link.set('id', linkData.id);
+
+                graph.addCell(link);
+            });
+        }
     }
 
     static loadDiagramFromFile(file: File): Promise<SerializedDiagram> {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            
+
             reader.onload = (event) => {
                 try {
                     const content = event.target?.result as string;
                     const diagramData = JSON.parse(content) as SerializedDiagram;
-                    
+
                     // Validate the diagram data structure
                     if (!diagramData.id || !diagramData.entities || !diagramData.metadata) {
                         throw new Error('Invalid diagram file format');
                     }
-                    
+
                     resolve(diagramData);
                 } catch (error) {
                     reject(new Error(`Failed to parse diagram file: ${error instanceof Error ? error.message : 'Unknown error'}`));
                 }
             };
-            
+
             reader.onerror = () => {
                 reject(new Error('Failed to read diagram file'));
             };
-            
+
             reader.readAsText(file);
         });
     }
