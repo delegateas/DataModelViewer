@@ -10,4 +10,5 @@ export interface SerializedLink {
     targetId: string;
     targetSchemaName: string;
     relationships: SerializedRelationship[];
+    label?: any; // Store the full JointJS label object
 }

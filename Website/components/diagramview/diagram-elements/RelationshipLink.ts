@@ -62,9 +62,6 @@ export const RelationshipLinkView = dia.LinkView.extend({
     },
 
     onPointerDown: function (evt: PointerEvent) {
-        evt.stopPropagation();
-        evt.preventDefault();
-
         // Get the relationships array from the model
         const relationships = this.model.get('relationshipInformationList') || [];
 
@@ -117,7 +114,8 @@ export const createRelationshipLink = (
     sourceSchemaName: string,
     targetId: dia.Cell.ID,
     targetSchemaName: string,
-    relationshipInformationList: RelationshipInformation[]
+    relationshipInformationList: RelationshipInformation[],
+    label?: string
 ) => {
     const link = new RelationshipLink({
         source: { id: sourceId },
@@ -126,6 +124,49 @@ export const createRelationshipLink = (
         targetSchemaName,
         relationshipInformationList,
     });
+
+    // Add label if provided using JointJS label system
+    if (label) {
+        link.appendLabel({
+            markup: [
+                {
+                    tagName: 'rect',
+                    selector: 'body'
+                },
+                {
+                    tagName: 'text',
+                    selector: 'label'
+                }
+            ],
+            attrs: {
+                label: {
+                    text: label,
+                    fill: 'var(--mui-palette-text-primary)',
+                    fontSize: 12,
+                    fontFamily: 'sans-serif',
+                    textAnchor: 'middle',
+                    textVerticalAnchor: 'middle'
+                },
+                body: {
+                    ref: 'label',
+                    fill: 'white',
+                    rx: 3,
+                    ry: 3,
+                    refWidth: '100%',
+                    refHeight: '100%',
+                    refX: '0%',
+                    refY: '0%'
+                }
+            },
+            position: {
+                distance: 0.5,
+                args: {
+                    keepGradient: true,
+                    ensureLegibility: true
+                }
+            }
+        });
+    }
 
     // Calculate markers based on included relationships only
     updateLinkMarkers(link);

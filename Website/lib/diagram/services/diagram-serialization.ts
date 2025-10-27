@@ -45,6 +45,8 @@ export class DiagramSerializationService {
                 const source = link.get('source');
                 const target = link.get('target');
                 const relationshipInformationList = link.get('relationshipInformationList') as RelationshipInformation[] || [];
+                const labels = link.labels();
+                const label = labels.length > 0 ? labels[0] : undefined;
 
                 // Only save links that have relationship information
                 if (relationshipInformationList.length > 0 && source?.id && target?.id) {
@@ -57,7 +59,8 @@ export class DiagramSerializationService {
                         relationships: relationshipInformationList.map((relInfo) => ({
                             schemaName: relInfo.RelationshipSchemaName,
                             isIncluded: relInfo.isIncluded
-                        }))
+                        })),
+                        label: label
                     });
                 }
             }
@@ -75,7 +78,8 @@ export class DiagramSerializationService {
                     relationships: excludedLink.relationshipInformationList.map((relInfo) => ({
                         schemaName: relInfo.RelationshipSchemaName,
                         isIncluded: relInfo.isIncluded
-                    }))
+                    })),
+                    label: excludedLink.label
                 });
             });
         }

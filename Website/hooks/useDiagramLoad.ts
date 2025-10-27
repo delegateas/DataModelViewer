@@ -17,7 +17,7 @@ export const useDiagramLoad = () => {
         dispatch({ type: 'ADD_ENTITY_TO_DIAGRAM', payload: entity });
     }
 
-    const addExcludedLink = (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: any[]) => {
+    const addExcludedLink = (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: any[], label?: any) => {
         dispatch({
             type: 'ADD_EXCLUDED_LINK',
             payload: {
@@ -26,7 +26,8 @@ export const useDiagramLoad = () => {
                 targetId,
                 sourceSchemaName,
                 targetSchemaName,
-                relationshipInformationList
+                relationshipInformationList,
+                label
             }
         });
     }

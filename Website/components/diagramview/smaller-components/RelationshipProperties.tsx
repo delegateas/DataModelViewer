@@ -1,7 +1,7 @@
 import { useDiagramView } from '@/contexts/DiagramViewContext';
 import { RelationshipInformation } from '@/lib/diagram/models/relationship-information';
-import { Box, Chip, Paper, Typography, FormControlLabel, Switch } from '@mui/material';
-import React, { useState } from 'react'
+import { Box, Chip, Paper, Typography, FormControlLabel, Switch, TextField, Divider } from '@mui/material';
+import React, { useState, useEffect } from 'react'
 
 interface IRelationshipPropertiesProps {
     relationships: RelationshipInformation[];
@@ -10,11 +10,27 @@ interface IRelationshipPropertiesProps {
 
 const RelationshipProperties = ({ relationships, linkId }: IRelationshipPropertiesProps) => {
 
-    const { toggleRelationshipLink } = useDiagramView();
+    const { toggleRelationshipLink, updateRelationshipLinkLabel, getGraph } = useDiagramView();
     const [isToggled, setIsToggled] = useState<Map<number, boolean | undefined>>(relationships.reduce((map, rel, index) => {
         map.set(index, rel.isIncluded);
         return map;
     }, new Map<number, boolean | undefined>()));
+    const [label, setLabel] = useState<string>('');
+
+    // Load current label from link when component mounts or linkId changes
+    useEffect(() => {
+        if (!linkId) return;
+
+        const graph = getGraph();
+        if (!graph) return;
+
+        const link = graph.getLinks().find(l => l.id === linkId);
+        if (link) {
+            const labels = link.labels();
+            const currentLabel = labels.length > 0 ? labels[0].attrs?.label?.text || '' : '';
+            setLabel(currentLabel);
+        }
+    }, [linkId, getGraph]);
 
     const handleToggleInclude = (index: number, currentValue: boolean | undefined) => {
         if (!linkId) return;
@@ -22,14 +38,37 @@ const RelationshipProperties = ({ relationships, linkId }: IRelationshipProperti
         setIsToggled((prev) => new Map(prev).set(index, !currentValue));
     };
 
+    const handleLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newLabel = event.target.value;
+        setLabel(newLabel);
+        if (linkId) {
+            updateRelationshipLinkLabel(linkId, newLabel);
+        }
+    };
+
     return (
         <Box className="flex flex-col h-full" gap={2}>
             <Typography variant="h6" className='self-center'>
                 Relationship Properties
             </Typography>
+
+            <Divider />
+
+            <TextField
+                label="Link Label"
+                value={label}
+                onChange={handleLabelChange}
+                size="small"
+                fullWidth
+                placeholder="Enter label (optional)"
+            />
+
+            <Divider />
+
             <Typography variant="caption" className='self-center text-gray-500'>
                 {relationships.length} relationship{relationships.length !== 1 ? 's' : ''}
             </Typography>
+
             <Box className="overflow-y-auto flex flex-col" gap={2}>
                 {relationships.map((rel, index) => {
 
@@ -38,7 +77,7 @@ const RelationshipProperties = ({ relationships, linkId }: IRelationshipProperti
                             opacity: isToggled ? 1 : 0.6,
                             borderColor: isToggled ? 'divider' : 'text.disabled'
                         }}>
-                            <Box className="flex items-center justify-between mb-2">
+                            <Box className="flex items-center justify-between mb-2 overflow-x-scroll">
                                 <Box className="flex items-center flex-1 justify-center">
                                     <Box className="flex flex-col text-right">
                                         <Typography variant='body2' className='font-medium'>{rel.sourceEntityDisplayName}</Typography>

@@ -17,6 +17,7 @@ export interface ExcludedLinkMetadata {
     sourceSchemaName: string;
     targetSchemaName: string;
     relationshipInformationList: RelationshipInformation[];
+    label?: any; // Store the full JointJS label object
 }
 
 interface DiagramActions {
@@ -39,6 +40,7 @@ interface DiagramActions {
     toggleRelationshipLink: (linkId: string, relationshipSchemaName: string, include: boolean) => void;
     restoreRelationshipLink: (sourceSchemaName: string, targetSchemaName: string) => void;
     getExcludedLinks: () => Map<string, ExcludedLinkMetadata>;
+    updateRelationshipLinkLabel: (linkId: string, label: string) => void;
 }
 
 export interface DiagramState extends DiagramActions {
@@ -88,7 +90,8 @@ const initialState: DiagramState = {
     getSelectedEntities: () => { throw new Error("getSelectedEntities not initialized yet!"); },
     toggleRelationshipLink: () => { throw new Error("toggleRelationshipLink not initialized yet!"); },
     restoreRelationshipLink: () => { throw new Error("restoreRelationshipLink not initialized yet!"); },
-    getExcludedLinks: () => { throw new Error("getExcludedLinks not initialized yet!"); }
+    getExcludedLinks: () => { throw new Error("getExcludedLinks not initialized yet!"); },
+    updateRelationshipLinkLabel: () => { throw new Error("updateRelationshipLinkLabel not initialized yet!"); }
 }
 
 type DiagramViewAction =
@@ -254,9 +257,12 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 color: backgroundColor
             },
             interactive: {
-                elementMove: true
+                elementMove: true,
+                linkMove: false,
+                labelMove: true
             },
             snapToGrid: true,
+            snapLabels: true,
             frozen: true,
             async: true,
             cellViewNamespace: { ...shapes, diagram: { EntityElement, EntityElementView, RelationshipLink, RelationshipLinkView }, selection: { SelectionElement } }
@@ -588,6 +594,8 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 const target = linkElement.get('target') as { id: string };
                 const sourceSchemaName = linkElement.get('sourceSchemaName');
                 const targetSchemaName = linkElement.get('targetSchemaName');
+                const labels = linkElement.labels();
+                const currentLabel = labels.length > 0 ? labels[0] : undefined;
 
                 const excludedLinkMetadata: ExcludedLinkMetadata = {
                     linkId: id,
@@ -595,7 +603,8 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                     targetId: target.id,
                     sourceSchemaName,
                     targetSchemaName,
-                    relationshipInformationList: updatedRelations
+                    relationshipInformationList: updatedRelations,
+                    label: currentLabel
                 };
 
                 // Add to excluded links
@@ -782,14 +791,21 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Recreate the link with the stored metadata
+        const labelText = excludedLink.label?.attrs?.label?.text;
         const link = createRelationshipLink(
             excludedLink.sourceId,
             excludedLink.sourceSchemaName,
             excludedLink.targetId,
             excludedLink.targetSchemaName,
-            excludedLink.relationshipInformationList
+            excludedLink.relationshipInformationList,
+            labelText
         );
         link.set('id', excludedLink.linkId);
+
+        // If we have the full label object with position data, restore it
+        if (excludedLink.label) {
+            link.labels([excludedLink.label]);
+        }
 
         graphRef.current.addCell(link);
 
@@ -801,8 +817,88 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         return diagramViewState.excludedLinks;
     };
 
+    const updateRelationshipLinkLabel = (linkId: string, label: string) => {
+        if (!graphRef.current) return;
+
+        const linkElement = graphRef.current.getLinks().find(link =>
+            link.get('type') === 'diagram.RelationshipLink' && link.id === linkId
+        ) as RelationshipLink | undefined;
+
+        if (!linkElement) {
+            console.warn('Relationship link not found in diagram:', linkId);
+            return;
+        }
+
+        // Get existing labels
+        const labels = linkElement.labels();
+
+        if (label) {
+            // If label text provided
+            if (labels.length > 0) {
+                // Update existing label
+                const existingLabel = labels[0];
+                linkElement.label(0, {
+                    ...existingLabel,
+                    attrs: {
+                        ...existingLabel.attrs,
+                        label: {
+                            ...existingLabel.attrs?.label,
+                            text: label
+                        }
+                    }
+                });
+            } else {
+                // Create new label
+                linkElement.appendLabel({
+                    markup: [
+                        {
+                            tagName: 'rect',
+                            selector: 'body'
+                        },
+                        {
+                            tagName: 'text',
+                            selector: 'label'
+                        }
+                    ],
+                    attrs: {
+                        label: {
+                            text: label,
+                            fill: 'var(--mui-palette-text-primary)',
+                            fontSize: 12,
+                            fontFamily: 'sans-serif',
+                            textAnchor: 'middle',
+                            textVerticalAnchor: 'middle'
+                        },
+                        body: {
+                            ref: 'label',
+                            fill: 'white',
+                            rx: 3,
+                            ry: 3,
+                            refWidth: '100%',
+                            refHeight: '100%',
+                            refX: '0%',
+                            refY: '0%'
+                        }
+                    },
+                    position: {
+                        distance: 0.5,
+                        args: {
+                            keepGradient: true,
+                            ensureLegibility: true
+                        }
+                    }
+                });
+            }
+        } else {
+            // If label text is empty, remove the label
+            if (labels.length > 0) {
+                linkElement.removeLabel(0);
+            }
+        }
+    };
+
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, toggleRelationshipLink, restoreRelationshipLink, getExcludedLinks, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection, applySmartLayout, getSelectedEntities }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, toggleRelationshipLink, restoreRelationshipLink, getExcludedLinks, updateRelationshipLinkLabel, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection, applySmartLayout, getSelectedEntities }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

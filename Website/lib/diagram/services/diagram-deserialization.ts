@@ -53,7 +53,7 @@ export class DiagramDeserializationService {
         filename: string,
         source: 'cloud' | 'file',
         filePath?: string,
-        addExcludedLink?: (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: any[]) => void
+        addExcludedLink?: (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: any[], label?: any) => void
     ): void {
         if (!graph) {
             throw new Error('No diagram graph available for deserialization');
@@ -118,18 +118,26 @@ export class DiagramDeserializationService {
                         linkData.id,
                         linkData.sourceId,
                         linkData.targetId,
-                        relations
+                        relations,
+                        linkData.label
                     );
                 } else {
                     // Add the link to the graph
+                    const labelText = linkData.label?.attrs?.label?.text;
                     const link = createRelationshipLink(
                         linkData.sourceId,
                         linkData.sourceSchemaName,
                         linkData.targetId,
                         linkData.targetSchemaName,
-                        relations
+                        relations,
+                        labelText
                     );
                     link.set('id', linkData.id);
+
+                    // If we have the full label object with position data, restore it
+                    if (linkData.label) {
+                        link.labels([linkData.label]);
+                    }
 
                     graph.addCell(link);
                 }
