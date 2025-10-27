@@ -5,13 +5,15 @@ import { SerializedLink } from '../models/serialized-link';
 import { RelationshipInformation } from '../models/relationship-information';
 import { EntityElement } from '@/components/diagramview/diagram-elements/EntityElement';
 import { RelationshipLink } from '@/components/diagramview/diagram-elements/RelationshipLink';
+import { ExcludedLinkMetadata } from '@/contexts/DiagramViewContext';
 
 export class DiagramSerializationService {
     static serializeDiagram(
         graph: dia.Graph | null,
         zoom: number,
         translate: { x: number; y: number },
-        diagramName: string
+        diagramName: string,
+        excludedLinks?: Map<string, ExcludedLinkMetadata>
     ): SerializedDiagram {
         if (!graph) {
             throw new Error('No diagram graph available');
@@ -60,6 +62,23 @@ export class DiagramSerializationService {
                 }
             }
         });
+
+        // Add excluded links to the serialized diagram
+        if (excludedLinks && excludedLinks.size > 0) {
+            excludedLinks.forEach((excludedLink) => {
+                links.push({
+                    id: excludedLink.linkId,
+                    sourceId: excludedLink.sourceId,
+                    sourceSchemaName: excludedLink.sourceSchemaName,
+                    targetId: excludedLink.targetId,
+                    targetSchemaName: excludedLink.targetSchemaName,
+                    relationships: excludedLink.relationshipInformationList.map((relInfo) => ({
+                        schemaName: relInfo.RelationshipSchemaName,
+                        isIncluded: relInfo.isIncluded
+                    }))
+                });
+            });
+        }
 
         return {
             id: crypto.randomUUID(),

@@ -10,6 +10,15 @@ import { createRelationshipLink, RelationshipLink, RelationshipLinkView, updateL
 import { getAllRelationshipsBetween, linkExistsBetween } from '@/lib/diagram/relationship-helpers';
 import { RelationshipInformation } from '@/lib/diagram/models/relationship-information';
 
+export interface ExcludedLinkMetadata {
+    linkId: string;
+    sourceId: string;
+    targetId: string;
+    sourceSchemaName: string;
+    targetSchemaName: string;
+    relationshipInformationList: RelationshipInformation[];
+}
+
 interface DiagramActions {
     setZoom: (zoom: number) => void;
     setIsPanning: (isPanning: boolean) => void;
@@ -28,6 +37,8 @@ interface DiagramActions {
     applySmartLayout: (entities: EntityType[]) => void;
     getSelectedEntities: () => EntityType[];
     toggleRelationshipLink: (linkId: string, relationshipSchemaName: string, include: boolean) => void;
+    restoreRelationshipLink: (sourceSchemaName: string, targetSchemaName: string) => void;
+    getExcludedLinks: () => Map<string, ExcludedLinkMetadata>;
 }
 
 export interface DiagramState extends DiagramActions {
@@ -42,6 +53,7 @@ export interface DiagramState extends DiagramActions {
     diagramName: string;
     selectedEntities: string[];
     entitiesInDiagram: Map<string, EntityType>;
+    excludedLinks: Map<string, ExcludedLinkMetadata>;
 }
 
 const initialState: DiagramState = {
@@ -56,6 +68,7 @@ const initialState: DiagramState = {
     diagramName: 'untitled',
     selectedEntities: [],
     entitiesInDiagram: new Map<string, EntityType>(),
+    excludedLinks: new Map<string, ExcludedLinkMetadata>(),
 
     setZoom: () => { throw new Error("setZoom not initialized yet!"); },
     setIsPanning: () => { throw new Error("setIsPanning not initialized yet!"); },
@@ -73,7 +86,9 @@ const initialState: DiagramState = {
     isEntityInDiagram: () => { throw new Error("isEntityInDiagram not initialized yet!"); },
     applySmartLayout: () => { throw new Error("applySmartLayout not initialized yet!"); },
     getSelectedEntities: () => { throw new Error("getSelectedEntities not initialized yet!"); },
-    toggleRelationshipLink: () => { throw new Error("toggleRelationshipLink not initialized yet!"); }
+    toggleRelationshipLink: () => { throw new Error("toggleRelationshipLink not initialized yet!"); },
+    restoreRelationshipLink: () => { throw new Error("restoreRelationshipLink not initialized yet!"); },
+    getExcludedLinks: () => { throw new Error("getExcludedLinks not initialized yet!"); }
 }
 
 type DiagramViewAction =
@@ -87,7 +102,9 @@ type DiagramViewAction =
     | { type: 'CLEAR_SELECTION' }
     | { type: 'SET_SELECTION', payload: string[] }
     | { type: 'ADD_ENTITY_TO_DIAGRAM', payload: EntityType }
-    | { type: 'REMOVE_ENTITY_FROM_DIAGRAM', payload: string };
+    | { type: 'REMOVE_ENTITY_FROM_DIAGRAM', payload: string }
+    | { type: 'ADD_EXCLUDED_LINK', payload: ExcludedLinkMetadata }
+    | { type: 'REMOVE_EXCLUDED_LINK', payload: string };
 
 const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): DiagramState => {
     switch (action.type) {
@@ -114,7 +131,8 @@ const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): Dia
                 loadedDiagramFilePath: null,
                 hasLoadedDiagram: false,
                 diagramName: 'untitled',
-                entitiesInDiagram: new Map<string, EntityType>()
+                entitiesInDiagram: new Map<string, EntityType>(),
+                excludedLinks: new Map<string, ExcludedLinkMetadata>()
             }
         case 'SET_DIAGRAM_NAME':
             return { ...state, diagramName: action.payload }
@@ -148,6 +166,16 @@ const diagramViewReducer = (state: DiagramState, action: DiagramViewAction): Dia
             const updatedEntitiesMap = new Map(state.entitiesInDiagram);
             updatedEntitiesMap.delete(action.payload);
             return { ...state, entitiesInDiagram: updatedEntitiesMap }
+        case 'ADD_EXCLUDED_LINK':
+            const newExcludedLinks = new Map(state.excludedLinks);
+            // Use a key that identifies the link by source and target
+            const linkKey = `${action.payload.sourceSchemaName}-${action.payload.targetSchemaName}`;
+            newExcludedLinks.set(linkKey, action.payload);
+            return { ...state, excludedLinks: newExcludedLinks }
+        case 'REMOVE_EXCLUDED_LINK':
+            const updatedExcludedLinks = new Map(state.excludedLinks);
+            updatedExcludedLinks.delete(action.payload);
+            return { ...state, excludedLinks: updatedExcludedLinks }
         default:
             return state;
     }
@@ -555,10 +583,26 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
 
             const allExcluded = updatedRelations.every(r => r.isIncluded === false);
             if (allExcluded) {
-                linkElement.attr('line/style/strokeDasharray', '1 1');
-                linkElement.attr('line/style/stroke', 'var(--mui-palette-text-secondary)');
-                linkElement.attr('line/targetMarker', null);
-                linkElement.attr('line/sourceMarker', null);
+                // Store link metadata before removing
+                const source = linkElement.get('source') as { id: string };
+                const target = linkElement.get('target') as { id: string };
+                const sourceSchemaName = linkElement.get('sourceSchemaName');
+                const targetSchemaName = linkElement.get('targetSchemaName');
+
+                const excludedLinkMetadata: ExcludedLinkMetadata = {
+                    linkId: id,
+                    sourceId: source.id,
+                    targetId: target.id,
+                    sourceSchemaName,
+                    targetSchemaName,
+                    relationshipInformationList: updatedRelations
+                };
+
+                // Add to excluded links
+                dispatch({ type: 'ADD_EXCLUDED_LINK', payload: excludedLinkMetadata });
+
+                // Remove the link from the paper
+                linkElement.remove();
             } else {
                 linkElement.attr('line/style/strokeDasharray', '');
                 linkElement.attr('line/style/stroke', 'var(--mui-palette-primary-main)');
@@ -726,8 +770,39 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         return entities;
     };
 
+    const restoreRelationshipLink = (sourceSchemaName: string, targetSchemaName: string) => {
+        if (!graphRef.current) return;
+
+        const linkKey = `${sourceSchemaName}-${targetSchemaName}`;
+        const excludedLink = diagramViewState.excludedLinks.get(linkKey);
+
+        if (!excludedLink) {
+            console.warn('Excluded link not found:', linkKey);
+            return;
+        }
+
+        // Recreate the link with the stored metadata
+        const link = createRelationshipLink(
+            excludedLink.sourceId,
+            excludedLink.sourceSchemaName,
+            excludedLink.targetId,
+            excludedLink.targetSchemaName,
+            excludedLink.relationshipInformationList
+        );
+        link.set('id', excludedLink.linkId);
+
+        graphRef.current.addCell(link);
+
+        // Remove from excluded links
+        dispatch({ type: 'REMOVE_EXCLUDED_LINK', payload: linkKey });
+    };
+
+    const getExcludedLinks = () => {
+        return diagramViewState.excludedLinks;
+    };
+
     return (
-        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, toggleRelationshipLink, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection, applySmartLayout, getSelectedEntities }}>
+        <DiagramViewContext.Provider value={{ ...diagramViewState, isEntityInDiagram, setZoom, setIsPanning, setTranslate, addEntity, removeEntity, toggleRelationshipLink, restoreRelationshipLink, getExcludedLinks, getGraph, getPaper, applyZoomAndPan, setLoadedDiagram, clearDiagram, setDiagramName, selectEntity, clearSelection, applySmartLayout, getSelectedEntities }}>
             <DiagramViewDispatcher.Provider value={dispatch}>
                 {children}
             </DiagramViewDispatcher.Provider>

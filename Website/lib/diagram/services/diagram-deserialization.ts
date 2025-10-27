@@ -52,7 +52,8 @@ export class DiagramDeserializationService {
         addEntityToDiagram: (entity: EntityType) => void,
         filename: string,
         source: 'cloud' | 'file',
-        filePath?: string
+        filePath?: string,
+        addExcludedLink?: (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: any[]) => void
     ): void {
         if (!graph) {
             throw new Error('No diagram graph available for deserialization');
@@ -105,16 +106,33 @@ export class DiagramDeserializationService {
                         isIncluded: relInfo ? relInfo.isIncluded : undefined
                     };
                 });
-                const link = createRelationshipLink(
-                    linkData.sourceId,
-                    linkData.sourceSchemaName,
-                    linkData.targetId,
-                    linkData.targetSchemaName,
-                    relations
-                );
-                link.set('id', linkData.id);
 
-                graph.addCell(link);
+                // Check if all relationships are excluded
+                const allExcluded = relations.every(rel => rel.isIncluded === false);
+
+                if (allExcluded && addExcludedLink) {
+                    // Don't add to graph, add to excluded links instead
+                    addExcludedLink(
+                        linkData.sourceSchemaName,
+                        linkData.targetSchemaName,
+                        linkData.id,
+                        linkData.sourceId,
+                        linkData.targetId,
+                        relations
+                    );
+                } else {
+                    // Add the link to the graph
+                    const link = createRelationshipLink(
+                        linkData.sourceId,
+                        linkData.sourceSchemaName,
+                        linkData.targetId,
+                        linkData.targetSchemaName,
+                        relations
+                    );
+                    link.set('id', linkData.id);
+
+                    graph.addCell(link);
+                }
             });
         }
     }

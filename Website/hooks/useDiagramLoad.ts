@@ -17,6 +17,20 @@ export const useDiagramLoad = () => {
         dispatch({ type: 'ADD_ENTITY_TO_DIAGRAM', payload: entity });
     }
 
+    const addExcludedLink = (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: any[]) => {
+        dispatch({
+            type: 'ADD_EXCLUDED_LINK',
+            payload: {
+                linkId,
+                sourceId,
+                targetId,
+                sourceSchemaName,
+                targetSchemaName,
+                relationshipInformationList
+            }
+        });
+    }
+
     const loadAvailableDiagrams = async () => {
         setIsLoadingList(true);
         try {
@@ -47,7 +61,8 @@ export const useDiagramLoad = () => {
                 addEntityToDiagram,
                 diagramData.name || 'Untitled',
                 'cloud',
-                filePath
+                filePath,
+                addExcludedLink
             );
 
             setShowLoadModal(false);
@@ -77,7 +92,8 @@ export const useDiagramLoad = () => {
                 addEntityToDiagram,
                 file.name.replace('.json', ''),
                 'file',
-                undefined
+                undefined,
+                addExcludedLink
             );
         } catch (error) {
             console.error('Error loading diagram from file:', error);
