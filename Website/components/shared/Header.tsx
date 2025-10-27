@@ -1,7 +1,7 @@
 import { useLoading } from '@/hooks/useLoading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { AppBar, Toolbar, Box, LinearProgress, Button, Stack } from '@mui/material';
 import SettingsPane from './elements/SettingsPane';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,11 +18,14 @@ const Header = ({ }: HeaderProps) => {
     const { isOpen: sidebarOpen, expand } = useSidebar();
     const isMobile = useIsMobile();
     const router = useRouter();
+    const pathname = usePathname();
 
     const { 
         isAuthenticating, 
         isRedirecting, 
     } = useLoading();
+
+    const isDiagramRoute = pathname === '/diagram';
 
     const handleSettingsClick = () => {
         setSettingsOpen(true);
@@ -53,7 +56,7 @@ const Header = ({ }: HeaderProps) => {
             position="sticky" 
             color="transparent" 
             elevation={0}
-            className="w-full top-0 z-0 border-b h-header max-h-header"
+            className={`w-full top-0 z-0 h-header max-h-header ${isDiagramRoute ? 'border-b border-dashed' : 'border-b'}`}
             sx={{ bgcolor: 'background.paper', borderColor: 'border.main' }}
         >
         <Box className="mx-4 h-full">

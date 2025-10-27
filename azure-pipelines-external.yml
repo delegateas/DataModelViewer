@@ -20,6 +20,9 @@
 #   - AzureClientId
 #   - AzureClientSecret
 #   - DataverseUrl
+#   - AdoWikiName
+#   - AdoWikiPagePath
+#   - AdoRepositoryName
 
 trigger: none
 pr: none
@@ -89,3 +92,6 @@ stages:
               websitePassword: $(WebsitePassword)
               websiteSessionSecret: $(WebsiteSessionSecret)
               websiteName: $(WebsiteName)
+              adoOrganizationUrl: $(System.CollectionUri)
+              adoProjectName: $(System.TeamProject)
+              adoRepositoryName: $(AdoRepositoryName)

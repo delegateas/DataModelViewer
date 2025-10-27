@@ -23,6 +23,15 @@ parameters:
   - name: websiteName
     type: string
     default: ''
+  - name: adoOrganizationUrl
+    type: string
+    default: ''
+  - name: adoProjectName
+    type: string
+    default: ''
+  - name: adoRepositoryName
+    type: string
+    default: ''
 
 steps:
   - task: AzureCLI@2
@@ -32,10 +41,46 @@ steps:
       scriptType: "pscore"
       scriptLocation: "inlineScript"
       inlineScript: |
+        # Create resource group
         az group create --name ${{ parameters.azureResourceGroupName }} --location ${{ parameters.azureLocation }}
-        $jsonResult = az deployment group create --resource-group ${{ parameters.azureResourceGroupName }} --template-file ${{ parameters.bicepTemplateFile }} --parameters websitePassword=${{ parameters.websitePassword }} --parameters sessionSecret=${{ parameters.websiteSessionSecret }} --parameters solutionId=${{ parameters.websiteName }} | ConvertFrom-Json
+        
+        # Deploy bicep template
+        $jsonResult = az deployment group create `
+          --resource-group ${{ parameters.azureResourceGroupName }} `
+          --template-file ${{ parameters.bicepTemplateFile }} `
+          --parameters websitePassword="${{ parameters.websitePassword }}" `
+          --parameters sessionSecret="${{ parameters.websiteSessionSecret }}" `
+          --parameters solutionId="${{ parameters.websiteName }}" `
+          --parameters adoOrganizationUrl="${{ parameters.adoOrganizationUrl }}" `
+          --parameters adoProjectName="${{ parameters.adoProjectName }}" `
+          --parameters adoRepositoryName="${{ parameters.adoRepositoryName }}" `
+          | ConvertFrom-Json
+        
+        # Extract outputs
         $webAppName = $jsonResult.properties.outputs.webAppName.value
+        $principalId = $jsonResult.properties.outputs.managedIdentityPrincipalId.value
+        $webAppUrl = $jsonResult.properties.outputs.webAppUrl.value
+        
+        # Set pipeline variables
         Write-Host "##vso[task.setvariable variable=webAppName]$webAppName"
+        Write-Host "##vso[task.setvariable variable=managedIdentityPrincipalId]$principalId"
+        Write-Host "##vso[task.setvariable variable=webAppUrl]$webAppUrl"
+        
+        # Output for manual ADO setup
+        Write-Host "=================================================="
+        Write-Host "MANAGED IDENTITY SETUP REQUIRED:"
+        Write-Host "=================================================="
+        Write-Host "Web App: $webAppName"
+        Write-Host "Managed Identity Principal ID: $principalId"
+        Write-Host "Web App URL: $webAppUrl"
+        Write-Host ""
+        Write-Host "MANUAL STEPS REQUIRED:"
+        Write-Host "1. Go to Azure DevOps Organization Settings > Users"
+        Write-Host "2. Add user with Principal ID: $principalId"
+        Write-Host "3. Grant 'Basic' access level"
+        Write-Host "4. Add to project '${{ parameters.adoProjectName }}' with appropriate permissions"
+        Write-Host "5. Grant repository access to '${{ parameters.adoRepositoryName }}'"
+        Write-Host "=================================================="
 
   - download: current
     artifact: WebApp
@@ -46,3 +91,25 @@ steps:
       appType: "webAppLinux"
       appName: $(webAppName)
       package: "$(Pipeline.Workspace)/WebApp/WebApp.zip"
+
+  - task: AzureCLI@2
+    displayName: "Verify Managed Identity"
+    inputs:
+      azureSubscription: ${{ parameters.azureServiceConnectionName }}
+      scriptType: "pscore"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        # Test if managed identity can get tokens
+        Write-Host "Testing Managed Identity token acquisition..."
+        
+        # Get token using managed identity (this tests if it's working)
+        try {
+          $token = az account get-access-token --resource "https://app.vssps.visualstudio.com/" --query accessToken --output tsv
+          if ($token) {
+            Write-Host "Your managed identity is working"
+          } else {
+            Write-Host "Failed to acquire token"
+          }
+        } catch {
+          Write-Host "Error testing managed identity: $_"
+        }

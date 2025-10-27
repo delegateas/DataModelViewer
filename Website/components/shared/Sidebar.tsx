@@ -41,7 +41,6 @@ const Sidebar = ({ }: SidebarProps) => {
           href: '/insights',
           icon: InsightsIcon,
           active: pathname === '/insights',
-          new: true,
         },
         {
           label: 'Metadata',
@@ -54,6 +53,7 @@ const Sidebar = ({ }: SidebarProps) => {
           href: '/diagram',
           icon: DiagramIcon,
           active: pathname === '/diagram',
+          new: true,
         },
         {
           label: 'Processes',
@@ -191,7 +191,7 @@ const Sidebar = ({ }: SidebarProps) => {
                     </Link>
                   </Badge>
                 </Box>
-                </Tooltip>
+              </Tooltip>
             ))}
         </Box>
         {isOpen && element != null && (

@@ -67,7 +67,6 @@ steps:
     workingDirectory: $(Build.SourcesDirectory)/Website
     displayName: "Build Next.js app"
 
-
   - task: ArchiveFiles@2
     inputs:
       rootFolderOrFile: "$(Build.SourcesDirectory)/Website/.next/standalone"

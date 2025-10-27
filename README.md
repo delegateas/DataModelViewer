@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/delegateas/DataModelViewer/main/Website/public/DMVLOGOHORZ.svg" alt="logo" width="240" />
+  <img src="https://raw.githubusercontent.com/delegateas/DataModelViewer/main/Website/public/DMVLOGO.svg" alt="logo" width="120" />
 </p>
 
 <p align="center">
@@ -26,6 +26,8 @@
 [Website](#setup-website)
 
 [Pipeline Setup](#settings-in-pipeline)
+
+[ADO integration Setup](#setup-azuredevops-optional)
 
 ## Grouping
 To create a group for a subset of tables, you must simply add a "#" at the start of your table description. See below:
@@ -71,6 +73,18 @@ Add `Website/.env` file to run this locally.
 openssl rand -base64 32
 ```
 
+## Setup AzureDevOps (optional)
+In 2.2.0 you can integrate with ado to save/load diagrams. The 2.2.0 pipelines automatically creates a Managed Identity (MI) to the web service, so configuration is minimal to enable this integration.
+
+1. Go to your Azure Dev Ops `Organization Settings > Users`.
+2. Click `Add users` and search for `wa-<<WebsiteName>>` where `<<WebsiteName>>` is the environment variable you use for the website name.
+3. Select the principle-user/MI from the search result, give `Basic` access level, add to correct ADO project, and UNTICK the `send email invites`.
+4. Navigate to your ADO project.
+5. Inside `Project Settings > Permissions > Users (at the top) > (Click on the MI) > Member of > Add > (e.g. Constributor)` (The MI should have at least read/write to your DataModelViewer repo)
+
+> Note: Constributor gives additional unnecessary permissions. We suggest a least priviledges role.
+
+
 ## Running it
 Generate data by running the Generator project from Visual Studio. 
 Afterwards go into the "Website"-folder from VS Code and open the terminal (of the "Command Prompt" type). If this the first time running it, type `npm install` (you need to have installed node.js first: https://nodejs.org/en/download/). Start the website on localhost by running `npm run dev`. Click the link in the terminal to view the website.
@@ -93,6 +107,7 @@ The pipeline expects a variable group called `DataModel`. It must have the follo
 * (Optional) AdoWikiName: Name of your wiki found under "Overview -> Wiki" in ADO. (will be encoded so dont worry about space)
 * (Optional) AdoWikiPagePath: Path to the introduction page you wish to show in DMV. (will also be encoded so dont worry about spaces)
 * (Optional) WebResourceNameFunc: Function to fetch the entity logicalname from a webresource. The function must be a valid C# LINQ expression that works on the `name` input parameter. Default: `np(name.Split('/').LastOrDefault()).Split('.').Reverse().Skip(1).FirstOrDefault()`
+* (Optional) AdoRepositoryName: Name of the existing repo to store diagrams. A folder will be created called `diagrams` first time being used.
 
 ## After deployment
 * Go to portal.azure.com 
