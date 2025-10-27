@@ -46,7 +46,7 @@ export default function PropertiesPanel({ }: IPropertiesPanelProps) {
                 return;
             }
             setObject(event);
-            setIsOpen(true && !userClosedRef.current);
+            setIsOpen(!userClosedRef.current && event.type !== "none");
         });
 
         return cleanup;
