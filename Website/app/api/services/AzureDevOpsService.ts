@@ -23,9 +23,6 @@ interface GitItem {
     commitId: string;
     path: string;
     isFolder: boolean;
-    contentMetadata?: {
-        size: number;
-    };
 }
 
 interface GitFileResponse {
@@ -102,7 +99,7 @@ export async function listFilesFromRepo(options: LoadFileOptions): Promise<GitIt
     try {
         // Get ADO configuration
         const config = managedAuth.getConfig();
-        
+
         // Construct the API URL for listing items in a folder
         const normalizedPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
         const itemsUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryName}/items?scopePath=/${normalizedPath}&version=${branch}&recursionLevel=OneLevel&api-version=7.0`;
@@ -118,7 +115,7 @@ export async function listFilesFromRepo(options: LoadFileOptions): Promise<GitIt
         }
 
         const data = await response.json();
-        
+
         if (!data.value || !Array.isArray(data.value)) {
             return [];
         }
@@ -178,7 +175,7 @@ export async function commitFileToRepo(options: CreateFileOptions): Promise<GitC
         // Get the latest commit ID for the branch (needed for push operation)
         const refsUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryName}/refs?filter=heads/${branch}&api-version=7.0`;
         const refsResponse = await managedAuth.makeAuthenticatedRequest(refsUrl);
-        
+
         if (!refsResponse.ok) {
             const errorText = await refsResponse.text();
             throw new AzureDevOpsError(`Failed to get branch refs: ${refsResponse.status} - ${errorText}`, refsResponse.status);
@@ -235,7 +232,7 @@ export async function commitFileToRepo(options: CreateFileOptions): Promise<GitC
         }
 
         const pushData = await pushResponse.json();
-        
+
         return {
             commitId: pushData.commits[0].commitId,
             author: pushData.commits[0].author,
@@ -266,7 +263,7 @@ export async function pullFileFromRepo<T>(options: LoadFileOptions): Promise<T> 
     try {
         // Get ADO configuration
         const config = managedAuth.getConfig();
-        
+
         // Validate inputs
         if (!filePath) {
             throw new AzureDevOpsError('File path is required');
@@ -291,7 +288,7 @@ export async function pullFileFromRepo<T>(options: LoadFileOptions): Promise<T> 
         if (!fileData.content) {
             throw new AzureDevOpsError(`File content is empty: ${fileUrl}`);
         }
-        
+
         try {
             return JSON.parse(fileData.content) as T;
         } catch (parseError) {
@@ -321,7 +318,7 @@ export async function listFileVersions(options: FileVersionOptions): Promise<Fil
     try {
         // Get ADO configuration
         const config = managedAuth.getConfig();
-        
+
         // Validate inputs
         if (!filePath) {
             throw new AzureDevOpsError('File path is required');
@@ -342,26 +339,26 @@ export async function listFileVersions(options: FileVersionOptions): Promise<Fil
         }
 
         const commitsData = await response.json();
-        
+
         if (!commitsData.value || !Array.isArray(commitsData.value)) {
             return [];
         }
 
         // Get detailed change information for each commit
         const versions: FileVersion[] = [];
-        
+
         for (const commit of commitsData.value) {
             try {
                 // Get the changes for this specific commit to determine the change type
                 const changesUrl = `${config.organizationUrl}${config.projectName}/_apis/git/repositories/${repositoryName}/commits/${commit.commitId}/changes?api-version=7.0`;
                 const changesResponse = await managedAuth.makeAuthenticatedRequest(changesUrl);
-                
+
                 if (changesResponse.ok) {
                     const changesData = await changesResponse.json();
-                    const fileChange = changesData.changes?.find((change: any) => 
+                    const fileChange = changesData.changes?.find((change: any) =>
                         change.item?.path === normalizedPath
                     );
-                    
+
                     if (fileChange) {
                         versions.push({
                             commitId: commit.commitId,
@@ -414,7 +411,7 @@ export async function pullFileVersion<T>(options: LoadFileVersionOptions): Promi
     try {
         // Get ADO configuration
         const config = managedAuth.getConfig();
-        
+
         // Validate inputs
         if (!filePath || !commitId) {
             throw new AzureDevOpsError('File path and commit ID are required');
@@ -439,7 +436,7 @@ export async function pullFileVersion<T>(options: LoadFileVersionOptions): Promi
         if (!fileData.content) {
             throw new AzureDevOpsError(`File content is empty at commit ${commitId}: ${filePath}`);
         }
-        
+
         try {
             return JSON.parse(fileData.content) as T;
         } catch (parseError) {
@@ -459,7 +456,7 @@ export async function getRepositoryInfo(repositoryName?: string): Promise<{ id: 
     try {
         const config = managedAuth.getConfig();
         const repoName = repositoryName || process.env.AdoRepositoryName || config.repositoryName;
-        
+
         if (!repoName) {
             throw new AzureDevOpsError('Repository name not found. Set AdoRepositoryName environment variable or pass repositoryName parameter.');
         }
@@ -473,7 +470,7 @@ export async function getRepositoryInfo(repositoryName?: string): Promise<{ id: 
         }
 
         const repoData = await response.json();
-        
+
         return {
             id: repoData.id,
             name: repoData.name,
@@ -489,13 +486,13 @@ export async function getRepositoryInfo(repositoryName?: string): Promise<{ id: 
 }
 
 // Export types for external use
-export type { 
-    CreateFileOptions, 
-    LoadFileOptions, 
+export type {
+    CreateFileOptions,
+    LoadFileOptions,
     FileVersionOptions,
     LoadFileVersionOptions,
-    GitCommitResponse, 
-    GitFileResponse, 
+    GitCommitResponse,
+    GitFileResponse,
     GitItem,
     FileVersion
 };
