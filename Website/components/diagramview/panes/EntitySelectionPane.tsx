@@ -1,20 +1,16 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { 
-    Drawer, 
-    Box, 
-    Typography, 
+import {
+    Drawer,
+    Box,
+    Typography,
     IconButton,
     Divider,
     Paper,
-    Chip,
-    Button
 } from '@mui/material';
-import { 
+import {
     Close as CloseIcon,
-    CloseRounded,
-    ExtensionRounded
 } from '@mui/icons-material';
 import { useDatamodelData } from '@/contexts/DatamodelDataContext';
 import { useDiagramView } from '@/contexts/DiagramViewContext';
@@ -26,7 +22,7 @@ interface EntitySelectionPaneProps {
     onClose: () => void;
 }
 
-export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) => {
+export const EntitySelectionPane = ({ open, onClose }: EntitySelectionPaneProps) => {
     const { groups } = useDatamodelData();
     const { addEntity, isEntityInDiagram } = useDiagramView();
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -68,9 +64,9 @@ export const EntitySelectionPane =({ open, onClose }: EntitySelectionPaneProps) 
                         <CloseIcon />
                     </IconButton>
                 </Box>
-                
+
                 <Divider sx={{ my: 2 }} />
-                
+
                 {groups.length === 0 ? (
                     <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
                         No entity groups found. Please load datamodel data first.

@@ -5,6 +5,7 @@ import { createEntity } from '@/components/diagramview/diagram-elements/EntityEl
 import { createRelationshipLink } from '@/components/diagramview/diagram-elements/RelationshipLink';
 import { getAllRelationshipsBetween } from '../relationship-helpers';
 import { EntityType } from '@/lib/Types';
+import { RelationshipInformation } from '../models/relationship-information';
 
 export interface DiagramFile {
     path: string;
@@ -53,7 +54,7 @@ export class DiagramDeserializationService {
         filename: string,
         source: 'cloud' | 'file',
         filePath?: string,
-        addExcludedLink?: (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: any[], label?: any) => void
+        addExcludedLink?: (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: RelationshipInformation[], label?: string) => void
     ): void {
         if (!graph) {
             throw new Error('No diagram graph available for deserialization');

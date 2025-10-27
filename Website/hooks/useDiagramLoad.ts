@@ -3,6 +3,7 @@ import { useDiagramView, useDiagramViewDispatch } from '@/contexts/DiagramViewCo
 import { useDatamodelData } from '@/contexts/DatamodelDataContext';
 import { DiagramDeserializationService, DiagramFile } from '@/lib/diagram/services/diagram-deserialization';
 import { EntityType } from '@/lib/Types';
+import { RelationshipInformation } from '@/lib/diagram/models/relationship-information';
 
 export const useDiagramLoad = () => {
     const { getGraph, applyZoomAndPan, setLoadedDiagram } = useDiagramView();
@@ -17,7 +18,7 @@ export const useDiagramLoad = () => {
         dispatch({ type: 'ADD_ENTITY_TO_DIAGRAM', payload: entity });
     }
 
-    const addExcludedLink = (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: any[], label?: any) => {
+    const addExcludedLink = (sourceSchemaName: string, targetSchemaName: string, linkId: string, sourceId: string, targetId: string, relationshipInformationList: RelationshipInformation[], label?: string) => {
         dispatch({
             type: 'ADD_EXCLUDED_LINK',
             payload: {

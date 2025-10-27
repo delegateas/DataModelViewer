@@ -1,4 +1,4 @@
-import { EntityType, ExtendedEntityInformationType } from '../Types';
+import { EntityType } from '../Types';
 import { RelationshipInformation } from './models/relationship-information';
 import { dia } from '@joint/core';
 

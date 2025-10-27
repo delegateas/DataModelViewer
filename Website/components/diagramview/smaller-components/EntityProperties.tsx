@@ -15,14 +15,8 @@ export default function EntityProperties({ entity, closePane }: IEntityPropertie
     const [relatedEntitiesPaneOpen, setRelatedEntitiesPaneOpen] = useState(false);
     const { removeEntity, getExcludedLinks, restoreRelationshipLink } = useDiagramView();
 
-    if (!entity) {
-        return (
-            <Typography variant="body2">Error: Entity not found.</Typography>
-        )
-    }
-
-    const hasRelatedEntities = entity.Relationships.length > 0 ||
-        entity.Attributes.some(attr => attr.AttributeType === 'LookupAttribute' && attr.Targets.length > 0);
+    const hasRelatedEntities = (entity?.Relationships ?? []).length > 0 ||
+        entity?.Attributes.some(attr => attr.AttributeType === 'LookupAttribute' && attr.Targets.length > 0);
 
     // Get excluded relationships for this entity
     const excludedRelationships = useMemo(() => {
@@ -30,17 +24,23 @@ export default function EntityProperties({ entity, closePane }: IEntityPropertie
         const results: ExcludedLinkMetadata[] = [];
 
         excludedLinks.forEach((link) => {
-            if (link.sourceSchemaName === entity.SchemaName || link.targetSchemaName === entity.SchemaName) {
+            if (link.sourceSchemaName === entity?.SchemaName || link.targetSchemaName === entity?.SchemaName) {
                 results.push(link);
             }
         });
 
         return results;
-    }, [entity.SchemaName, getExcludedLinks]);
+    }, [entity?.SchemaName, getExcludedLinks]);
 
     const handleRestoreLink = (link: ExcludedLinkMetadata) => {
         restoreRelationshipLink(link.sourceSchemaName, link.targetSchemaName);
     };
+
+    if (!entity) {
+        return (
+            <Typography variant="body2">Error: Entity not found.</Typography>
+        )
+    }
 
     return (
         <Box className="flex flex-col" gap={2}>

@@ -29,7 +29,7 @@ const WorkerSelectionElement = dia.Element.define('selection.SelectionElement', 
     }
 });
 
-onmessage = async(e) => {
+onmessage = async (e) => {
     await routerLoaded;
 
     const { command, ...data } = e.data; // Remove array destructuring
@@ -85,12 +85,12 @@ onmessage = async(e) => {
 
 await routerLoaded;
 
-const graph = new dia.Graph({}, { 
-    cellNamespace: { 
-        ...shapes, 
-        diagram: { EntityElement: WorkerEntityElement, RelationshipLink }, 
-        selection: { SelectionElement: WorkerSelectionElement } 
-    } 
+const graph = new dia.Graph({}, {
+    cellNamespace: {
+        ...shapes,
+        diagram: { EntityElement: WorkerEntityElement, RelationshipLink },
+        selection: { SelectionElement: WorkerSelectionElement }
+    }
 });
 
 const router = new AvoidRouter(graph, {
@@ -100,13 +100,14 @@ const router = new AvoidRouter(graph, {
     commitTransactions: false
 });
 
-let changed: any = {};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let changed: Record<string, any> = {};
 let isProcessing = false;
 
 const debouncedProcessTransaction = util.debounce(() => {
     if (isProcessing) return;
     isProcessing = true;
-    
+
     router.avoidRouter.processTransaction();
     setTimeout(() => {
         postMessage({

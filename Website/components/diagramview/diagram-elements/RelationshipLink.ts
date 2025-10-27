@@ -61,7 +61,7 @@ export const RelationshipLinkView = dia.LinkView.extend({
         this.model.attr('line/strokeWidth', 1);
     },
 
-    onPointerDown: function (evt: PointerEvent) {
+    onPointerDown: function () {
         // Get the relationships array from the model
         const relationships = this.model.get('relationshipInformationList') || [];
 

@@ -47,6 +47,7 @@ export class DiagramPngExportService {
                 minY = Math.min(minY, bbox.y);
                 maxX = Math.max(maxX, bbox.x + bbox.width);
                 maxY = Math.max(maxY, bbox.y + bbox.height);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {
                 // Some elements might not support getBBox, skip them
             }
