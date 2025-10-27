@@ -60,7 +60,7 @@ stages:
         steps:
           - checkout: none
           - script: |
-              git clone --branch "features/diagram-2.0.0-patches" https://github.com/delegateas/DataModelViewer.git $(Build.SourcesDirectory)
+              git clone https://github.com/delegateas/DataModelViewer.git $(Build.SourcesDirectory)
             displayName: "Clone DataModelViewer public repository"
           - template: azure-pipelines-build-jobs.yml
             parameters:
@@ -81,7 +81,7 @@ stages:
         steps:
           - checkout: none
           - script: |
-              git clone --branch "features/diagram-2.0.0-patches" https://github.com/delegateas/DataModelViewer.git $(Build.SourcesDirectory)
+              git clone https://github.com/delegateas/DataModelViewer.git $(Build.SourcesDirectory)
             displayName: "Clone DataModelViewer public repository"
           - template: azure-pipelines-deploy-jobs.yml
             parameters:
