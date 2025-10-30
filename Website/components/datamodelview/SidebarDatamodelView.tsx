@@ -2,7 +2,7 @@ import { EntityType, GroupType } from "@/lib/Types";
 import { useSidebar } from '@/contexts/SidebarContext';
 import { Box, InputAdornment, Paper } from '@mui/material';
 import { SearchRounded } from '@mui/icons-material';
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { TextField } from "@mui/material";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
@@ -25,7 +25,45 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [displaySearchTerm, setDisplaySearchTerm] = useState("");
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-    
+    const [manuallyCollapsed, setManuallyCollapsed] = useState<Set<string>>(new Set());
+    const prevGroupRef = useRef<string | null>(null);
+
+    // Auto-expand the current group when it changes or when section changes (e.g., from scrolling)
+    useEffect(() => {
+        if (currentGroup) {
+            const groupChanged = prevGroupRef.current !== currentGroup;
+            const oldGroup = prevGroupRef.current;
+
+            // If the group changed, close the old group and open the new one
+            if (groupChanged) {
+                setManuallyCollapsed(prev => {
+                    const newCollapsed = new Set(prev);
+                    newCollapsed.delete(currentGroup);
+                    return newCollapsed;
+                });
+                setExpandedGroups(prev => {
+                    const newExpanded = new Set(prev);
+                    // Close the old group
+                    if (oldGroup) {
+                        newExpanded.delete(oldGroup);
+                    }
+                    // Open the new group
+                    newExpanded.add(currentGroup);
+                    return newExpanded;
+                });
+                prevGroupRef.current = currentGroup;
+            }
+            // If the group didn't change but section did, only expand if not manually collapsed
+            else if (!manuallyCollapsed.has(currentGroup)) {
+                setExpandedGroups(prev => {
+                    const newExpanded = new Set(prev);
+                    newExpanded.add(currentGroup);
+                    return newExpanded;
+                });
+            }
+        }
+    }, [currentGroup, currentSection, manuallyCollapsed]);
+
     // Memoize search results to prevent recalculation on every render
     const filteredGroups = useMemo(() => {
         if (!searchTerm.trim() && !search) return groups;
@@ -85,39 +123,67 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const handleGroupClick = useCallback((groupName: string) => {
         setExpandedGroups(prev => {
             const newExpanded = new Set(prev);
-            if (newExpanded.has(groupName)) {
+            const isCurrentlyExpanded = newExpanded.has(groupName);
+
+            if (isCurrentlyExpanded) {
+                // User is manually collapsing this group
                 newExpanded.delete(groupName);
+                setManuallyCollapsed(prevCollapsed => {
+                    const newCollapsed = new Set(prevCollapsed);
+                    newCollapsed.add(groupName);
+                    return newCollapsed;
+                });
             } else {
-                if (currentGroup?.toLowerCase() === groupName.toLowerCase()) return newExpanded;
+                // User is manually expanding this group
                 newExpanded.add(groupName);
+                setManuallyCollapsed(prevCollapsed => {
+                    const newCollapsed = new Set(prevCollapsed);
+                    newCollapsed.delete(groupName);
+                    return newCollapsed;
+                });
             }
             return newExpanded;
         });
-    }, [currentGroup]);
+    }, []);
+
+    const clearCurrentGroup = useCallback(() => {
+        dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: null });
+        dataModelDispatch({ type: "SET_CURRENT_SECTION", payload: null });
+    }, [dataModelDispatch]);
 
     const handleScrollToGroup = useCallback((group: GroupType) => {
+        // If clicking on the current group, clear the selection
+        if (currentGroup?.toLowerCase() === group.Name.toLowerCase()) {
+            clearCurrentGroup();
+            return;
+        }
+
         // Set current group and scroll to group header
         dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: group.Name });
-        if (group.Entities.length > 0) 
+        if (group.Entities.length > 0)
             dataModelDispatch({ type: "SET_CURRENT_SECTION", payload: group.Entities[0].SchemaName });
 
+        // Clear manually collapsed state and ensure the group is expanded when selected
+        setManuallyCollapsed(prev => {
+            const newCollapsed = new Set(prev);
+            newCollapsed.delete(group.Name);
+            return newCollapsed;
+        });
         setExpandedGroups(prev => {
             const newExpanded = new Set(prev);
-            if (newExpanded.has(group.Name)) {
-                newExpanded.delete(group.Name);
-            }
+            newExpanded.add(group.Name);
             return newExpanded;
         });
 
         if (scrollToGroup) {
             scrollToGroup(group.Name);
         }
-        
+
         // On phone - close sidebar
         if (!!isMobile) {
             closeSidebar();
         }
-    }, [dataModelDispatch, scrollToGroup, isMobile, closeSidebar]);
+    }, [currentGroup, clearCurrentGroup, dataModelDispatch, scrollToGroup, isMobile, closeSidebar]);
 
     const handleEntityClick = useCallback((entity: EntityType, groupName: string) => {
         // Use requestAnimationFrame to defer heavy operations
@@ -127,11 +193,23 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
             dataModelDispatch({ type: "SET_CURRENT_GROUP", payload: groupName });
             dataModelDispatch({ type: 'SET_CURRENT_SECTION', payload: entity.SchemaName });
 
+            // Clear manually collapsed state and ensure the group is expanded when an entity is clicked
+            setManuallyCollapsed(prev => {
+                const newCollapsed = new Set(prev);
+                newCollapsed.delete(groupName);
+                return newCollapsed;
+            });
+            setExpandedGroups(prev => {
+                const newExpanded = new Set(prev);
+                newExpanded.add(groupName);
+                return newExpanded;
+            });
+
             // On phone - close
             if (!!isMobile) {
                 closeSidebar();
             }
-            
+
             // Defer scroll operation to next frame to prevent blocking
             requestAnimationFrame(() => {
                 if (scrollToSection) {
@@ -171,7 +249,7 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
                     <EntityGroupAccordion
                         key={group.Name}
                         group={group}
-                        isExpanded={expandedGroups.has(group.Name) || currentGroup?.toLowerCase() === group.Name.toLowerCase()}
+                        isExpanded={expandedGroups.has(group.Name)}
                         onToggle={handleGroupClick}
                         onEntityClick={handleEntityClick}
                         onGroupClick={handleScrollToGroup}
