@@ -2,7 +2,7 @@
 
 import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
 import { AddCircleOutlineRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
-import { Link, Tooltip } from "@mui/material";
+import { Box, Link, Tooltip, Typography } from "@mui/material";
 
 export function AttributeDetails({ entityName, attribute }: { entityName: string, attribute: AttributeType }) {
     const details = [];
@@ -35,14 +35,20 @@ export function AttributeDetails({ entityName, attribute }: { entityName: string
     }
 
     if (attribute.AttributeUsages.length > 0) {
-        const tooltip = <span className="">Processes ${attribute.AttributeUsages.map(au => au.Name).join(", ")}.<br />Click to see more details.</span>;
-        details.push({ icon: (
-            <Link href={`/processes?ent=${entityName}&attr=${attribute.SchemaName}`}>
-                <ElectricBoltRounded className="h-4 w-4" />
-            </Link>
-        ), tooltip });
+        const tooltip = <span className="">
+            <b>Usages ({attribute.AttributeUsages.length}):</b>
+            <Box className="flex flex-col my-1" gap={1}>{attribute.AttributeUsages.map(au => au.Name).join(", ")}</Box>
+            <Typography variant="caption">Click <ElectricBoltRounded className="h-4 w-4" /> to see more details.</Typography>
+        </span>;
+        details.push({
+            icon: (
+                <Link href={`/processes?ent=${entityName}&attr=${attribute.SchemaName}`}>
+                    <ElectricBoltRounded className="h-4 w-4" />
+                </Link>
+            ), tooltip
+        });
     }
-    
+
     return (
         <div className="flex flex-row gap-1">
             {details.map((detail, index) => (

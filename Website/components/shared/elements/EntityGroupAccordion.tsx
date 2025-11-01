@@ -95,7 +95,7 @@ export const EntityGroupAccordion = ({
                     isCurrentGroup ? "font-semibold" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
                 )}
                 sx={{
-                    backgroundColor: isExpanded ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                    backgroundColor: isCurrentGroup ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
                     padding: '4px',
                     minHeight: '32px !important',
                     '& .MuiAccordionSummary-content': {
@@ -106,28 +106,28 @@ export const EntityGroupAccordion = ({
                     }
                 }}
             >
-                <Typography 
-                    className={`flex-1 text-sm text-left truncate min-w-0 ${isExpanded ? 'font-semibold' : ''}`} 
-                    sx={{ 
-                        color: isExpanded ? 'primary.main' : 'text.primary'
+                <Typography
+                    className={`flex-1 text-sm text-left truncate min-w-0 ${isCurrentGroup ? 'font-semibold' : ''}`}
+                    sx={{
+                        color: isCurrentGroup ? 'primary.main' : 'text.primary'
                     }}
                 >
                     {group.Name}
                 </Typography>
-                <Typography 
-                    className={`flex-shrink-0 text-xs mr-2 ${isExpanded ? 'font-semibold' : ''}`} 
-                    sx={{ opacity: 0.7, color: isExpanded ? 'primary.main' : 'text.primary' }}
+                <Typography
+                    className={`flex-shrink-0 text-xs mr-2 ${isCurrentGroup ? 'font-semibold' : ''}`}
+                    sx={{ opacity: 0.7, color: isCurrentGroup ? 'primary.main' : 'text.primary' }}
                 >
                     {group.Entities.length}
                 </Typography>
-                
+
                 {showGroupClickIcon && (
-                    <OpenInNewRounded 
+                    <OpenInNewRounded
                         onClick={handleGroupIconClick}
                         aria-label={`Link to first entity in ${group.Name}`}
                         className="w-4 h-4 flex-shrink-0"
                         sx={{
-                            color: isExpanded ? "primary.main" : "default"
+                            color: isCurrentGroup ? "primary.main" : "default"
                         }}
                     />
                 )}

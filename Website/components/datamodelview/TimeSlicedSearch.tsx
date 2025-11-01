@@ -20,8 +20,8 @@ interface TimeSlicedSearchProps {
 }
 
 // Time-sliced input that maintains 60fps regardless of background work
-export const TimeSlicedSearch = ({ 
-  onSearch, 
+export const TimeSlicedSearch = ({
+  onSearch,
   onLoadingChange,
   onNavigateNext,
   onNavigatePrevious,
@@ -37,7 +37,7 @@ export const TimeSlicedSearch = ({
   const { isOpen } = useSidebar();
   const { isSettingsOpen } = useSettings();
   const isMobile = useIsMobile();
-  
+
   const searchTimeoutRef = useRef<number>();
   const typingTimeoutRef = useRef<number>();
   const frameRef = useRef<number>();
@@ -106,7 +106,7 @@ export const TimeSlicedSearch = ({
       channel.port2.onmessage = () => {
         onSearch(value);
         setLastValidSearch(value);
-        
+
         // Reset typing state in next frame
         frameRef.current = requestAnimationFrame(() => {
           setIsTyping(false);
@@ -118,10 +118,10 @@ export const TimeSlicedSearch = ({
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
+
     // Immediate visual update (highest priority)
     setLocalValue(value);
-    
+
     // Only manage typing state and loading for searches >= 3 characters
     if (value.length >= 3) {
       // Manage typing state
@@ -134,7 +134,7 @@ export const TimeSlicedSearch = ({
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      
+
       // Auto-reset typing state if user stops typing
       typingTimeoutRef.current = window.setTimeout(() => {
         setIsTyping(false);
@@ -143,13 +143,13 @@ export const TimeSlicedSearch = ({
       // Clear typing state for short searches
       setIsTyping(false);
       onLoadingChange(false);
-      
+
       // Clear any pending timeouts
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
     }
-    
+
     // Schedule search (will handle short searches internally)
     scheduleSearch(value);
 
@@ -158,11 +158,12 @@ export const TimeSlicedSearch = ({
   // Handle clear button
   const handleClear = useCallback(() => {
     if (localValue.length === 0) return; // No-op if already empty
+    handleClose();
     setLocalValue('');
     onSearch(''); // Clear search immediately
     setIsTyping(false);
     onLoadingChange(false);
-    
+
     // Clear any pending timeouts
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -202,7 +203,7 @@ export const TimeSlicedSearch = ({
       container.style.zIndex = '9999';
       document.body.appendChild(container);
     }
-    
+
     const searchContainer = document.createElement('div');
     searchContainer.style.pointerEvents = 'auto';
     container.appendChild(searchContainer);
@@ -236,8 +237,8 @@ export const TimeSlicedSearch = ({
         </InputAdornment>
 
         <Divider orientation="vertical" className='mr-1 h-6' />
-        
-        <InputBase 
+
+        <InputBase
           className='ml-1 flex-1'
           type="text"
           placeholder={placeholder}
@@ -249,7 +250,7 @@ export const TimeSlicedSearch = ({
           autoCapitalize="off"
           sx={{ backgroundColor: 'transparent' }}
         />
-        
+
         <InputAdornment position="end">
           {isTyping && localValue.length >= 3 ? (
             <CircularProgress size={20} />
@@ -260,9 +261,9 @@ export const TimeSlicedSearch = ({
             </Box>
           ) : null}
         </InputAdornment>
-        
+
         <Divider orientation="vertical" className='mx-1 h-6' />
-        
+
         <IconButton onClick={handleClick} size="small">
           <InfoRounded fontSize="small" color="action" />
         </IconButton>
@@ -275,28 +276,28 @@ export const TimeSlicedSearch = ({
         className='mt-2'
       >
         <MenuList dense className='w-64'>
-          <MenuItem onClick={onNavigateNext}>
+          <MenuItem disabled={localValue.length < 3} onClick={onNavigateNext}>
             <ListItemIcon>
               <NavigateNextRounded />
             </ListItemIcon>
             <ListItemText>Next</ListItemText>
             <Typography variant='body2' color="text.secondary">Enter</Typography>
           </MenuItem>
-          <MenuItem onClick={onNavigatePrevious}>
+          <MenuItem disabled={localValue.length < 3} onClick={onNavigatePrevious}>
             <ListItemIcon>
               <NavigateBeforeRounded />
             </ListItemIcon>
             <ListItemText>Previous</ListItemText>
             <Typography variant='body2' color="text.secondary">Shift + Enter</Typography>
           </MenuItem>
-          <MenuItem onClick={onNavigateNext}>
+          <MenuItem disabled={localValue.length < 3} onClick={onNavigateNext}>
             <ListItemIcon>
               <NavigateNextRounded />
             </ListItemIcon>
             <ListItemText>Next</ListItemText>
             <Typography variant='body2' color="text.secondary">Ctrl + <KeyboardArrowDownRounded /></Typography>
           </MenuItem>
-          <MenuItem onClick={onNavigatePrevious}>
+          <MenuItem disabled={localValue.length < 3} onClick={onNavigatePrevious}>
             <ListItemIcon>
               <NavigateBeforeRounded />
             </ListItemIcon>
@@ -304,7 +305,7 @@ export const TimeSlicedSearch = ({
             <Typography variant='body2' color="text.secondary">Ctrl + <KeyboardArrowUpRounded /></Typography>
           </MenuItem>
           <Divider />
-          <MenuItem onClick={handleClear}>
+          <MenuItem disabled={localValue.length === 0} onClick={handleClear}>
             <ListItemIcon>
               <ClearRounded />
             </ListItemIcon>
