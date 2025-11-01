@@ -53,6 +53,7 @@ const Sidebar = ({ }: SidebarProps) => {
       href: '/diagram',
       icon: DiagramIcon,
       active: pathname === '/diagram',
+      disabled: isMobile,
       new: true,
     },
     {
