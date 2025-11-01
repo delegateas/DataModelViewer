@@ -23,7 +23,21 @@ declare module '@mui/material/styles' {
 
 export const createAppTheme = (mode: PaletteMode) => createTheme({
   components: {
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: ({ theme }) => ({
+          backgroundColor: theme.palette.background.paper,
+          opacity: 1,
+          color: theme.palette.text.primary,
+          boxShadow: theme.shadows[1],
+        }),
+        arrow: ({ theme }) => ({
+          color: theme.palette.background.paper,
+        }),
+      },
+    },
     MuiIconButton: {
+
       styleOverrides: {
         root: {
           // Base styles for all IconButton variants
@@ -76,9 +90,10 @@ export const createAppTheme = (mode: PaletteMode) => createTheme({
       disabled: mode === 'dark' ? '#6b7280' : '#9ca3af', // Disabled text colors
     },
     background: {
-      default: mode === 'dark' ? '#111827' : '#fafafa', 
+      default: mode === 'dark' ? '#111827' : '#fafafa',
       paper: mode === 'dark' ? '#1f2937' : '#ffffff',
     },
+
     divider: mode === 'dark' ? '#374151' : '#e5e7eb', // Same as border.main for consistency
     grey: {
       100: mode === 'dark' ? '#374151' : '#f3f4f6',
