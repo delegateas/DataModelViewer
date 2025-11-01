@@ -2,7 +2,7 @@
 
 import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
 import { AddCircleOutlineRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
-import { Box, Button, Link, Tooltip, Typography } from "@mui/material";
+import { Box, Link, Tooltip, Typography } from "@mui/material";
 
 export function AttributeDetails({ entityName, attribute }: { entityName: string, attribute: AttributeType }) {
     const details = [];
