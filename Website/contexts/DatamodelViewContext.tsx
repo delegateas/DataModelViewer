@@ -9,6 +9,7 @@ export interface DatamodelViewState {
     currentSection: string | null;
     scrollToSection: (sectionId: string) => void;
     scrollToGroup: (groupName: string) => void;
+    scrollToAttribute: (sectionId: string, attrSchema: string) => void;
     loading: boolean;
     loadingSection: string | null;
     restoreSection: () => void;
@@ -19,19 +20,21 @@ const initialState: DatamodelViewState = {
     currentSection: null,
     scrollToSection: () => { throw new Error("scrollToSection not initialized yet!"); },
     scrollToGroup: () => { throw new Error("scrollToGroup not initialized yet!"); },
+    scrollToAttribute: () => { throw new Error("scrollToAttribute not initialized yet!"); },
     loading: true,
     loadingSection: null,
     restoreSection: () => { throw new Error("restoreSection not initialized yet!"); },
 }
 
-type DatamodelViewAction = 
+type DatamodelViewAction =
     | { type: 'SET_CURRENT_GROUP', payload: string | null }
     | { type: 'SET_CURRENT_SECTION', payload: string | null }
     | { type: 'SET_SCROLL_TO_SECTION', payload: (sectionId: string) => void }
     | { type: 'SET_SCROLL_TO_GROUP', payload: (groupName: string) => void }
     | { type: 'SET_LOADING', payload: boolean }
     | { type: 'SET_LOADING_SECTION', payload: string | null }
-    | { type: 'SET_RESTORE_SECTION', payload: () => void };
+    | { type: 'SET_RESTORE_SECTION', payload: () => void }
+    | { type: 'SET_SCROLL_TO_ATTRIBUTE', payload: (sectionId: string, attrSchema: string) => void };
 
 
 const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAction): DatamodelViewState => {
@@ -50,6 +53,8 @@ const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAc
             return { ...state, loadingSection: action.payload }
         case 'SET_RESTORE_SECTION':
             return { ...state, restoreSection: action.payload }
+        case 'SET_SCROLL_TO_ATTRIBUTE':
+            return { ...state, scrollToAttribute: action.payload }
         default:
             return state;
     }
@@ -70,7 +75,7 @@ export const DatamodelViewProvider = ({ children }: { children: ReactNode }) => 
         try { datamodelViewState.scrollToSection(""); } catch { return; }
         dispatch({ type: "SET_CURRENT_GROUP", payload: groupParam });
         dispatch({ type: "SET_CURRENT_SECTION", payload: sectionParam });
-        datamodelViewState.scrollToSection(sectionParam); 
+        datamodelViewState.scrollToSection(sectionParam);
     }, [datamodelViewState.scrollToSection])
 
     return (
