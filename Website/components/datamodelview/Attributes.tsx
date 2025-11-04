@@ -23,10 +23,10 @@ type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
 
 interface IAttributeProps {
     entity: EntityType
-    onVisibleCountChange?: (count: number) => void
+    search?: string
 }
 
-export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttributeProps & { search?: string }) => {
+export const Attributes = ({ entity, search = "" }: IAttributeProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("displayName")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -123,13 +123,6 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
 
     const sortedAttributes = getSortedAttributes();
     const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
-
-    // Notify parent of visible count
-    React.useEffect(() => {
-        if (onVisibleCountChange) {
-            onVisibleCountChange(sortedAttributes.length);
-        }
-    }, [onVisibleCountChange, sortedAttributes.length]);
 
     const SortIcon = ({ column }: { column: SortColumn }) => {
         if (sortColumn !== column) return <ArrowUpwardRounded className="ml-2 h-4 w-4" />

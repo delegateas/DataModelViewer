@@ -14,40 +14,16 @@ import { KeyRounded, SellRounded, ShareRounded } from "@mui/icons-material"
 interface ISectionProps {
     entity: EntityType;
     group: GroupType;
-    onContentChange?: () => void;
-    onTabChange?: (isChanging: boolean) => void;
     search?: string;
 }
 
 export const Section = React.memo(
-    ({ entity, group, onContentChange, onTabChange, search }: ISectionProps) => {
-        // Use useRef to track previous props for comparison
-        const prevSearch = React.useRef(search);
-
+    ({ entity, group, search }: ISectionProps) => {
         const [tab, setTab] = React.useState(0);
 
-        // Handle tab changes to notify parent component
         const handleTabChange = React.useCallback((event: React.SyntheticEvent, newValue: number) => {
-            if (onTabChange) {
-                onTabChange(true);
-            }
             setTab(newValue);
-        }, [onTabChange]);
-
-        // Only compute these counts when needed
-        const visibleAttributeCount = React.useMemo(() => entity.Attributes.length, [entity.Attributes]);
-        const visibleRelationshipCount = React.useMemo(() => entity.Relationships.length, [entity.Relationships]);
-        const visibleKeyCount = React.useMemo(() => entity.Keys.length, [entity.Keys]);
-
-        // Only call onContentChange when something actually changes
-        React.useEffect(() => {
-            if (onContentChange &&
-                (prevSearch.current !== search ||
-                    tab !== 0)) {
-                prevSearch.current = search;
-                onContentChange();
-            }
-        }, [tab, search, onContentChange]);
+        }, []);
 
         return (
             <Box data-entity-schema={entity.SchemaName} data-group={group.Name} className="mb-10">
@@ -77,7 +53,7 @@ export const Section = React.memo(
                                     label={
                                         <div className="flex items-center min-w-[120px] sm:min-w-[140px] px-2 py-1 text-xs sm:text-sm">
                                             <SellRounded className="mr-2 h-4 w-4 shrink-0" />
-                                            <span className="truncate">Attributes [{visibleAttributeCount}]</span>
+                                            <span className="truncate">Attributes [{entity.Attributes.length}]</span>
                                         </div>
                                     }
                                 />
@@ -86,7 +62,7 @@ export const Section = React.memo(
                                         label={
                                             <div className="flex items-center min-w-[140px] sm:min-w-[160px] px-2 py-1 text-xs sm:text-sm">
                                                 <ShareRounded className="mr-2 h-4 w-4 shrink-0" />
-                                                <span className="truncate">Relationships [{visibleRelationshipCount}]</span>
+                                                <span className="truncate">Relationships [{entity.Relationships.length}]</span>
                                             </div>
                                         }
                                     />
@@ -96,7 +72,7 @@ export const Section = React.memo(
                                         label={
                                             <div className="flex items-center min-w-[100px] sm:min-w-[120px] px-2 py-1 text-xs sm:text-sm">
                                                 <KeyRounded className="mr-2 h-4 w-4 shrink-0" />
-                                                <span className="truncate">Keys [{visibleKeyCount}]</span>
+                                                <span className="truncate">Keys [{entity.Keys.length}]</span>
                                             </div>
                                         }
                                     />

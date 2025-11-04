@@ -153,6 +153,12 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         onChange: debouncedOnChange,
     });
 
+    // Set shouldAdjustScrollPositionOnItemSizeChange to prevent scroll position adjustments
+    // when item sizes change due to filtering/searching
+    useEffect(() => {
+        rowVirtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => false;
+    }, [rowVirtualizer]);
+
     const scrollToSection = useCallback((sectionId: string) => {
         const sectionIndex = flatItems.findIndex(item =>
             item.type === 'entity' && item.entity.SchemaName === sectionId
@@ -211,16 +217,6 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         dispatch({ type: 'SET_SCROLL_TO_GROUP', payload: scrollToGroup });
         dispatch({ type: 'SET_RESTORE_SECTION', payload: restoreSection });
     }, [dispatch, scrollToSection, scrollToAttribute, scrollToGroup]);
-
-    // Callback to handle section content changes (for tab switches, expansions, etc.)
-    const handleSectionResize = useCallback((index: number) => {
-        if (index !== -1) {
-            const containerElement = document.querySelector(`[data-index="${index}"]`) as HTMLElement;
-            if (containerElement) {
-                rowVirtualizer.measureElement(containerElement);
-            }
-        }
-    }, [rowVirtualizer]);
 
     const smartScrollToIndex = useCallback((index: number) => {
         rowVirtualizer.scrollToIndex(index, { align: 'start' });
@@ -282,10 +278,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                 }}
                                 ref={(el) => {
                                     if (el) {
-                                        // trigger remeasurement when content changes and load
-                                        requestAnimationFrame(() => {
-                                            handleSectionResize(virtualItem.index);
-                                        });
+                                        rowVirtualizer.measureElement(el);
                                     }
                                 }}
                             >
@@ -307,9 +300,6 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                         <Section
                                             entity={item.entity}
                                             group={item.group}
-                                            onTabChange={() => {
-
-                                            }}
                                             search={search}
                                         />
                                     </div>

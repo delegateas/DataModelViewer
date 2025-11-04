@@ -26,10 +26,10 @@ type SortDirection = 'asc' | 'desc' | null
 
 interface IKeysProps {
     entity: EntityType;
-    onVisibleCountChange?: (count: number) => void;
+    search?: string;
 }
 
-function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { search?: string }) {
+function Keys({ entity, search = "" }: IKeysProps) {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [searchQuery, setSearchQuery] = useState("")
@@ -106,12 +106,6 @@ function Keys({ entity, onVisibleCountChange, search = "" }: IKeysProps & { sear
 
     const sortedKeys = getSortedKeys();
     const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
-
-    React.useEffect(() => {
-        if (onVisibleCountChange) {
-            onVisibleCountChange(sortedKeys.length);
-        }
-    }, [onVisibleCountChange, sortedKeys.length]);
 
     const SortIcon = ({ column }: { column: SortColumn }) => {
         if (sortColumn !== column) return <ArrowDownwardRounded className="ml-2 h-4 w-4" />

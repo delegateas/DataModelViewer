@@ -14,10 +14,10 @@ type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' |
 
 interface IRelationshipsProps {
     entity: EntityType;
-    onVisibleCountChange?: (count: number) => void;
+    search?: string;
 }
 
-export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRelationshipsProps & { search?: string }) => {
+export const Relationships = ({ entity, search = "" }: IRelationshipsProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -129,12 +129,6 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
 
     const sortedRelationships = getSortedRelationships();
     const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
-
-    React.useEffect(() => {
-        if (onVisibleCountChange) {
-            onVisibleCountChange(sortedRelationships.length);
-        }
-    }, [onVisibleCountChange, sortedRelationships.length]);
 
     return <>
         <Box 
