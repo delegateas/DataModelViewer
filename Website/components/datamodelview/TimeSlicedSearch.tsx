@@ -254,11 +254,15 @@ export const TimeSlicedSearch = ({
         <InputAdornment position="end">
           {isTyping && localValue.length >= 3 ? (
             <CircularProgress size={20} />
-          ) : localValue ? (
-            <Box className="flex flex-col items-center px-2 justify-center h-full">
-              <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{currentIndex}</Typography>
-              <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{totalResults}</Typography>
-            </Box>
+          ) : localValue && totalResults !== undefined && totalResults > 0 ? (
+            <Typography
+              variant='caption'
+              color="text.secondary"
+              className='px-2 font-mono'
+              sx={{ minWidth: '40px', textAlign: 'center' }}
+            >
+              {currentIndex}/{totalResults}
+            </Typography>
           ) : null}
         </InputAdornment>
 
