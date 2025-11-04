@@ -134,7 +134,10 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             updateURL({ query: { group: mostVisibleEntity.group.Name, section: mostVisibleEntity.entity.SchemaName } });
             dispatch({ type: "SET_CURRENT_GROUP", payload: mostVisibleEntity.group.Name });
             dispatch({ type: "SET_CURRENT_SECTION", payload: mostVisibleEntity.entity.SchemaName });
-            setCurrentIndex(mostVisibleEntity.index);
+            // Only update the index when not searching - during search, index should only change via next/previous buttons
+            if (!search) {
+                setCurrentIndex(mostVisibleEntity.index);
+            }
         }
     }, 100);
 
