@@ -229,6 +229,13 @@ export const TimeSlicedSearch = ({
     setAnchorEl(null);
   };
 
+  // Close menu when focus moves back to search input or elsewhere
+  const handleSearchFocus = () => {
+    if (open) {
+      setAnchorEl(null);
+    }
+  };
+
   const searchInput = (
     <Box className={`fixed top-20 right-0 z-50 transition-opacity bg-transparent duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       <Paper component="form" className='p-1 rounded-lg flex items-center w-[320px]' sx={{ backgroundColor: 'background.paper' }}>
@@ -245,6 +252,7 @@ export const TimeSlicedSearch = ({
           aria-label="Search attributes in tables"
           value={localValue}
           onChange={handleChange}
+          onFocus={handleSearchFocus}
           spellCheck={false}
           autoComplete="off"
           autoCapitalize="off"
