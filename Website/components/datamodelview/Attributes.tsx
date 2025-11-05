@@ -17,6 +17,7 @@ import React from "react"
 import { highlightMatch } from "../datamodelview/List";
 import { Box, Button, FormControl, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography, useTheme } from "@mui/material"
 import { ClearRounded, SearchRounded, Visibility, VisibilityOff, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
+import { useEntityFiltersDispatch } from "@/contexts/EntityFiltersContext"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
@@ -35,6 +36,19 @@ export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttri
     const [searchQuery, setSearchQuery] = useState("")
 
     const theme = useTheme();
+    const entityFiltersDispatch = useEntityFiltersDispatch();
+
+    // Report filter state changes to context
+    useEffect(() => {
+        entityFiltersDispatch({
+            type: "SET_ENTITY_FILTERS",
+            entitySchemaName: entity.SchemaName,
+            filters: {
+                hideStandardFields,
+                typeFilter
+            }
+        });
+    }, [hideStandardFields, typeFilter, entity.SchemaName, entityFiltersDispatch]);
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {

@@ -6,9 +6,15 @@ interface InitMessage {
   groups: GroupType[];
 }
 
+interface EntityFilterState {
+  hideStandardFields: boolean;
+  typeFilter: string;
+}
+
 interface SearchMessage {
   type: 'search';
   data: string;
+  entityFilters?: Record<string, EntityFilterState>;
 }
 
 type WorkerMessage = InitMessage | SearchMessage | string;
@@ -48,6 +54,8 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
 
   // Handle search
   const search = (typeof e.data === 'string' ? e.data : e.data?.data || '').trim().toLowerCase();
+  const entityFilters: Record<string, EntityFilterState> = (typeof e.data === 'object' && 'entityFilters' in e.data) ? e.data.entityFilters || {} : {};
+
   if (!search) {
     const response: WorkerResponse = { type: 'results', data: [], complete: true };
     self.postMessage(response);
@@ -70,8 +78,32 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
   for (const group of groups) {
     let groupUsed = false;
     for (const entity of group.Entities) {
+      // Get entity-specific filters (default to showing all if not set)
+      const entityFilter = entityFilters[entity.SchemaName] || { hideStandardFields: true, typeFilter: 'all' };
+
       // Find all matching attributes
       const matchingAttributes = entity.Attributes.filter((attr: AttributeType) => {
+        // Apply hideStandardFields filter
+        if (entityFilter.hideStandardFields) {
+          const isStandardFieldHidden = !attr.IsCustomAttribute && !attr.IsStandardFieldModified;
+          if (isStandardFieldHidden) return false;
+        }
+
+        // Apply type filter
+        if (entityFilter.typeFilter && entityFilter.typeFilter !== 'all') {
+          // Special case: ChoiceAttribute filter also includes StatusAttribute
+          if (entityFilter.typeFilter === 'ChoiceAttribute') {
+            if (attr.AttributeType !== 'ChoiceAttribute' && attr.AttributeType !== 'StatusAttribute') {
+              return false;
+            }
+          } else {
+            if (attr.AttributeType !== entityFilter.typeFilter) {
+              return false;
+            }
+          }
+        }
+
+        // Apply search matching
         const basicMatch = attr.SchemaName.toLowerCase().includes(search) ||
           (attr.DisplayName && attr.DisplayName.toLowerCase().includes(search)) ||
           (attr.Description && attr.Description.toLowerCase().includes(search));

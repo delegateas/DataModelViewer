@@ -10,6 +10,7 @@ import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/Datamodel
 import { updateURL } from "@/lib/url-utils";
 import { useSearchParams } from "next/navigation";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
+import { useEntityFilters } from "@/contexts/EntityFiltersContext";
 
 export function DatamodelView() {
     const { setElement, expand } = useSidebar();
@@ -29,6 +30,7 @@ function DatamodelViewContent() {
     const datamodelDispatch = useDatamodelViewDispatch();
     const { groups, filtered } = useDatamodelData();
     const datamodelDataDispatch = useDatamodelDataDispatch();
+    const { filters: entityFilters } = useEntityFilters();
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
     const accumulatedResultsRef = useRef<Array<{ type: string; entity: { SchemaName: string }; group: { Name: string }; attribute?: { SchemaName: string } }>>([]); // Track all results during search
@@ -47,7 +49,17 @@ function DatamodelViewContent() {
     const handleSearch = useCallback((searchValue: string) => {
         if (workerRef.current && groups) {
             if (searchValue.length >= 3) {
-                workerRef.current.postMessage(searchValue);
+                // Convert Map to plain object for worker
+                const filtersObject: Record<string, { hideStandardFields: boolean; typeFilter: string }> = {};
+                entityFilters.forEach((filter, entitySchemaName) => {
+                    filtersObject[entitySchemaName] = filter;
+                });
+
+                workerRef.current.postMessage({
+                    type: 'search',
+                    data: searchValue,
+                    entityFilters: filtersObject
+                });
             } else {
                 // Clear search - reset to show all groups
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
@@ -61,7 +73,7 @@ function DatamodelViewContent() {
         updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })
         datamodelDataDispatch({ type: "SET_SEARCH", payload: searchValue.length >= 3 ? searchValue : "" });
         setCurrentSearchIndex(searchValue.length >= 3 ? 1 : 0); // Reset to first result when searching, 0 when cleared
-    }, [groups, datamodelDataDispatch, restoreSection]);
+    }, [groups, datamodelDataDispatch, restoreSection, entityFilters]);
 
     const handleLoadingChange = useCallback((isLoading: boolean) => {
         datamodelDispatch({ type: "SET_LOADING", payload: isLoading });
