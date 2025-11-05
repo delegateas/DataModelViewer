@@ -12,6 +12,12 @@ import { useSearchParams } from "next/navigation";
 import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { useEntityFilters } from "@/contexts/EntityFiltersContext";
 
+// Type for search results
+type SearchResultItem =
+    | { type: 'group'; group: GroupType }
+    | { type: 'entity'; group: GroupType; entity: EntityType }
+    | { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType };
+
 export function DatamodelView() {
     const { setElement, expand } = useSidebar();
 
@@ -33,7 +39,7 @@ function DatamodelViewContent() {
     const { filters: entityFilters } = useEntityFilters();
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
-    const accumulatedResultsRef = useRef<Array<{ type: string; entity: { SchemaName: string }; group: { Name: string }; attribute?: { SchemaName: string } }>>([]); // Track all results during search
+    const accumulatedResultsRef = useRef<SearchResultItem[]>([]); // Track all results during search
 
     // Calculate total search results (prioritize attributes, fallback to entities)
     const totalResults = useMemo(() => {
@@ -234,7 +240,7 @@ function DatamodelViewContent() {
                     datamodelDispatch({ type: "SET_LOADING", payload: false });
                     // Set to first result if we have any and auto-navigate to it
                     // Prioritize attributes, fallback to entities
-                    const attributeResults = accumulatedResultsRef.current.filter((item: any): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
+                    const attributeResults = accumulatedResultsRef.current.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
                         item.type === 'attribute'
                     );
 
@@ -251,7 +257,7 @@ function DatamodelViewContent() {
                         }, 100);
                     } else {
                         // Fallback to entity results
-                        const entityResults = accumulatedResultsRef.current.filter((item: any): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
+                        const entityResults = accumulatedResultsRef.current.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
                             item.type === 'entity'
                         );
 
@@ -269,10 +275,11 @@ function DatamodelViewContent() {
             }
             else {
                 // Handle legacy format for backward compatibility
-                datamodelDataDispatch({ type: "SET_FILTERED", payload: message });
+                const messageData = message as SearchResultItem[];
+                datamodelDataDispatch({ type: "SET_FILTERED", payload: messageData });
                 datamodelDispatch({ type: "SET_LOADING", payload: false });
                 // Set to first result if we have any and auto-navigate to it - prioritize attributes
-                const attributeResults = message.filter((item: any): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
+                const attributeResults = messageData.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
                     item.type === 'attribute'
                 );
 
@@ -288,7 +295,7 @@ function DatamodelViewContent() {
                     }, 100);
                 } else {
                     // Fallback to entity results
-                    const entityResults = message.filter((item: any): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
+                    const entityResults = messageData.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
                         item.type === 'entity'
                     );
 
