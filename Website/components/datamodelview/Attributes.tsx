@@ -70,7 +70,14 @@ export const Attributes = ({ entity, search = "" }: IAttributeProps) => {
         let filteredAttributes = entity.Attributes
 
         if (typeFilter !== "all") {
-            filteredAttributes = filteredAttributes.filter(attr => attr.AttributeType === typeFilter)
+            if (typeFilter === "ChoiceAttribute") {
+                // When Choice is selected, show both ChoiceAttribute and StatusAttribute
+                filteredAttributes = filteredAttributes.filter(attr =>
+                    attr.AttributeType === "ChoiceAttribute" || attr.AttributeType === "StatusAttribute"
+                )
+            } else {
+                filteredAttributes = filteredAttributes.filter(attr => attr.AttributeType === typeFilter)
+            }
         }
 
         if (searchQuery) {
@@ -139,7 +146,6 @@ export const Attributes = ({ entity, search = "" }: IAttributeProps) => {
         "IntegerAttribute",
         "LookupAttribute",
         "DecimalAttribute",
-        "StatusAttribute",
         "StringAttribute",
         "BooleanAttribute",
         "FileAttribute"
