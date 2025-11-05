@@ -30,7 +30,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
     const parentRef = useRef<HTMLDivElement | null>(null);
     // used to relocate section after search/filter
     const [sectionVirtualItem, setSectionVirtualItem] = useState<string | null>(null);
-        
+
     const handleCopyGroupLink = useCallback(async (groupName: string) => {
         const link = generateGroupLink(groupName);
         const success = await copyToClipboard(link);
@@ -43,7 +43,8 @@ export const List = ({ setCurrentIndex }: IListProps) => {
 
     // Only recalculate items when filtered or search changes
     const flatItems = useMemo(() => {
-        if (filtered && filtered.length > 0) return filtered;
+        if (filtered && filtered.length > 0) return filtered.filter(item => item.type !== 'attribute');
+
         const lowerSearch = search.trim().toLowerCase();
         const items: Array<
             | { type: 'group'; group: GroupType }
@@ -78,7 +79,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         if (!sync) {
             dispatch({ type: 'SET_LOADING_SECTION', payload: null });
         }
-        
+
         const virtualItems = instance.getVirtualItems();
         if (virtualItems.length === 0) return;
 
@@ -101,19 +102,19 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             const item = flatItems[vi.index];
             if (!item || item.type !== 'entity') continue;
             actualIndex++;
-            
+
             const itemTop = vi.start;
             const itemBottom = vi.end;
-            
+
             // Calculate intersection
             const intersectionTop = Math.max(itemTop, viewportTop);
             const intersectionBottom = Math.min(itemBottom, viewportBottom);
-            
+
             // Skip if no intersection
             if (intersectionTop >= intersectionBottom) continue;
-            
+
             const visibleArea = intersectionBottom - intersectionTop;
-            
+
             // Update most visible entity without array operations
             if (!mostVisibleEntity || visibleArea > mostVisibleEntity.visibleArea) {
                 mostVisibleEntity = {
@@ -133,7 +134,10 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             updateURL({ query: { group: mostVisibleEntity.group.Name, section: mostVisibleEntity.entity.SchemaName } });
             dispatch({ type: "SET_CURRENT_GROUP", payload: mostVisibleEntity.group.Name });
             dispatch({ type: "SET_CURRENT_SECTION", payload: mostVisibleEntity.entity.SchemaName });
-            setCurrentIndex(mostVisibleEntity.index);
+            // Only update the index when not searching - during search, index should only change via next/previous buttons
+            if (!search) {
+                setCurrentIndex(mostVisibleEntity.index);
+            }
         }
     }, 100);
 
@@ -144,16 +148,22 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         estimateSize: (index) => {
             const item = flatItems[index];
             if (!item) return 200;
-            return item.type === 'group' ? 100 : 500; 
+            return item.type === 'group' ? 100 : 500;
         },
         onChange: debouncedOnChange,
     });
-    
+
+    // Set shouldAdjustScrollPositionOnItemSizeChange to prevent scroll position adjustments
+    // when item sizes change due to filtering/searching
+    useEffect(() => {
+        rowVirtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => false;
+    }, [rowVirtualizer]);
+
     const scrollToSection = useCallback((sectionId: string) => {
-        const sectionIndex = flatItems.findIndex(item => 
+        const sectionIndex = flatItems.findIndex(item =>
             item.type === 'entity' && item.entity.SchemaName === sectionId
         );
-        
+
         if (sectionIndex === -1) {
             console.warn(`Section ${sectionId} not found in virtualized list`);
             return;
@@ -163,11 +173,30 @@ export const List = ({ setCurrentIndex }: IListProps) => {
 
     }, [flatItems]);
 
+    const scrollToAttribute = useCallback((sectionId: string, attrSchema: string) => {
+        const attrId = `attr-${sectionId}-${attrSchema}`;
+        const attributeLocation = document.getElementById(attrId);
+
+        if (attributeLocation) {
+            // Attribute is already rendered, scroll directly to it
+            attributeLocation.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            // Attribute not found, need to scroll to section first
+            scrollToSection(sectionId);
+            setTimeout(() => {
+                const attributeLocationAfterScroll = document.getElementById(attrId);
+                if (attributeLocationAfterScroll) {
+                    attributeLocationAfterScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+    }, [scrollToSection]);
+
     const scrollToGroup = useCallback((groupName: string) => {
-        const groupIndex = flatItems.findIndex(item => 
+        const groupIndex = flatItems.findIndex(item =>
             item.type === 'group' && item.group.Name === groupName
         );
-        
+
         if (groupIndex === -1) {
             console.warn(`Group ${groupName} not found in virtualized list`);
             return;
@@ -184,19 +213,10 @@ export const List = ({ setCurrentIndex }: IListProps) => {
 
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
+        dispatch({ type: 'SET_SCROLL_TO_ATTRIBUTE', payload: scrollToAttribute });
         dispatch({ type: 'SET_SCROLL_TO_GROUP', payload: scrollToGroup });
         dispatch({ type: 'SET_RESTORE_SECTION', payload: restoreSection });
-    }, [dispatch, scrollToSection, scrollToGroup]);
-
-    // Callback to handle section content changes (for tab switches, expansions, etc.)
-    const handleSectionResize = useCallback((index: number) => {
-        if (index !== -1) {
-            const containerElement = document.querySelector(`[data-index="${index}"]`) as HTMLElement;
-            if (containerElement) {
-                rowVirtualizer.measureElement(containerElement);
-            }
-        }
-    }, [rowVirtualizer]);
+    }, [dispatch, scrollToSection, scrollToAttribute, scrollToGroup]);
 
     const smartScrollToIndex = useCallback((index: number) => {
         rowVirtualizer.scrollToIndex(index, { align: 'start' });
@@ -213,7 +233,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             });
         };
         requestAnimationFrame(tryFix);
-        }, [rowVirtualizer]);
+    }, [rowVirtualizer]);
 
     return (
         <>
@@ -231,7 +251,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                         </div>
                     </div>
                 )}
-                
+
                 {/* Virtualized list */}
                 <div
                     className={`mx-6 my-6 transition-opacity duration-300 ${loadingSection ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
@@ -258,10 +278,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                 }}
                                 ref={(el) => {
                                     if (el) {
-                                        // trigger remeasurement when content changes and load
-                                        requestAnimationFrame(() => {
-                                            handleSectionResize(virtualItem.index);
-                                        });
+                                        rowVirtualizer.measureElement(el);
                                     }
                                 }}
                             >
@@ -269,7 +286,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                     <div className="flex items-center py-6 my-4">
                                         <div className="flex-1 h-0.5 bg-gray-200" />
                                         <Tooltip title="Copy link to this group">
-                                            <div 
+                                            <div
                                                 className="px-4 text-md font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-blue-600 transition-colors"
                                                 onClick={() => handleCopyGroupLink(item.group.Name)}
                                             >
@@ -283,9 +300,6 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                         <Section
                                             entity={item.entity}
                                             group={item.group}
-                                            onTabChange={() => {
-                                                
-                                            }}
                                             search={search}
                                         />
                                     </div>

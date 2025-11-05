@@ -2,7 +2,7 @@
 
 import { EntityType } from "@/lib/Types"
 import { CascadeConfiguration } from "./entity/CascadeConfiguration"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
@@ -14,15 +14,16 @@ type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' |
 
 interface IRelationshipsProps {
     entity: EntityType;
+    search?: string;
     onVisibleCountChange?: (count: number) => void;
 }
 
-export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRelationshipsProps & { search?: string }) => {
+export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRelationshipsProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("name")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
-    
+
     const theme = useTheme();
 
     const dispatch = useDatamodelViewDispatch();
@@ -130,11 +131,10 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
     const sortedRelationships = getSortedRelationships();
     const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
 
-    React.useEffect(() => {
-        if (onVisibleCountChange) {
-            onVisibleCountChange(sortedRelationships.length);
-        }
-    }, [onVisibleCountChange, sortedRelationships.length]);
+    // Notify parent of visible count changes
+    useEffect(() => {
+        onVisibleCountChange?.(sortedRelationships.length);
+    }, [sortedRelationships.length, onVisibleCountChange]);
 
     return <>
         <Box 
@@ -184,8 +184,8 @@ export const Relationships = ({ entity, onVisibleCountChange, search = "" }: IRe
                     <InputLabel id="relationship-type-filter-label" className="text-xs md:text-sm">
                         Filter by type
                     </InputLabel>
-                    <Select 
-                        value={typeFilter} 
+                    <Select
+                        value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value)}
                         label="Filter by type"
                         labelId="relationship-type-filter-label"

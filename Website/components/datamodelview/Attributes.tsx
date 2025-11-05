@@ -1,7 +1,7 @@
 'use client'
 
 import { EntityType, AttributeType } from "@/lib/Types"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AttributeDetails } from "./entity/AttributeDetails"
 import BooleanAttribute from "./attributes/BooleanAttribute"
 import ChoiceAttribute from "./attributes/ChoiceAttribute"
@@ -15,18 +15,20 @@ import StatusAttribute from "./attributes/StatusAttribute"
 import StringAttribute from "./attributes/StringAttribute"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
-import { Box, Button, FormControl, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, useTheme } from "@mui/material"
+import { Box, Button, FormControl, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography, useTheme } from "@mui/material"
 import { ClearRounded, SearchRounded, Visibility, VisibilityOff, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
+import { useEntityFiltersDispatch } from "@/contexts/EntityFiltersContext"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
 
 interface IAttributeProps {
     entity: EntityType
+    search?: string
     onVisibleCountChange?: (count: number) => void
 }
 
-export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttributeProps & { search?: string }) => {
+export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttributeProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("displayName")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -34,6 +36,19 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     const [searchQuery, setSearchQuery] = useState("")
 
     const theme = useTheme();
+    const entityFiltersDispatch = useEntityFiltersDispatch();
+
+    // Report filter state changes to context
+    useEffect(() => {
+        entityFiltersDispatch({
+            type: "SET_ENTITY_FILTERS",
+            entitySchemaName: entity.SchemaName,
+            filters: {
+                hideStandardFields,
+                typeFilter
+            }
+        });
+    }, [hideStandardFields, typeFilter, entity.SchemaName, entityFiltersDispatch]);
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -56,13 +71,13 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
         const basicMatch = attr.DisplayName.toLowerCase().includes(query) ||
             attr.SchemaName.toLowerCase().includes(query) ||
             (attr.Description && attr.Description.toLowerCase().includes(query));
-        
+
         // Check options for ChoiceAttribute and StatusAttribute
         let optionsMatch = false;
         if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
             optionsMatch = attr.Options.some(option => option.Name.toLowerCase().includes(query));
         }
-        
+
         return basicMatch || optionsMatch;
     };
 
@@ -70,7 +85,14 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
         let filteredAttributes = entity.Attributes
 
         if (typeFilter !== "all") {
-            filteredAttributes = filteredAttributes.filter(attr => attr.AttributeType === typeFilter)
+            if (typeFilter === "ChoiceAttribute") {
+                // When Choice is selected, show both ChoiceAttribute and StatusAttribute
+                filteredAttributes = filteredAttributes.filter(attr =>
+                    attr.AttributeType === "ChoiceAttribute" || attr.AttributeType === "StatusAttribute"
+                )
+            } else {
+                filteredAttributes = filteredAttributes.filter(attr => attr.AttributeType === typeFilter)
+            }
         }
 
         if (searchQuery) {
@@ -124,12 +146,10 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
     const sortedAttributes = getSortedAttributes();
     const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
 
-    // Notify parent of visible count
-    React.useEffect(() => {
-        if (onVisibleCountChange) {
-            onVisibleCountChange(sortedAttributes.length);
-        }
-    }, [onVisibleCountChange, sortedAttributes.length]);
+    // Notify parent of visible count changes
+    useEffect(() => {
+        onVisibleCountChange?.(sortedAttributes.length);
+    }, [sortedAttributes.length, onVisibleCountChange]);
 
     const SortIcon = ({ column }: { column: SortColumn }) => {
         if (sortColumn !== column) return <ArrowUpwardRounded className="ml-2 h-4 w-4" />
@@ -146,16 +166,15 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
         "IntegerAttribute",
         "LookupAttribute",
         "DecimalAttribute",
-        "StatusAttribute",
         "StringAttribute",
         "BooleanAttribute",
         "FileAttribute"
     ]
 
     return <>
-        <Box 
+        <Box
             className="p-1 md:p-2 gap-1 md:gap-2 border-b flex flex-col"
-            sx={{ 
+            sx={{
                 borderColor: 'border.main',
                 backgroundColor: 'background.paper'
             }}
@@ -172,7 +191,7 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                         }
                     }}
                     className="flex-grow"
-                    sx={{ 
+                    sx={{
                         '& .MuiInputBase-input': {
                             fontSize: { xs: '0.75rem', md: '0.875rem' }
                         }
@@ -194,40 +213,41 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                                 </InputAdornment>
                             )
                         }
-                    }}   
+                    }}
                 />
                 <FormControl size="small">
                     <InputLabel id="relationship-type-filter-label" sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
                         Filter by type
                     </InputLabel>
-                    <Select 
-                        value={typeFilter} 
+                    <Select
+                        value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value)}
                         label="Filter by type"
                         labelId="relationship-type-filter-label"
                         sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
                     >
                         {attributeTypes.map(type => (
-                        <MenuItem key={type} value={type} className="text-xs md:text-sm">
-                            {type === "all" ? "All Types" : type.replace("Attribute", "")}
-                        </MenuItem>
+                            <MenuItem key={type} value={type} className="text-xs md:text-sm">
+                                {type === "all" ? "All Types" : type.replace("Attribute", "")}
+                            </MenuItem>
                         ))}
                     </Select>
                 </FormControl>
-                <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setHideStandardFields(!hideStandardFields)}
-                    title="Control customfields"
-                    className="min-w-0 p-0 h-8 w-8 md:h-10 md:w-10"
-                    sx={{ 
-                        borderColor: 'border.main'
-                    }}
-                >
-                    {
-                        hideStandardFields ? <VisibilityOff className="text-xs md:text-base" /> : <Visibility className="text-xs md:text-base" />
-                    }
-                </Button>
+                <Tooltip title={hideStandardFields ? "Show standard columns" : "Hide standard columns"}>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setHideStandardFields(!hideStandardFields)}
+                        className="min-w-0 p-0 h-8 w-8 md:h-10 md:w-10"
+                        sx={{
+                            borderColor: 'border.main'
+                        }}
+                    >
+                        {
+                            hideStandardFields ? <VisibilityOff className="text-xs md:text-base" /> : <Visibility className="text-xs md:text-base" />
+                        }
+                    </Button>
+                </Tooltip>
                 {(searchQuery || typeFilter !== "all") && (
                     <Button
                         variant="text"
@@ -244,9 +264,9 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                 )}
             </Box>
             {search && search.length >= 3 && searchQuery && (
-                <Box 
+                <Box
                     className="flex items-center gap-1 text-xs md:text-sm px-1 py-0.5 rounded border"
-                    sx={{ 
+                    sx={{
                         color: 'warning.dark',
                         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255, 243, 224, 1)',
                         borderColor: 'warning.main'
@@ -265,9 +285,9 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                     {searchQuery || typeFilter !== "all" ? (
                         <Box className="flex flex-col items-center gap-1">
                             <Typography variant="body2">
-                                {searchQuery && typeFilter !== "all" 
+                                {searchQuery && typeFilter !== "all"
                                     ? `No ${typeFilter === "all" ? "" : typeFilter.replace("Attribute", "")} attributes found matching "${searchQuery}"`
-                                    : searchQuery 
+                                    : searchQuery
                                         ? `No attributes found matching "${searchQuery}"`
                                         : `No ${typeFilter === "all" ? "" : typeFilter.replace("Attribute", "")} attributes available`
                                 }
@@ -288,10 +308,10 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                     )}
                 </Box>
             ) : (
-                <Box 
+                <Box
                     className="overflow-x-auto md:overflow-x-visible"
-                    sx={{ 
-                        borderTop: 1, 
+                    sx={{
+                        borderTop: 1,
                         borderColor: 'border.main',
                         // Mobile: allow horizontal scrolling within the component
                         maxWidth: '100%',
@@ -310,92 +330,95 @@ export const Attributes = ({ entity, onVisibleCountChange, search = "" }: IAttri
                         }
                     }}
                 >
-                    <Table 
+                    <Table
                         className="w-full min-w-[800px] md:min-w-0"
-                        sx={{ 
+                        sx={{
                             borderColor: 'border.main'
                         }}
                     >
-                    <TableHead sx={{ backgroundColor: 'background.paper' }}>
-                        <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
-                            <TableCell 
-                                className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('displayName')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Display Name
-                                    <SortIcon column="displayName" />
-                                </Box>
-                            </TableCell>
-                            <TableCell 
-                                className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('schemaName')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Schema Name
-                                    <SortIcon column="schemaName" />
-                                </Box>
-                            </TableCell>
-                            <TableCell 
-                                className="w-[30%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('type')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Type
-                                    <SortIcon column="type" />
-                                </Box>
-                            </TableCell>
-                            <TableCell 
-                                className="w-[5%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
-                                sx={{ color: 'text.primary' }}
-                            >
-                                Details
-                            </TableCell>
-                            <TableCell 
-                                className="w-[35%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('description')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Description
-                                    <SortIcon column="description" />
-                                </Box>
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {sortedAttributes.map((attribute, index) => (
-                            <TableRow 
-                                key={attribute.SchemaName} 
-                                className="transition-colors duration-150 border-b"
-                                sx={{
-                                    '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
-                                    borderColor: 'border.main',
-                                    backgroundColor: index % 2 === 0 
-                                        ? 'background.paper' 
-                                        : theme.palette.mode === 'dark' 
-                                            ? 'rgba(255, 255, 255, 0.02)' 
-                                            : 'rgba(0, 0, 0, 0.02)'
-                                }}
-                            >
-                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                    {highlightMatch(attribute.DisplayName, highlightTerm)}
+                        <TableHead sx={{ backgroundColor: 'background.paper' }}>
+                            <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
+                                <TableCell
+                                    className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('displayName')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Display Name
+                                        <SortIcon column="displayName" />
+                                    </Box>
                                 </TableCell>
-                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                    {highlightMatch(attribute.SchemaName, highlightTerm)}
+                                <TableCell
+                                    className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('schemaName')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Schema Name
+                                        <SortIcon column="schemaName" />
+                                    </Box>
                                 </TableCell>
-                                <TableCell className="break-words py-1 md:py-1.5">{getAttributeComponent(entity, attribute, highlightMatch, highlightTerm)}</TableCell>
-                                <TableCell className="py-1 md:py-1.5"><AttributeDetails entityName={entity.SchemaName} attribute={attribute} /></TableCell>
-                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                    {highlightMatch(attribute.Description ?? "", highlightTerm)}
+                                <TableCell
+                                    className="w-[30%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('type')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Type
+                                        <SortIcon column="type" />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    className="w-[5%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    Details
+                                </TableCell>
+                                <TableCell
+                                    className="w-[35%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('description')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Description
+                                        <SortIcon column="description" />
+                                    </Box>
                                 </TableCell>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHead>
+                        <TableBody>
+                            {sortedAttributes.map((attribute, index) => (
+                                <TableRow
+                                    id={`attr-${entity.SchemaName}-${attribute.SchemaName}`}
+                                    key={attribute.SchemaName}
+                                    data-entity-schema={entity.SchemaName}
+                                    data-attribute-schema={attribute.SchemaName}
+                                    className="transition-colors duration-150 border-b"
+                                    sx={{
+                                        '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
+                                        borderColor: 'border.main',
+                                        backgroundColor: index % 2 === 0
+                                            ? 'background.paper'
+                                            : theme.palette.mode === 'dark'
+                                                ? 'rgba(255, 255, 255, 0.02)'
+                                                : 'rgba(0, 0, 0, 0.02)'
+                                    }}
+                                >
+                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                        {highlightMatch(attribute.DisplayName, highlightTerm)}
+                                    </TableCell>
+                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                        {highlightMatch(attribute.SchemaName, highlightTerm)}
+                                    </TableCell>
+                                    <TableCell className="break-words py-1 md:py-1.5">{getAttributeComponent(entity, attribute, highlightMatch, highlightTerm)}</TableCell>
+                                    <TableCell className="py-1 md:py-1.5"><AttributeDetails entityName={entity.SchemaName} attribute={attribute} /></TableCell>
+                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                        {highlightMatch(attribute.Description ?? "", highlightTerm)}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </Box>
             )}
         </Box>

@@ -3,13 +3,20 @@
 import { useSidebar } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
-import { SearchPerformanceProvider } from "@/contexts/SearchPerformanceContext";
 import { List } from "./List";
 import { TimeSlicedSearch } from "./TimeSlicedSearch";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/DatamodelDataContext";
 import { updateURL } from "@/lib/url-utils";
 import { useSearchParams } from "next/navigation";
+import { AttributeType, EntityType, GroupType } from "@/lib/Types";
+import { useEntityFilters } from "@/contexts/EntityFiltersContext";
+
+// Type for search results
+type SearchResultItem =
+    | { type: 'group'; group: GroupType }
+    | { type: 'entity'; group: GroupType; entity: EntityType }
+    | { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType };
 
 export function DatamodelView() {
     const { setElement, expand } = useSidebar();
@@ -20,30 +27,45 @@ export function DatamodelView() {
     }, [setElement]);
 
     return (
-        <SearchPerformanceProvider>
-            <DatamodelViewContent />
-        </SearchPerformanceProvider>
+        <DatamodelViewContent />
     );
 }
 
 function DatamodelViewContent() {
-    const { scrollToSection, restoreSection  } = useDatamodelView();
+    const { scrollToSection, scrollToAttribute, restoreSection } = useDatamodelView();
     const datamodelDispatch = useDatamodelViewDispatch();
     const { groups, filtered } = useDatamodelData();
     const datamodelDataDispatch = useDatamodelDataDispatch();
+    const { filters: entityFilters } = useEntityFilters();
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
-    const accumulatedResultsRef = useRef<Array<{ type: string; entity: { SchemaName: string }; group: { Name: string } }>>([]); // Track all results during search
+    const accumulatedResultsRef = useRef<SearchResultItem[]>([]); // Track all results during search
 
-    // Calculate total search results
-    const totalResults = filtered.length > 0 ? filtered.filter(item => item.type === 'entity').length : 0;
+    // Calculate total search results (prioritize attributes, fallback to entities)
+    const totalResults = useMemo(() => {
+        if (filtered.length === 0) return 0;
+
+        const attributeCount = filtered.filter(item => item.type === 'attribute').length;
+        if (attributeCount > 0) return attributeCount;
+        return 0;
+    }, [filtered]);
     const initialLocalValue = useSearchParams().get('globalsearch') || "";
 
     // Isolated search handlers - these don't depend on component state
     const handleSearch = useCallback((searchValue: string) => {
         if (workerRef.current && groups) {
             if (searchValue.length >= 3) {
-                workerRef.current.postMessage(searchValue);
+                // Convert Map to plain object for worker
+                const filtersObject: Record<string, { hideStandardFields: boolean; typeFilter: string }> = {};
+                entityFilters.forEach((filter, entitySchemaName) => {
+                    filtersObject[entitySchemaName] = filter;
+                });
+
+                workerRef.current.postMessage({
+                    type: 'search',
+                    data: searchValue,
+                    entityFilters: filtersObject
+                });
             } else {
                 // Clear search - reset to show all groups
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
@@ -57,48 +79,128 @@ function DatamodelViewContent() {
         updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })
         datamodelDataDispatch({ type: "SET_SEARCH", payload: searchValue.length >= 3 ? searchValue : "" });
         setCurrentSearchIndex(searchValue.length >= 3 ? 1 : 0); // Reset to first result when searching, 0 when cleared
-    }, [groups, datamodelDataDispatch]);
+    }, [groups, datamodelDataDispatch, restoreSection, entityFilters]);
 
     const handleLoadingChange = useCallback((isLoading: boolean) => {
         datamodelDispatch({ type: "SET_LOADING", payload: isLoading });
     }, [datamodelDispatch]);
+
+    // Helper function to sort results by their Y position on the page
+    const sortResultsByYPosition = useCallback((results: Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }>) => {
+        return results.sort((a, b) => {
+            // Get the actual DOM elements for attributes
+            const elementA = document.getElementById(`attr-${a.entity.SchemaName}-${a.attribute.SchemaName}`);
+            const elementB = document.getElementById(`attr-${b.entity.SchemaName}-${b.attribute.SchemaName}`);
+
+            // If both elements are found, compare their Y positions
+            if (elementA && elementB) {
+                const rectA = elementA.getBoundingClientRect();
+                const rectB = elementB.getBoundingClientRect();
+                return rectA.top - rectB.top;
+            }
+
+            // Fallback: if elements can't be found, maintain original order
+            return 0;
+        });
+    }, []);
+
+    // Get attribute results (not sorted initially)
+    const attributeResults = useMemo(() => {
+        return filtered.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
+            item.type === 'attribute'
+        );
+    }, [filtered]);
+
+    // Cached sorted results - only re-sort when attribute results change
+    const [cachedSortedResults, setCachedSortedResults] = useState<Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }>>([]);
+
+    // Update cached sorted results when attribute results change
+    useEffect(() => {
+        if (attributeResults.length > 0) {
+            // Wait a bit for DOM to settle, then sort and cache
+            const timeoutId = setTimeout(() => {
+                const sorted = sortResultsByYPosition([...attributeResults]);
+                setCachedSortedResults(sorted);
+            }, 200);
+
+            return () => clearTimeout(timeoutId);
+        } else {
+            setCachedSortedResults([]);
+        }
+    }, [attributeResults, sortResultsByYPosition]);
+
+    // Helper function to get sorted attribute results
+    const getSortedAttributeResults = useCallback(() => {
+        return cachedSortedResults;
+    }, [cachedSortedResults]);
 
     // Navigation handlers
     const handleNavigateNext = useCallback(() => {
         if (currentSearchIndex < totalResults) {
             const nextIndex = currentSearchIndex + 1;
             setCurrentSearchIndex(nextIndex);
-            
-            // Find the next entity in filtered results
-            const entityResults = filtered.filter(item => item.type === 'entity');
-            const nextEntity = entityResults[nextIndex - 1];
-            if (nextEntity) {
-                datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: nextEntity.entity.SchemaName });
-                datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: nextEntity.group.Name });
-                
-                // Scroll to the section
-                scrollToSection(nextEntity.entity.SchemaName);
+
+            // Get sorted attribute results
+            const sortedAttributeResults = getSortedAttributeResults();
+
+            // If we have attribute results, use them
+            if (sortedAttributeResults.length > 0) {
+                const nextResult = sortedAttributeResults[nextIndex - 1];
+                if (nextResult) {
+                    datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: nextResult.entity.SchemaName });
+                    datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: nextResult.group.Name });
+
+                    // Always scroll to the attribute since we only have attribute results
+                    scrollToAttribute(nextResult.entity.SchemaName, nextResult.attribute.SchemaName);
+                }
+            } else {
+                // Fallback to entity results if no attributes found (e.g., searching by entity name)
+                const entityResults = filtered.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
+                    item.type === 'entity'
+                );
+
+                const nextResult = entityResults[nextIndex - 1];
+                if (nextResult) {
+                    datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: nextResult.entity.SchemaName });
+                    datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: nextResult.group.Name });
+                    scrollToSection(nextResult.entity.SchemaName);
+                }
             }
         }
-    }, [currentSearchIndex, totalResults, filtered, datamodelDispatch, scrollToSection]);
+    }, [currentSearchIndex, totalResults, getSortedAttributeResults, filtered, datamodelDispatch, scrollToAttribute, scrollToSection]);
 
     const handleNavigatePrevious = useCallback(() => {
         if (currentSearchIndex > 1) {
             const prevIndex = currentSearchIndex - 1;
             setCurrentSearchIndex(prevIndex);
-            
-            // Find the previous entity in filtered results
-            const entityResults = filtered.filter(item => item.type === 'entity');
-            const prevEntity = entityResults[prevIndex - 1];
-            if (prevEntity) {
-                datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: prevEntity.entity.SchemaName });
-                datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: prevEntity.group.Name });
-                
-                // Scroll to the section
-                scrollToSection(prevEntity.entity.SchemaName);
+
+            // Get sorted attribute results
+            const sortedAttributeResults = getSortedAttributeResults();
+
+            // If we have attribute results, use them
+            if (sortedAttributeResults.length > 0) {
+                const prevResult = sortedAttributeResults[prevIndex - 1];
+                if (prevResult) {
+                    datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: prevResult.entity.SchemaName });
+                    datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: prevResult.group.Name });
+                    // Always scroll to the attribute since we only have attribute results
+                    scrollToAttribute(prevResult.entity.SchemaName, prevResult.attribute.SchemaName);
+                }
+            } else {
+                // Fallback to entity results if no attributes found (e.g., searching by entity name)
+                const entityResults = filtered.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
+                    item.type === 'entity'
+                );
+
+                const prevResult = entityResults[prevIndex - 1];
+                if (prevResult) {
+                    datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: prevResult.entity.SchemaName });
+                    datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: prevResult.group.Name });
+                    scrollToSection(prevResult.entity.SchemaName);
+                }
             }
         }
-    }, [currentSearchIndex, filtered, datamodelDispatch, scrollToSection]);
+    }, [currentSearchIndex, getSortedAttributeResults, filtered, datamodelDispatch, scrollToAttribute, scrollToSection]);
 
     useEffect(() => {
         if (!workerRef.current) {
@@ -115,7 +217,7 @@ function DatamodelViewContent() {
 
         const handleMessage = (e: MessageEvent) => {
             const message = e.data;
-            
+
             if (message.type === 'started') {
                 datamodelDispatch({ type: "SET_LOADING", payload: true });
                 // setSearchProgress(0);
@@ -123,56 +225,96 @@ function DatamodelViewContent() {
                 // Start with empty results to show loading state
                 accumulatedResultsRef.current = []; // Reset accumulated results
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: [] });
-            } 
+            }
             else if (message.type === 'results') {
                 // setSearchProgress(message.progress || 0);
-                
+
                 // Accumulate results in ref for immediate access
                 accumulatedResultsRef.current = [...accumulatedResultsRef.current, ...message.data];
-                
+
                 // For chunked results, always append to existing
                 datamodelDataDispatch({ type: "APPEND_FILTERED", payload: message.data });
-                
+
                 // Only handle completion logic when all chunks are received
                 if (message.complete) {
                     datamodelDispatch({ type: "SET_LOADING", payload: false });
                     // Set to first result if we have any and auto-navigate to it
-                    // Use accumulated results from ref for immediate access
-                    const allFilteredResults = accumulatedResultsRef.current.filter((item: { type: string }) => item.type === 'entity');
-                    if (allFilteredResults.length > 0) {
+                    // Prioritize attributes, fallback to entities
+                    const attributeResults = accumulatedResultsRef.current.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
+                        item.type === 'attribute'
+                    );
+
+                    if (attributeResults.length > 0) {
                         setCurrentSearchIndex(1);
-                        const firstEntity = allFilteredResults[0];
-                        datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstEntity.entity.SchemaName });
-                        datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstEntity.group.Name });
+                        // Use the first result from the array (will be sorted when user navigates)
+                        const firstResult = attributeResults[0];
+                        datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstResult.entity.SchemaName });
+                        datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstResult.group.Name });
                         // Small delay to ensure virtual list is ready
                         setTimeout(() => {
-                            scrollToSection(firstEntity.entity.SchemaName);
+                            // Always scroll to attribute since we have attribute results
+                            scrollToAttribute(firstResult.entity.SchemaName, firstResult.attribute.SchemaName);
                         }, 100);
+                    } else {
+                        // Fallback to entity results
+                        const entityResults = accumulatedResultsRef.current.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
+                            item.type === 'entity'
+                        );
+
+                        if (entityResults.length > 0) {
+                            setCurrentSearchIndex(1);
+                            const firstResult = entityResults[0];
+                            datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstResult.entity.SchemaName });
+                            datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstResult.group.Name });
+                            setTimeout(() => {
+                                scrollToSection(firstResult.entity.SchemaName);
+                            }, 100);
+                        }
                     }
                 }
             }
             else {
                 // Handle legacy format for backward compatibility
-                datamodelDataDispatch({ type: "SET_FILTERED", payload: message });
+                const messageData = message as SearchResultItem[];
+                datamodelDataDispatch({ type: "SET_FILTERED", payload: messageData });
                 datamodelDispatch({ type: "SET_LOADING", payload: false });
-                // Set to first result if we have any and auto-navigate to it
-                const entityResults = message.filter((item: { type: string }) => item.type === 'entity');
-                if (entityResults.length > 0) {
+                // Set to first result if we have any and auto-navigate to it - prioritize attributes
+                const attributeResults = messageData.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
+                    item.type === 'attribute'
+                );
+
+                if (attributeResults.length > 0) {
                     setCurrentSearchIndex(1);
-                    const firstEntity = entityResults[0];
-                    datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstEntity.entity.SchemaName });
-                    datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstEntity.group.Name });
+                    const firstResult = attributeResults[0];
+                    datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstResult.entity.SchemaName });
+                    datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstResult.group.Name });
                     // Small delay to ensure virtual list is ready
                     setTimeout(() => {
-                        scrollToSection(firstEntity.entity.SchemaName);
+                        // Always scroll to attribute since we have attribute results
+                        scrollToAttribute(firstResult.entity.SchemaName, firstResult.attribute.SchemaName);
                     }, 100);
+                } else {
+                    // Fallback to entity results
+                    const entityResults = messageData.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
+                        item.type === 'entity'
+                    );
+
+                    if (entityResults.length > 0) {
+                        setCurrentSearchIndex(1);
+                        const firstResult = entityResults[0];
+                        datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstResult.entity.SchemaName });
+                        datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstResult.group.Name });
+                        setTimeout(() => {
+                            scrollToSection(firstResult.entity.SchemaName);
+                        }, 100);
+                    }
                 }
             }
         };
 
         worker.addEventListener("message", handleMessage);
         return () => worker.removeEventListener("message", handleMessage);
-    }, [datamodelDispatch, datamodelDataDispatch, groups]);
+    }, [datamodelDispatch, datamodelDataDispatch, groups, scrollToSection, scrollToAttribute]);
 
     if (!groups) {
         return (
@@ -206,8 +348,8 @@ function DatamodelViewContent() {
                         />
                     </div>
                 )} */}
-                <TimeSlicedSearch 
-                    onSearch={handleSearch} 
+                <TimeSlicedSearch
+                    onSearch={handleSearch}
                     onLoadingChange={handleLoadingChange}
                     onNavigateNext={handleNavigateNext}
                     onNavigatePrevious={handleNavigatePrevious}

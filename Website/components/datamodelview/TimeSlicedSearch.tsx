@@ -229,6 +229,13 @@ export const TimeSlicedSearch = ({
     setAnchorEl(null);
   };
 
+  // Close menu when focus moves back to search input or elsewhere
+  const handleSearchFocus = () => {
+    if (open) {
+      setAnchorEl(null);
+    }
+  };
+
   const searchInput = (
     <Box className={`fixed top-20 right-0 z-50 transition-opacity bg-transparent duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       <Paper component="form" className='p-1 rounded-lg flex items-center w-[320px]' sx={{ backgroundColor: 'background.paper' }}>
@@ -245,6 +252,7 @@ export const TimeSlicedSearch = ({
           aria-label="Search attributes in tables"
           value={localValue}
           onChange={handleChange}
+          onFocus={handleSearchFocus}
           spellCheck={false}
           autoComplete="off"
           autoCapitalize="off"
@@ -254,11 +262,15 @@ export const TimeSlicedSearch = ({
         <InputAdornment position="end">
           {isTyping && localValue.length >= 3 ? (
             <CircularProgress size={20} />
-          ) : localValue ? (
-            <Box className="flex flex-col items-center px-2 justify-center h-full">
-              <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{currentIndex}</Typography>
-              <Typography variant='caption' color="text.secondary" className='leading-none p-0 m-0'>{totalResults}</Typography>
-            </Box>
+          ) : localValue && totalResults !== undefined && totalResults > 0 ? (
+            <Typography
+              variant='caption'
+              color="text.secondary"
+              className='px-2 font-mono'
+              sx={{ minWidth: '40px', textAlign: 'center' }}
+            >
+              {currentIndex}/{totalResults}
+            </Typography>
           ) : null}
         </InputAdornment>
 
