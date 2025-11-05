@@ -15,7 +15,7 @@ import StatusAttribute from "./attributes/StatusAttribute"
 import StringAttribute from "./attributes/StringAttribute"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
-import { Box, Button, FormControl, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, useTheme } from "@mui/material"
+import { Box, Button, FormControl, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography, useTheme } from "@mui/material"
 import { ClearRounded, SearchRounded, Visibility, VisibilityOff, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
 
 type SortDirection = 'asc' | 'desc' | null
@@ -213,20 +213,21 @@ export const Attributes = ({ entity, search = "" }: IAttributeProps) => {
                         ))}
                     </Select>
                 </FormControl>
-                <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setHideStandardFields(!hideStandardFields)}
-                    title="Control customfields"
-                    className="min-w-0 p-0 h-8 w-8 md:h-10 md:w-10"
-                    sx={{
-                        borderColor: 'border.main'
-                    }}
-                >
-                    {
-                        hideStandardFields ? <VisibilityOff className="text-xs md:text-base" /> : <Visibility className="text-xs md:text-base" />
-                    }
-                </Button>
+                <Tooltip title={hideStandardFields ? "Show standard columns" : "Hide standard columns"}>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setHideStandardFields(!hideStandardFields)}
+                        className="min-w-0 p-0 h-8 w-8 md:h-10 md:w-10"
+                        sx={{
+                            borderColor: 'border.main'
+                        }}
+                    >
+                        {
+                            hideStandardFields ? <VisibilityOff className="text-xs md:text-base" /> : <Visibility className="text-xs md:text-base" />
+                        }
+                    </Button>
+                </Tooltip>
                 {(searchQuery || typeFilter !== "all") && (
                     <Button
                         variant="text"
