@@ -20,9 +20,19 @@ interface ISectionProps {
 export const Section = React.memo(
     ({ entity, group, search }: ISectionProps) => {
         const [tab, setTab] = React.useState(0);
+        const [visibleAttributeCount, setVisibleAttributeCount] = React.useState(entity.Attributes.length);
+        const [visibleRelationshipCount, setVisibleRelationshipCount] = React.useState(entity.Relationships.length);
 
         const handleTabChange = React.useCallback((event: React.SyntheticEvent, newValue: number) => {
             setTab(newValue);
+        }, []);
+
+        const handleVisibleAttributeCountChange = React.useCallback((count: number) => {
+            setVisibleAttributeCount(count);
+        }, []);
+
+        const handleVisibleRelationshipCountChange = React.useCallback((count: number) => {
+            setVisibleRelationshipCount(count);
         }, []);
 
         return (
@@ -53,7 +63,7 @@ export const Section = React.memo(
                                     label={
                                         <div className="flex items-center min-w-[120px] sm:min-w-[140px] px-2 py-1 text-xs sm:text-sm">
                                             <SellRounded className="mr-2 h-4 w-4 shrink-0" />
-                                            <span className="truncate">Attributes [{entity.Attributes.length}]</span>
+                                            <span className="truncate">Attributes [{visibleAttributeCount}]</span>
                                         </div>
                                     }
                                 />
@@ -62,7 +72,7 @@ export const Section = React.memo(
                                         label={
                                             <div className="flex items-center min-w-[140px] sm:min-w-[160px] px-2 py-1 text-xs sm:text-sm">
                                                 <ShareRounded className="mr-2 h-4 w-4 shrink-0" />
-                                                <span className="truncate">Relationships [{entity.Relationships.length}]</span>
+                                                <span className="truncate">Relationships [{visibleRelationshipCount}]</span>
                                             </div>
                                         }
                                     />
@@ -80,11 +90,11 @@ export const Section = React.memo(
                             </Tabs>
 
                             <CustomTabPanel value={tab} index={0} className="m-0 p-0">
-                                <Attributes entity={entity} search={search} />
+                                <Attributes entity={entity} search={search} onVisibleCountChange={handleVisibleAttributeCountChange} />
                             </CustomTabPanel>
                             {entity.Relationships.length > 0 && (
                                 <CustomTabPanel value={tab} index={entity.Keys.length > 0 ? 1 : 1} className="m-0 p-0">
-                                    <Relationships entity={entity} search={search} />
+                                    <Relationships entity={entity} search={search} onVisibleCountChange={handleVisibleRelationshipCountChange} />
                                 </CustomTabPanel>
                             )}
                             {entity.Keys.length > 0 && (

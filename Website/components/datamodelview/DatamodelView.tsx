@@ -3,7 +3,6 @@
 import { useSidebar } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
-import { SearchPerformanceProvider } from "@/contexts/SearchPerformanceContext";
 import { List } from "./List";
 import { TimeSlicedSearch } from "./TimeSlicedSearch";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -21,9 +20,7 @@ export function DatamodelView() {
     }, [setElement]);
 
     return (
-        <SearchPerformanceProvider>
-            <DatamodelViewContent />
-        </SearchPerformanceProvider>
+        <DatamodelViewContent />
     );
 }
 
@@ -64,7 +61,7 @@ function DatamodelViewContent() {
         updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })
         datamodelDataDispatch({ type: "SET_SEARCH", payload: searchValue.length >= 3 ? searchValue : "" });
         setCurrentSearchIndex(searchValue.length >= 3 ? 1 : 0); // Reset to first result when searching, 0 when cleared
-    }, [groups, datamodelDataDispatch]);
+    }, [groups, datamodelDataDispatch, restoreSection]);
 
     const handleLoadingChange = useCallback((isLoading: boolean) => {
         datamodelDispatch({ type: "SET_LOADING", payload: isLoading });

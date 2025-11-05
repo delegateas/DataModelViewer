@@ -1,7 +1,7 @@
 'use client'
 
 import { EntityType, AttributeType } from "@/lib/Types"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AttributeDetails } from "./entity/AttributeDetails"
 import BooleanAttribute from "./attributes/BooleanAttribute"
 import ChoiceAttribute from "./attributes/ChoiceAttribute"
@@ -24,9 +24,10 @@ type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
 interface IAttributeProps {
     entity: EntityType
     search?: string
+    onVisibleCountChange?: (count: number) => void
 }
 
-export const Attributes = ({ entity, search = "" }: IAttributeProps) => {
+export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttributeProps) => {
     const [sortColumn, setSortColumn] = useState<SortColumn>("displayName")
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -130,6 +131,11 @@ export const Attributes = ({ entity, search = "" }: IAttributeProps) => {
 
     const sortedAttributes = getSortedAttributes();
     const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
+
+    // Notify parent of visible count changes
+    useEffect(() => {
+        onVisibleCountChange?.(sortedAttributes.length);
+    }, [sortedAttributes.length, onVisibleCountChange]);
 
     const SortIcon = ({ column }: { column: SortColumn }) => {
         if (sortColumn !== column) return <ArrowUpwardRounded className="ml-2 h-4 w-4" />
