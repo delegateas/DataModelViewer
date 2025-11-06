@@ -4,7 +4,7 @@ import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
 import { AddCircleOutlineRounded, BadgeRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, KeyRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
 import { Box, Link, Tooltip, Typography } from "@mui/material";
 
-export function AttributeDetails({ entityName, attribute }: { entityName: string, attribute: AttributeType }) {
+export function AttributeDetails({ entityName, attribute, isEntityAuditEnabled }: { entityName: string, attribute: AttributeType, isEntityAuditEnabled: boolean }) {
     const details = [];
 
     if (attribute.IsPrimaryId) {
@@ -35,7 +35,16 @@ export function AttributeDetails({ entityName, attribute }: { entityName: string
     }
 
     if (attribute.IsAuditEnabled) {
-        details.push({ icon: <VisibilityRounded className="h-4 w-4" />, tooltip: "Audit Enabled" });
+        const hasAuditConflict = !isEntityAuditEnabled;
+        const iconColor = hasAuditConflict ? "error" : "inherit";
+        const tooltipText = hasAuditConflict
+            ? "Audit enabled on this column but not on the table, so it won't be in effect"
+            : "Audit Enabled";
+
+        details.push({
+            icon: <VisibilityRounded className="h-4 w-4" color={iconColor} />,
+            tooltip: tooltipText
+        });
     }
 
     if (attribute.IsColumnSecured) {
