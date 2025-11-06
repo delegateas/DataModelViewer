@@ -53,33 +53,33 @@ function SecurityRoleRow({ role }: { role: SecurityRole }) {
                     alignItems: 'flex-end' 
                 }}
             >
-                <PrivilegeIcon name="Create" depth={role.Create} />
-                <PrivilegeIcon name="Read" depth={role.Read} />
-                <PrivilegeIcon name="Write" depth={role.Write} />
-                <PrivilegeIcon name="Delete" depth={role.Delete} />
-                <PrivilegeIcon name="Append" depth={role.Append} />
-                <PrivilegeIcon name="Append To" depth={role.AppendTo} />
-                <PrivilegeIcon name="Assign" depth={role.Assign} />
-                <PrivilegeIcon name="Share" depth={role.Share} />
+                <PrivilegeIcon privilege="Create" name="Create" depth={role.Create} />
+                <PrivilegeIcon privilege="Read" name="Read" depth={role.Read} />
+                <PrivilegeIcon privilege="Write" name="Write" depth={role.Write} />
+                <PrivilegeIcon privilege="Delete" name="Delete" depth={role.Delete} />
+                <PrivilegeIcon privilege="Append" name="Append" depth={role.Append} />
+                <PrivilegeIcon privilege="AppendTo" name="Append To" depth={role.AppendTo} />
+                <PrivilegeIcon privilege="Assign" name="Assign" depth={role.Assign} />
+                <PrivilegeIcon privilege="Share" name="Share" depth={role.Share} />
             </Box>
         </Paper>
     );
 }
 
-function PrivilegeIcon({ name, depth }: { name: string, depth: PrivilegeDepth | null }) {
+function PrivilegeIcon({ privilege, name, depth }: { privilege: string, name: string, depth: PrivilegeDepth | null }) {
     return (
-        <Box 
-            sx={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                minWidth: '60px', 
-                maxWidth: '80px' 
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                minWidth: '60px',
+                maxWidth: '80px'
             }}
         >
-            <Typography 
+            <Typography
                 variant="caption"
-                sx={{ 
+                sx={{
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     textAlign: 'center',
                     color: 'text.secondary',
@@ -91,41 +91,69 @@ function PrivilegeIcon({ name, depth }: { name: string, depth: PrivilegeDepth | 
             >
                 {name}
             </Typography>
-            <GetDepthIcon depth={depth} />
+            <GetDepthIcon privilege={privilege} depth={depth} />
         </Box>
     );
 }
 
-function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
+function GetDepthIcon({ privilege, depth }: { privilege: string, depth: PrivilegeDepth | null }) {
     const theme = useTheme();
-    
+
     let icon = null;
     let tooltip = "";
 
+    // Generate context-aware tooltip based on privilege type and depth
+    const getTooltipText = (priv: string, d: PrivilegeDepth): string => {
+        const depthDescriptions: Record<PrivilegeDepth, string> = {
+            [PrivilegeDepth.None]: "No access",
+            [PrivilegeDepth.Basic]: "User - Only records owned by the user",
+            [PrivilegeDepth.Local]: "Business Unit - Records owned by the user's business unit",
+            [PrivilegeDepth.Deep]: "Parent: Child Business Units - Records owned by the user's business unit and all child business units",
+            [PrivilegeDepth.Global]: "Organization - All records in the organization"
+        };
+
+        const privilegeDescriptions: Record<string, string> = {
+            "Create": "Create new records",
+            "Read": "View records",
+            "Write": "Modify existing records",
+            "Delete": "Remove records",
+            "Append": "Attach other records to this record (e.g., add notes, activities)",
+            "AppendTo": "Attach this record to other records (e.g., be selected in a lookup)",
+            "Assign": "Change the owner of records",
+            "Share": "Share records with other users or teams"
+        };
+
+        if (d === PrivilegeDepth.None) {
+            return `${privilegeDescriptions[priv] || priv}: ${depthDescriptions[d]}`;
+        }
+
+        return `${privilegeDescriptions[priv] || priv}\n${depthDescriptions[d]}`;
+    };
+
     if (depth === null || depth === undefined) {
         icon = <RemoveRounded style={{ height: '16px', width: '16px', color: theme.palette.text.primary }} />;
-        tooltip = "Unavailable";
+        tooltip = "This privilege is not available for this entity";
     } else {
         switch (depth) {
             case PrivilegeDepth.None:
                 icon = <BlockRounded style={{ height: '16px', width: '16px', color: theme.palette.error.main }} />;
-                tooltip = "None";
+                tooltip = getTooltipText(privilege, depth);
                 break;
             case PrivilegeDepth.Basic:
                 icon = <PersonRounded style={{ height: '16px', width: '16px', color: theme.palette.text.secondary }} />;
-                tooltip = "User";
+                tooltip = getTooltipText(privilege, depth);
                 break;
             case PrivilegeDepth.Local:
                 icon = <PeopleRounded style={{ height: '16px', width: '16px', color: theme.palette.text.secondary }} />;
-                tooltip = "Business Unit";
+                tooltip = getTooltipText(privilege, depth);
                 break;
             case PrivilegeDepth.Deep:
                 icon = <AccountTreeRounded style={{ height: '16px', width: '16px', color: theme.palette.info.main }} />;
-                tooltip = "Parent: Child Business Units";
+                tooltip = getTooltipText(privilege, depth);
                 break;
             case PrivilegeDepth.Global:
                 icon = <BusinessRounded style={{ height: '16px', width: '16px', color: theme.palette.success.main }} />;
-                tooltip = "Organization";
+                tooltip = getTooltipText(privilege, depth);
                 break;
             default:
                 return null;
@@ -133,7 +161,19 @@ function GetDepthIcon({ depth }: { depth: PrivilegeDepth | null }) {
     }
 
     return (
-        <Tooltip title={tooltip}>
+        <Tooltip
+            title={tooltip}
+            placement="top"
+            slotProps={{
+                tooltip: {
+                    sx: {
+                        whiteSpace: 'pre-line',
+                        maxWidth: '300px',
+                        textAlign: 'center'
+                    }
+                }
+            }}
+        >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {icon}
             </Box>
