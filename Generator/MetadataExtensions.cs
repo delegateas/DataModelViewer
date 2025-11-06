@@ -20,15 +20,25 @@ public static class MetadataExtensions
             .Replace("\"", @"”")
             .Replace("\n", " ");
 
-    public static bool StandardFieldHasChanged(this AttributeMetadata attribute, string entityDisplayName)
+    public static bool StandardFieldHasChanged(this AttributeMetadata attribute, string entityDisplayName, bool isCustomEntity)
     {
         if (attribute.IsCustomAttribute ?? false) return false;
 
         var languagecode = attribute.DisplayName.UserLocalizedLabel?.LanguageCode;
 
         var fields = GetDefaultFields(entityDisplayName, languagecode);
-        return fields.StandardDescriptionHasChanged(attribute.LogicalName, attribute.Description.UserLocalizedLabel?.Label ?? string.Empty)
+        var hasTextChanged = fields.StandardDescriptionHasChanged(attribute.LogicalName, attribute.Description.UserLocalizedLabel?.Label ?? string.Empty)
             || fields.StandardDisplayNameHasChanged(attribute.LogicalName, attribute.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
+
+        // Check if options have been added to statecode or statuscode
+        var hasOptionsChanged = attribute switch
+        {
+            StateAttributeMetadata state => StateCodeOptionsHaveChanged(state),
+            StatusAttributeMetadata status => StatusCodeOptionsHaveChanged(status),
+            _ => false
+        };
+
+        return hasTextChanged || hasOptionsChanged;
     }
 
     private static bool StandardDisplayNameHasChanged(this IEnumerable<(string LogicalName, string DisplayName, string Description)> fields, string logicalName, string displayName)
@@ -43,6 +53,16 @@ public static class MetadataExtensions
         return !fields
             .Where(f => f.LogicalName == logicalName)
             .Any(f => description.Equals(f.Description));
+    }
+
+    private static bool StateCodeOptionsHaveChanged(StateAttributeMetadata state)
+    {
+        return state.OptionSet?.Options?.Count > 2;
+    }
+
+    private static bool StatusCodeOptionsHaveChanged(StatusAttributeMetadata status)
+    {
+        return status.OptionSet?.Options?.Count > 2;
     }
 
     private static IEnumerable<(string LogicalName, string DisplayName, string Description)> GetDefaultFields(string entityDisplayName, int? languageCode)

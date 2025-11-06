@@ -41,7 +41,7 @@ export const Section = React.memo(
                     <Box className="flex flex-col xl:flex-row min-w-0 p-6">
                         <EntityHeader entity={entity} />
                         {entity.SecurityRoles.length > 0 && (
-                            <div className="md:w-full xl:w-2/3 xl:pl-6 xl:border-l md:border-t xl:border-t-0 border-gray-100 mt-6 xl:mt-0 pt-6 xl:pt-0">
+                            <div className="md:w-full xl:w-2/3 md:border-t xl:border-t-0 mt-6 xl:mt-0 xl:pt-0">
                                 <SecurityRoles roles={entity.SecurityRoles} />
                             </div>
                         )}

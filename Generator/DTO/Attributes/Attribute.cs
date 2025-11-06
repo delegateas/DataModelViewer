@@ -7,6 +7,7 @@ public abstract class Attribute
     public bool IsStandardFieldModified { get; set; }
     public bool IsCustomAttribute { get; set; }
     public bool IsPrimaryId { get; set; }
+    public bool IsPrimaryName { get; set; }
     public List<AttributeUsage> AttributeUsages { get; set; } = new List<AttributeUsage>();
     public string DisplayName { get; }
     public string SchemaName { get; }
@@ -20,6 +21,7 @@ public abstract class Attribute
     protected Attribute(AttributeMetadata metadata)
     {
         IsPrimaryId = metadata.IsPrimaryId ?? false;
+        IsPrimaryName = metadata.IsPrimaryName ?? false;
         IsCustomAttribute = metadata.IsCustomAttribute ?? false;
         DisplayName = metadata.DisplayName.UserLocalizedLabel?.Label ?? string.Empty;
         SchemaName = metadata.SchemaName;

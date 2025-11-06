@@ -1,11 +1,19 @@
 'use client'
 
 import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
-import { AddCircleOutlineRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
+import { AddCircleOutlineRounded, BadgeRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, KeyRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
 import { Box, Link, Tooltip, Typography } from "@mui/material";
 
-export function AttributeDetails({ entityName, attribute }: { entityName: string, attribute: AttributeType }) {
+export function AttributeDetails({ entityName, attribute, isEntityAuditEnabled }: { entityName: string, attribute: AttributeType, isEntityAuditEnabled: boolean }) {
     const details = [];
+
+    if (attribute.IsPrimaryId) {
+        details.push({ icon: <KeyRounded className="h-4 w-4" />, tooltip: "Primary ID" });
+    }
+
+    if (attribute.IsPrimaryName) {
+        details.push({ icon: <BadgeRounded className="h-4 w-4" />, tooltip: "Primary Name" });
+    }
 
     switch (attribute.RequiredLevel) {
         case RequiredLevel.SystemRequired:
@@ -27,7 +35,16 @@ export function AttributeDetails({ entityName, attribute }: { entityName: string
     }
 
     if (attribute.IsAuditEnabled) {
-        details.push({ icon: <VisibilityRounded className="h-4 w-4" />, tooltip: "Audit Enabled" });
+        const hasAuditConflict = !isEntityAuditEnabled;
+        const iconColor = hasAuditConflict ? "error" : "inherit";
+        const tooltipText = hasAuditConflict
+            ? "Audit enabled on this column but not on the table, so it won't be in effect"
+            : "Audit Enabled";
+
+        details.push({
+            icon: <VisibilityRounded className="h-4 w-4" color={iconColor} />,
+            tooltip: tooltipText
+        });
     }
 
     if (attribute.IsColumnSecured) {

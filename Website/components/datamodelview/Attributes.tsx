@@ -411,7 +411,7 @@ export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttri
                                         {highlightMatch(attribute.SchemaName, highlightTerm)}
                                     </TableCell>
                                     <TableCell className="break-words py-1 md:py-1.5">{getAttributeComponent(entity, attribute, highlightMatch, highlightTerm)}</TableCell>
-                                    <TableCell className="py-1 md:py-1.5"><AttributeDetails entityName={entity.SchemaName} attribute={attribute} /></TableCell>
+                                    <TableCell className="py-1 md:py-1.5"><AttributeDetails entityName={entity.SchemaName} attribute={attribute} isEntityAuditEnabled={entity.IsAuditEnabled} /></TableCell>
                                     <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
                                         {highlightMatch(attribute.Description ?? "", highlightTerm)}
                                     </TableCell>
