@@ -623,6 +623,54 @@ useEffect(() => {
    ```
 4. Verify [Website/generated/Data.ts](Website/generated/Data.ts) output
 
+## 🔍 Customization Detection
+
+### Standard Field Detection ([MetadataExtensions.cs](Generator/MetadataExtensions.cs))
+
+The application identifies whether attributes are standard (out-of-box) or customized using multiple checks:
+
+**Detection Logic**:
+
+1. **IsCustomAttribute Check**: If `attribute.IsCustomAttribute = true`, it's entirely custom
+2. **Display Name/Description Check**: Compares against language-specific defaults (English, Danish)
+3. **Choice Options Check** (NEW for statecode/statuscode):
+   - Checks if any option in the OptionSet has `IsManaged = false`
+   - Unmanaged options indicate custom choices have been added
+   - Works reliably for both custom and standard entities
+
+**Implementation**:
+```csharp
+public static bool StandardFieldHasChanged(
+    AttributeMetadata attribute,
+    string entityDisplayName,
+    bool isCustomEntity)
+{
+    // Check text changes
+    var hasTextChanged = fields.StandardDescriptionHasChanged(...)
+        || fields.StandardDisplayNameHasChanged(...);
+
+    // Check option changes for statecode/statuscode
+    var hasOptionsChanged = attribute switch
+    {
+        StateAttributeMetadata state => StateCodeOptionsHaveChanged(state),
+        StatusAttributeMetadata status => StatusCodeOptionsHaveChanged(status),
+        _ => false
+    };
+
+    return hasTextChanged || hasOptionsChanged;
+}
+
+private static bool StateCodeOptionsHaveChanged(StateAttributeMetadata state)
+{
+    // Check if any options are unmanaged (custom)
+    return state.OptionSet?.Options?.Any(opt => opt.IsManaged == false) ?? false;
+}
+```
+
+**Frontend Usage**:
+- Fields marked with `IsStandardFieldModified = true` are shown when "Hide standard fields" is OFF
+- Enables users to see which entities have custom status/state options added
+
 ## 🐛 Debugging Tips
 
 ### Generator Issues

@@ -339,7 +339,7 @@ namespace Generator
                 .Select(metadata =>
                 {
                     var attr = GetAttribute(metadata, entity, logicalToSchema, attributeUsages, logger);
-                    attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
+                    attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty, entity.IsCustomEntity ?? false);
                     return attr;
                 })
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
