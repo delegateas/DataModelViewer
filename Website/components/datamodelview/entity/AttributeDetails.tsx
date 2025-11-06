@@ -1,11 +1,19 @@
 'use client'
 
 import { AttributeType, CalculationMethods, RequiredLevel } from "@/lib/Types";
-import { AddCircleOutlineRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
+import { AddCircleOutlineRounded, BadgeRounded, CalculateRounded, ElectricBoltRounded, ErrorRounded, FunctionsRounded, KeyRounded, LockRounded, VisibilityRounded } from "@mui/icons-material";
 import { Box, Link, Tooltip, Typography } from "@mui/material";
 
 export function AttributeDetails({ entityName, attribute }: { entityName: string, attribute: AttributeType }) {
     const details = [];
+
+    if (attribute.IsPrimaryId) {
+        details.push({ icon: <KeyRounded className="h-4 w-4" />, tooltip: "Primary ID" });
+    }
+
+    if (attribute.IsPrimaryName) {
+        details.push({ icon: <BadgeRounded className="h-4 w-4" />, tooltip: "Primary Name" });
+    }
 
     switch (attribute.RequiredLevel) {
         case RequiredLevel.SystemRequired:

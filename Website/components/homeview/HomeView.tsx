@@ -57,14 +57,14 @@ export const HomeView = ({ }: IHomeViewProps) => {
 
     const goToPrevious = () => {
         setSlideDirection('left');
-        setCurrentCarouselIndex((prevIndex) => 
+        setCurrentCarouselIndex((prevIndex) =>
             prevIndex === 0 ? carouselItems.length - 1 : prevIndex - 1
         );
     };
 
     const goToNext = () => {
         setSlideDirection('right');
-        setCurrentCarouselIndex((prevIndex) => 
+        setCurrentCarouselIndex((prevIndex) =>
             prevIndex === carouselItems.length - 1 ? 0 : prevIndex + 1
         );
     };
@@ -90,10 +90,10 @@ export const HomeView = ({ }: IHomeViewProps) => {
     }, []);
 
     return (
-        <Box className="p-4" style={{ height: 'calc(100vh - var(--layout-header-desktop-height))'}}>
-            <Grid container spacing={2}>
+        <Box style={{ height: 'calc(100vh - var(--layout-header-desktop-height))' }}>
+            <Grid container spacing={2} className="p-4">
                 <Grid size={{ xs: 12, md: 8 }}>
-                    <Box 
+                    <Box
                         className='rounded-2xl flex w-full h-96 bg-cover bg-center bg-no-repeat'
                         sx={{
                             backgroundImage: `
@@ -101,19 +101,19 @@ export const HomeView = ({ }: IHomeViewProps) => {
                                 url(/welcomeback-data-stockimage.webp)
                             `
                         }}>
-                            <Box className="relative z-10 flex flex-col justify-center h-full p-8 text-white md:w-1/2 w-full">
-                                <Typography variant='h1' className="text-4xl font-bold mb-4">Welcome back!</Typography>
-                                <Typography variant='body1' className="text-md text-gray-300">Explore your metadata model with ease. If this is your first time using Data Model Viewer, make sure to check out the documentation on Git.</Typography>
-                                <Button href='/metadata' size='small' variant='contained' color='primary' className='text-white py-2 mt-4 rounded-lg transition-colors shadow-sm w-32'>Explore Now</Button>
-                            </Box>
+                        <Box className="relative z-10 flex flex-col justify-center h-full p-8 text-white md:w-1/2 w-full">
+                            <Typography variant='h1' className="text-4xl font-bold mb-4">Welcome back!</Typography>
+                            <Typography variant='body1' className="text-md text-gray-300">Explore your metadata model with ease. If this is your first time using Data Model Viewer, make sure to check out the documentation on Git.</Typography>
+                            <Button href='/metadata' size='small' variant='contained' color='primary' className='text-white py-2 mt-4 rounded-lg transition-colors shadow-sm w-32'>Explore Now</Button>
+                        </Box>
                     </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <NotchedBox 
+                    <NotchedBox
                         notchContent={
                             <Box className="flex items-center gap-1 bg-transparent">
                                 <IconButton size="medium" onClick={goToPrevious}>
-                                    <ChevronLeftRounded/>
+                                    <ChevronLeftRounded />
                                 </IconButton>
                                 <IconButton size="medium" onClick={goToNext}>
                                     <ChevronRightRounded />
@@ -123,7 +123,7 @@ export const HomeView = ({ }: IHomeViewProps) => {
                         backgroundImage={carouselItems[currentCarouselIndex]?.image}
                         className='h-96'
                     >
-                        <Carousel 
+                        <Carousel
                             items={carouselItems}
                             currentIndex={currentCarouselIndex}
                             slideDirection={slideDirection}

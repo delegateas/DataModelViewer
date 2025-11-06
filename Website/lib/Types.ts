@@ -98,6 +98,7 @@ export type UsageType = {
 export type BaseAttribute = {
     AttributeUsages: UsageType[];
     IsPrimaryId: boolean;
+    IsPrimaryName: boolean;
     IsCustomAttribute: boolean;
     IsStandardFieldModified: boolean;
     DisplayName: string,

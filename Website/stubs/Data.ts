@@ -23,7 +23,25 @@ export let Groups: GroupType[] = [
         "Attributes": [
           {
             "AttributeType": "StringAttribute",
+            "IsPrimaryId": true,
+            "IsPrimaryName": false,
+            "IsCustomAttribute": false,
+            "IsStandardFieldModified": false,
+            "DisplayName": "Account ID",
+            "SchemaName": "accountid",
+            "Description": "Unique identifier for the account",
+            "RequiredLevel": 3,
+            "IsAuditEnabled": false,
+            "IsColumnSecured": false,
+            "CalculationMethod": null,
+            "Format": "Text",
+            "MaxLength": 100,
+            "AttributeUsages": []
+          },
+          {
+            "AttributeType": "StringAttribute",
             "IsPrimaryId": false,
+            "IsPrimaryName": true,
             "IsCustomAttribute": true,
             "IsStandardFieldModified": false,
             "DisplayName": "Account Name",
@@ -40,6 +58,7 @@ export let Groups: GroupType[] = [
           {
             "AttributeType": "StringAttribute",
             "IsPrimaryId": false,
+            "IsPrimaryName": false,
             "IsCustomAttribute": true,
             "IsStandardFieldModified": false,
             "DisplayName": "Phone",
@@ -56,6 +75,7 @@ export let Groups: GroupType[] = [
           {
             "AttributeType": "LookupAttribute",
             "IsPrimaryId": false,
+            "IsPrimaryName": false,
             "IsCustomAttribute": true,
             "IsStandardFieldModified": false,
             "DisplayName": "Primary Contact",
