@@ -1,17 +1,11 @@
-import { Box, Tooltip, Typography, Grid, TextField, Divider, Alert } from '@mui/material';
+import { Box, Typography, TextField, Divider, Alert, Button } from '@mui/material';
 import React, { useState } from 'react';
 import { EntitySelectionPane } from './panes/EntitySelectionPane';
 import { useDiagramView } from '@/contexts/DiagramViewContext';
+import { Add as AddIcon } from '@mui/icons-material';
 
 interface ISidebarDiagramViewProps {
 
-}
-
-interface DiagramTool {
-    id: string;
-    label: string;
-    icon: React.ReactNode;
-    action: () => void;
 }
 
 export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
@@ -31,18 +25,9 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
         setDiagramName(event.target.value);
     };
 
-    const diagramTools: DiagramTool[] = [
-        {
-            id: 'add-entity',
-            label: 'Add Entity',
-            icon: <Box className="rounded-md border flex items-center justify-center h-6" sx={{ borderColor: 'text.primary' }}></Box>,
-            action: handleAddEntity
-        },
-    ];
-
     return (
         <Box className="w-full h-full flex flex-col justify-between">
-            <Box className="max-h-16 h-16 p-4 border-b" sx={{ borderColor: 'border.main' }}>
+            <Box className="p-4 border-b" sx={{ borderColor: 'border.main' }}>
                 <TextField
                     fullWidth
                     size="small"
@@ -54,37 +39,38 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 />
             </Box>
 
-            <Box className="p-4 flex-grow flex flex-col" gap={2}>
+            <Box className="p-4 flex-grow flex flex-col" gap={3}>
 
-                <Alert severity='warning'>The diagram tool is still under development.</Alert>
+                <Alert severity='warning' sx={{ fontSize: '13px' }}>
+                    The diagram tool is still under development.
+                </Alert>
 
-                <Typography variant='body1'>
-                    Metadata Elements
-                </Typography>
+                <Box>
+                    <Typography variant='subtitle2' sx={{ fontWeight: 600, mb: 1.5 }}>
+                        Diagram Elements
+                    </Typography>
 
-                <Divider />
+                    <Divider sx={{ mb: 2 }} />
 
-                <Grid container spacing={1}>
-                    {diagramTools.map((tool) => (
-                        <Grid size={3} key={tool.id}>
-                            <Tooltip title={tool.label} placement="top">
-                                <Box
-                                    onClick={tool.action}
-                                    className='hover:cursor-pointer w-full h-full'
-                                    sx={{ color: "primary.main", backgroundColor: "transparent" }}
-                                >
-                                    {tool.icon}
-                                </Box>
-                            </Tooltip>
-                        </Grid>
-                    ))}
-                </Grid>
-
-                <Typography variant='body1' className='mt-8'>
-                    Elements
-                </Typography>
-
-                <Divider />
+                    <Button
+                        variant="outlined"
+                        fullWidth
+                        startIcon={<AddIcon />}
+                        onClick={handleAddEntity}
+                        sx={{
+                            textTransform: 'none',
+                            justifyContent: 'flex-start',
+                            py: 1.5,
+                            borderStyle: 'dashed',
+                            '&:hover': {
+                                borderStyle: 'dashed',
+                                backgroundColor: 'action.hover'
+                            }
+                        }}
+                    >
+                        Add Entity to Diagram
+                    </Button>
+                </Box>
 
                 <EntitySelectionPane
                     open={entityPaneOpen}
@@ -92,14 +78,19 @@ export const SidebarDiagramView = ({ }: ISidebarDiagramViewProps) => {
                 />
             </Box>
 
-            <Box className="border-t p-4" sx={{ borderColor: 'border.main' }}>
-                <Typography variant='body2' className='mt-4 font-semibold'>
-                    Loaded Diagram: ({loadedDiagramSource})
-                </Typography>
-                <Typography variant='caption'>
-                    {loadedDiagramFilename}
-                </Typography>
-            </Box>
+            {(hasLoadedDiagram || loadedDiagramFilename) && (
+                <Box className="border-t p-4" sx={{ borderColor: 'border.main', backgroundColor: 'action.hover' }}>
+                    <Typography variant='caption' sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Loaded Diagram
+                    </Typography>
+                    <Typography variant='body2' sx={{ mt: 0.5, fontWeight: 500 }}>
+                        {loadedDiagramFilename || 'Untitled'}
+                    </Typography>
+                    <Typography variant='caption' sx={{ color: 'text.secondary', mt: 0.5 }}>
+                        Source: {loadedDiagramSource}
+                    </Typography>
+                </Box>
+            )}
         </Box>
     );
 }

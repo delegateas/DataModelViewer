@@ -70,10 +70,10 @@ export const EntityGroupAccordion = ({
 
     return (
         <Accordion
-            disableGutters 
+            disableGutters
             expanded={isExpanded}
             onChange={handleGroupClick}
-            className="group/accordion w-full first:rounded-t-lg last:rounded-b-lg shadow-none p-1"
+            className="group/accordion w-full first:rounded-t-lg last:rounded-b-lg shadow-none"
             slotProps={{
                 transition: {
                     timeout: 300,
@@ -85,24 +85,31 @@ export const EntityGroupAccordion = ({
                 '&:before': { display: 'none' },
                 '& .MuiCollapse-root': {
                     transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                },
+                '&:not(:last-child)': {
+                    borderBottom: 1,
+                    borderColor: 'divider'
                 }
             }}
         >
             <AccordionSummary
                 expandIcon={<ExpandMore className="w-4 h-4" sx={{ color: isCurrentGroup ? "primary.main" : "default" }} />}
                 className={cn(
-                    "p-2 duration-200 flex items-center rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full min-w-0",
+                    "duration-200 flex items-center rounded-md text-xs font-semibold text-sidebar-foreground/80 outline-none ring-sidebar-ring transition-all focus-visible:ring-2 cursor-pointer w-full min-w-0",
                     isCurrentGroup ? "font-semibold" : "hover:bg-sidebar-accent hover:text-sidebar-primary"
                 )}
                 sx={{
                     backgroundColor: isCurrentGroup ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                    padding: '4px',
-                    minHeight: '32px !important',
+                    padding: '8px 12px',
+                    minHeight: '40px !important',
                     '& .MuiAccordionSummary-content': {
                         margin: 0,
                         alignItems: 'center',
                         minWidth: 0,
                         overflow: 'hidden'
+                    },
+                    '&:hover': {
+                        backgroundColor: isCurrentGroup ? alpha(theme.palette.primary.main, 0.15) : alpha(theme.palette.action.hover, 0.04)
                     }
                 }}
             >
@@ -133,28 +140,32 @@ export const EntityGroupAccordion = ({
                 )}
             </AccordionSummary>
             <AccordionDetails className="p-0">
-                <Box className="flex flex-col w-full gap-1 pt-1">
+                <Box className="flex flex-col w-full gap-0.5 py-1">
                     {group.Entities.map(entity => {
                         const isCurrentSection = currentSection?.toLowerCase() === entity.SchemaName.toLowerCase();
                         const isMatch = isEntityMatch ? isEntityMatch(entity) : false;
                         const isLoading = loadingSection === entity.SchemaName;
                         const isCurrentDisabled = isDisabled && isDisabled(entity);
-                        
+
                         // If searching and this entity doesn't match, don't render it
                         if (searchTerm.trim() && !isMatch) {
                             return null;
                         }
-                        
+
                         return (
                             <Button
                                 className={cn(
-                                    "flex items-center gap-2 rounded-lg px-3 py-1 cursor-pointer transition-colors text-xs font-medium mx-1 justify-start",
+                                    "flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer transition-colors text-xs font-medium mx-2 justify-start",
                                     isMatch ? "ring-1" : "",
                                     isCurrentDisabled ? "opacity-50" : ""
                                 )}
-                                sx={{ 
+                                sx={{
                                     borderColor: 'accent.main',
-                                    backgroundColor: isCurrentSection ? alpha(theme.palette.primary.main, 0.1) : 'transparent' 
+                                    backgroundColor: isCurrentSection ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                                    minHeight: '36px',
+                                    '&:hover': {
+                                        backgroundColor: isCurrentDisabled ? 'transparent' : (isCurrentSection ? alpha(theme.palette.primary.main, 0.15) : alpha(theme.palette.action.hover, 0.04))
+                                    }
                                 }}
                                 key={entity.SchemaName}
                                 onClick={() => !isCurrentDisabled && handleEntityButtonClick(entity)}

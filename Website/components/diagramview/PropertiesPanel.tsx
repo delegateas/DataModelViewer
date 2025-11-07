@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Box, Divider, IconButton } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
 import EntityProperties from './smaller-components/EntityProperties';
 import { SelectionProperties } from './smaller-components/SelectionProperties';
 import { diagramEvents } from '@/lib/diagram/DiagramEventBridge';
@@ -64,7 +64,7 @@ export default function PropertiesPanel({ }: IPropertiesPanelProps) {
     }
 
     return (
-        <Box className={`h-full transition-all duration-300 absolute right-0 top-0 border-l ${isOpen ? 'w-64' : 'w-4'}`} sx={{ borderColor: 'border.main', backgroundColor: 'background.paper' }}>
+        <Box className={`h-full transition-all duration-300 absolute right-0 top-0 border-l ${isOpen ? 'w-80' : 'w-4'}`} sx={{ borderColor: 'border.main', backgroundColor: 'background.paper' }}>
             <IconButton
                 size='xsmall'
                 onClick={togglePane}
@@ -77,20 +77,17 @@ export default function PropertiesPanel({ }: IPropertiesPanelProps) {
                     bgcolor: 'background.paper',
                     zIndex: 50,
                     '&:hover': {
-                        bgcolor: 'background.paper',
+                        bgcolor: 'action.hover',
                     }
                 }}
             >
                 {isOpen ? <ChevronRightRounded /> : <ChevronLeftRounded />}
             </IconButton>
-            <Divider className='w-full' />
-            {
-                isOpen && (
-                    <Box className='p-4 h-full'>
-                        {getProperties()}
-                    </Box>
-                )
-            }
+            {isOpen && (
+                <Box className='px-4 py-3 h-full overflow-y-hidden max-h-full'>
+                    {getProperties()}
+                </Box>
+            )}
         </Box>
     )
 }
