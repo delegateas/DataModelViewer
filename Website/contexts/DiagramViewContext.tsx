@@ -2,7 +2,8 @@ import { dia, shapes } from '@joint/core';
 import React, { createContext, useContext, ReactNode, useReducer, useEffect, useRef } from 'react';
 import { createEntity, EntityElement, EntityElementView } from '@/components/diagramview/diagram-elements/EntityElement';
 import EntitySelection, { SelectionElement } from '@/components/diagramview/diagram-elements/Selection';
-import { SmartLayout } from '@/components/diagramview/layout/SmartLayout';
+import { GridHierarchicalLayout } from '@/components/diagramview/layout/GridHierarchicalLayout';
+import { ForceDirectedLayout } from '@/components/diagramview/layout/ForceDirectedLayout';
 import { EntityType } from '@/lib/Types';
 import { AvoidRouter } from '@/components/diagramview/avoid-router/shared/avoidrouter';
 import { initializeRouter } from '@/components/diagramview/avoid-router/shared/initialization';
@@ -35,7 +36,7 @@ interface DiagramActions {
     selectEntity: (entityId: string, ctrlClick?: boolean) => void;
     clearSelection: () => void;
     isEntityInDiagram: (entity: EntityType) => boolean;
-    applySmartLayout: (entities: EntityType[]) => void;
+    applySmartLayout: (entities: EntityType[], algorithm?: 'grid' | 'force') => Promise<void>;
     getSelectedEntities: () => EntityType[];
     toggleRelationshipLink: (linkId: string, relationshipSchemaName: string, include: boolean) => void;
     restoreRelationshipLink: (sourceSchemaName: string, targetSchemaName: string) => void;
@@ -709,7 +710,7 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
         return diagramViewState.entitiesInDiagram.has(entity.SchemaName);
     };
 
-    const applySmartLayout = (entities: EntityType[]) => {
+    const applySmartLayout = async (entities: EntityType[], algorithm: 'grid' | 'force' = 'grid') => {
         if (graphRef.current && paperRef.current) {
             // Get all entity elements from the graph
             const entityElements = graphRef.current.getCells().filter(
@@ -731,9 +732,47 @@ export const DiagramViewProvider = ({ children }: { children: ReactNode }) => {
                 return;
             }
 
-            // Create and apply the smart layout
-            const smartLayout = new SmartLayout(paperRef.current, layoutEntities);
-            smartLayout.applyLayout();
+            console.log(`[DiagramViewContext] Applying ${algorithm} layout to ${layoutEntities.length} entities`);
+
+            if (algorithm === 'force') {
+                // Force-directed layout for dense, interconnected graphs
+                const forceLayout = new ForceDirectedLayout(
+                    paperRef.current,
+                    graphRef.current,
+                    layoutEntities,
+                    {
+                        gridSize: 40,                          // Smaller grid for more flexibility
+                        entitySpacing: 180,                    // Minimum spacing between entities
+                        linkStrength: 0.5,                     // Attraction strength
+                        linkDistance: 200,                     // Desired distance between connected entities
+                        chargeStrength: -300,                  // Repulsion strength
+                        iterations: 300,                       // Simulation iterations
+                        orthogonalBias: true,                  // Bias towards grid alignment
+                        orthogonalBiasStrength: 0.3            // Strength of grid bias
+                    }
+                );
+
+                await forceLayout.applyLayout();
+            } else {
+                // Grid hierarchical layout optimized for ER diagrams (default)
+                const gridLayout = new GridHierarchicalLayout(
+                    paperRef.current,
+                    graphRef.current,
+                    layoutEntities,
+                    {
+                        gridCellSize: 200,                         // Grid cell size for snapping
+                        horizontalSpacing: 300,                    // Extra space for high-connectivity entities (base is 200)
+                        verticalSpacing: 300,                      // Space between layers
+                        columnsPerRow: 5,                          // Entities per layer before wrapping
+                        topPadding: 100,                           // Top margin
+                        leftPadding: 100,                          // Left margin
+                        highConnectivitySpacingMultiplier: 1.5,    // Not used anymore (using weighted assignment)
+                        highConnectivityThreshold: 3               // 3+ relationships = high connectivity
+                    }
+                );
+
+                await gridLayout.applyLayout();
+            }
 
             // Recalculate selection bounding box after layout change
             if (selectionRef.current) {
