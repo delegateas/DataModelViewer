@@ -7,12 +7,26 @@
       "Bash(npx tsc:*)",
       "Bash(npm test:*)",
       "Bash(git status)",
-      "Bash(git diff*)"
+      "Bash(git diff*)",
+      "Bash(python:*)"
     ],
     "deny": [
       "Bash(rm -rf*)",
       "Bash(git push --force*)"
     ],
     "ask": []
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/stop-audio.py"
+          }
+        ]
+      }
+    ]
   }
 }
