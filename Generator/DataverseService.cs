@@ -369,7 +369,7 @@ namespace Generator
 
                     return new DTO.Relationship(
                         x.IsCustomRelationship ?? false,
-                        label,
+                        label ?? x.SchemaName, // Fallback to schema name if no localized label is available, this is relevant for some Default/System Many to Many relationships.
                         logicalToSchema[!useEntity1 ? x.Entity1LogicalName : x.Entity2LogicalName].Name,
                         "-",
                         x.SchemaName,
