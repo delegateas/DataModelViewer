@@ -1,17 +1,20 @@
-## [2.2.3] - 2025-11-06
+## [2.2.4] - 2025-11-10
 
 ### Features
 
-* show warning if column audit is enabled, but disabled for table ([3d01192](https://github.com/delegateas/DataModelViewer/commit/3d01192))
-* primary name and id details and more padding on home page. ([ec917c2](https://github.com/delegateas/DataModelViewer/commit/ec917c2))
-* reduce padding for security model and header ([332a33e](https://github.com/delegateas/DataModelViewer/commit/332a33e))
+* Added fallback to schema name if there are no labels available ([c2cee2d](https://github.com/delegateas/DataModelViewer/commit/c2cee2d))
 
-### Performance Improvements
+### Bug Fixes
 
-* catch changes to state and status more frequent. Still not perfect but catches most cases ([7f6cfda](https://github.com/delegateas/DataModelViewer/commit/7f6cfda))
+* close api endpoints other than login and version ([ebc5f0e](https://github.com/delegateas/DataModelViewer/commit/ebc5f0e))
+
+### UI/UX Improvements
+
+* some styling guidelines ([172fe02](https://github.com/delegateas/DataModelViewer/commit/172fe02))
 
 ### Other Changes
 
-* better tooltips for security roles ([a03f024](https://github.com/delegateas/DataModelViewer/commit/a03f024))
+* small hook ([9309426](https://github.com/delegateas/DataModelViewer/commit/9309426))
+* claude: initial .md files and settings files ([91acbc0](https://github.com/delegateas/DataModelViewer/commit/91acbc0))
 
 
