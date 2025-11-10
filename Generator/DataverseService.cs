@@ -6,6 +6,7 @@ using Generator.DTO.Warnings;
 using Generator.Queries;
 using Generator.Services;
 using Generator.Services.Plugins;
+using Generator.Services.PowerAutomate;
 using Generator.Services.WebResources;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Extensions.Caching.Memory;
