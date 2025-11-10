@@ -8,20 +8,6 @@ Data Model Viewer is a Next.js 15 application for visualizing Dataverse data mod
 
 ## Development Commands
 
-### Setup
-```bash
-npm i
-```
-
-Required environment variables in `.env.local`:
-- `WebsitePassword` - Basic auth password
-- `WebsiteSessionSecret` - Session encryption secret
-- `ADO_PROJECT_NAME` - Azure DevOps project name
-- `ADO_ORGANIZATION_URL` - Azure DevOps organization URL
-- `ADO_REPOSITORY_NAME` - Repository name for diagram storage
-- `AZURE_CLI_AUTHENTICATION_ENABLED` - Set to `true` for local dev
-- `ADO_PAT` - Personal Access Token for Azure DevOps (generate at DevOps settings)
-
 ### Development
 ```bash
 npm run dev              # Start development server
@@ -32,6 +18,16 @@ npm run prepipeline      # Copy stub files (runs before pipeline build)
 ```
 
 Note: The build process includes a `postbuild` script that creates required standalone directories for Next.js 15 deployment compatibility.
+
+### MUI MCP Server Setup
+
+**REQUIRED** for working with MUI components:
+
+```bash
+claude mcp add mui-mcp -- npx -y @mui/mcp@latest
+```
+
+This provides access to MUI v7 documentation and component APIs through the MCP server.
 
 ## Architecture
 
@@ -53,7 +49,7 @@ Application uses nested context providers in this order:
 
 ### Diagram Architecture
 
-**Key Pattern**: Diagram uses JointJS for rendering with a Web Worker for routing calculations.
+**Key Pattern**: Diagram uses JointJS for rendering with a Web Worker for libavoid routing calculations.
 
 #### DiagramViewContext (`contexts/DiagramViewContext.tsx`)
 - Central state management for the diagram canvas
@@ -198,6 +194,50 @@ Authentication uses either:
 
 File operations always specify branch (default: 'main') and commit messages.
 
+## Styling Guidelines
+
+**CRITICAL**: This project uses a specific MUI + Tailwind integration pattern.
+
+### MUI Component Usage Rules
+
+1. **Use MUI for interactive components**: Button, TextField, Dialog, Select, etc.
+2. **Use Tailwind for ALL visual styling**: No `sx` prop except for theme access
+3. **Query MUI MCP server** before implementing unfamiliar components
+4. **See the MUI Guidelines Skill**: `.claude/skills/mui-guidelines/SKILL.md`
+
+### Examples
+
+**WRONG** (using `sx` prop):
+```tsx
+<Button sx={{ padding: '16px', backgroundColor: 'primary.main' }}>
+  Click Me
+</Button>
+```
+
+**CORRECT** (Tailwind classes):
+```tsx
+<Button className="p-4 bg-blue-600">
+  Click Me
+</Button>
+```
+
+**Exception** (theme access only):
+```tsx
+<Box sx={{ display: { xs: 'none', md: 'block' } }} className="p-4">
+  Responsive with theme breakpoints
+</Box>
+```
+
+### Workflow for Styling Tasks
+
+1. Identify need (button, form, modal, etc.)
+2. Choose appropriate MUI component
+3. Query MUI MCP server if unfamiliar: `mcp__mui-mcp__useMuiDocs`
+4. Implement with MUI component + Tailwind classes
+5. Verify no `sx` props (except theme access)
+
+**Reference**: See `.claude/skills/mui-guidelines/SKILL.md` for comprehensive guidelines.
+
 ## Important Notes
 
 - **Path aliases**: `@/*` maps to root directory (see `tsconfig.json`)
@@ -206,3 +246,4 @@ File operations always specify branch (default: 'main') and commit messages.
 - **Selection transformations**: Must be calculated relative to paper transformation matrix (see `Selection.ts:applyTransformation`)
 - **Entity deduplication**: Always check `diagramContext.isEntityInDiagram()` before adding
 - **JointJS integration**: Custom elements defined with `dia.Element.define()`, custom views with `dia.ElementView.extend()`
+- **MUI Styling**: NEVER use `sx` prop for styling (use Tailwind), see MUI Guidelines Skill

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build*)",
+      "Bash(dotnet restore*)",
+      "Bash(dotnet run*)",
+      "Bash(dotnet clean*)",
+      "Bash(dotnet format*)",
+      "Bash(dotnet list package*)",
+      "Bash(az login)",
+      "Bash(az account*)",
+      "Bash(git status)",
+      "Bash(git diff*)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(dotnet publish*)"
+    ],
+    "ask": []
+  }
+}
