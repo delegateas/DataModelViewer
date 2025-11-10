@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *:*)",
+      "Bash(npm install*)",
+      "Bash(npm test*)",
+      "Bash(dotnet build*)",
+      "Bash(dotnet restore*)",
+      "Bash(dotnet run*)",
+      "Bash(dotnet format*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(az login)",
+      "Bash(az account*)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(git push --force* main)",
+      "Bash(git push --force* master)",
+      "Bash(git reset --hard*)",
+      "Bash(npm publish*)",
+      "Bash(dotnet publish*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(git merge*)",
+      "Bash(git rebase*)"
+    ]
+  }
+}

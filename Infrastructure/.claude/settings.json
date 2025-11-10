@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(az login)",
+      "Bash(az account*)",
+      "Bash(az group*)",
+      "Bash(az deployment group validate*)",
+      "Bash(az deployment group what-if*)",
+      "Bash(az bicep build*)",
+      "Bash(az webapp*)",
+      "Bash(git status)",
+      "Bash(git diff*)"
+    ],
+    "deny": [
+      "Bash(az deployment group create*)",
+      "Bash(az deployment group delete*)",
+      "Bash(az group delete*)",
+      "Bash(rm -rf*)"
+    ],
+    "ask": [
+      "Bash(az deployment*)"
+    ]
+  }
+}
