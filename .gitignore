@@ -353,6 +353,7 @@ MigrationBackup/
 
 # Claude
 **/.claude/settings.local.json
+.claude/settings.local.json
 
 # --------------------------------------------------------------------------
 # ----- Above is GitHub VisualStudio.gitignore, below are custom rules -----

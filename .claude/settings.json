@@ -8,6 +8,7 @@
       "Bash(dotnet restore*)",
       "Bash(dotnet run*)",
       "Bash(dotnet format*)",
+      "Bash(dotnet test:*)",
       "Bash(git status)",
       "Bash(git diff*)",
       "Bash(git log*)",
