@@ -227,14 +227,12 @@ namespace Generator
                 });
 
             // Group components by solution
-            var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId);
+            var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId).ToDictionary(g => g.Key.Id, g => g);
 
-            foreach (var solutionGroup in componentsBySolution)
+            // Process ALL solutions from configuration, not just those with components
+            foreach (var solutionEntity in solutionEntities)
             {
-                var solutionId = solutionGroup.Key;
-                var solutionEntity = solutionEntities.FirstOrDefault(s => s.GetAttributeValue<Guid>("solutionid") == solutionId.Id);
-
-                if (solutionEntity == null) continue;
+                var solutionId = solutionEntity.GetAttributeValue<Guid>("solutionid");
 
                 var solutionName = solutionEntity.GetAttributeValue<string>("friendlyname") ??
                                   solutionEntity.GetAttributeValue<string>("uniquename") ??
@@ -245,15 +243,20 @@ namespace Generator
 
                 var components = new List<SolutionComponent>();
 
-                foreach (var component in solutionGroup)
+                // Add components if this solution has any
+                if (componentsBySolution.TryGetValue(solutionId, out var solutionGroup))
                 {
-                    var solutionComponent = CreateSolutionComponent(component, entityLookup, allEntityMetadata);
-                    if (solutionComponent != null)
+                    foreach (var component in solutionGroup)
                     {
-                        components.Add(solutionComponent);
+                        var solutionComponent = CreateSolutionComponent(component, entityLookup, allEntityMetadata);
+                        if (solutionComponent != null)
+                        {
+                            components.Add(solutionComponent);
+                        }
                     }
                 }
 
+                // Add solution even if components list is empty (e.g., flow-only solutions)
                 solutions.Add(new Solution(
                     solutionName,
                     publisher?.Name ?? "Unknown Publisher",
@@ -590,7 +593,7 @@ namespace Generator
                 {
                     Conditions =
                     {
-                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20, 92 }), // entity, attribute, role, sdkpluginstep (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
+                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20, 29, 92 }), // entity, attribute, role, workflow/flow, sdkpluginstep (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
                         new ConditionExpression("solutionid", ConditionOperator.In, solutionIds)
                     }
                 }
