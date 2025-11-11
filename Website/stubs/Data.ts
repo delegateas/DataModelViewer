@@ -108,6 +108,8 @@ export let SolutionWarnings: SolutionWarningType[] = [];
 export let Solutions: SolutionType[] = [
   {
     Name: "Sample Solution",
+    PublisherName: "Sample Publisher",
+    PublisherPrefix: "sample",
     Components: [
       {
         Name: "Sample Entity",

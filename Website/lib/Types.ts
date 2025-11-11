@@ -14,6 +14,8 @@ export type GroupType = {
 
 export type SolutionType = {
     Name: string,
+    PublisherName: string,
+    PublisherPrefix: string,
     Components: SolutionComponentType[]
 }
 

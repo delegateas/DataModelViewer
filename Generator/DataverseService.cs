@@ -58,7 +58,7 @@ namespace Generator
         public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<Solution>)> GetFilteredMetadata()
         {
             var warnings = new List<SolutionWarning>(); // used to collect warnings for the insights dashboard
-            var (publisherPrefix, solutionIds, solutionEntities) = await GetSolutionIds();
+            var (solutionIds, solutionEntities) = await GetSolutionIds();
             var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type, rootcomponentbehavior, solutionid)
 
             var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).Select(x => x.ObjectId).Distinct().ToList();
@@ -189,7 +189,7 @@ namespace Generator
                 solutions);
         }
 
-        private Task<IEnumerable<Solution>> CreateSolutions(
+        private async Task<IEnumerable<Solution>> CreateSolutions(
             List<Entity> solutionEntities,
             IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId)> solutionComponents,
             List<EntityMetadata> allEntityMetadata)
@@ -198,6 +198,33 @@ namespace Generator
 
             // Create lookup dictionaries for faster access
             var entityLookup = allEntityMetadata.ToDictionary(e => e.MetadataId ?? Guid.Empty, e => e);
+
+            // Fetch all unique publishers for the solutions
+            var publisherIds = solutionEntities
+                .Select(s => s.GetAttributeValue<EntityReference>("publisherid").Id)
+                .Distinct()
+                .ToList();
+
+            var publisherQuery = new QueryExpression("publisher")
+            {
+                ColumnSet = new ColumnSet("publisherid", "friendlyname", "customizationprefix"),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression("publisherid", ConditionOperator.In, publisherIds)
+                    }
+                }
+            };
+
+            var publishers = await client.RetrieveMultipleAsync(publisherQuery);
+            var publisherLookup = publishers.Entities.ToDictionary(
+                p => p.GetAttributeValue<Guid>("publisherid"),
+                p => new
+                {
+                    Name = p.GetAttributeValue<string>("friendlyname") ?? "Unknown Publisher",
+                    Prefix = p.GetAttributeValue<string>("customizationprefix") ?? string.Empty
+                });
 
             // Group components by solution
             var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId);
@@ -213,6 +240,9 @@ namespace Generator
                                   solutionEntity.GetAttributeValue<string>("uniquename") ??
                                   "Unknown Solution";
 
+                var publisherId = solutionEntity.GetAttributeValue<EntityReference>("publisherid").Id;
+                var publisher = publisherLookup.GetValueOrDefault(publisherId);
+
                 var components = new List<SolutionComponent>();
 
                 foreach (var component in solutionGroup)
@@ -224,10 +254,14 @@ namespace Generator
                     }
                 }
 
-                solutions.Add(new Solution(solutionName, components));
+                solutions.Add(new Solution(
+                    solutionName,
+                    publisher?.Name ?? "Unknown Publisher",
+                    publisher?.Prefix ?? string.Empty,
+                    components));
             }
 
-            return Task.FromResult(solutions.AsEnumerable());
+            return solutions.AsEnumerable();
         }
 
         private SolutionComponent? CreateSolutionComponent(
@@ -523,7 +557,7 @@ namespace Generator
             return metadata;
         }
 
-        private async Task<(string PublisherPrefix, List<Guid> SolutionIds, List<Entity> SolutionEntities)> GetSolutionIds()
+        private async Task<(List<Guid> SolutionIds, List<Entity> SolutionEntities)> GetSolutionIds()
         {
             var solutionNameArg = configuration["DataverseSolutionNames"];
             if (solutionNameArg == null)
@@ -544,16 +578,7 @@ namespace Generator
                 }
             });
 
-            var solutions = resp.Entities;
-            var publisherIds = solutions.Select(e => e.GetAttributeValue<EntityReference>("publisherid").Id).Distinct().ToList();
-            if (publisherIds.Count != 1)
-            {
-                throw new Exception("Multiple publishers found. Ensure solutions have the same publisher");
-            }
-
-            var publisher = await client.RetrieveAsync("publisher", publisherIds[0], new ColumnSet("customizationprefix"));
-
-            return (publisher.GetAttributeValue<string>("customizationprefix"), resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList(), resp.Entities.ToList());
+            return (resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList(), resp.Entities.ToList());
         }
 
         public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId)>> GetSolutionComponents(List<Guid> solutionIds)
