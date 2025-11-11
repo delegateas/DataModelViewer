@@ -1,7 +1,5 @@
 using Generator.DTO;
-using Microsoft.Extensions.Configuration;
 using Microsoft.PowerPlatform.Dataverse.Client;
-using System.Linq.Dynamic.Core;
 using System.Text.RegularExpressions;
 
 namespace Generator.Services.WebResources;
@@ -10,15 +8,8 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
 {
     private record AttributeCall(string AttributeName, string Type, OperationType Operation);
 
-    private readonly Func<string, string> webresourceNamingFunc;
-    public WebResourceAnalyzer(ServiceClient service, IConfiguration configuration) : base(service)
+    public WebResourceAnalyzer(ServiceClient service) : base(service)
     {
-        var lambda = configuration.GetValue<string>("WebResourceNameFunc") ?? "np(name.Split('/').LastOrDefault()).Split('.').Reverse().Skip(1).FirstOrDefault()";
-        webresourceNamingFunc = DynamicExpressionParser.ParseLambda<string, string>(
-            new ParsingConfig { ResolveTypesBySimpleName = true },
-            false,
-            "name => " + lambda
-        ).Compile();
     }
 
     public override ComponentType SupportedType => ComponentType.WebResource;
@@ -50,23 +41,17 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
         ExtractGetControlCalls(content, attributeNames);
         // TODO get attributes used in XrmApi or XrmQuery calls
 
+        // Extract entity name from description field
+        string? entityName = ExtractEntityFromDescription(webResource.Description);
+
+        if (string.IsNullOrWhiteSpace(entityName))
+        {
+            // Skip this webresource if no entity is found in description
+            return;
+        }
+
         foreach (var attributeName in attributeNames)
         {
-            string entityName;
-            try
-            {
-                entityName = webresourceNamingFunc(webResource.Name);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Warning: Naming function failed for web resource '{webResource.Name}': {ex.Message}");
-                continue;
-            }
-            if (string.IsNullOrWhiteSpace(entityName))
-            {
-                Console.WriteLine($"Warning: Naming function returned an invalid value for web resource '{webResource.Name}'. Skipping attribute usage.");
-                continue;
-            }
             AddAttributeUsage(attributeUsages, entityName.ToLower(), attributeName.AttributeName, new AttributeUsage(
                 webResource.Name,
                 attributeName.Type,
@@ -74,6 +59,22 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
                 SupportedType
             ));
         }
+    }
+
+    private static string? ExtractEntityFromDescription(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        // Look for pattern: ENTITY:<entityschemaname>
+        var match = Regex.Match(description, @"ENTITY:(\w+)", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+
+        return null;
     }
 
     private void ExtractGetAttributeCalls(string code, List<AttributeCall> attributes)

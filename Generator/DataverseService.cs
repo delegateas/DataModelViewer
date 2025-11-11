@@ -52,7 +52,7 @@ namespace Generator
 
             pluginAnalyzer = new PluginAnalyzer(client);
             flowAnalyzer = new PowerAutomateFlowAnalyzer(client);
-            webResourceAnalyzer = new WebResourceAnalyzer(client, configuration);
+            webResourceAnalyzer = new WebResourceAnalyzer(client);
         }
 
         public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<Solution>)> GetFilteredMetadata()
