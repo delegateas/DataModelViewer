@@ -1,26 +1,28 @@
-#!/usr/bin/dotnet run
-#:package Microsoft.PowerPlatform.Dataverse.Client@1.2.*
-#:package Azure.Identity@1.13.*
-#:package System.Text.RegularExpressions@*
-
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// DOES NOT WORK AS SERVICECLIENT IS NOT SUPPORTED IN .NET 10
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 using Azure.Core;
 using Azure.Identity;
+using Microsoft.Identity.Client;
 using Microsoft.PowerPlatform.Dataverse.Client;
+using Microsoft.PowerPlatform.Dataverse.Client.Model;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
+
+#nullable enable
+#pragma warning disable MA0048 // File name must match type name - This is a top-level program
+#pragma warning disable S1075 // Refactor your code not to use hardcoded absolute paths or URIs
 
 // Validate command-line arguments
 if (args.Length == 0)
 {
     Console.WriteLine("Error: Please provide a folder path as argument.");
-    Console.WriteLine("Usage: dotnet run addWebResourceDescription.cs <folder-path> [dataverse-url]");
+    Console.WriteLine("Usage: AddWebResourceDescription <folder-path> [dataverse-url]");
     Console.WriteLine("  folder-path: Path to TypeScript project folder");
     Console.WriteLine("  dataverse-url: (Optional) Dataverse URL, or set DATAVERSE_URL environment variable");
+    Console.WriteLine("\nEnvironment variables:");
+    Console.WriteLine("  DATAVERSE_URL: Dataverse environment URL");
+    Console.WriteLine("  DATAVERSE_TENANT_ID: (Optional) Azure AD Tenant ID for multi-tenant scenarios");
     return 1;
 }
 
@@ -74,9 +76,7 @@ foreach (var tsFile in tsFiles)
     var onLoadMatch = Regex.Match(content, onLoadPattern, RegexOptions.Multiline);
 
     if (!onLoadMatch.Success)
-    {
         continue; // Skip files without exported onLoad
-    }
 
     var onLoadBody = onLoadMatch.Groups[1].Value;
 
@@ -136,33 +136,128 @@ if (fileEntityMap.Count == 0)
 // Connect to Dataverse using Azure Default Credentials
 Console.WriteLine("Connecting to Dataverse...");
 Console.WriteLine($"Target URL: {dataverseUrl}");
-Console.WriteLine("Authentication: Azure DefaultAzureCredential (Azure CLI, Managed Identity, etc.)\n");
+Console.WriteLine("Authentication: Azure DefaultAzureCredential\n");
 
 try
 {
-    // Token provider function using DefaultAzureCredential
-    var credential = new DefaultAzureCredential();
+    // ---- CONFIG ----
+    var tenantId = "0d3aa8f9-8168-4bc2-bda1-c3972e6d9352";
+    var loginHint = "";
 
-    string TokenProviderFunction(string url)
+    // ---- MSAL public client (user-interactive) ----
+    var pca = PublicClientApplicationBuilder
+        .Create("51f81489-12ee-4a9e-aaae-a2591f45987d") // XrmTooling public client
+        .WithAuthority($"https://login.microsoftonline.com/{tenantId}")
+        .WithRedirectUri("http://localhost")
+        .Build();
+
+    // Optional: pick default account by hint (helps silent token later)
+    var accounts = await pca.GetAccountsAsync();
+    IAccount? preferred = accounts.FirstOrDefault(a => string.Equals(a.Username, loginHint, StringComparison.OrdinalIgnoreCase));
+
+    // Simple per-audience cache
+    var tokenCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    // Token provider that handles ORG + DISCOVERY hosts
+    async Task<string> TokenProviderFunction(string audience)
     {
-        var scope = $"{GetCoreUrl(url)}/.default";
-        var tokenRequestContext = new TokenRequestContext([scope]);
-        var token = credential.GetToken(tokenRequestContext, CancellationToken.None);
-        return token.Token;
+        var aud = new Uri(audience).GetLeftPart(UriPartial.Authority).TrimEnd('/');
+        Console.WriteLine($"TokenProvider asked for audience: {aud}");
+
+        if (tokenCache.TryGetValue(aud, out var cached))
+            return cached;
+
+        var scopes = new[] { $"{aud}/user_impersonation" };  // IMPORTANT: public client wants scopes, not "/.default"
+
+        AuthenticationResult result;
+        try
+        {
+            // Try silent first (no prompt)
+            result = await pca.AcquireTokenSilent(scopes, preferred ?? accounts.FirstOrDefault())
+                              .ExecuteAsync();
+        }
+        catch (MsalUiRequiredException)
+        {
+            // Fall back to interactive (one prompt)
+            var builder = pca.AcquireTokenInteractive(scopes).WithPrompt(Prompt.SelectAccount);
+            if (!string.IsNullOrEmpty(loginHint))
+            {
+                builder = builder.WithLoginHint(loginHint);
+            }
+            result = await builder.ExecuteAsync();
+        }
+
+        tokenCache[aud] = result.AccessToken;
+        return result.AccessToken;
     }
 
-    using var serviceClient = new ServiceClient(
-        instanceUrl: new Uri(dataverseUrl),
-        tokenProviderFunction: url => TokenProviderFunction(url));
+    // ---- Sanity: same identity works via raw WhoAmI (ORG audience) ----
+    var whoScopes = new[] { $"{new Uri(dataverseUrl).GetLeftPart(UriPartial.Authority)}/user_impersonation" };
+    var whoToken = await pca.AcquireTokenInteractive(whoScopes).WithLoginHint(loginHint).ExecuteAsync();
+
+    using var http = new HttpClient { BaseAddress = new Uri($"{dataverseUrl}/api/data/v9.2/") };
+    http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", whoToken.AccessToken);
+    http.DefaultRequestHeaders.Add("OData-MaxVersion", "4.0");
+    http.DefaultRequestHeaders.Add("OData-Version", "4.0");
+    http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+    var who = await http.GetAsync("WhoAmI()");
+    Console.WriteLine($"WhoAmI: {(int)who.StatusCode} {who.ReasonPhrase}");
+    Console.WriteLine(await who.Content.ReadAsStringAsync());
+
+    // ---- Create ServiceClient with that provider ----
+    try
+    {
+        Console.WriteLine("Creating ServiceClient...");
+        using var svc = new ServiceClient(
+            new ConnectionOptions { ServiceUri = new Uri(dataverseUrl), AccessTokenProviderFunctionAsync = TokenProviderFunction },
+            false,
+            new ConfigurationOptions { UseWebApi = true, UseWebApiLoginFlow = true, EnableAffinityCookie = true });
+
+        Console.WriteLine($"IsReady: {svc.IsReady}");
+        Console.WriteLine($"LastError: {svc.LastError}");
+        Console.WriteLine($"LastException: {svc.LastException}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("ServiceClient ctor threw:");
+        Console.WriteLine(ex.ToString());
+    }
+
+    // ---- 3) Now create ServiceClient with the SAME token source ----
+    Console.WriteLine("Creating ServiceClient...");
+    using var serviceClient = new ServiceClient(new Uri(dataverseUrl), tokenProviderFunction: TokenProviderFunction);
+    Console.WriteLine($"IsReady: {serviceClient.IsReady}");
+    Console.WriteLine($"LastError: {serviceClient.LastError}");
+    Console.WriteLine($"LastException: {serviceClient.LastException?.ToString()}");
 
     if (!serviceClient.IsReady)
     {
-        Console.WriteLine($"Error: Failed to connect to Dataverse.");
-        Console.WriteLine($"Details: {serviceClient.LastError}");
+        Console.WriteLine($"\nError: Failed to connect to Dataverse.");
+        Console.WriteLine($"Last Error: {serviceClient.LastError ?? "(null)"}");
+
+        if (serviceClient.LastException != null)
+        {
+            Console.WriteLine($"Exception Type: {serviceClient.LastException.GetType().Name}");
+            Console.WriteLine($"Exception Message: {serviceClient.LastException.Message}");
+
+            if (serviceClient.LastException.InnerException != null)
+            {
+                Console.WriteLine($"Inner Exception Type: {serviceClient.LastException.InnerException.GetType().Name}");
+                Console.WriteLine($"Inner Exception Message: {serviceClient.LastException.InnerException.Message}");
+            }
+
+            Console.WriteLine($"\nFull Stack Trace:");
+            Console.WriteLine(serviceClient.LastException.ToString());
+        }
+        else
+        {
+            Console.WriteLine("No exception details available.");
+        }
+
         Console.WriteLine("\nTroubleshooting:");
-        Console.WriteLine("  - Run 'az login' to authenticate with Azure CLI");
         Console.WriteLine("  - Verify you have access to the Dataverse environment");
         Console.WriteLine("  - Check the Dataverse URL is correct");
+        Console.WriteLine("  - Ensure your account has permissions in this environment");
         return 1;
     }
 
@@ -182,9 +277,9 @@ try
         {
             Conditions =
             {
-                new ConditionExpression("name", ConditionOperator.BeginsWith, rootFolderName)
-            }
-        }
+                new ConditionExpression("name", ConditionOperator.BeginsWith, rootFolderName),
+            },
+        },
     };
 
     var allWebResources = serviceClient.RetrieveMultiple(query);
@@ -208,13 +303,13 @@ try
         var entitySchemaName = kvp.Value;
 
         // Convert file path to webresource name (replace backslashes with forward slashes, .ts -> .js)
-        string webResourceName = $"{rootFolderName}/{relativePath.Replace('\\', '/').Replace(".ts", ".js")}";
+        string webResourceName = $"{rootFolderName}/{relativePath.Replace('\\', '/').Replace(".ts", ".js", StringComparison.Ordinal)}";
 
         // Try to find the webresource in our dictionary
         if (!webResourceDict.TryGetValue(webResourceName, out var webResource))
         {
             // Try without root folder prefix (in case files already include it)
-            string alternativeName = relativePath.Replace('\\', '/').Replace(".ts", ".js");
+            string alternativeName = relativePath.Replace('\\', '/').Replace(".ts", ".js", StringComparison.Ordinal);
             if (!webResourceDict.TryGetValue(alternativeName, out webResource))
             {
                 Console.WriteLine($"⚠️  Webresource not found: {webResourceName}");
@@ -227,11 +322,11 @@ try
             }
         }
 
-        var currentDescription = webResource.GetAttributeValue<string>("description") ?? "";
+        var currentDescription = webResource.GetAttributeValue<string>("description") ?? string.Empty;
 
         // Check if ENTITY tag already exists
         string entityTag = $"ENTITY:{entitySchemaName}";
-        if (currentDescription.Contains(entityTag))
+        if (currentDescription.Contains(entityTag, StringComparison.Ordinal))
         {
             Console.WriteLine($"ℹ️  Already tagged: {webResourceName}");
             alreadyTaggedCount++;
@@ -264,10 +359,3 @@ catch (Exception ex)
 }
 
 return 0;
-
-// Helper function to extract core URL from Dataverse URL
-static string GetCoreUrl(string dataverseUrl)
-{
-    var uri = new Uri(dataverseUrl);
-    return $"{uri.Scheme}://{uri.Host}";
-}
