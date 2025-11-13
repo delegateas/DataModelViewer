@@ -29,9 +29,7 @@ namespace Generator
         private readonly IConfiguration configuration;
         private readonly ILogger<DataverseService> logger;
 
-        private readonly PluginAnalyzer pluginAnalyzer;
-        private readonly PowerAutomateFlowAnalyzer flowAnalyzer;
-        private readonly WebResourceAnalyzer webResourceAnalyzer;
+        private readonly List<IAnalyzerRegistration> analyzerRegistrations;
 
         public DataverseService(IConfiguration configuration, ILogger<DataverseService> logger)
         {
@@ -50,9 +48,22 @@ namespace Generator
                 instanceUrl: new Uri(dataverseUrl),
                 tokenProviderFunction: url => TokenProviderFunction(url, cache, logger));
 
-            pluginAnalyzer = new PluginAnalyzer(client);
-            flowAnalyzer = new PowerAutomateFlowAnalyzer(client);
-            webResourceAnalyzer = new WebResourceAnalyzer(client);
+            // Register all analyzers with their query functions
+            analyzerRegistrations = new List<IAnalyzerRegistration>
+            {
+                new AnalyzerRegistration<SDKStep>(
+                    new PluginAnalyzer(client),
+                    solutionIds => client.GetSDKMessageProcessingStepsAsync(solutionIds),
+                    "Plugins"),
+                new AnalyzerRegistration<PowerAutomateFlow>(
+                    new PowerAutomateFlowAnalyzer(client),
+                    solutionIds => client.GetPowerAutomateFlowsAsync(solutionIds),
+                    "Power Automate Flows"),
+                new AnalyzerRegistration<WebResource>(
+                    new WebResourceAnalyzer(client),
+                    solutionIds => client.GetWebResourcesAsync(solutionIds),
+                    "WebResources")
+            };
         }
 
         public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<Solution>)> GetFilteredMetadata()
@@ -109,33 +120,12 @@ namespace Generator
             var entityIconMap = await GetEntityIconMap(allEntityMetadata);
             // Processes analysis
             var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
-            // Plugins
-            var pluginStopWatch = new Stopwatch();
-            pluginStopWatch.Start();
-            var pluginCollection = await client.GetSDKMessageProcessingStepsAsync(solutionIds);
-            logger.LogInformation($"There are {pluginCollection.Count()} plugin sdk steps in the environment.");
-            foreach (var plugin in pluginCollection)
-                await pluginAnalyzer.AnalyzeComponentAsync(plugin, attributeUsages);
-            pluginStopWatch.Stop();
-            logger.LogInformation($"Plugin analysis took {pluginStopWatch.ElapsedMilliseconds} ms.");
-            // Flows
-            var flowStopWatch = new Stopwatch();
-            flowStopWatch.Start();
-            var flowCollection = await client.GetPowerAutomateFlowsAsync(solutionIds);
-            logger.LogInformation($"There are {flowCollection.Count()} Power Automate flows in the environment.");
-            foreach (var flow in flowCollection)
-                await flowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
-            flowStopWatch.Stop();
-            logger.LogInformation($"Power Automate flow analysis took {flowStopWatch.ElapsedMilliseconds} ms.");
-            // WebResources
-            var resourceStopWatch = new Stopwatch();
-            resourceStopWatch.Start();
-            var webresourceCollection = await client.GetWebResourcesAsync(solutionIds);
-            logger.LogInformation($"There are {webresourceCollection.Count()} WebResources in the environment.");
-            foreach (var resource in webresourceCollection)
-                await webResourceAnalyzer.AnalyzeComponentAsync(resource, attributeUsages);
-            resourceStopWatch.Stop();
-            logger.LogInformation($"WebResource analysis took {resourceStopWatch.ElapsedMilliseconds} ms.");
+
+            // Run all registered analyzers
+            foreach (var registration in analyzerRegistrations)
+            {
+                await registration.RunAnalysisAsync(solutionIds, attributeUsages, warnings, logger);
+            }
 
             var records =
                 entitiesInSolutionMetadata
@@ -801,6 +791,60 @@ namespace Generator
                 logger.LogError($"Failed to retrieve access token: {ex.Message}");
                 throw;
             }
+        }
+    }
+
+    /// <summary>
+    /// Interface for analyzer registrations to enable polymorphic execution
+    /// </summary>
+    internal interface IAnalyzerRegistration
+    {
+        Task RunAnalysisAsync(
+            List<Guid> solutionIds,
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+            List<SolutionWarning> warnings,
+            ILogger logger);
+    }
+
+    /// <summary>
+    /// Generic analyzer registration that pairs an analyzer with its query function
+    /// </summary>
+    internal class AnalyzerRegistration<T> : IAnalyzerRegistration where T : Analyzeable
+    {
+        private readonly IComponentAnalyzer<T> analyzer;
+        private readonly Func<List<Guid>, Task<IEnumerable<T>>> queryFunc;
+        private readonly string componentTypeName;
+
+        public AnalyzerRegistration(
+            IComponentAnalyzer<T> analyzer,
+            Func<List<Guid>, Task<IEnumerable<T>>> queryFunc,
+            string componentTypeName)
+        {
+            this.analyzer = analyzer;
+            this.queryFunc = queryFunc;
+            this.componentTypeName = componentTypeName;
+        }
+
+        public async Task RunAnalysisAsync(
+            List<Guid> solutionIds,
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+            List<SolutionWarning> warnings,
+            ILogger logger)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            var components = await queryFunc(solutionIds);
+            var componentList = components.ToList();
+
+            logger.LogInformation($"There are {componentList.Count} {componentTypeName} in the environment.");
+
+            foreach (var component in componentList)
+            {
+                await analyzer.AnalyzeComponentAsync(component, attributeUsages, warnings);
+            }
+
+            stopwatch.Stop();
+            logger.LogInformation($"{componentTypeName} analysis took {stopwatch.ElapsedMilliseconds} ms.");
         }
     }
 }

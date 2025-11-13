@@ -1,4 +1,5 @@
 using Generator.DTO;
+using Generator.DTO.Warnings;
 using Generator.Services.PowerAutomate.Analyzers;
 using Generator.Services.PowerAutomate.Extractors;
 using Microsoft.PowerPlatform.Dataverse.Client;
@@ -46,7 +47,8 @@ public class PowerAutomateFlowAnalyzer : BaseComponentAnalyzer<PowerAutomateFlow
 
     public override async Task AnalyzeComponentAsync(
         PowerAutomateFlow flow,
-        Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+        Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+        List<SolutionWarning> solutionWarnings)
     {
         try
         {

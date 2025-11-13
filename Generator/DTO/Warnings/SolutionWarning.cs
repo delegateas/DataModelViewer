@@ -3,6 +3,7 @@
 public enum SolutionWarningType
 {
     Attribute,
+    Webresource,
 }
 
 public record SolutionWarning(

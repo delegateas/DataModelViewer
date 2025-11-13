@@ -1,4 +1,5 @@
 using Generator.DTO;
+using Generator.DTO.Warnings;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using System.Text.RegularExpressions;
 
@@ -14,7 +15,7 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
 
     public override ComponentType SupportedType => ComponentType.WebResource;
 
-    public override async Task AnalyzeComponentAsync(WebResource webResource, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+    public override async Task AnalyzeComponentAsync(WebResource webResource, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages, List<SolutionWarning> warnings)
     {
         try
         {
@@ -22,7 +23,7 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
                 return;
 
             // Analyze JavaScript content for onChange event handlers and getAttribute calls
-            AnalyzeOnChangeHandlers(webResource, attributeUsages);
+            AnalyzeOnChangeHandlers(webResource, attributeUsages, warnings);
         }
         catch (Exception ex)
         {
@@ -32,7 +33,7 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
         await Task.CompletedTask;
     }
 
-    private void AnalyzeOnChangeHandlers(WebResource webResource, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+    private void AnalyzeOnChangeHandlers(WebResource webResource, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages, List<SolutionWarning> warnings)
     {
         var content = webResource.Content;
 
@@ -47,6 +48,7 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
         if (string.IsNullOrWhiteSpace(entityName))
         {
             // Skip this webresource if no entity is found in description
+            warnings.Add(new SolutionWarning(SolutionWarningType.Webresource, $"Entityname not found in WebResource description {webResource.Name}"));
             return;
         }
 

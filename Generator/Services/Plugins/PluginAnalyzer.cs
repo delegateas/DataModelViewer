@@ -1,4 +1,5 @@
 ﻿using Generator.DTO;
+using Generator.DTO.Warnings;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 
@@ -10,7 +11,7 @@ public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
 
     public override ComponentType SupportedType => ComponentType.Plugin;
 
-    public override async Task AnalyzeComponentAsync(SDKStep sdkStep, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+    public override async Task AnalyzeComponentAsync(SDKStep sdkStep, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages, List<SolutionWarning> warnings)
     {
         try
         {

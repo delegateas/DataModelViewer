@@ -1,4 +1,5 @@
 ﻿using Generator.DTO;
+using Generator.DTO.Warnings;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using System.Text.RegularExpressions;
 
@@ -9,7 +10,7 @@ public abstract class BaseComponentAnalyzer<T>(ServiceClient service) : ICompone
     protected readonly ServiceClient _service = service;
 
     public abstract ComponentType SupportedType { get; }
-    public abstract Task AnalyzeComponentAsync(T component, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages);
+    public abstract Task AnalyzeComponentAsync(T component, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages, List<SolutionWarning> warnings);
 
     protected void AddAttributeUsage(Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
         string entityName, string attributeName, AttributeUsage usage)
