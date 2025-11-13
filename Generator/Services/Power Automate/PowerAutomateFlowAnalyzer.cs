@@ -48,7 +48,8 @@ public class PowerAutomateFlowAnalyzer : BaseComponentAnalyzer<PowerAutomateFlow
     public override async Task AnalyzeComponentAsync(
         PowerAutomateFlow flow,
         Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
-        List<SolutionWarning> solutionWarnings)
+        List<SolutionWarning> solutionWarnings,
+        List<Microsoft.Xrm.Sdk.Metadata.EntityMetadata>? entityMetadata = null)
     {
         try
         {

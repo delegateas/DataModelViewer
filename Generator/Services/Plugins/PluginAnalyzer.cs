@@ -11,7 +11,7 @@ public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
 
     public override ComponentType SupportedType => ComponentType.Plugin;
 
-    public override async Task AnalyzeComponentAsync(SDKStep sdkStep, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages, List<SolutionWarning> warnings)
+    public override async Task AnalyzeComponentAsync(SDKStep sdkStep, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages, List<SolutionWarning> warnings, List<Microsoft.Xrm.Sdk.Metadata.EntityMetadata>? entityMetadata = null)
     {
         try
         {

@@ -1,4 +1,5 @@
 using Generator.DTO;
+using Generator.DTO.Warnings;
 using Generator.Tests.PowerAutomateAnalyzerTests.Builders;
 using Generator.Tests.PowerAutomateAnalyzerTests.Builders.Connectors.OpenApiConnection;
 using Newtonsoft.Json.Linq;
@@ -23,9 +24,10 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         // Arrange
         var flow = new PowerAutomateFlow("id1", "Test Flow", null!);
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
+        var warnings = new List<SolutionWarning>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert
         Assert.Empty(attributeUsages);
@@ -37,9 +39,10 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         // Arrange
         var flow = new PowerAutomateFlow("id1", "Test Flow", "");
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
+        var warnings = new List<SolutionWarning>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert
         Assert.Empty(attributeUsages);
@@ -51,9 +54,10 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         // Arrange
         var flow = new PowerAutomateFlow("id1", "Test Flow", "{ invalid json }");
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
+        var warnings = new List<SolutionWarning>();
 
         // Act - should not throw
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert
         Assert.Empty(attributeUsages);
@@ -74,7 +78,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert
         Assert.True(attributeUsages.ContainsKey("accounts"));
@@ -105,7 +110,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act - Should not throw
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert - Basic validation that analysis completed
         Assert.NotNull(attributeUsages);
@@ -127,7 +133,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act - Should not throw
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert - Basic validation
         Assert.NotNull(attributeUsages);
@@ -149,7 +156,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act - Should not throw
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert - Basic validation
         Assert.NotNull(attributeUsages);
@@ -169,7 +177,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert - Delete operations might not track specific attributes
         // but should still identify the entity is being used
@@ -190,7 +199,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert - Trigger entity is mapped for expression resolution
         // May not create direct attribute usages unless expressions reference trigger outputs
@@ -231,7 +241,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert
         Assert.True(attributeUsages.ContainsKey("accounts"));
@@ -256,7 +267,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert
         Assert.True(attributeUsages.ContainsKey("accounts"));
@@ -282,7 +294,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert
         Assert.True(attributeUsages.ContainsKey("accounts"));
@@ -304,7 +317,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert
         Assert.True(attributeUsages.ContainsKey("accounts"));
@@ -345,7 +359,8 @@ public class PowerAutomateFlowAnalyzerTests : TestBase
         var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
         // Act - Should not throw
-        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
+        var warnings = new List<SolutionWarning>();
+        await FlowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages, warnings);
 
         // Assert - Basic validation
         Assert.NotNull(attributeUsages);

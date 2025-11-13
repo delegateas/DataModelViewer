@@ -121,10 +121,10 @@ namespace Generator
             // Processes analysis
             var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
 
-            // Run all registered analyzers
+            // Run all registered analyzers, passing entity metadata
             foreach (var registration in analyzerRegistrations)
             {
-                await registration.RunAnalysisAsync(solutionIds, attributeUsages, warnings, logger);
+                await registration.RunAnalysisAsync(solutionIds, attributeUsages, warnings, logger, entitiesInSolutionMetadata.ToList());
             }
 
             var records =
@@ -803,7 +803,8 @@ namespace Generator
             List<Guid> solutionIds,
             Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
             List<SolutionWarning> warnings,
-            ILogger logger);
+            ILogger logger,
+            List<EntityMetadata> entityMetadata);
     }
 
     /// <summary>
@@ -829,7 +830,8 @@ namespace Generator
             List<Guid> solutionIds,
             Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
             List<SolutionWarning> warnings,
-            ILogger logger)
+            ILogger logger,
+            List<EntityMetadata> entityMetadata)
         {
             var stopwatch = Stopwatch.StartNew();
 
@@ -840,7 +842,7 @@ namespace Generator
 
             foreach (var component in componentList)
             {
-                await analyzer.AnalyzeComponentAsync(component, attributeUsages, warnings);
+                await analyzer.AnalyzeComponentAsync(component, attributeUsages, warnings, entityMetadata);
             }
 
             stopwatch.Stop();

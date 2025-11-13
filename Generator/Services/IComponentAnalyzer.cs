@@ -1,10 +1,15 @@
 ﻿using Generator.DTO;
 using Generator.DTO.Warnings;
+using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator.Services;
 
 public interface IComponentAnalyzer<T> where T : Analyzeable
 {
     ComponentType SupportedType { get; }
-    Task AnalyzeComponentAsync(T component, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages, List<SolutionWarning> warnings);
+    Task AnalyzeComponentAsync(
+        T component,
+        Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+        List<SolutionWarning> warnings,
+        List<EntityMetadata>? entityMetadata = null);
 }
