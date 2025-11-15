@@ -51,6 +51,7 @@ public static class WebResourceQueries
             var contentValue = e.GetAttributeValue<AliasedValue>("webresource.content")?.Value;
             var webresourceId = e.GetAttributeValue<AliasedValue>("webresource.webresourceid").Value?.ToString() ?? "";
             var webresourceName = e.GetAttributeValue<AliasedValue>("webresource.name").Value?.ToString();
+            var webresourceDesc = e.GetAttributeValue<AliasedValue>("webresource.description")?.Value?.ToString() ?? "";
             if (contentValue != null)
             {
                 // Content is base64 encoded, decode it
@@ -75,7 +76,7 @@ public static class WebResourceQueries
                 webresourceName,
                 content,
                 (OptionSetValue)e.GetAttributeValue<AliasedValue>("webresource.webresourcetype").Value,
-                e.GetAttributeValue<AliasedValue>("webresource.description")?.Value?.ToString()
+                webresourceDesc
             );
         });
 

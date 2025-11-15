@@ -210,11 +210,10 @@ namespace Generator
             var publishers = await client.RetrieveMultipleAsync(publisherQuery);
             var publisherLookup = publishers.Entities.ToDictionary(
                 p => p.GetAttributeValue<Guid>("publisherid"),
-                p => new
-                {
-                    Name = p.GetAttributeValue<string>("friendlyname") ?? "Unknown Publisher",
-                    Prefix = p.GetAttributeValue<string>("customizationprefix") ?? string.Empty
-                });
+                p => (
+                    Name: p.GetAttributeValue<string>("friendlyname") ?? "Unknown Publisher",
+                    Prefix: p.GetAttributeValue<string>("customizationprefix") ?? string.Empty
+                ));
 
             // Group components by solution
             var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId).ToDictionary(g => g.Key.Id, g => g);
@@ -238,7 +237,7 @@ namespace Generator
                 {
                     foreach (var component in solutionGroup)
                     {
-                        var solutionComponent = CreateSolutionComponent(component, entityLookup, allEntityMetadata);
+                        var solutionComponent = CreateSolutionComponent(component, entityLookup, allEntityMetadata, publisherLookup);
                         if (solutionComponent != null)
                         {
                             components.Add(solutionComponent);
@@ -249,8 +248,8 @@ namespace Generator
                 // Add solution even if components list is empty (e.g., flow-only solutions)
                 solutions.Add(new Solution(
                     solutionName,
-                    publisher?.Name ?? "Unknown Publisher",
-                    publisher?.Prefix ?? string.Empty,
+                    publisher.Name,
+                    publisher.Prefix,
                     components));
             }
 
@@ -260,7 +259,8 @@ namespace Generator
         private SolutionComponent? CreateSolutionComponent(
             (Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId) component,
             Dictionary<Guid, EntityMetadata> entityLookup,
-            List<EntityMetadata> allEntityMetadata)
+            List<EntityMetadata> allEntityMetadata,
+            Dictionary<Guid, (string Name, string Prefix)> publisherLookup)
         {
             try
             {
@@ -270,11 +270,14 @@ namespace Generator
                         // Try to find entity by MetadataId first, then by searching all entities
                         if (entityLookup.TryGetValue(component.ObjectId, out var entityMetadata))
                         {
+                            var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(entityMetadata.SchemaName, publisherLookup);
                             return new SolutionComponent(
                                 entityMetadata.DisplayName?.UserLocalizedLabel?.Label ?? entityMetadata.SchemaName,
                                 entityMetadata.SchemaName,
                                 entityMetadata.Description?.UserLocalizedLabel?.Label ?? string.Empty,
-                                SolutionComponentType.Entity);
+                                SolutionComponentType.Entity,
+                                publisherName,
+                                publisherPrefix);
                         }
 
                         // Entity lookup by ObjectId is complex in Dataverse, so we'll skip the fallback for now
@@ -288,11 +291,14 @@ namespace Generator
                             var attribute = entity.Attributes?.FirstOrDefault(a => a.MetadataId == component.ObjectId);
                             if (attribute != null)
                             {
+                                var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(attribute.SchemaName, publisherLookup);
                                 return new SolutionComponent(
                                     attribute.DisplayName?.UserLocalizedLabel?.Label ?? attribute.SchemaName,
                                     attribute.SchemaName,
                                     attribute.Description?.UserLocalizedLabel?.Label ?? string.Empty,
-                                    SolutionComponentType.Attribute);
+                                    SolutionComponentType.Attribute,
+                                    publisherName,
+                                    publisherPrefix);
                             }
                         }
                         break;
@@ -305,33 +311,42 @@ namespace Generator
                             var oneToMany = entity.OneToManyRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
                             if (oneToMany != null)
                             {
+                                var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(oneToMany.SchemaName, publisherLookup);
                                 return new SolutionComponent(
                                     oneToMany.SchemaName,
                                     oneToMany.SchemaName,
                                     $"One-to-Many: {entity.SchemaName} -> {oneToMany.ReferencingEntity}",
-                                    SolutionComponentType.Relationship);
+                                    SolutionComponentType.Relationship,
+                                    publisherName,
+                                    publisherPrefix);
                             }
 
                             // Check many-to-one relationships
                             var manyToOne = entity.ManyToOneRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
                             if (manyToOne != null)
                             {
+                                var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(manyToOne.SchemaName, publisherLookup);
                                 return new SolutionComponent(
                                     manyToOne.SchemaName,
                                     manyToOne.SchemaName,
                                     $"Many-to-One: {entity.SchemaName} -> {manyToOne.ReferencedEntity}",
-                                    SolutionComponentType.Relationship);
+                                    SolutionComponentType.Relationship,
+                                    publisherName,
+                                    publisherPrefix);
                             }
 
                             // Check many-to-many relationships
                             var manyToMany = entity.ManyToManyRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
                             if (manyToMany != null)
                             {
+                                var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(manyToMany.SchemaName, publisherLookup);
                                 return new SolutionComponent(
                                     manyToMany.SchemaName,
                                     manyToMany.SchemaName,
                                     $"Many-to-Many: {manyToMany.Entity1LogicalName} <-> {manyToMany.Entity2LogicalName}",
-                                    SolutionComponentType.Relationship);
+                                    SolutionComponentType.Relationship,
+                                    publisherName,
+                                    publisherPrefix);
                             }
                         }
                         break;
@@ -347,6 +362,31 @@ namespace Generator
             }
 
             return null;
+        }
+
+        private static (string PublisherName, string PublisherPrefix) GetPublisherFromSchemaName(
+            string schemaName,
+            Dictionary<Guid, (string Name, string Prefix)> publisherLookup)
+        {
+            // Extract prefix from schema name (e.g., "contoso_entity" -> "contoso")
+            var parts = schemaName.Split('_', 2);
+
+            if (parts.Length == 2)
+            {
+                var prefix = parts[0];
+
+                // Find publisher by matching prefix
+                foreach (var publisher in publisherLookup.Values)
+                {
+                    if (publisher.Prefix.Equals(prefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return (publisher.Name, publisher.Prefix);
+                    }
+                }
+            }
+
+            // Default to Microsoft if no prefix or prefix not found
+            return ("Microsoft", "");
         }
 
         private static Record MakeRecord(

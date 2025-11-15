@@ -7,4 +7,4 @@ public record WebResource(
     string Name,
     string Content,
     OptionSetValue WebResourceType,
-    string? Description = null) : Analyzeable();
+    string Description) : Analyzeable();

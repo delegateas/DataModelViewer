@@ -278,7 +278,6 @@ public class XrmQueryAttributeExtractor
         foreach (var pattern in new[] { arrowPattern, transpiledPattern })
         {
             var matches = Regex.Matches(code, pattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            Console.WriteLine($"DEBUG Select pattern '{pattern.Substring(0, 30)}...' matches: {matches.Count}");
 
             foreach (Match match in matches)
             {
