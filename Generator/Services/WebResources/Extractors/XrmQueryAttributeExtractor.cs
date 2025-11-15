@@ -46,8 +46,8 @@ public class XrmQueryAttributeExtractor
     private IEnumerable<AttributeReference> ExtractFromRetrieve(string code, Func<string, string>? convertCollectionNameToLogicalName)
     {
         // Extract entity name from retrieve calls
-        var arrowPattern = @"XrmQuery\.retrieve\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*=>\s*(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)";
-        var transpiledPattern = @"XrmQuery\.retrieve\s*\(\s*function\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*\)\s*\{\s*return\s+(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*;?\s*\}";
+        var arrowPattern = @"XrmQuery\s*\.\s*retrieve\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*=>\s*(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)";
+        var transpiledPattern = @"XrmQuery\s*\.\s*retrieve\s*\(\s*function\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*\)\s*\{\s*return\s+(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*;?\s*\}";
 
         foreach (var pattern in new[] { arrowPattern, transpiledPattern })
         {
@@ -86,8 +86,8 @@ public class XrmQueryAttributeExtractor
     private IEnumerable<AttributeReference> ExtractFromRetrieveMultiple(string code, Func<string, string>? convertCollectionNameToLogicalName)
     {
         // Pattern to match both arrow functions and transpiled function expressions
-        var arrowPattern = @"XrmQuery\.retrieveMultiple\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*=>\s*(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)";
-        var transpiledPattern = @"XrmQuery\.retrieveMultiple\s*\(\s*function\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*\)\s*\{\s*return\s+(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*;?\s*\}";
+        var arrowPattern = @"XrmQuery\s*\.\s*retrieveMultiple\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*=>\s*(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)";
+        var transpiledPattern = @"XrmQuery\s*\.\s*retrieveMultiple\s*\(\s*function\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*\)\s*\{\s*return\s+(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*;?\s*\}";
 
         foreach (var pattern in new[] { arrowPattern, transpiledPattern })
         {
@@ -126,8 +126,8 @@ public class XrmQueryAttributeExtractor
     private IEnumerable<AttributeReference> ExtractFromCreate(string code, Func<string, string>? convertCollectionNameToLogicalName)
     {
         // Pattern to match both arrow functions and transpiled function expressions
-        var arrowPattern = @"XrmQuery\.create\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*=>\s*(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*,\s*(?<data>\{[^}]*\})";
-        var transpiledPattern = @"XrmQuery\.create\s*\(\s*function\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*\)\s*\{\s*return\s+(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*;?\s*\}\s*,\s*(?<data>\{[^}]*\})";
+        var arrowPattern = @"XrmQuery\s*\.\s*create\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*=>\s*(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*,\s*(?<data>\{[^}]*\})";
+        var transpiledPattern = @"XrmQuery\s*\.\s*create\s*\(\s*function\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*\)\s*\{\s*return\s+(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*;?\s*\}\s*,\s*(?<data>\{[^}]*\})";
 
         foreach (var pattern in new[] { arrowPattern, transpiledPattern })
         {
@@ -155,8 +155,8 @@ public class XrmQueryAttributeExtractor
     private IEnumerable<AttributeReference> ExtractFromUpdate(string code, Func<string, string>? convertCollectionNameToLogicalName)
     {
         // Pattern to match both arrow functions and transpiled function expressions
-        var arrowPattern = @"XrmQuery\.update\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*=>\s*(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*,\s*[^,]+\s*,\s*(?<data>\{[^}]*\})";
-        var transpiledPattern = @"XrmQuery\.update\s*\(\s*function\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*\)\s*\{\s*return\s+(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*;?\s*\}\s*,\s*[^,]+\s*,\s*(?<data>\{[^}]*\})";
+        var arrowPattern = @"XrmQuery\s*\.\s*update\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*=>\s*(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*,\s*[^,]+\s*,\s*(?<data>\{[^}]*\})";
+        var transpiledPattern = @"XrmQuery\s*\.\s*update\s*\(\s*function\s*\(\s*(?<param>[a-zA-Z_]\w*)\s*\)\s*\{\s*return\s+(?:[a-zA-Z_]\w*)\.(?<entity>[a-zA-Z_]\w*)\s*;?\s*\}\s*,\s*[^,]+\s*,\s*(?<data>\{[^}]*\})";
 
         foreach (var pattern in new[] { arrowPattern, transpiledPattern })
         {
