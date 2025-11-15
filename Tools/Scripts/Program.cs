@@ -140,91 +140,17 @@ Console.WriteLine("Authentication: Azure DefaultAzureCredential\n");
 
 try
 {
-    // ---- CONFIG ----
-    var tenantId = "0d3aa8f9-8168-4bc2-bda1-c3972e6d9352";
-    var loginHint = "";
+    // Token provider function using DefaultAzureCredential
+    var credential = new DefaultAzureCredential();
 
-    // ---- MSAL public client (user-interactive) ----
-    var pca = PublicClientApplicationBuilder
-        .Create("51f81489-12ee-4a9e-aaae-a2591f45987d") // XrmTooling public client
-        .WithAuthority($"https://login.microsoftonline.com/{tenantId}")
-        .WithRedirectUri("http://localhost")
-        .Build();
-
-    // Optional: pick default account by hint (helps silent token later)
-    var accounts = await pca.GetAccountsAsync();
-    IAccount? preferred = accounts.FirstOrDefault(a => string.Equals(a.Username, loginHint, StringComparison.OrdinalIgnoreCase));
-
-    // Simple per-audience cache
-    var tokenCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-    // Token provider that handles ORG + DISCOVERY hosts
-    async Task<string> TokenProviderFunction(string audience)
+    Task<string> TokenProviderFunction(string url)
     {
-        var aud = new Uri(audience).GetLeftPart(UriPartial.Authority).TrimEnd('/');
-        Console.WriteLine($"TokenProvider asked for audience: {aud}");
-
-        if (tokenCache.TryGetValue(aud, out var cached))
-            return cached;
-
-        var scopes = new[] { $"{aud}/user_impersonation" };  // IMPORTANT: public client wants scopes, not "/.default"
-
-        AuthenticationResult result;
-        try
-        {
-            // Try silent first (no prompt)
-            result = await pca.AcquireTokenSilent(scopes, preferred ?? accounts.FirstOrDefault())
-                              .ExecuteAsync();
-        }
-        catch (MsalUiRequiredException)
-        {
-            // Fall back to interactive (one prompt)
-            var builder = pca.AcquireTokenInteractive(scopes).WithPrompt(Prompt.SelectAccount);
-            if (!string.IsNullOrEmpty(loginHint))
-            {
-                builder = builder.WithLoginHint(loginHint);
-            }
-            result = await builder.ExecuteAsync();
-        }
-
-        tokenCache[aud] = result.AccessToken;
-        return result.AccessToken;
+        var scope = $"{GetCoreUrl(url)}/.default";
+        var tokenRequestContext = new TokenRequestContext([scope]);
+        var token = credential.GetToken(tokenRequestContext, CancellationToken.None);
+        return Task.FromResult(token.Token);
     }
 
-    // ---- Sanity: same identity works via raw WhoAmI (ORG audience) ----
-    var whoScopes = new[] { $"{new Uri(dataverseUrl).GetLeftPart(UriPartial.Authority)}/user_impersonation" };
-    var whoToken = await pca.AcquireTokenInteractive(whoScopes).WithLoginHint(loginHint).ExecuteAsync();
-
-    using var http = new HttpClient { BaseAddress = new Uri($"{dataverseUrl}/api/data/v9.2/") };
-    http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", whoToken.AccessToken);
-    http.DefaultRequestHeaders.Add("OData-MaxVersion", "4.0");
-    http.DefaultRequestHeaders.Add("OData-Version", "4.0");
-    http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-    var who = await http.GetAsync("WhoAmI()");
-    Console.WriteLine($"WhoAmI: {(int)who.StatusCode} {who.ReasonPhrase}");
-    Console.WriteLine(await who.Content.ReadAsStringAsync());
-
-    // ---- Create ServiceClient with that provider ----
-    try
-    {
-        Console.WriteLine("Creating ServiceClient...");
-        using var svc = new ServiceClient(
-            new ConnectionOptions { ServiceUri = new Uri(dataverseUrl), AccessTokenProviderFunctionAsync = TokenProviderFunction },
-            false,
-            new ConfigurationOptions { UseWebApi = true, UseWebApiLoginFlow = true, EnableAffinityCookie = true });
-
-        Console.WriteLine($"IsReady: {svc.IsReady}");
-        Console.WriteLine($"LastError: {svc.LastError}");
-        Console.WriteLine($"LastException: {svc.LastException}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("ServiceClient ctor threw:");
-        Console.WriteLine(ex.ToString());
-    }
-
-    // ---- 3) Now create ServiceClient with the SAME token source ----
-    Console.WriteLine("Creating ServiceClient...");
     using var serviceClient = new ServiceClient(new Uri(dataverseUrl), tokenProviderFunction: TokenProviderFunction);
     Console.WriteLine($"IsReady: {serviceClient.IsReady}");
     Console.WriteLine($"LastError: {serviceClient.LastError}");
@@ -359,3 +285,10 @@ catch (Exception ex)
 }
 
 return 0;
+
+// Helper function to extract core URL from Dataverse URL
+static string GetCoreUrl(string dataverseUrl)
+{
+    var uri = new Uri(dataverseUrl);
+    return $"{uri.Scheme}://{uri.Host}";
+}
