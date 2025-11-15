@@ -8,7 +8,6 @@ namespace Generator.Queries;
 
 public static class PluginQueries
 {
-
     public static async Task<IEnumerable<SDKStep>> GetSDKMessageProcessingStepsAsync(this ServiceClient service, List<Guid>? solutionIds = null)
     {
         // Retrieve the SDK Message Processing Step entity using the componentId

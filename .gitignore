@@ -351,6 +351,10 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+# Claude
+**/.claude/settings.local.json
+.claude/settings.local.json
+
 # --------------------------------------------------------------------------
 # ----- Above is GitHub VisualStudio.gitignore, below are custom rules -----
 # --------------------------------------------------------------------------
@@ -385,3 +389,4 @@ MigrationBackup/
 /Website/generated
 Generator/appsettings.local.json
 /Generator/Properties/launchSettings.json
+/.claude/settings.local.json

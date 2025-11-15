@@ -6,6 +6,7 @@ using Generator.DTO.Warnings;
 using Generator.Queries;
 using Generator.Services;
 using Generator.Services.Plugins;
+using Generator.Services.PowerAutomate;
 using Generator.Services.WebResources;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Extensions.Caching.Memory;
@@ -28,9 +29,7 @@ namespace Generator
         private readonly IConfiguration configuration;
         private readonly ILogger<DataverseService> logger;
 
-        private readonly PluginAnalyzer pluginAnalyzer;
-        private readonly PowerAutomateFlowAnalyzer flowAnalyzer;
-        private readonly WebResourceAnalyzer webResourceAnalyzer;
+        private readonly List<IAnalyzerRegistration> analyzerRegistrations;
 
         public DataverseService(IConfiguration configuration, ILogger<DataverseService> logger)
         {
@@ -49,15 +48,28 @@ namespace Generator
                 instanceUrl: new Uri(dataverseUrl),
                 tokenProviderFunction: url => TokenProviderFunction(url, cache, logger));
 
-            pluginAnalyzer = new PluginAnalyzer(client);
-            flowAnalyzer = new PowerAutomateFlowAnalyzer(client);
-            webResourceAnalyzer = new WebResourceAnalyzer(client, configuration);
+            // Register all analyzers with their query functions
+            analyzerRegistrations = new List<IAnalyzerRegistration>
+            {
+                new AnalyzerRegistration<SDKStep>(
+                    new PluginAnalyzer(client),
+                    solutionIds => client.GetSDKMessageProcessingStepsAsync(solutionIds),
+                    "Plugins"),
+                new AnalyzerRegistration<PowerAutomateFlow>(
+                    new PowerAutomateFlowAnalyzer(client),
+                    solutionIds => client.GetPowerAutomateFlowsAsync(solutionIds),
+                    "Power Automate Flows"),
+                new AnalyzerRegistration<WebResource>(
+                    new WebResourceAnalyzer(client),
+                    solutionIds => client.GetWebResourcesAsync(solutionIds),
+                    "WebResources")
+            };
         }
 
         public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<Solution>)> GetFilteredMetadata()
         {
             var warnings = new List<SolutionWarning>(); // used to collect warnings for the insights dashboard
-            var (publisherPrefix, solutionIds, solutionEntities) = await GetSolutionIds();
+            var (solutionIds, solutionEntities) = await GetSolutionIds();
             var solutionComponents = await GetSolutionComponents(solutionIds); // (id, type, rootcomponentbehavior, solutionid)
 
             var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).Select(x => x.ObjectId).Distinct().ToList();
@@ -108,33 +120,12 @@ namespace Generator
             var entityIconMap = await GetEntityIconMap(allEntityMetadata);
             // Processes analysis
             var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
-            // Plugins
-            var pluginStopWatch = new Stopwatch();
-            pluginStopWatch.Start();
-            var pluginCollection = await client.GetSDKMessageProcessingStepsAsync(solutionIds);
-            logger.LogInformation($"There are {pluginCollection.Count()} plugin sdk steps in the environment.");
-            foreach (var plugin in pluginCollection)
-                await pluginAnalyzer.AnalyzeComponentAsync(plugin, attributeUsages);
-            pluginStopWatch.Stop();
-            logger.LogInformation($"Plugin analysis took {pluginStopWatch.ElapsedMilliseconds} ms.");
-            // Flows
-            var flowStopWatch = new Stopwatch();
-            flowStopWatch.Start();
-            var flowCollection = await client.GetPowerAutomateFlowsAsync(solutionIds);
-            logger.LogInformation($"There are {flowCollection.Count()} Power Automate flows in the environment.");
-            foreach (var flow in flowCollection)
-                await flowAnalyzer.AnalyzeComponentAsync(flow, attributeUsages);
-            flowStopWatch.Stop();
-            logger.LogInformation($"Power Automate flow analysis took {flowStopWatch.ElapsedMilliseconds} ms.");
-            // WebResources
-            var resourceStopWatch = new Stopwatch();
-            resourceStopWatch.Start();
-            var webresourceCollection = await client.GetWebResourcesAsync(solutionIds);
-            logger.LogInformation($"There are {webresourceCollection.Count()} WebResources in the environment.");
-            foreach (var resource in webresourceCollection)
-                await webResourceAnalyzer.AnalyzeComponentAsync(resource, attributeUsages);
-            resourceStopWatch.Stop();
-            logger.LogInformation($"WebResource analysis took {resourceStopWatch.ElapsedMilliseconds} ms.");
+
+            // Run all registered analyzers, passing entity metadata
+            foreach (var registration in analyzerRegistrations)
+            {
+                await registration.RunAnalysisAsync(solutionIds, attributeUsages, warnings, logger, entitiesInSolutionMetadata.ToList());
+            }
 
             var records =
                 entitiesInSolutionMetadata
@@ -188,7 +179,7 @@ namespace Generator
                 solutions);
         }
 
-        private Task<IEnumerable<Solution>> CreateSolutions(
+        private async Task<IEnumerable<Solution>> CreateSolutions(
             List<Entity> solutionEntities,
             IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId)> solutionComponents,
             List<EntityMetadata> allEntityMetadata)
@@ -198,41 +189,78 @@ namespace Generator
             // Create lookup dictionaries for faster access
             var entityLookup = allEntityMetadata.ToDictionary(e => e.MetadataId ?? Guid.Empty, e => e);
 
-            // Group components by solution
-            var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId);
+            // Fetch all unique publishers for the solutions
+            var publisherIds = solutionEntities
+                .Select(s => s.GetAttributeValue<EntityReference>("publisherid").Id)
+                .Distinct()
+                .ToList();
 
-            foreach (var solutionGroup in componentsBySolution)
+            var publisherQuery = new QueryExpression("publisher")
             {
-                var solutionId = solutionGroup.Key;
-                var solutionEntity = solutionEntities.FirstOrDefault(s => s.GetAttributeValue<Guid>("solutionid") == solutionId.Id);
+                ColumnSet = new ColumnSet("publisherid", "friendlyname", "customizationprefix"),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression("publisherid", ConditionOperator.In, publisherIds)
+                    }
+                }
+            };
 
-                if (solutionEntity == null) continue;
+            var publishers = await client.RetrieveMultipleAsync(publisherQuery);
+            var publisherLookup = publishers.Entities.ToDictionary(
+                p => p.GetAttributeValue<Guid>("publisherid"),
+                p => (
+                    Name: p.GetAttributeValue<string>("friendlyname") ?? "Unknown Publisher",
+                    Prefix: p.GetAttributeValue<string>("customizationprefix") ?? string.Empty
+                ));
+
+            // Group components by solution
+            var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId).ToDictionary(g => g.Key.Id, g => g);
+
+            // Process ALL solutions from configuration, not just those with components
+            foreach (var solutionEntity in solutionEntities)
+            {
+                var solutionId = solutionEntity.GetAttributeValue<Guid>("solutionid");
 
                 var solutionName = solutionEntity.GetAttributeValue<string>("friendlyname") ??
                                   solutionEntity.GetAttributeValue<string>("uniquename") ??
                                   "Unknown Solution";
 
+                var publisherId = solutionEntity.GetAttributeValue<EntityReference>("publisherid").Id;
+                var publisher = publisherLookup.GetValueOrDefault(publisherId);
+
                 var components = new List<SolutionComponent>();
 
-                foreach (var component in solutionGroup)
+                // Add components if this solution has any
+                if (componentsBySolution.TryGetValue(solutionId, out var solutionGroup))
                 {
-                    var solutionComponent = CreateSolutionComponent(component, entityLookup, allEntityMetadata);
-                    if (solutionComponent != null)
+                    foreach (var component in solutionGroup)
                     {
-                        components.Add(solutionComponent);
+                        var solutionComponent = CreateSolutionComponent(component, entityLookup, allEntityMetadata, publisherLookup);
+                        if (solutionComponent != null)
+                        {
+                            components.Add(solutionComponent);
+                        }
                     }
                 }
 
-                solutions.Add(new Solution(solutionName, components));
+                // Add solution even if components list is empty (e.g., flow-only solutions)
+                solutions.Add(new Solution(
+                    solutionName,
+                    publisher.Name,
+                    publisher.Prefix,
+                    components));
             }
 
-            return Task.FromResult(solutions.AsEnumerable());
+            return solutions.AsEnumerable();
         }
 
         private SolutionComponent? CreateSolutionComponent(
             (Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId) component,
             Dictionary<Guid, EntityMetadata> entityLookup,
-            List<EntityMetadata> allEntityMetadata)
+            List<EntityMetadata> allEntityMetadata,
+            Dictionary<Guid, (string Name, string Prefix)> publisherLookup)
         {
             try
             {
@@ -242,11 +270,14 @@ namespace Generator
                         // Try to find entity by MetadataId first, then by searching all entities
                         if (entityLookup.TryGetValue(component.ObjectId, out var entityMetadata))
                         {
+                            var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(entityMetadata.SchemaName, publisherLookup);
                             return new SolutionComponent(
                                 entityMetadata.DisplayName?.UserLocalizedLabel?.Label ?? entityMetadata.SchemaName,
                                 entityMetadata.SchemaName,
                                 entityMetadata.Description?.UserLocalizedLabel?.Label ?? string.Empty,
-                                SolutionComponentType.Entity);
+                                SolutionComponentType.Entity,
+                                publisherName,
+                                publisherPrefix);
                         }
 
                         // Entity lookup by ObjectId is complex in Dataverse, so we'll skip the fallback for now
@@ -260,11 +291,14 @@ namespace Generator
                             var attribute = entity.Attributes?.FirstOrDefault(a => a.MetadataId == component.ObjectId);
                             if (attribute != null)
                             {
+                                var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(attribute.SchemaName, publisherLookup);
                                 return new SolutionComponent(
                                     attribute.DisplayName?.UserLocalizedLabel?.Label ?? attribute.SchemaName,
                                     attribute.SchemaName,
                                     attribute.Description?.UserLocalizedLabel?.Label ?? string.Empty,
-                                    SolutionComponentType.Attribute);
+                                    SolutionComponentType.Attribute,
+                                    publisherName,
+                                    publisherPrefix);
                             }
                         }
                         break;
@@ -277,33 +311,42 @@ namespace Generator
                             var oneToMany = entity.OneToManyRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
                             if (oneToMany != null)
                             {
+                                var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(oneToMany.SchemaName, publisherLookup);
                                 return new SolutionComponent(
                                     oneToMany.SchemaName,
                                     oneToMany.SchemaName,
                                     $"One-to-Many: {entity.SchemaName} -> {oneToMany.ReferencingEntity}",
-                                    SolutionComponentType.Relationship);
+                                    SolutionComponentType.Relationship,
+                                    publisherName,
+                                    publisherPrefix);
                             }
 
                             // Check many-to-one relationships
                             var manyToOne = entity.ManyToOneRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
                             if (manyToOne != null)
                             {
+                                var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(manyToOne.SchemaName, publisherLookup);
                                 return new SolutionComponent(
                                     manyToOne.SchemaName,
                                     manyToOne.SchemaName,
                                     $"Many-to-One: {entity.SchemaName} -> {manyToOne.ReferencedEntity}",
-                                    SolutionComponentType.Relationship);
+                                    SolutionComponentType.Relationship,
+                                    publisherName,
+                                    publisherPrefix);
                             }
 
                             // Check many-to-many relationships
                             var manyToMany = entity.ManyToManyRelationships?.FirstOrDefault(r => r.MetadataId == component.ObjectId);
                             if (manyToMany != null)
                             {
+                                var (publisherName, publisherPrefix) = GetPublisherFromSchemaName(manyToMany.SchemaName, publisherLookup);
                                 return new SolutionComponent(
                                     manyToMany.SchemaName,
                                     manyToMany.SchemaName,
                                     $"Many-to-Many: {manyToMany.Entity1LogicalName} <-> {manyToMany.Entity2LogicalName}",
-                                    SolutionComponentType.Relationship);
+                                    SolutionComponentType.Relationship,
+                                    publisherName,
+                                    publisherPrefix);
                             }
                         }
                         break;
@@ -319,6 +362,31 @@ namespace Generator
             }
 
             return null;
+        }
+
+        private static (string PublisherName, string PublisherPrefix) GetPublisherFromSchemaName(
+            string schemaName,
+            Dictionary<Guid, (string Name, string Prefix)> publisherLookup)
+        {
+            // Extract prefix from schema name (e.g., "contoso_entity" -> "contoso")
+            var parts = schemaName.Split('_', 2);
+
+            if (parts.Length == 2)
+            {
+                var prefix = parts[0];
+
+                // Find publisher by matching prefix
+                foreach (var publisher in publisherLookup.Values)
+                {
+                    if (publisher.Prefix.Equals(prefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return (publisher.Name, publisher.Prefix);
+                    }
+                }
+            }
+
+            // Default to Microsoft if no prefix or prefix not found
+            return ("Microsoft", "");
         }
 
         private static Record MakeRecord(
@@ -522,7 +590,7 @@ namespace Generator
             return metadata;
         }
 
-        private async Task<(string PublisherPrefix, List<Guid> SolutionIds, List<Entity> SolutionEntities)> GetSolutionIds()
+        private async Task<(List<Guid> SolutionIds, List<Entity> SolutionEntities)> GetSolutionIds()
         {
             var solutionNameArg = configuration["DataverseSolutionNames"];
             if (solutionNameArg == null)
@@ -543,16 +611,7 @@ namespace Generator
                 }
             });
 
-            var solutions = resp.Entities;
-            var publisherIds = solutions.Select(e => e.GetAttributeValue<EntityReference>("publisherid").Id).Distinct().ToList();
-            if (publisherIds.Count != 1)
-            {
-                throw new Exception("Multiple publishers found. Ensure solutions have the same publisher");
-            }
-
-            var publisher = await client.RetrieveAsync("publisher", publisherIds[0], new ColumnSet("customizationprefix"));
-
-            return (publisher.GetAttributeValue<string>("customizationprefix"), resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList(), resp.Entities.ToList());
+            return (resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList(), resp.Entities.ToList());
         }
 
         public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId)>> GetSolutionComponents(List<Guid> solutionIds)
@@ -564,7 +623,7 @@ namespace Generator
                 {
                     Conditions =
                     {
-                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20, 92 }), // entity, attribute, role, sdkpluginstep (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
+                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20, 29, 92 }), // entity, attribute, role, workflow/flow, sdkpluginstep (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
                         new ConditionExpression("solutionid", ConditionOperator.In, solutionIds)
                     }
                 }
@@ -772,6 +831,62 @@ namespace Generator
                 logger.LogError($"Failed to retrieve access token: {ex.Message}");
                 throw;
             }
+        }
+    }
+
+    /// <summary>
+    /// Interface for analyzer registrations to enable polymorphic execution
+    /// </summary>
+    internal interface IAnalyzerRegistration
+    {
+        Task RunAnalysisAsync(
+            List<Guid> solutionIds,
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+            List<SolutionWarning> warnings,
+            ILogger logger,
+            List<EntityMetadata> entityMetadata);
+    }
+
+    /// <summary>
+    /// Generic analyzer registration that pairs an analyzer with its query function
+    /// </summary>
+    internal class AnalyzerRegistration<T> : IAnalyzerRegistration where T : Analyzeable
+    {
+        private readonly IComponentAnalyzer<T> analyzer;
+        private readonly Func<List<Guid>, Task<IEnumerable<T>>> queryFunc;
+        private readonly string componentTypeName;
+
+        public AnalyzerRegistration(
+            IComponentAnalyzer<T> analyzer,
+            Func<List<Guid>, Task<IEnumerable<T>>> queryFunc,
+            string componentTypeName)
+        {
+            this.analyzer = analyzer;
+            this.queryFunc = queryFunc;
+            this.componentTypeName = componentTypeName;
+        }
+
+        public async Task RunAnalysisAsync(
+            List<Guid> solutionIds,
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+            List<SolutionWarning> warnings,
+            ILogger logger,
+            List<EntityMetadata> entityMetadata)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            var components = await queryFunc(solutionIds);
+            var componentList = components.ToList();
+
+            logger.LogInformation($"There are {componentList.Count} {componentTypeName} in the environment.");
+
+            foreach (var component in componentList)
+            {
+                await analyzer.AnalyzeComponentAsync(component, attributeUsages, warnings, entityMetadata);
+            }
+
+            stopwatch.Stop();
+            logger.LogInformation($"{componentTypeName} analysis took {stopwatch.ElapsedMilliseconds} ms.");
         }
     }
 }

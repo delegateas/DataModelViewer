@@ -14,6 +14,8 @@ export type GroupType = {
 
 export type SolutionType = {
     Name: string,
+    PublisherName: string,
+    PublisherPrefix: string,
     Components: SolutionComponentType[]
 }
 
@@ -22,6 +24,8 @@ export type SolutionComponentType = {
     SchemaName: string,
     Description: string | null,
     ComponentType: SolutionComponentTypeEnum,
+    PublisherName: string,
+    PublisherPrefix: string,
 }
 
 export const enum OwnershipType {

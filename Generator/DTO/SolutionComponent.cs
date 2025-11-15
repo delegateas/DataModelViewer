@@ -11,4 +11,6 @@ public record SolutionComponent(
     string Name,
     string SchemaName,
     string Description,
-    SolutionComponentType ComponentType);
+    SolutionComponentType ComponentType,
+    string PublisherName,
+    string PublisherPrefix);

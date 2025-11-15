@@ -1,7 +1,8 @@
 using Generator.DTO;
-using Microsoft.Extensions.Configuration;
+using Generator.DTO.Warnings;
+using Generator.Services.WebResources.Extractors;
 using Microsoft.PowerPlatform.Dataverse.Client;
-using System.Linq.Dynamic.Core;
+using Microsoft.Xrm.Sdk.Metadata;
 using System.Text.RegularExpressions;
 
 namespace Generator.Services.WebResources;
@@ -10,20 +11,22 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
 {
     private record AttributeCall(string AttributeName, string Type, OperationType Operation);
 
-    private readonly Func<string, string> webresourceNamingFunc;
-    public WebResourceAnalyzer(ServiceClient service, IConfiguration configuration) : base(service)
+    private readonly WebApiAttributeExtractor _webApiExtractor;
+    private readonly XrmQueryAttributeExtractor _xrmQueryExtractor;
+
+    public WebResourceAnalyzer(ServiceClient service) : base(service)
     {
-        var lambda = configuration.GetValue<string>("WebResourceNameFunc") ?? "np(name.Split('/').LastOrDefault()).Split('.').Reverse().Skip(1).FirstOrDefault()";
-        webresourceNamingFunc = DynamicExpressionParser.ParseLambda<string, string>(
-            new ParsingConfig { ResolveTypesBySimpleName = true },
-            false,
-            "name => " + lambda
-        ).Compile();
+        _webApiExtractor = new WebApiAttributeExtractor();
+        _xrmQueryExtractor = new XrmQueryAttributeExtractor();
     }
 
     public override ComponentType SupportedType => ComponentType.WebResource;
 
-    public override async Task AnalyzeComponentAsync(WebResource webResource, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+    public override async Task AnalyzeComponentAsync(
+        WebResource webResource,
+        Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+        List<SolutionWarning> warnings,
+        List<EntityMetadata>? entityMetadata = null)
     {
         try
         {
@@ -31,49 +34,133 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
                 return;
 
             // Analyze JavaScript content for onChange event handlers and getAttribute calls
-            AnalyzeOnChangeHandlers(webResource, attributeUsages);
+            await AnalyzeOnChangeHandlersAsync(webResource, attributeUsages, warnings, entityMetadata);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error analyzing web resource {webResource.Name}: {ex.Message}");
         }
-
-        await Task.CompletedTask;
     }
 
-    private void AnalyzeOnChangeHandlers(WebResource webResource, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+    private async Task AnalyzeOnChangeHandlersAsync(
+        WebResource webResource,
+        Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+        List<SolutionWarning> warnings,
+        List<EntityMetadata>? entityMetadata)
     {
         var content = webResource.Content;
 
+        // Extract entity name from description field
+        string? entityName = ExtractEntityFromDescription(webResource.Description);
+
+        // Legacy attribute extraction methods (getAttribute, getControl)
         var attributeNames = new List<AttributeCall>();
         ExtractGetAttributeCalls(content, attributeNames);
         ExtractGetControlCalls(content, attributeNames);
-        // TODO get attributes used in XrmApi or XrmQuery calls
-
-        foreach (var attributeName in attributeNames)
+        var webApiReferences = _webApiExtractor.ExtractAttributeReferences(content);
+        var entityMapping = BuildEntityMapping(entityMetadata);
+        var xrmQueryReferences = _xrmQueryExtractor.ExtractAttributeReferences(content, collectionName =>
         {
-            string entityName;
-            try
+            if (entityMapping.TryGetValue(collectionName.ToLower(), out var logicalName))
+                return logicalName;
+            // Entity not found in solution - return the collection name as-is, will be warned about
+            return collectionName.ToLower();
+        });
+
+        // Build set of valid entity names in solution
+        var validEntityNames = entityMapping.Values.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Process legacy getAttribute/getControl calls
+        // These require the entity name from description
+        if (!string.IsNullOrWhiteSpace(entityName))
+        {
+            foreach (var attributeName in attributeNames)
             {
-                entityName = webresourceNamingFunc(webResource.Name);
+                AddAttributeUsage(attributeUsages, entityName.ToLower(), attributeName.AttributeName, new AttributeUsage(
+                    webResource.Name,
+                    attributeName.Type,
+                    attributeName.Operation,
+                    SupportedType
+                ));
             }
-            catch (Exception ex)
+        }
+        else if (attributeNames.Count > 0)
+        {
+            // Warn if we found getAttribute/getControl calls but no entity in description
+            warnings.Add(new SolutionWarning(SolutionWarningType.Webresource,
+                $"getAttribute/getControl calls found but ENTITY not specified in WebResource description: {webResource.Name}"));
+        }
+
+        // Process WebApi references (these include their own entity names)
+        foreach (var reference in webApiReferences)
+        {
+            var entityNameLower = reference.EntityName.ToLower();
+
+            // Warn if entity not found in solution
+            if (!validEntityNames.Contains(entityNameLower))
             {
-                Console.WriteLine($"Warning: Naming function failed for web resource '{webResource.Name}': {ex.Message}");
-                continue;
+                warnings.Add(new SolutionWarning(SolutionWarningType.Webresource,
+                    $"Entity '{reference.EntityName}' not found in solution. Used in {webResource.Name} with attribute '{reference.AttributeName}' ({reference.Context})"));
             }
-            if (string.IsNullOrWhiteSpace(entityName))
-            {
-                Console.WriteLine($"Warning: Naming function returned an invalid value for web resource '{webResource.Name}'. Skipping attribute usage.");
-                continue;
-            }
-            AddAttributeUsage(attributeUsages, entityName.ToLower(), attributeName.AttributeName, new AttributeUsage(
+
+            AddAttributeUsage(attributeUsages, entityNameLower, reference.AttributeName, new AttributeUsage(
                 webResource.Name,
-                attributeName.Type,
-                attributeName.Operation,
+                reference.Context,
+                ConvertOperationString(reference.Operation),
                 SupportedType
             ));
         }
+
+        // Process XrmQuery references (these include their own entity names)
+        foreach (var reference in xrmQueryReferences)
+        {
+            var entityNameLower = reference.EntityName.ToLower();
+
+            // Warn if entity not found in solution
+            if (!validEntityNames.Contains(entityNameLower))
+            {
+                warnings.Add(new SolutionWarning(SolutionWarningType.Webresource,
+                    $"Entity '{reference.EntityName}' not found in solution. Used in {webResource.Name} with attribute '{reference.AttributeName}' ({reference.Context})"));
+            }
+
+            AddAttributeUsage(attributeUsages, entityNameLower, reference.AttributeName, new AttributeUsage(
+                webResource.Name,
+                reference.Context,
+                ConvertOperationString(reference.Operation),
+                SupportedType
+            ));
+        }
+    }
+
+    /// <summary>
+    /// Converts operation string from extractors to OperationType enum
+    /// </summary>
+    private OperationType ConvertOperationString(string operation)
+    {
+        return operation.ToLower() switch
+        {
+            "read" => OperationType.Read,
+            "create" => OperationType.Create,
+            "update" => OperationType.Update,
+            "delete" => OperationType.Delete,
+            _ => OperationType.Read
+        };
+    }
+
+    private static string? ExtractEntityFromDescription(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        // Look for pattern: ENTITY:<entityschemaname>
+        var match = Regex.Match(description, @"ENTITY:(\w+)", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+
+        return null;
     }
 
     private void ExtractGetAttributeCalls(string code, List<AttributeCall> attributes)
@@ -120,5 +207,21 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
             attributes.Add(new AttributeCall(attributeName, "getControl call", OperationType.Read));
         }
         return;
+    }
+
+    /// <summary>
+    /// Builds entity mapping from LogicalCollectionName to LogicalName using the provided entity metadata
+    /// </summary>
+    private Dictionary<string, string> BuildEntityMapping(List<EntityMetadata>? entityMetadata)
+    {
+        if (entityMetadata == null || entityMetadata.Count == 0)
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        return entityMetadata
+            .Where(e => !string.IsNullOrEmpty(e.LogicalCollectionName))
+            .ToDictionary(
+                e => e.LogicalCollectionName!.ToLower(),
+                e => e.LogicalName.ToLower(),
+                StringComparer.OrdinalIgnoreCase);
     }
 }

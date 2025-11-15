@@ -33,21 +33,21 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
     const barChartData = useMemo(() => {
         // Get all entities from all groups
         const allEntities = groups.flatMap(group => group.Entities);
-        
+
         // Count entities
         const standardEntities = allEntities.filter(entity => !entity.IsCustom);
         const customEntities = allEntities.filter(entity => entity.IsCustom);
-        
+
         // Count attributes
         const allAttributes = allEntities.flatMap(entity => entity.Attributes);
         const standardAttributes = allAttributes.filter(attr => !attr.IsCustomAttribute);
         const customAttributes = allAttributes.filter(attr => attr.IsCustomAttribute);
-        
+
         // Count relationships
         const allRelationships = allEntities.flatMap(entity => entity.Relationships);
         const standardRelationships = allRelationships.filter(rel => !rel.IsCustom);
         const customRelationships = allRelationships.filter(rel => rel.IsCustom);
-        
+
         return [
             {
                 category: 'Entities',
@@ -55,7 +55,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 custom: customEntities.length,
             },
             {
-                category: 'Attributes', 
+                category: 'Attributes',
                 standard: standardAttributes.length,
                 custom: customAttributes.length,
             },
@@ -69,7 +69,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
     const entityFeaturesData = useMemo(() => {
         const allEntities = groups.flatMap(group => group.Entities);
-        
+
         const auditEnabled = allEntities.filter(entity => entity.IsAuditEnabled).length;
         const auditDisabled = allEntities.filter(entity => !entity.IsAuditEnabled).length;
         const activities = allEntities.filter(entity => entity.IsActivity).length;
@@ -88,7 +88,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
     const attributeTypeData = useMemo(() => {
         const allEntities = groups.flatMap(group => group.Entities);
         const allAttributes = allEntities.flatMap(entity => entity.Attributes);
-        
+
         // Count attribute types
         const attributeTypeCounts = allAttributes.reduce((acc, attr) => {
             const type = attr.AttributeType;
@@ -101,12 +101,35 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             label: type.replace('Attribute', ''),
             value: count
         }));
-    }, [groups, theme.palette]);
+    }, [groups]);
+
+    const publisherComponentData = useMemo(() => {
+        // Count components per publisher by looking at each component's publisher
+        const publisherCounts: Record<string, number> = {};
+
+        solutions.forEach(solution => {
+            solution.Components.forEach(component => {
+                const publisher = component.PublisherName;
+                if (!publisherCounts[publisher]) {
+                    publisherCounts[publisher] = 0;
+                }
+                publisherCounts[publisher]++;
+            });
+        });
+
+        // Convert to chart format and sort by component count (descending)
+        return Object.entries(publisherCounts)
+            .map(([publisher, count]) => ({
+                publisher: publisher,
+                components: count
+            }))
+            .sort((a, b) => b.components - a.components);
+    }, [solutions]);
 
     return (
         <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 7 }}>
-                <Box className="px-6 py-8 mb-8 rounded-2xl relative flex items-center h-full" sx={{ 
+                <Box className="px-6 py-8 mb-8 rounded-2xl relative flex items-center h-full" sx={{
                     backgroundColor: "background.default",
                     backgroundImage: generateLiquidCheeseSVG(
                         theme.palette.primary.main,
@@ -115,22 +138,22 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                     color: 'primary.contrastText',
                 }}>
                     <Stack direction="column" spacing={2} justifyContent="center">
-                        <Typography 
-                            variant="h3" 
+                        <Typography
+                            variant="h3"
                             className="font-bold"
-                            sx={{ 
-                                textShadow: theme.palette.mode === 'light' 
-                                    ? '0 1px 3px rgba(0,0,0,0.3)' 
+                            sx={{
+                                textShadow: theme.palette.mode === 'light'
+                                    ? '0 1px 3px rgba(0,0,0,0.3)'
                                     : 'none'
                             }}
                         >
                             Insights
                         </Typography>
-                        <Typography 
-                            variant='body2' 
-                            sx={{ 
-                                textShadow: theme.palette.mode === 'light' 
-                                    ? '0 1px 2px rgba(0,0,0,0.2)' 
+                        <Typography
+                            variant='body2'
+                            sx={{
+                                textShadow: theme.palette.mode === 'light'
+                                    ? '0 1px 2px rgba(0,0,0,0.2)'
                                     : 'none'
                             }}
                         >
@@ -151,7 +174,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                 <Typography variant="body2" className="p-0 m-0" sx={{ color: 'text.secondary' }}>Entities ungrouped</Typography>
                             </Box>
                         </Tooltip>
-                            
+
                         {/* No Icon Entities */}
                         <Tooltip title={"Entities: " + missingIconEntities.map(entity => entity.SchemaName).join(", ")}>
                             <Box className="text-center px-4 py-1 rounded-lg flex items-center w-full" gap={2} sx={{ backgroundColor: 'background.default' }}>
@@ -160,7 +183,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                 <Typography variant="body2" className="p-0 m-0" sx={{ color: 'text.secondary' }}>Entities without icons</Typography>
                             </Box>
                         </Tooltip>
-                            
+
                         {/* No Icon Entities */}
                         <Tooltip title="">
                             <Box className="text-center px-4 py-1 rounded-lg flex items-center w-full" gap={2} sx={{ backgroundColor: 'background.default' }}>
@@ -174,25 +197,25 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             </Grid>
 
             <Grid size={{ xs: 12, md: 4 }}>
-                <InfoCard 
+                <InfoCard
                     color="success.main"
                     title="Solutions"
                     value={solutions.length}
                     iconSrc={SolutionIcon}
                 />
             </Grid>
-            
+
             <Grid size={{ xs: 12, md: 4 }}>
-                <InfoCard 
+                <InfoCard
                     color="primary.main"
                     title="Components"
                     value={solutions.reduce((acc, solution) => acc + solution.Components.length, 0)}
                     iconSrc={ComponentIcon}
                 />
-            </Grid> 
-            
+            </Grid>
+
             <Grid size={{ xs: 12, md: 4 }}>
-                <InfoCard 
+                <InfoCard
                     color="warning.main"
                     title="Attribute Usages"
                     value={totalAttributeUsageCount}
@@ -353,6 +376,101 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 </Paper>
             </Grid>
 
+            <Grid size={12}>
+                <Paper elevation={2} className="p-6 rounded-2xl">
+                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
+                        Components by Publisher
+                    </Typography>
+                    <Box sx={{ height: 400 }}>
+                        <ResponsiveBar
+                            data={publisherComponentData}
+                            keys={['components']}
+                            indexBy="publisher"
+                            margin={{ top: 50, right: 50, bottom: 80, left: 150 }}
+                            padding={0.3}
+                            layout="horizontal"
+                            valueScale={{ type: 'linear' }}
+                            indexScale={{ type: 'band', round: true }}
+                            colors={{ scheme: "blues" }}
+                            borderRadius={4}
+                            borderWidth={1}
+                            borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                            axisTop={null}
+                            axisRight={null}
+                            axisBottom={{
+                                tickSize: 5,
+                                tickPadding: 5,
+                                tickRotation: 0,
+                                legend: 'Number of Components',
+                                legendPosition: 'middle',
+                                legendOffset: 40
+                            }}
+                            axisLeft={{
+                                tickSize: 5,
+                                tickPadding: 5,
+                                tickRotation: 0,
+                                legend: 'Publisher',
+                                legendPosition: 'middle',
+                                legendOffset: -140
+                            }}
+                            enableLabel={true}
+                            labelSkipWidth={12}
+                            labelSkipHeight={12}
+                            labelTextColor={{ from: 'color', modifiers: [['darker', 3]] }}
+                            role="application"
+                            ariaLabel="Components by publisher bar chart"
+                            barAriaLabel={e => `${e.indexValue}: ${e.formattedValue} components`}
+                            theme={{
+                                background: 'transparent',
+                                text: {
+                                    fontSize: 12,
+                                    fill: theme.palette.text.primary,
+                                    outlineWidth: 0,
+                                    outlineColor: 'transparent'
+                                },
+                                axis: {
+                                    domain: {
+                                        line: {
+                                            stroke: theme.palette.divider,
+                                            strokeWidth: 1
+                                        }
+                                    },
+                                    legend: {
+                                        text: {
+                                            fontSize: 12,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    ticks: {
+                                        line: {
+                                            stroke: theme.palette.divider,
+                                            strokeWidth: 1
+                                        },
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    }
+                                },
+                                grid: {
+                                    line: {
+                                        stroke: theme.palette.divider,
+                                        strokeWidth: 1,
+                                        strokeDasharray: '4 4'
+                                    }
+                                },
+                                tooltip: {
+                                    container: {
+                                        background: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Paper>
+            </Grid>
+
             <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
                     <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
@@ -449,7 +567,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                         />
                     </Box>
                 </Paper>
-            </Grid>              
+            </Grid>
         </Grid>
     )
 }
