@@ -4,7 +4,8 @@ export type SolutionWarningType = {
 }
 
 export enum WarningType {
-    Attribute
+    Attribute,
+    WebResource
 }
 
 export type GroupType = {
