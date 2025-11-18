@@ -1,0 +1,80 @@
+using Generator.DTO;
+using Generator.DTO.Attributes;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Xrm.Sdk.Metadata;
+
+namespace Generator.Services
+{
+    /// <summary>
+    /// Service responsible for creating Record DTOs from entity metadata
+    /// Orchestrates attribute mapping, relationship mapping, and grouping logic
+    /// </summary>
+    internal class RecordMappingService
+    {
+        private readonly AttributeMappingService attributeMappingService;
+        private readonly RelationshipService relationshipService;
+        private readonly IConfiguration configuration;
+        private readonly ILogger<RecordMappingService> logger;
+        private readonly ILogger<RelationshipService> relationshipLogger;
+
+        public RecordMappingService(
+            AttributeMappingService attributeMappingService,
+            RelationshipService relationshipService,
+            IConfiguration configuration,
+            ILogger<RecordMappingService> logger,
+            ILogger<RelationshipService> relationshipLogger)
+        {
+            this.attributeMappingService = attributeMappingService;
+            this.relationshipService = relationshipService;
+            this.configuration = configuration;
+            this.logger = logger;
+            this.relationshipLogger = relationshipLogger;
+        }
+
+        /// <summary>
+        /// Creates a Record DTO from entity metadata
+        /// </summary>
+        public Record CreateRecord(
+            EntityMetadata entity,
+            List<AttributeMetadata> relevantAttributes,
+            List<ManyToManyRelationshipMetadata> relevantManyToMany,
+            Dictionary<string, ExtendedEntityInformation> logicalToSchema,
+            Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
+            List<SecurityRole> securityRoles,
+            List<Key> keys,
+            Dictionary<string, string> entityIconMap,
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+        {
+            var attributes =
+                relevantAttributes
+                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages))
+                .Where(x => !string.IsNullOrEmpty(x.DisplayName))
+                .ToList();
+
+            var oneToMany = relationshipService.MapOneToManyRelationships(entity, logicalToSchema, attributeLogicalToSchema);
+            var manyToMany = relationshipService.MapManyToManyRelationships(entity, relevantManyToMany, logicalToSchema);
+
+            var tablegroups = relationshipService.ParseTableGroups(relationshipLogger);
+            var (group, description) = relationshipService.GetGroupAndDescription(entity, tablegroups);
+
+            entityIconMap.TryGetValue(entity.LogicalName, out string? iconBase64);
+
+            return new Record(
+                    entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty,
+                    entity.SchemaName,
+                    group,
+                    description?.PrettyDescription(),
+                    entity.IsAuditEnabled.Value,
+                    entity.IsActivity ?? false,
+                    entity.IsCustomEntity ?? false,
+                    entity.OwnershipType ?? OwnershipTypes.UserOwned,
+                    entity.HasNotes ?? false,
+                    attributes,
+                    oneToMany.Concat(manyToMany).ToList(),
+                    securityRoles,
+                    keys,
+                    iconBase64);
+        }
+    }
+}
