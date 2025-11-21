@@ -13,7 +13,7 @@ var configuration =
     .AddEnvironmentVariables()
     .AddJsonFile("appsettings.local.json", optional: true)
     .Build();
-var verbose = configuration.GetValue("Verbosity", LogLevel.Information);
+var verbose = configuration.GetValue("Verbosity", LogLevel.Warning);
 
 // Set up dependency injection
 var services = new ServiceCollection();
@@ -57,6 +57,7 @@ services.AddSingleton<AttributeMappingService>();
 services.AddSingleton<RelationshipService>();
 services.AddSingleton<RecordMappingService>();
 services.AddSingleton<DataverseService>();
+services.AddSingleton<SolutionComponentService>();
 
 // Build service provider
 var serviceProvider = services.BuildServiceProvider();

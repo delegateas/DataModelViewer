@@ -14,9 +14,6 @@ namespace Generator.Services
     {
         private readonly AttributeMappingService attributeMappingService;
         private readonly RelationshipService relationshipService;
-        private readonly IConfiguration configuration;
-        private readonly ILogger<RecordMappingService> logger;
-        private readonly ILogger<RelationshipService> relationshipLogger;
 
         public RecordMappingService(
             AttributeMappingService attributeMappingService,
@@ -27,9 +24,6 @@ namespace Generator.Services
         {
             this.attributeMappingService = attributeMappingService;
             this.relationshipService = relationshipService;
-            this.configuration = configuration;
-            this.logger = logger;
-            this.relationshipLogger = relationshipLogger;
         }
 
         /// <summary>
@@ -38,24 +32,21 @@ namespace Generator.Services
         public Record CreateRecord(
             EntityMetadata entity,
             List<AttributeMetadata> relevantAttributes,
-            List<ManyToManyRelationshipMetadata> relevantManyToMany,
+            List<Relationship> relevantRelationships,
             Dictionary<string, ExtendedEntityInformation> logicalToSchema,
-            Dictionary<string, Dictionary<string, string>> attributeLogicalToSchema,
             List<SecurityRole> securityRoles,
             List<Key> keys,
             Dictionary<string, string> entityIconMap,
-            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+            Dictionary<Guid, ComponentInclusionType> inclusionMap)
         {
             var attributes =
                 relevantAttributes
-                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages))
+                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages, inclusionMap))
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 
-            var oneToMany = relationshipService.MapOneToManyRelationships(entity, logicalToSchema, attributeLogicalToSchema);
-            var manyToMany = relationshipService.MapManyToManyRelationships(entity, relevantManyToMany, logicalToSchema);
-
-            var tablegroups = relationshipService.ParseTableGroups(relationshipLogger);
+            var tablegroups = relationshipService.ParseTableGroups();
             var (group, description) = relationshipService.GetGroupAndDescription(entity, tablegroups);
 
             entityIconMap.TryGetValue(entity.LogicalName, out string? iconBase64);
@@ -71,7 +62,7 @@ namespace Generator.Services
                     entity.OwnershipType ?? OwnershipTypes.UserOwned,
                     entity.HasNotes ?? false,
                     attributes,
-                    oneToMany.Concat(manyToMany).ToList(),
+                    relevantRelationships,
                     securityRoles,
                     keys,
                     iconBase64);

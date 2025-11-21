@@ -1,12 +1,12 @@
 ﻿using Generator.DTO;
 using Generator.DTO.Attributes;
 using Generator.DTO.Warnings;
+using Generator.ExtensionMethods;
 using Generator.Queries;
 using Generator.Services;
 using Generator.Services.Plugins;
 using Generator.Services.PowerAutomate;
 using Generator.Services.WebResources;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk.Metadata;
@@ -16,29 +16,26 @@ namespace Generator
 {
     internal class DataverseService
     {
-        private readonly ServiceClient client;
-        private readonly IConfiguration configuration;
         private readonly ILogger<DataverseService> logger;
         private readonly EntityMetadataService entityMetadataService;
         private readonly SolutionService solutionService;
         private readonly SecurityRoleService securityRoleService;
         private readonly EntityIconService entityIconService;
         private readonly RecordMappingService recordMappingService;
+        private readonly SolutionComponentService solutionComponentService;
 
         private readonly List<IAnalyzerRegistration> analyzerRegistrations;
 
         public DataverseService(
             ServiceClient client,
-            IConfiguration configuration,
             ILogger<DataverseService> logger,
             EntityMetadataService entityMetadataService,
             SolutionService solutionService,
             SecurityRoleService securityRoleService,
             EntityIconService entityIconService,
-            RecordMappingService recordMappingService)
+            RecordMappingService recordMappingService,
+            SolutionComponentService solutionComponentService)
         {
-            this.client = client;
-            this.configuration = configuration;
             this.logger = logger;
             this.entityMetadataService = entityMetadataService;
             this.solutionService = solutionService;
@@ -62,42 +59,49 @@ namespace Generator
                     solutionIds => client.GetWebResourcesAsync(solutionIds),
                     "WebResources")
             };
+            this.solutionComponentService = solutionComponentService;
         }
 
         public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<Solution>)> GetFilteredMetadata()
         {
-            var warnings = new List<SolutionWarning>(); // used to collect warnings for the insights dashboard
+            // used to collect warnings for the insights dashboard
+            var warnings = new List<SolutionWarning>();
             var (solutionIds, solutionEntities) = await solutionService.GetSolutionIds();
-            var solutionComponents = await solutionService.GetSolutionComponents(solutionIds); // (id, type, rootcomponentbehavior, solutionid)
 
-            var entitiesInSolution = solutionComponents.Where(x => x.ComponentType == 1).Select(x => x.ObjectId).Distinct().ToList();
-            var entityRootBehaviour = solutionComponents
-                .Where(x => x.ComponentType == 1)
-                .GroupBy(x => x.ObjectId)
-                .ToDictionary(g => g.Key, g =>
-                {
-                    // If any solution includes all attributes (0), use that, otherwise use the first occurrence
-                    var behaviors = g.Select(x => x.RootComponentBehavior).ToList();
-                    return behaviors.Contains(0) ? 0 : behaviors.First();
-                });
-            var attributesInSolution = solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId).ToHashSet();
-            var rolesInSolution = solutionComponents.Where(x => x.ComponentType == 20).Select(x => x.ObjectId).Distinct().ToList();
+            /// SOLUTIONS
+            IEnumerable<ComponentInfo> solutionComponents;
+            try
+            {
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Calling solutionComponentService.GetAllSolutionComponents()");
+                solutionComponents = solutionComponentService.GetAllSolutionComponents(solutionIds);
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieved {solutionComponents.Count()} solution components");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to get solution components");
+                throw;
+            }
+            var inclusionMap = solutionComponents.ToDictionary(s => s.ObjectId, s => s.InclusionType);
 
-            var entitiesInSolutionMetadata = await entityMetadataService.GetEntityMetadataByObjectIds(entitiesInSolution);
-
-            var logicalNameToKeys = entitiesInSolutionMetadata.ToDictionary(
-                entity => entity.LogicalName,
-                entity => entity.Keys.Select(key => new Key(
-                    key.DisplayName.UserLocalizedLabel?.Label ?? key.DisplayName.LocalizedLabels.First().Label,
-                    key.LogicalName,
-                    key.KeyAttributes)
-                ).ToList());
-
-            var logicalNameToSecurityRoles = await securityRoleService.GetSecurityRoles(rolesInSolution, entitiesInSolutionMetadata.ToDictionary(x => x.LogicalName, x => x.Privileges));
+            /// ENTITIES
+            var set = solutionComponents.Select(c => c.ObjectId).ToHashSet();
+            IEnumerable<EntityMetadata> entitiesInSolutionMetadata;
+            IEnumerable<ComponentInfo> entitiesInSolution;
+            try
+            {
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Calling entityMetadataService.GetEntityMetadataByObjectIds()");
+                entitiesInSolution = solutionComponents.Where(c => c.ComponentType is 1).DistinctBy(comp => comp.ObjectId);
+                entitiesInSolutionMetadata = await entityMetadataService.GetEntityMetadataByObjectIds(entitiesInSolution.Select(e => e.ObjectId));
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieved {entitiesInSolutionMetadata.Count()} entity metadata");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to get entity metadata");
+                throw;
+            }
             var entityLogicalNamesInSolution = entitiesInSolutionMetadata.Select(e => e.LogicalName).ToHashSet();
-
-            logger.LogInformation("There are {Count} entities in the solution.", entityLogicalNamesInSolution.Count);
-            // Collect all referenced entities from attributes and add (needed for lookup attributes)
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {entityLogicalNamesInSolution.Count} unique entities");
+            var entityIconMap = await entityIconService.GetEntityIconMap(entitiesInSolutionMetadata);
             var relatedEntityLogicalNames = new HashSet<string>();
             foreach (var entity in entitiesInSolutionMetadata)
             {
@@ -110,69 +114,72 @@ namespace Generator
             }
             logger.LogInformation("There are {Count} entities referenced outside the solution.", relatedEntityLogicalNames.Count);
             var referencedEntityMetadata = await entityMetadataService.GetEntityMetadataByLogicalNames(relatedEntityLogicalNames.ToList());
-
             var allEntityMetadata = entitiesInSolutionMetadata.Concat(referencedEntityMetadata).ToList();
             var logicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => new ExtendedEntityInformation { Name = x.SchemaName, IsInSolution = entitiesInSolutionMetadata.Any(e => e.LogicalName == x.LogicalName) });
+
+            /// SECURITY ROLES
+            var rolesInSolution = solutionComponents.Where(x => x.ComponentType == 20).Select(x => x.ObjectId).Distinct().ToList();
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {rolesInSolution.Count} roles");
+            var logicalNameToSecurityRoles = await securityRoleService.GetSecurityRoles(rolesInSolution, entitiesInSolutionMetadata.ToDictionary(x => x.LogicalName, x => x.Privileges));
+
+            /// ATTRIBUTES
+            var attributesInSolution = solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId).ToHashSet();
+            var rootBehaviourEntities = entitiesInSolution.Where(ent => ent.RootComponentBehaviour is 0).Select(e => e.ObjectId).ToHashSet();
+            var attributesAllExplicitlyAdded = entitiesInSolutionMetadata.Where(e => rootBehaviourEntities.Contains(e.MetadataId!.Value)).SelectMany(e => e.Attributes.Select(a => a.MetadataId!.Value));
+            foreach (var attr in attributesAllExplicitlyAdded) attributesInSolution.Add(attr);
+
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {attributesInSolution.Count} attributes");
             var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.UserLocalizedLabel?.Label ?? attr.SchemaName) ?? []);
 
-            var entityIconMap = await entityIconService.GetEntityIconMap(allEntityMetadata);
-            // Processes analysis
-            var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
+            /// ENTITY RELATIONSHIPS
+            var relationshipsInSolution = solutionComponents.Where(x => x.ComponentType == 10).Select(x => x.ObjectId).ToHashSet();
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {relationshipsInSolution.Count} relations");
 
-            // Run all registered analyzers, passing entity metadata
+            /// KEYS
+            var logicalNameToKeys = entitiesInSolutionMetadata.ToDictionary(
+                entity => entity.LogicalName,
+                entity => entity.Keys.Select(key => new Key(
+                    key.DisplayName.UserLocalizedLabel?.Label ?? key.DisplayName.LocalizedLabels.First().Label,
+                    key.LogicalName,
+                    key.KeyAttributes)
+                ).ToList());
+
+            /// PROCESS ANALYSERS
+            var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
             foreach (var registration in analyzerRegistrations)
-            {
                 await registration.RunAnalysisAsync(solutionIds, attributeUsages, warnings, logger, entitiesInSolutionMetadata.ToList());
-            }
+
 
             var records =
                 entitiesInSolutionMetadata
-                .Select(x => new
+                .Select(entMeta =>
                 {
-                    EntityMetadata = x,
-                    RelevantAttributes =
-                        x.GetRelevantAttributes(attributesInSolution, entityRootBehaviour)
-                        .Where(x => x.DisplayName.UserLocalizedLabel?.Label != null)
-                        .ToList(),
-                    RelevantManyToMany =
-                        x.ManyToManyRelationships
-                        .Where(r => entityLogicalNamesInSolution.Contains(r.Entity1LogicalName) && entityLogicalNamesInSolution.Contains(r.Entity2LogicalName))
-                        .ToList(),
-                })
-                .Where(x => x.EntityMetadata.DisplayName.UserLocalizedLabel?.Label != null)
-                .ToList();
+                    var relevantAttributes = entMeta.Attributes.Where(attr => attributesInSolution.Contains(attr.MetadataId!.Value)).ToList();
+                    var relevantManyToManyRelations = entMeta.ManyToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)).ConvertToRelationship(entMeta.LogicalName, inclusionMap);
+                    var relevantOneToManyRelations = entMeta.OneToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)).ConvertToRelationship(entMeta.LogicalName, attributeLogicalToSchema, inclusionMap);
+                    var relevantManyToOneRelations = entMeta.ManyToOneRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)).ConvertToRelationship(entMeta.LogicalName, attributeLogicalToSchema, inclusionMap);
+                    var relevantRelationships = relevantManyToManyRelations.Concat(relevantManyToOneRelations).Concat(relevantOneToManyRelations).ToList();
 
-            // Warn about attributes that were used in processes, but the entity could not be resolved from e.g. JavaScript file name or similar
-            var hash = entitiesInSolutionMetadata.SelectMany<EntityMetadata, string>(r => [r.LogicalCollectionName?.ToLower() ?? "", r.LogicalName.ToLower()]).ToHashSet();
-            warnings.AddRange(attributeUsages.Keys
-                .Where(k => !hash.Contains(k.ToLower()))
-                .SelectMany(entityKey => attributeUsages.GetValueOrDefault(entityKey)!
-                    .SelectMany(attributeDict => attributeDict.Value
-                        .Select(usage =>
-                            new AttributeWarning($"{attributeDict.Key} was used inside a {usage.ComponentType} component [{usage.Name}]. However, the entity {entityKey} could not be resolved in the provided solutions.")))));
-
-            // Create solutions with their components
-            var solutions = await solutionService.CreateSolutions(solutionEntities, solutionComponents, allEntityMetadata);
-
-            return (records
-                .Select(x =>
-                {
-                    logicalNameToSecurityRoles.TryGetValue(x.EntityMetadata.LogicalName, out var securityRoles);
-                    logicalNameToKeys.TryGetValue(x.EntityMetadata.LogicalName, out var keys);
+                    logicalNameToSecurityRoles.TryGetValue(entMeta.LogicalName, out var securityRoles);
+                    logicalNameToKeys.TryGetValue(entMeta.LogicalName, out var keys);
 
                     return recordMappingService.CreateRecord(
-                        x.EntityMetadata,
-                        x.RelevantAttributes,
-                        x.RelevantManyToMany,
+                        entMeta,
+                        relevantAttributes,
+                        relevantRelationships,
                         logicalToSchema,
-                        attributeLogicalToSchema,
                         securityRoles ?? [],
                         keys ?? [],
                         entityIconMap,
-                        attributeUsages);
-                }),
-                warnings,
-                solutions);
+                        attributeUsages,
+                        inclusionMap);
+                })
+                .ToList();
+
+            var solutions = await solutionService.CreateSolutions(solutionEntities, solutionComponents, entitiesInSolutionMetadata);
+
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] GetFilteredMetadata completed - returning empty results");
+            return (records, warnings, solutions);
         }
     }
 
@@ -215,20 +222,41 @@ namespace Generator
             ILogger logger,
             List<EntityMetadata> entityMetadata)
         {
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Starting {componentTypeName} analysis");
             var stopwatch = Stopwatch.StartNew();
 
-            var components = await queryFunc(solutionIds);
+            IEnumerable<T> components;
+            try
+            {
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Querying {componentTypeName} from Dataverse");
+                components = await queryFunc(solutionIds);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to query {componentTypeName}");
+                throw;
+            }
+
             var componentList = components.ToList();
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] There are {componentList.Count} {componentTypeName} in the environment.");
 
-            logger.LogInformation($"There are {componentList.Count} {componentTypeName} in the environment.");
-
+            int processedCount = 0;
             foreach (var component in componentList)
             {
-                await analyzer.AnalyzeComponentAsync(component, attributeUsages, warnings, entityMetadata);
+                try
+                {
+                    await analyzer.AnalyzeComponentAsync(component, attributeUsages, warnings, entityMetadata);
+                    processedCount++;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to analyze {componentTypeName} component (processed {processedCount}/{componentList.Count})");
+                    // Continue with next component instead of throwing
+                }
             }
 
             stopwatch.Stop();
-            logger.LogInformation($"{componentTypeName} analysis took {stopwatch.ElapsedMilliseconds} ms.");
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {componentTypeName} analysis completed - processed {processedCount}/{componentList.Count} components in {stopwatch.ElapsedMilliseconds} ms");
         }
     }
 }

@@ -74,8 +74,7 @@ export const enum CalculationMethods {
     Rollup = 1,
 }
 
-export enum ComponentType
-{
+export enum ComponentType {
     PowerAutomateFlow,
     Plugin,
     WebResource,
@@ -83,8 +82,7 @@ export enum ComponentType
     CustomApi
 }
 
-export enum OperationType
-{
+export enum OperationType {
     Create,
     Read,
     Update,
@@ -100,19 +98,26 @@ export type UsageType = {
     OperationType: OperationType
 }
 
+export enum InclusionTypeEnum {
+    Explicit = 0,      // Explicitly added to the solution
+    Implicit = 1,      // Implicitly included (subcomponent)
+    Required = 2       // Required dependency
+}
+
 export type BaseAttribute = {
     AttributeUsages: UsageType[];
     IsPrimaryId: boolean;
     IsPrimaryName: boolean;
     IsCustomAttribute: boolean;
     IsStandardFieldModified: boolean;
-    DisplayName: string,
-    SchemaName: string,
-    Description: string | null,
-    RequiredLevel: RequiredLevel,
-    IsAuditEnabled: boolean,
-    IsColumnSecured: boolean,
-    CalculationMethod: CalculationMethods | null,
+    DisplayName: string;
+    SchemaName: string;
+    Description: string | null;
+    RequiredLevel: RequiredLevel;
+    IsAuditEnabled: boolean;
+    IsColumnSecured: boolean;
+    CalculationMethod: CalculationMethods | null;
+    InclusionType: InclusionTypeEnum;
 }
 
 export type ChoiceAttributeType = BaseAttribute & {
@@ -230,7 +235,7 @@ export type RelationshipType = {
     LookupDisplayName: string,
     RelationshipSchema: string,
     IsManyToMany: boolean,
-    CascadeConfiguration: CascadeConfigurationType | null
+    CascadeConfiguration: CascadeConfigurationType | null,
 }
 
 export enum PrivilegeDepth {

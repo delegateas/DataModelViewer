@@ -6,8 +6,8 @@ import { useState, useEffect } from "react"
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
-import { Button, FormControl, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, InputAdornment, Box, Typography, useTheme } from "@mui/material"
-import { SearchRounded, ClearRounded, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
+import { Button, FormControl, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, InputAdornment, Box, Typography, useTheme, Tooltip } from "@mui/material"
+import { SearchRounded, ClearRounded, ArrowUpwardRounded, ArrowDownwardRounded, Visibility, VisibilityOff } from "@mui/icons-material"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
@@ -23,6 +23,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
+    const [hideStandardRelationships, setHideStandardRelationships] = useState<boolean>(true)
 
     const theme = useTheme();
 
@@ -47,17 +48,17 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
 
     const getSortedRelationships = () => {
         let filteredRelationships = entity.Relationships
-        
+
         if (typeFilter !== "all") {
-            filteredRelationships = filteredRelationships.filter(rel => 
-                (typeFilter === "many-to-many" && rel.IsManyToMany) || 
+            filteredRelationships = filteredRelationships.filter(rel =>
+                (typeFilter === "many-to-many" && rel.IsManyToMany) ||
                 (typeFilter === "one-to-many" && !rel.IsManyToMany)
             )
         }
-        
+
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
-            filteredRelationships = filteredRelationships.filter(rel => 
+            filteredRelationships = filteredRelationships.filter(rel =>
                 rel.Name.toLowerCase().includes(query) ||
                 rel.TableSchema.toLowerCase().includes(query) ||
                 rel.LookupDisplayName.toLowerCase().includes(query) ||
@@ -68,13 +69,15 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
         // Also filter by parent search prop if provided
         if (search && search.length >= 3) {
             const query = search.toLowerCase()
-            filteredRelationships = filteredRelationships.filter(rel => 
+            filteredRelationships = filteredRelationships.filter(rel =>
                 rel.Name.toLowerCase().includes(query) ||
                 rel.TableSchema.toLowerCase().includes(query) ||
                 rel.LookupDisplayName.toLowerCase().includes(query) ||
                 rel.RelationshipSchema.toLowerCase().includes(query)
             )
         }
+
+        if (hideStandardRelationships) filteredRelationships = filteredRelationships.filter(rel => rel.IsInSolution);
 
         if (!sortColumn || !sortDirection) return filteredRelationships
 
@@ -181,7 +184,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                     }}   
                 />
                 <FormControl size="small">
-                    <InputLabel id="relationship-type-filter-label" className="text-xs md:text-sm">
+                    <InputLabel id="relationship-type-filter-label" sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
                         Filter by type
                     </InputLabel>
                     <Select
@@ -189,7 +192,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                         onChange={(e) => setTypeFilter(e.target.value)}
                         label="Filter by type"
                         labelId="relationship-type-filter-label"
-                        className="text-xs md:text-sm"
+                        sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
                     >
                         {relationshipTypes.map(type => (
                             <MenuItem key={type.value} value={type.value} className="text-xs md:text-sm">
@@ -198,6 +201,21 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                         ))}
                     </Select>
                 </FormControl>
+                <Tooltip title={hideStandardRelationships ? "Show standard relationships" : "Hide standard relationships"}>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setHideStandardRelationships(!hideStandardRelationships)}
+                        className="min-w-0 p-0 h-8 w-8 md:h-10 md:w-10"
+                        sx={{
+                            borderColor: 'border.main'
+                        }}
+                    >
+                        {
+                            hideStandardRelationships ? <VisibilityOff className="text-xs md:text-base" /> : <Visibility className="text-xs md:text-base" />
+                        }
+                    </Button>
+                </Tooltip>
                 {(searchQuery || typeFilter !== "all") && (
                     <Button
                         variant="text"

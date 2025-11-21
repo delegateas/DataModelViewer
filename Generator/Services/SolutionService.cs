@@ -52,37 +52,12 @@ namespace Generator.Services
         }
 
         /// <summary>
-        /// Retrieves solution components for given solution IDs
-        /// </summary>
-        public async Task<IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId)>> GetSolutionComponents(List<Guid> solutionIds)
-        {
-            var entityQuery = new QueryExpression("solutioncomponent")
-            {
-                ColumnSet = new ColumnSet("objectid", "componenttype", "rootcomponentbehavior", "solutionid"),
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 20, 29, 92 }), // entity, attribute, role, workflow/flow, sdkpluginstep (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
-                        new ConditionExpression("solutionid", ConditionOperator.In, solutionIds)
-                    }
-                }
-            };
-
-            return
-                (await client.RetrieveMultipleAsync(entityQuery))
-                .Entities
-                .Select(e => (e.GetAttributeValue<Guid>("objectid"), e.GetAttributeValue<OptionSetValue>("componenttype").Value, e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1, e.GetAttributeValue<EntityReference>("solutionid")))
-                .ToList();
-        }
-
-        /// <summary>
         /// Creates Solution DTOs with their components
         /// </summary>
         public async Task<IEnumerable<Solution>> CreateSolutions(
             List<Entity> solutionEntities,
-            IEnumerable<(Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId)> solutionComponents,
-            List<EntityMetadata> allEntityMetadata)
+            IEnumerable<ComponentInfo> solutionComponents,
+            IEnumerable<EntityMetadata> allEntityMetadata)
         {
             var solutions = new List<Solution>();
 
@@ -116,7 +91,7 @@ namespace Generator.Services
                 ));
 
             // Group components by solution
-            var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId).ToDictionary(g => g.Key.Id, g => g);
+            var componentsBySolution = solutionComponents.GroupBy(c => c.SolutionId).ToDictionary(g => g.Key, g => g);
 
             // Process ALL solutions from configuration, not just those with components
             foreach (var solutionEntity in solutionEntities)
@@ -160,9 +135,9 @@ namespace Generator.Services
         /// Creates a solution component DTO from component metadata
         /// </summary>
         private SolutionComponent? CreateSolutionComponent(
-            (Guid ObjectId, int ComponentType, int RootComponentBehavior, EntityReference SolutionId) component,
+            ComponentInfo component,
             Dictionary<Guid, EntityMetadata> entityLookup,
-            List<EntityMetadata> allEntityMetadata,
+            IEnumerable<EntityMetadata> allEntityMetadata,
             Dictionary<Guid, (string Name, string Prefix)> publisherLookup)
         {
             try

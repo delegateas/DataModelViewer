@@ -25,7 +25,8 @@ namespace Generator.Services
             AttributeMetadata metadata,
             EntityMetadata entity,
             Dictionary<string, ExtendedEntityInformation> logicalToSchema,
-            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+            Dictionary<Guid, ComponentInclusionType> inclusionMap)
         {
             Attribute attr = metadata switch
             {
@@ -50,6 +51,7 @@ namespace Generator.Services
             var pluralname = attributeUsages.GetValueOrDefault(entity.LogicalCollectionName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
 
             attr.AttributeUsages = [.. schemaname, .. pluralname];
+            attr.InclusionType = inclusionMap.GetValueOrDefault(metadata.MetadataId!.Value, ComponentInclusionType.Implicit);
             attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty, entity.IsCustomEntity ?? false);
 
             return attr;

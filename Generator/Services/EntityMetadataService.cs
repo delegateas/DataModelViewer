@@ -1,4 +1,3 @@
-using Generator.Queries;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk.Metadata;
 using System.Collections.Concurrent;
@@ -20,9 +19,10 @@ namespace Generator.Services
         /// <summary>
         /// Retrieves entity metadata by object IDs
         /// </summary>
-        public async Task<IEnumerable<EntityMetadata>> GetEntityMetadataByObjectIds(List<Guid> entityObjectIds)
+        public async Task<IEnumerable<EntityMetadata>> GetEntityMetadataByObjectIds(IEnumerable<Guid> entityObjectIds)
         {
             ConcurrentBag<EntityMetadata> metadata = new();
+            ConcurrentBag<Guid> failedIds = new();
 
             // Disable affinity cookie
             client.EnableAffinityCookie = false;
@@ -37,8 +37,22 @@ namespace Generator.Services
                 parallelOptions: parallelOptions,
                 async (objectId, token) =>
                 {
-                    metadata.Add(await client.RetrieveEntityAsync(objectId, token));
+                    try
+                    {
+                        metadata.Add(await client.RetrieveEntityAsync(objectId, token));
+                    }
+                    catch (Exception ex)
+                    {
+                        // Entity doesn't exist or cannot be retrieved - log and continue
+                        Console.WriteLine($"Warning: Failed to retrieve entity with ID {objectId}: {ex.Message}");
+                        failedIds.Add(objectId);
+                    }
                 });
+
+            if (failedIds.Any())
+            {
+                Console.WriteLine($"Warning: Failed to retrieve {failedIds.Count} entities out of {entityObjectIds.Count()}. IDs: {string.Join(", ", failedIds)}");
+            }
 
             return metadata;
         }
