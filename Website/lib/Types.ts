@@ -22,6 +22,11 @@ export const enum OwnershipType {
     BusinessParented = 16
 }
 
+export type SolutionInfoType = {
+    Id: string,
+    Name: string,
+}
+
 export type EntityType = {
     DisplayName: string,
     SchemaName: string,
@@ -40,6 +45,8 @@ export type EntityType = {
     visibleAttributeSchemaNames?: string[],
     PublisherName?: string,
     PublisherPrefix?: string,
+    Solutions: SolutionInfoType[],
+
 }
 
 export const enum SolutionComponentTypeEnum {
@@ -103,6 +110,7 @@ export type BaseAttribute = {
     IsExplicit: boolean;
     PublisherName?: string,
     PublisherPrefix?: string,
+    Solutions: SolutionInfoType[],
 }
 
 export type ChoiceAttributeType = BaseAttribute & {
@@ -224,6 +232,7 @@ export type RelationshipType = {
     CascadeConfiguration: CascadeConfigurationType | null,
     PublisherName?: string,
     PublisherPrefix?: string,
+    Solutions: SolutionInfoType[],
 }
 
 export enum PrivilegeDepth {

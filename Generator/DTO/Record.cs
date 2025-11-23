@@ -19,5 +19,6 @@ internal record Record(
     List<Relationship> Relationships,
     List<SecurityRole> SecurityRoles,
     List<Key> Keys,
-    string? IconBase64);
+    string? IconBase64,
+    List<SolutionInfo> Solutions);
 

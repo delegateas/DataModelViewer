@@ -88,11 +88,19 @@ internal class RelationshipService
         IEnumerable<ManyToManyRelationshipMetadata> relationships,
         string entityLogicalName,
         Dictionary<Guid, bool> inclusionMap,
-        Dictionary<Guid, (string Name, string Prefix)> publisherMap)
+        Dictionary<Guid, (string Name, string Prefix)> publisherMap,
+        Dictionary<Guid, List<SolutionInfo>> componentSolutionMap,
+        Guid entityMetadataId)
     {
         return relationships.Select(rel =>
         {
             var (pName, pPrefix) = solutionService.GetPublisherFromSchemaName(rel.SchemaName, publisherMap);
+
+            // Get solution info for this relationship
+            // If not found directly, inherit from parent entity
+            var relationshipSolutions = componentSolutionMap.GetValueOrDefault(rel.MetadataId!.Value)
+                ?? componentSolutionMap.GetValueOrDefault(entityMetadataId, new List<SolutionInfo>());
+
             return new Relationship(
                 rel.IsCustomRelationship ?? false,
                 $"{rel.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel.Label} ⟷ {rel.Entity2AssociatedMenuConfiguration.Label.UserLocalizedLabel.Label}",
@@ -103,7 +111,8 @@ internal class RelationshipService
                 inclusionMap[rel.MetadataId!.Value],
                 pName,
                 pPrefix,
-                null);
+                null,
+                relationshipSolutions);
         });
     }
 
@@ -115,11 +124,19 @@ internal class RelationshipService
         string entityLogicalName,
         Dictionary<string, Dictionary<string, string>> attributeMapping,
         Dictionary<Guid, bool> inclusionMap,
-        Dictionary<Guid, (string Name, string Prefix)> publisherMap)
+        Dictionary<Guid, (string Name, string Prefix)> publisherMap,
+        Dictionary<Guid, List<SolutionInfo>> componentSolutionMap,
+        Guid entityMetadataId)
     {
         return relationships.Select(rel =>
         {
             var (pName, pPrefix) = solutionService.GetPublisherFromSchemaName(rel.SchemaName, publisherMap);
+
+            // Get solution info for this relationship
+            // If not found directly, inherit from parent entity
+            var relationshipSolutions = componentSolutionMap.GetValueOrDefault(rel.MetadataId!.Value)
+                ?? componentSolutionMap.GetValueOrDefault(entityMetadataId, new List<SolutionInfo>());
+
             return new Relationship(
                 rel.IsCustomRelationship ?? false,
                 rel.ReferencingEntityNavigationPropertyName ?? rel.ReferencedEntity,
@@ -130,7 +147,8 @@ internal class RelationshipService
                 inclusionMap[rel.MetadataId!.Value],
                 pName,
                 pPrefix,
-                rel.CascadeConfiguration);
+                rel.CascadeConfiguration,
+                relationshipSolutions);
         });
     }
 }

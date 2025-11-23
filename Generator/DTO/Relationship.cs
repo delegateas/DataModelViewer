@@ -13,4 +13,5 @@ public record Relationship(
     bool IsExplicit,
     string PublisherName,
     string PublisherPrefix,
-    CascadeConfiguration? CascadeConfiguration);
+    CascadeConfiguration? CascadeConfiguration,
+    List<SolutionInfo> Solutions);

@@ -43,11 +43,12 @@ namespace Generator.Services
             Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
             Dictionary<Guid, bool> inclusionMap,
             Dictionary<Guid, List<WorkflowInfo>> workflowDependencies,
-            Dictionary<Guid, (string Name, string Prefix)> publisherMap)
+            Dictionary<Guid, (string Name, string Prefix)> publisherMap,
+            Dictionary<Guid, List<SolutionInfo>> componentSolutionMap)
         {
             var attributes =
                 relevantAttributes
-                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages, inclusionMap, workflowDependencies, publisherMap))
+                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages, inclusionMap, workflowDependencies, publisherMap, componentSolutionMap))
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 
@@ -57,6 +58,9 @@ namespace Generator.Services
             entityIconMap.TryGetValue(entity.LogicalName, out string? iconBase64);
 
             var (pName, pPrefix) = solutionService.GetPublisherFromSchemaName(entity.SchemaName, publisherMap);
+
+            // Get solution info for this entity
+            var entitySolutions = componentSolutionMap.GetValueOrDefault(entity.MetadataId!.Value, new List<SolutionInfo>());
 
             return new Record(
                     entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty,
@@ -74,7 +78,8 @@ namespace Generator.Services
                     relevantRelationships,
                     securityRoles,
                     keys,
-                    iconBase64);
+                    iconBase64,
+                    entitySolutions);
         }
     }
 }

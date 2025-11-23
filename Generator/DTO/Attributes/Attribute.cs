@@ -12,6 +12,7 @@ public abstract class Attribute
     public bool IsExplicit { get; set; }
     public string PublisherName { get; set; }
     public string PublisherPrefix { get; set; }
+    public List<SolutionInfo> Solutions { get; set; } = new List<SolutionInfo>();
     public string DisplayName { get; }
     public string SchemaName { get; }
     public string Description { get; }

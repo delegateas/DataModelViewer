@@ -87,6 +87,37 @@ namespace Generator
                 logger.LogError(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to get solution components");
                 throw;
             }
+
+            // Build solution lookup: SolutionId -> SolutionInfo
+            var solutionLookup = solutionEntities.ToDictionary(
+                s => s.GetAttributeValue<Guid>("solutionid"),
+                s => new DTO.SolutionInfo(
+                    s.GetAttributeValue<Guid>("solutionid"),
+                    s.GetAttributeValue<string>("friendlyname") ?? s.GetAttributeValue<string>("uniquename") ?? "Unknown"
+                )
+            );
+
+            // Build ObjectId -> List<SolutionInfo> mapping BEFORE creating hashsets
+            // This preserves the many-to-many relationship between components and solutions
+            var componentSolutionMap = new Dictionary<Guid, List<DTO.SolutionInfo>>();
+            foreach (var component in solutionComponents)
+            {
+                if (!componentSolutionMap.ContainsKey(component.ObjectId))
+                {
+                    componentSolutionMap[component.ObjectId] = new List<DTO.SolutionInfo>();
+                }
+
+                if (solutionLookup.TryGetValue(component.SolutionId, out var solutionInfo))
+                {
+                    // Only add if not already present (avoid duplicates)
+                    if (!componentSolutionMap[component.ObjectId].Any(s => s.Id == solutionInfo.Id))
+                    {
+                        componentSolutionMap[component.ObjectId].Add(solutionInfo);
+                    }
+                }
+            }
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Built solution mapping for {componentSolutionMap.Count} unique components");
+
             var inclusionMap = solutionComponents.ToDictionary(s => s.ObjectId, s => s.IsExplicit);
 
             /// ENTITIES
@@ -201,9 +232,9 @@ namespace Generator
                 .Select(entMeta =>
                 {
                     var relevantAttributes = entMeta.Attributes.Where(attr => attributesInSolution.Contains(attr.MetadataId!.Value)).ToList();
-                    var relevantManyToManyRelations = relationshipService.ConvertManyToManyRelationships(entMeta.ManyToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, inclusionMap, publisherMap);
-                    var relevantOneToManyRelations = relationshipService.ConvertOneToManyRelationships(entMeta.OneToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, attributeLogicalToSchema, inclusionMap, publisherMap);
-                    var relevantManyToOneRelations = relationshipService.ConvertOneToManyRelationships(entMeta.ManyToOneRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, attributeLogicalToSchema, inclusionMap, publisherMap);
+                    var relevantManyToManyRelations = relationshipService.ConvertManyToManyRelationships(entMeta.ManyToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, inclusionMap, publisherMap, componentSolutionMap, entMeta.MetadataId!.Value);
+                    var relevantOneToManyRelations = relationshipService.ConvertOneToManyRelationships(entMeta.OneToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, attributeLogicalToSchema, inclusionMap, publisherMap, componentSolutionMap, entMeta.MetadataId!.Value);
+                    var relevantManyToOneRelations = relationshipService.ConvertOneToManyRelationships(entMeta.ManyToOneRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, attributeLogicalToSchema, inclusionMap, publisherMap, componentSolutionMap, entMeta.MetadataId!.Value);
                     var relevantRelationships = relevantManyToManyRelations.Concat(relevantManyToOneRelations).Concat(relevantOneToManyRelations).ToList();
 
                     logicalNameToSecurityRoles.TryGetValue(entMeta.LogicalName, out var securityRoles);
@@ -220,7 +251,8 @@ namespace Generator
                         attributeUsages,
                         inclusionMap,
                         workflowDependencies,
-                        publisherMap);
+                        publisherMap,
+                        componentSolutionMap);
                 })
                 .ToList();
 

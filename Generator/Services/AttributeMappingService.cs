@@ -30,7 +30,8 @@ namespace Generator.Services
             Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
             Dictionary<Guid, bool> inclusionMap,
             Dictionary<Guid, List<WorkflowInfo>> workflowDependencies,
-            Dictionary<Guid, (string Name, string Prefix)> publisherMap)
+            Dictionary<Guid, (string Name, string Prefix)> publisherMap,
+            Dictionary<Guid, List<SolutionInfo>> componentSolutionMap)
         {
             Attribute attr = metadata switch
             {
@@ -75,6 +76,11 @@ namespace Generator.Services
             attr.AttributeUsages = [.. analyzerUsages, .. workflowUsages];
             attr.IsExplicit = inclusionMap.GetValueOrDefault(metadata.MetadataId!.Value, false);
             attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty, entity.IsCustomEntity ?? false);
+
+            // Get solution info for this attribute
+            // If not found directly, inherit from parent entity (for attributes added via RootComponentBehaviour=0)
+            attr.Solutions = componentSolutionMap.GetValueOrDefault(metadata.MetadataId!.Value)
+                ?? componentSolutionMap.GetValueOrDefault(entity.MetadataId!.Value, new List<SolutionInfo>());
 
             return attr;
         }
