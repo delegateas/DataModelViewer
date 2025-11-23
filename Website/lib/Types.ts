@@ -234,6 +234,7 @@ export type RelationshipType = {
     TableSchema: string,
     LookupDisplayName: string,
     RelationshipSchema: string,
+    InclusionType: InclusionTypeEnum,
     IsManyToMany: boolean,
     CascadeConfiguration: CascadeConfigurationType | null,
 }
