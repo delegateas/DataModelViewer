@@ -71,17 +71,13 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
         const allEntities = groups.flatMap(group => group.Entities);
 
         const auditEnabled = allEntities.filter(entity => entity.IsAuditEnabled).length;
-        const auditDisabled = allEntities.filter(entity => !entity.IsAuditEnabled).length;
         const activities = allEntities.filter(entity => entity.IsActivity).length;
         const notesEnabled = allEntities.filter(entity => entity.IsNotesEnabled).length;
-        const notesDisabled = allEntities.filter(entity => !entity.IsNotesEnabled).length;
 
         return [
             { id: 'Audit Enabled', label: 'Audit Enabled', value: auditEnabled },
-            { id: 'Audit Disabled', label: 'Audit Disabled', value: auditDisabled },
             { id: 'Activities', label: 'Activities', value: activities },
             { id: 'Notes Enabled', label: 'Notes Enabled', value: notesEnabled },
-            { id: 'Notes Disabled', label: 'Notes Disabled', value: notesDisabled },
         ].filter(item => item.value > 0); // Only show categories with values
     }, [groups]);
 
@@ -104,27 +100,59 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
     }, [groups]);
 
     const publisherComponentData = useMemo(() => {
-        // Count components per publisher by looking at each component's publisher
-        const publisherCounts: Record<string, number> = {};
+        // Get all entities to look up IsExplicit for attributes and relationships
+        const allEntities = groups.flatMap(group => group.Entities);
+
+        // Create lookup maps for attributes and relationships by schema name
+        const attributeMap = new Map<string, boolean>();
+        const relationshipMap = new Map<string, boolean>();
+
+        allEntities.forEach(entity => {
+            entity.Attributes.forEach(attr => {
+                attributeMap.set(attr.SchemaName, attr.IsExplicit);
+            });
+            entity.Relationships.forEach(rel => {
+                relationshipMap.set(rel.RelationshipSchema, rel.IsExplicit);
+            });
+        });
+
+        // Count components per publisher with explicit/implicit breakdown
+        const publisherCounts: Record<string, { explicit: number, implicit: number }> = {};
 
         solutions.forEach(solution => {
             solution.Components.forEach(component => {
                 const publisher = component.PublisherName;
                 if (!publisherCounts[publisher]) {
-                    publisherCounts[publisher] = 0;
+                    publisherCounts[publisher] = { explicit: 0, implicit: 0 };
                 }
-                publisherCounts[publisher]++;
+
+                // Determine if component is explicit based on its type
+                // ComponentType 1 = Entity (treat as explicit), 2 = Attribute, 3 = Relationship
+                let isExplicit = true; // Default for entities and unknown types
+
+                if (component.ComponentType === 2) { // Attribute
+                    isExplicit = attributeMap.get(component.SchemaName) ?? true;
+                } else if (component.ComponentType === 3) { // Relationship
+                    isExplicit = relationshipMap.get(component.SchemaName) ?? true;
+                }
+
+                if (isExplicit) {
+                    publisherCounts[publisher].explicit++;
+                } else {
+                    publisherCounts[publisher].implicit++;
+                }
             });
         });
 
-        // Convert to chart format and sort by component count (descending)
+        // Convert to chart format and sort by total component count (descending)
         return Object.entries(publisherCounts)
-            .map(([publisher, count]) => ({
+            .map(([publisher, counts]) => ({
                 publisher: publisher,
-                components: count
+                explicit: counts.explicit,
+                implicit: counts.implicit
             }))
-            .sort((a, b) => b.components - a.components);
-    }, [solutions]);
+            .sort((a, b) => (b.explicit + b.implicit) - (a.explicit + a.implicit));
+    }, [solutions, groups]);
 
     const attributeUsageByComponentType = useMemo(() => {
         const allEntities = groups.flatMap(group => group.Entities);
@@ -166,9 +194,12 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
         const dependencyDetected = allAttributeUsages.filter(usage => usage.IsFromDependencyAnalysis).length;
 
         return [
-            { id: 'Analyzer Detected', label: 'Analyzer Detected', value: analyzerDetected },
-            { id: 'Dependency Detected', label: 'Dependency Detected', value: dependencyDetected }
-        ].filter(item => item.value > 0);
+            {
+                category: 'Detection Source',
+                'Analyzer Detected': analyzerDetected,
+                'Dependency Detected': dependencyDetected
+            }
+        ];
     }, [groups]);
 
     return (
@@ -424,16 +455,17 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             <Grid size={12}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
                     <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Components by Publisher
+                        Components by Publisher (Stacked by Explicit/Implicit)
                     </Typography>
                     <Box sx={{ height: 400 }}>
                         <ResponsiveBar
                             data={publisherComponentData}
-                            keys={['components']}
+                            keys={['explicit', 'implicit']}
                             indexBy="publisher"
-                            margin={{ top: 50, right: 50, bottom: 80, left: 150 }}
+                            margin={{ top: 50, right: 130, bottom: 80, left: 150 }}
                             padding={0.3}
                             layout="horizontal"
+                            groupMode="stacked"
                             valueScale={{ type: 'linear' }}
                             indexScale={{ type: 'band', round: true }}
                             colors={{ scheme: "blues" }}
@@ -462,9 +494,33 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                             labelSkipWidth={12}
                             labelSkipHeight={12}
                             labelTextColor={{ from: 'color', modifiers: [['darker', 3]] }}
+                            legends={[
+                                {
+                                    dataFrom: 'keys',
+                                    anchor: 'bottom-right',
+                                    direction: 'column',
+                                    justify: false,
+                                    translateX: 120,
+                                    translateY: 0,
+                                    itemsSpacing: 2,
+                                    itemWidth: 100,
+                                    itemHeight: 20,
+                                    itemDirection: 'left-to-right',
+                                    itemOpacity: 0.85,
+                                    symbolSize: 20,
+                                    effects: [
+                                        {
+                                            on: 'hover',
+                                            style: {
+                                                itemOpacity: 1
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]}
                             role="application"
                             ariaLabel="Components by publisher bar chart"
-                            barAriaLabel={e => `${e.indexValue}: ${e.formattedValue} components`}
+                            barAriaLabel={e => `${e.indexValue}: ${e.formattedValue} ${e.id} components`}
                             theme={{
                                 background: 'transparent',
                                 text: {
@@ -502,6 +558,25 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                         stroke: theme.palette.divider,
                                         strokeWidth: 1,
                                         strokeDasharray: '4 4'
+                                    }
+                                },
+                                legends: {
+                                    title: {
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    text: {
+                                        fontSize: 11,
+                                        fill: theme.palette.text.primary
+                                    },
+                                    ticks: {
+                                        line: {},
+                                        text: {
+                                            fontSize: 10,
+                                            fill: theme.palette.text.primary
+                                        }
                                     }
                                 },
                                 tooltip: {
@@ -627,7 +702,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                             padAngle={0.7}
                             cornerRadius={3}
                             activeOuterRadiusOffset={8}
-                            colors={{ scheme: "category10" }}
+                            colors={{ scheme: "blues" }}
                             borderWidth={1}
                             borderColor={{
                                 from: 'color',
@@ -669,36 +744,120 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                         Attribute Process Dependencies by Detection Source
                     </Typography>
                     <Box sx={{ height: 400 }}>
-                        <ResponsivePie
+                        <ResponsiveBar
                             data={attributeUsageBySource}
-                            margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
-                            innerRadius={0.5}
-                            padAngle={0.7}
-                            cornerRadius={3}
-                            activeOuterRadiusOffset={8}
-                            colors={{ scheme: "set2" }}
+                            keys={['Analyzer Detected', 'Dependency Detected']}
+                            indexBy="category"
+                            margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
+                            padding={0.6}
+                            layout="horizontal"
+                            valueScale={{ type: 'linear' }}
+                            indexScale={{ type: 'band', round: true }}
+                            colors={{ scheme: "blues" }}
+                            borderRadius={4}
                             borderWidth={1}
-                            borderColor={{
-                                from: 'color',
-                                modifiers: [
-                                    ['darker', 0.2]
-                                ]
+                            borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                            axisTop={null}
+                            axisRight={null}
+                            axisBottom={{
+                                tickSize: 5,
+                                tickPadding: 5,
+                                tickRotation: 0,
+                                legend: 'Count',
+                                legendPosition: 'middle',
+                                legendOffset: 40
                             }}
-                            arcLinkLabelsTextColor={theme.palette.text.primary}
-                            arcLinkLabelsThickness={2}
-                            arcLinkLabelsColor={{ from: 'color' }}
-                            arcLabelsSkipAngle={10}
-                            arcLabelsTextColor={{
-                                from: 'color',
-                                modifiers: [
-                                    ['darker', 2]
-                                ]
-                            }}
+                            axisLeft={null}
+                            enableGridX={true}
+                            enableGridY={false}
+                            enableLabel={true}
+                            labelSkipWidth={40}
+                            labelSkipHeight={12}
+                            labelTextColor={{ from: 'color', modifiers: [['darker', 3]] }}
+                            legends={[
+                                {
+                                    dataFrom: 'keys',
+                                    anchor: 'bottom-right',
+                                    direction: 'column',
+                                    justify: false,
+                                    translateX: 120,
+                                    translateY: 0,
+                                    itemsSpacing: 2,
+                                    itemWidth: 100,
+                                    itemHeight: 20,
+                                    itemDirection: 'left-to-right',
+                                    itemOpacity: 0.85,
+                                    symbolSize: 20,
+                                    effects: [
+                                        {
+                                            on: 'hover',
+                                            style: {
+                                                itemOpacity: 1
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]}
+                            role="application"
+                            ariaLabel="Attribute process dependencies by detection source"
+                            barAriaLabel={e => `${e.id}: ${e.formattedValue}`}
                             theme={{
                                 background: 'transparent',
                                 text: {
                                     fontSize: 12,
                                     fill: theme.palette.text.primary,
+                                    outlineWidth: 0,
+                                    outlineColor: 'transparent'
+                                },
+                                axis: {
+                                    domain: {
+                                        line: {
+                                            stroke: theme.palette.divider,
+                                            strokeWidth: 1
+                                        }
+                                    },
+                                    legend: {
+                                        text: {
+                                            fontSize: 12,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    ticks: {
+                                        line: {
+                                            stroke: theme.palette.divider,
+                                            strokeWidth: 1
+                                        },
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    }
+                                },
+                                grid: {
+                                    line: {
+                                        stroke: theme.palette.divider,
+                                        strokeWidth: 1,
+                                        strokeDasharray: '4 4'
+                                    }
+                                },
+                                legends: {
+                                    title: {
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    text: {
+                                        fontSize: 11,
+                                        fill: theme.palette.text.primary
+                                    },
+                                    ticks: {
+                                        line: {},
+                                        text: {
+                                            fontSize: 10,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    }
                                 },
                                 tooltip: {
                                     container: {
