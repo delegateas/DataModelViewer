@@ -11,6 +11,8 @@ internal record Record(
     bool IsAuditEnabled,
     bool IsActivity,
     bool IsCustom,
+    string PublisherName,
+    string PublisherPrefix,
     OwnershipTypes Ownership,
     bool IsNotesEnabled,
     List<Attribute> Attributes,

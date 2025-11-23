@@ -13,22 +13,6 @@ export type GroupType = {
     Entities: EntityType[]
 }
 
-export type SolutionType = {
-    Name: string,
-    PublisherName: string,
-    PublisherPrefix: string,
-    Components: SolutionComponentType[]
-}
-
-export type SolutionComponentType = {
-    Name: string,
-    SchemaName: string,
-    Description: string | null,
-    ComponentType: SolutionComponentTypeEnum,
-    PublisherName: string,
-    PublisherPrefix: string,
-}
-
 export const enum OwnershipType {
     None = 0,
     UserOwned = 1,
@@ -54,6 +38,8 @@ export type EntityType = {
     Keys: Key[],
     IconBase64: string | null,
     visibleAttributeSchemaNames?: string[],
+    PublisherName?: string,
+    PublisherPrefix?: string,
 }
 
 export const enum SolutionComponentTypeEnum {
@@ -115,6 +101,8 @@ export type BaseAttribute = {
     IsColumnSecured: boolean;
     CalculationMethod: CalculationMethods | null;
     IsExplicit: boolean;
+    PublisherName?: string,
+    PublisherPrefix?: string,
 }
 
 export type ChoiceAttributeType = BaseAttribute & {
@@ -234,6 +222,8 @@ export type RelationshipType = {
     IsExplicit: boolean,
     IsManyToMany: boolean,
     CascadeConfiguration: CascadeConfigurationType | null,
+    PublisherName?: string,
+    PublisherPrefix?: string,
 }
 
 export enum PrivilegeDepth {

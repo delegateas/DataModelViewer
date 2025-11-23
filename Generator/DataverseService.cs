@@ -1,7 +1,6 @@
 ﻿using Generator.DTO;
 using Generator.DTO.Attributes;
 using Generator.DTO.Warnings;
-using Generator.ExtensionMethods;
 using Generator.Queries;
 using Generator.Services;
 using Generator.Services.Plugins;
@@ -25,6 +24,7 @@ namespace Generator
         private readonly RecordMappingService recordMappingService;
         private readonly SolutionComponentService solutionComponentService;
         private readonly WorkflowService workflowService;
+        private readonly RelationshipService relationshipService;
 
         private readonly List<IAnalyzerRegistration> analyzerRegistrations;
 
@@ -37,7 +37,8 @@ namespace Generator
             EntityIconService entityIconService,
             RecordMappingService recordMappingService,
             SolutionComponentService solutionComponentService,
-            WorkflowService workflowService)
+            WorkflowService workflowService,
+            RelationshipService relationshipService)
         {
             this.logger = logger;
             this.entityMetadataService = entityMetadataService;
@@ -46,6 +47,7 @@ namespace Generator
             this.entityIconService = entityIconService;
             this.recordMappingService = recordMappingService;
             this.workflowService = workflowService;
+            this.relationshipService = relationshipService;
 
             // Register all analyzers with their query functions
             analyzerRegistrations = new List<IAnalyzerRegistration>
@@ -66,7 +68,7 @@ namespace Generator
             this.solutionComponentService = solutionComponentService;
         }
 
-        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<Solution>)> GetFilteredMetadata()
+        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>)> GetFilteredMetadata()
         {
             // used to collect warnings for the insights dashboard
             var warnings = new List<SolutionWarning>();
@@ -120,6 +122,9 @@ namespace Generator
             var referencedEntityMetadata = await entityMetadataService.GetEntityMetadataByLogicalNames(relatedEntityLogicalNames.ToList());
             var allEntityMetadata = entitiesInSolutionMetadata.Concat(referencedEntityMetadata).ToList();
             var logicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => new ExtendedEntityInformation { Name = x.SchemaName, IsInSolution = entitiesInSolutionMetadata.Any(e => e.LogicalName == x.LogicalName) });
+
+            /// PUBLISHERS
+            var publisherMap = await solutionService.GetPublisherMapAsync(solutionEntities);
 
             /// SECURITY ROLES
             var rolesInSolution = solutionComponents.Where(x => x.ComponentType == 20).Select(x => x.ObjectId).Distinct().ToList();
@@ -196,9 +201,9 @@ namespace Generator
                 .Select(entMeta =>
                 {
                     var relevantAttributes = entMeta.Attributes.Where(attr => attributesInSolution.Contains(attr.MetadataId!.Value)).ToList();
-                    var relevantManyToManyRelations = entMeta.ManyToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)).ConvertToRelationship(entMeta.LogicalName, inclusionMap);
-                    var relevantOneToManyRelations = entMeta.OneToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)).ConvertToRelationship(entMeta.LogicalName, attributeLogicalToSchema, inclusionMap);
-                    var relevantManyToOneRelations = entMeta.ManyToOneRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)).ConvertToRelationship(entMeta.LogicalName, attributeLogicalToSchema, inclusionMap);
+                    var relevantManyToManyRelations = relationshipService.ConvertManyToManyRelationships(entMeta.ManyToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, inclusionMap, publisherMap);
+                    var relevantOneToManyRelations = relationshipService.ConvertOneToManyRelationships(entMeta.OneToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, attributeLogicalToSchema, inclusionMap, publisherMap);
+                    var relevantManyToOneRelations = relationshipService.ConvertOneToManyRelationships(entMeta.ManyToOneRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, attributeLogicalToSchema, inclusionMap, publisherMap);
                     var relevantRelationships = relevantManyToManyRelations.Concat(relevantManyToOneRelations).Concat(relevantOneToManyRelations).ToList();
 
                     logicalNameToSecurityRoles.TryGetValue(entMeta.LogicalName, out var securityRoles);
@@ -214,14 +219,13 @@ namespace Generator
                         entityIconMap,
                         attributeUsages,
                         inclusionMap,
-                        workflowDependencies);
+                        workflowDependencies,
+                        publisherMap);
                 })
                 .ToList();
 
-            var solutions = await solutionService.CreateSolutions(solutionEntities, solutionComponents, entitiesInSolutionMetadata);
-
             logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] GetFilteredMetadata completed - returning empty results");
-            return (records, warnings, solutions);
+            return (records, warnings);
         }
     }
 

@@ -10,6 +10,8 @@ public abstract class Attribute
     public bool IsPrimaryName { get; set; }
     public List<AttributeUsage> AttributeUsages { get; set; } = new List<AttributeUsage>();
     public bool IsExplicit { get; set; }
+    public string PublisherName { get; set; }
+    public string PublisherPrefix { get; set; }
     public string DisplayName { get; }
     public string SchemaName { get; }
     public string Description { get; }

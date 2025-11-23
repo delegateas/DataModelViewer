@@ -14,16 +14,19 @@ namespace Generator.Services
     {
         private readonly AttributeMappingService attributeMappingService;
         private readonly RelationshipService relationshipService;
+        private readonly SolutionService solutionService;
 
         public RecordMappingService(
             AttributeMappingService attributeMappingService,
             RelationshipService relationshipService,
             IConfiguration configuration,
             ILogger<RecordMappingService> logger,
-            ILogger<RelationshipService> relationshipLogger)
+            ILogger<RelationshipService> relationshipLogger,
+            SolutionService solutionService)
         {
             this.attributeMappingService = attributeMappingService;
             this.relationshipService = relationshipService;
+            this.solutionService = solutionService;
         }
 
         /// <summary>
@@ -39,11 +42,12 @@ namespace Generator.Services
             Dictionary<string, string> entityIconMap,
             Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
             Dictionary<Guid, bool> inclusionMap,
-            Dictionary<Guid, List<WorkflowInfo>> workflowDependencies)
+            Dictionary<Guid, List<WorkflowInfo>> workflowDependencies,
+            Dictionary<Guid, (string Name, string Prefix)> publisherMap)
         {
             var attributes =
                 relevantAttributes
-                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages, inclusionMap, workflowDependencies))
+                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages, inclusionMap, workflowDependencies, publisherMap))
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 
@@ -51,6 +55,8 @@ namespace Generator.Services
             var (group, description) = relationshipService.GetGroupAndDescription(entity, tablegroups);
 
             entityIconMap.TryGetValue(entity.LogicalName, out string? iconBase64);
+
+            var (pName, pPrefix) = solutionService.GetPublisherFromSchemaName(entity.SchemaName, publisherMap);
 
             return new Record(
                     entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty,
@@ -60,6 +66,8 @@ namespace Generator.Services
                     entity.IsAuditEnabled.Value,
                     entity.IsActivity ?? false,
                     entity.IsCustomEntity ?? false,
+                    pName,
+                    pPrefix,
                     entity.OwnershipType ?? OwnershipTypes.UserOwned,
                     entity.HasNotes ?? false,
                     attributes,

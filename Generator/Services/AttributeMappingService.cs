@@ -12,10 +12,12 @@ namespace Generator.Services
     internal class AttributeMappingService
     {
         private readonly ILogger<AttributeMappingService> logger;
+        private readonly SolutionService solutionService;
 
-        public AttributeMappingService(ILogger<AttributeMappingService> logger)
+        public AttributeMappingService(ILogger<AttributeMappingService> logger, SolutionService solutionService)
         {
             this.logger = logger;
+            this.solutionService = solutionService;
         }
 
         /// <summary>
@@ -27,7 +29,8 @@ namespace Generator.Services
             Dictionary<string, ExtendedEntityInformation> logicalToSchema,
             Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
             Dictionary<Guid, bool> inclusionMap,
-            Dictionary<Guid, List<WorkflowInfo>> workflowDependencies)
+            Dictionary<Guid, List<WorkflowInfo>> workflowDependencies,
+            Dictionary<Guid, (string Name, string Prefix)> publisherMap)
         {
             Attribute attr = metadata switch
             {
@@ -66,6 +69,9 @@ namespace Generator.Services
                 .ToList();
 
             // Combine both sources
+            var (pName, pPrefix) = solutionService.GetPublisherFromSchemaName(attr.SchemaName, publisherMap);
+            attr.PublisherName = pName;
+            attr.PublisherPrefix = pPrefix;
             attr.AttributeUsages = [.. analyzerUsages, .. workflowUsages];
             attr.IsExplicit = inclusionMap.GetValueOrDefault(metadata.MetadataId!.Value, false);
             attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty, entity.IsCustomEntity ?? false);

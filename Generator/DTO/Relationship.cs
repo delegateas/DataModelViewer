@@ -11,4 +11,6 @@ public record Relationship(
     string RelationshipSchema,
     bool IsManyToMany,
     bool IsExplicit,
+    string PublisherName,
+    string PublisherPrefix,
     CascadeConfiguration? CascadeConfiguration);

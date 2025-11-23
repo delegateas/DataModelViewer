@@ -65,9 +65,9 @@ var serviceProvider = services.BuildServiceProvider();
 
 // Resolve and use DataverseService
 var dataverseService = serviceProvider.GetRequiredService<DataverseService>();
-var (entities, warnings, solutions) = await dataverseService.GetFilteredMetadata();
+var (entities, warnings) = await dataverseService.GetFilteredMetadata();
 
-var websiteBuilder = new WebsiteBuilder(configuration, entities, warnings, solutions);
+var websiteBuilder = new WebsiteBuilder(configuration, entities, warnings);
 websiteBuilder.AddData();
 
 // Token provider function

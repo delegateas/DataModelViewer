@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, ReactNode } from "react";
-import { AttributeType, EntityType, GroupType, SolutionType, SolutionWarningType } from "@/lib/Types";
+import { AttributeType, EntityType, GroupType, SolutionWarningType } from "@/lib/Types";
 import { useSearchParams } from "next/navigation";
 
 interface DataModelAction {
@@ -12,7 +12,7 @@ interface DatamodelDataState extends DataModelAction {
   groups: GroupType[];
   entityMap?: Map<string, EntityType>;
   warnings: SolutionWarningType[];
-  solutions: SolutionType[];
+  solutionCount: number;
   search: string;
   filtered: Array<
     | { type: 'group'; group: GroupType }
@@ -24,7 +24,7 @@ interface DatamodelDataState extends DataModelAction {
 const initialState: DatamodelDataState = {
   groups: [],
   warnings: [],
-  solutions: [],
+  solutionCount: 0,
   search: "",
   filtered: [],
 
@@ -42,12 +42,12 @@ const datamodelDataReducer = (state: DatamodelDataState, action: any): Datamodel
       return { ...state, entityMap: action.payload };
     case "SET_WARNINGS":
       return { ...state, warnings: action.payload };
+    case "SET_SOLUTION_COUNT":
+      return { ...state, solutionCount: action.payload };
     case "SET_SEARCH":
       return { ...state, search: action.payload };
     case "SET_FILTERED":
       return { ...state, filtered: action.payload };
-    case "SET_SOLUTIONS":
-      return { ...state, solutions: action.payload };
     case "APPEND_FILTERED":
       return { ...state, filtered: [...state.filtered, ...action.payload] };
     default:
@@ -70,7 +70,7 @@ export const DatamodelDataProvider = ({ children }: { children: ReactNode }) => 
       dispatch({ type: "SET_GROUPS", payload: e.data.groups || [] });
       dispatch({ type: "SET_ENTITIES", payload: e.data.entityMap || new Map() });
       dispatch({ type: "SET_WARNINGS", payload: e.data.warnings || [] });
-      dispatch({ type: "SET_SOLUTIONS", payload: e.data.solutions || [] });
+      dispatch({ type: "SET_SOLUTION_COUNT", payload: e.data.solutionCount || 0 });
       worker.terminate();
     };
     worker.postMessage({});

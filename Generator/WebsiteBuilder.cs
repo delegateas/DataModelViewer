@@ -14,12 +14,11 @@ internal class WebsiteBuilder
     private readonly IEnumerable<Solution> solutions;
     private readonly string OutputFolder;
 
-    public WebsiteBuilder(IConfiguration configuration, IEnumerable<Record> records, IEnumerable<SolutionWarning> warnings, IEnumerable<Solution> components)
+    public WebsiteBuilder(IConfiguration configuration, IEnumerable<Record> records, IEnumerable<SolutionWarning> warnings)
     {
         this.configuration = configuration;
         this.records = records;
         this.warnings = warnings;
-        this.solutions = components;
 
         // Assuming execution in bin/xxx/net8.0
         OutputFolder = configuration["OutputFolder"] ?? Path.Combine(System.Reflection.Assembly.GetExecutingAssembly().Location, "../../../../../Website/generated");
@@ -28,12 +27,13 @@ internal class WebsiteBuilder
     internal void AddData()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("import { GroupType, SolutionWarningType, SolutionType } from \"@/lib/Types\";");
+        sb.AppendLine("import { GroupType, SolutionWarningType } from \"@/lib/Types\";");
         sb.AppendLine("");
         sb.AppendLine($"export const LastSynched: Date = new Date('{DateTimeOffset.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}');");
         var logoUrl = configuration.GetValue<string?>("Logo", defaultValue: null);
         var jsValue = logoUrl != null ? $"\"{logoUrl}\"" : "null";
         sb.AppendLine($"export const Logo: string | null = {jsValue};");
+        sb.AppendLine($"export const SolutionCount: number = {configuration["DataverseSolutionNames"]?.Split(",").Length ?? -1};");
         sb.AppendLine("");
 
         // ENTITIES
@@ -63,15 +63,6 @@ internal class WebsiteBuilder
         foreach (var warning in warnings)
         {
             sb.AppendLine($"  {JsonConvert.SerializeObject(warning)},");
-        }
-        sb.AppendLine("]");
-
-        // SOLUTION COMPONENTS
-        sb.AppendLine("");
-        sb.AppendLine("export let Solutions: SolutionType[] = [");
-        foreach (var solution in solutions)
-        {
-            sb.AppendLine($"  {JsonConvert.SerializeObject(solution)},");
         }
         sb.AppendLine("]");
 

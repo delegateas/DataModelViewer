@@ -1,5 +1,5 @@
 import { EntityType } from '@/lib/Types';
-import { Groups, SolutionWarnings, Solutions } from '../../generated/Data';
+import { Groups, SolutionWarnings, SolutionCount } from '../../generated/Data';
 
 self.onmessage = function () {
   const entityMap = new Map<string, EntityType>();
@@ -8,5 +8,5 @@ self.onmessage = function () {
       entityMap.set(entity.SchemaName, entity);
     });
   });
-  self.postMessage({ groups: Groups, entityMap: entityMap, warnings: SolutionWarnings, solutions: Solutions });
+  self.postMessage({ groups: Groups, entityMap: entityMap, warnings: SolutionWarnings, solutionCount: SolutionCount });
 }; 

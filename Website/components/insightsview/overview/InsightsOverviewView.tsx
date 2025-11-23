@@ -14,10 +14,14 @@ interface InsightsOverviewViewProps {
 const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
     const theme = useTheme();
 
-    const { groups, solutions } = useDatamodelData();
+    const { groups, solutionCount } = useDatamodelData();
 
     const totalAttributeUsageCount = useMemo(() => {
         return groups.reduce((acc, group) => acc + group.Entities.reduce((acc, entity) => acc + entity.Attributes.reduce((acc, attr) => acc + attr.AttributeUsages.length, 0), 0), 0);
+    }, [groups])
+
+    const totalComponentsCount = useMemo(() => {
+        return groups.reduce((acc, group) => acc + 1 + group.Entities.reduce((acc, entity) => acc + entity.Attributes.length + entity.Relationships.length, 0), 0);
     }, [groups])
 
     const missingIconEntities = useMemo(() => {
@@ -119,28 +123,33 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
         // Count components per publisher with explicit/implicit breakdown
         const publisherCounts: Record<string, { explicit: number, implicit: number }> = {};
 
-        solutions.forEach(solution => {
-            solution.Components.forEach(component => {
-                const publisher = component.PublisherName;
+        groups.forEach(group => {
+            group.Entities.forEach(entity => {
+                const publisher = entity.PublisherName || "Unknown Publisher";
                 if (!publisherCounts[publisher]) {
                     publisherCounts[publisher] = { explicit: 0, implicit: 0 };
                 }
+                publisherCounts[publisher].explicit++;
 
-                // Determine if component is explicit based on its type
-                // ComponentType 1 = Entity (treat as explicit), 2 = Attribute, 3 = Relationship
-                let isExplicit = true; // Default for entities and unknown types
+                entity.Attributes.forEach(attr => {
+                    const isExplicit = attr.IsExplicit;
+                    const publisher = entity.PublisherName || "Unknown Publisher";
+                    if (!publisherCounts[publisher]) {
+                        publisherCounts[publisher] = { explicit: 0, implicit: 0 };
+                    }
+                    if (isExplicit) publisherCounts[publisher].explicit++;
+                    else publisherCounts[publisher].implicit++;
+                });
 
-                if (component.ComponentType === 2) { // Attribute
-                    isExplicit = attributeMap.get(component.SchemaName) ?? true;
-                } else if (component.ComponentType === 3) { // Relationship
-                    isExplicit = relationshipMap.get(component.SchemaName) ?? true;
-                }
-
-                if (isExplicit) {
-                    publisherCounts[publisher].explicit++;
-                } else {
-                    publisherCounts[publisher].implicit++;
-                }
+                entity.Relationships.forEach(rel => {
+                    const isExplicit = rel.IsExplicit;
+                    const publisher = entity.PublisherName || "Unknown Publisher";
+                    if (!publisherCounts[publisher]) {
+                        publisherCounts[publisher] = { explicit: 0, implicit: 0 };
+                    }
+                    if (isExplicit) publisherCounts[publisher].explicit++;
+                    else publisherCounts[publisher].implicit++;
+                });
             });
         });
 
@@ -152,7 +161,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 implicit: counts.implicit
             }))
             .sort((a, b) => (b.explicit + b.implicit) - (a.explicit + a.implicit));
-    }, [solutions, groups]);
+    }, [groups]);
 
     const attributeUsageByComponentType = useMemo(() => {
         const allEntities = groups.flatMap(group => group.Entities);
@@ -276,7 +285,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 <InfoCard
                     color="success.main"
                     title="Solutions"
-                    value={solutions.length}
+                    value={solutionCount}
                     iconSrc={SolutionIcon}
                 />
             </Grid>
@@ -285,7 +294,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 <InfoCard
                     color="primary.main"
                     title="Components"
-                    value={solutions.reduce((acc, solution) => acc + solution.Components.length, 0)}
+                    value={totalComponentsCount}
                     iconSrc={ComponentIcon}
                 />
             </Grid>
