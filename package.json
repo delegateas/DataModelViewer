@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@nivo/heatmap": "^0.99.0",
     "semver": "^7.7.3"
   }
 }
