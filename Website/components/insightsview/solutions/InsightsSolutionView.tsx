@@ -1,9 +1,10 @@
 import { useDatamodelData } from '@/contexts/DatamodelDataContext'
-import { Paper, Typography, Box, Grid, useTheme } from '@mui/material'
+import { Paper, Typography, Box, Grid, useTheme, Tooltip, IconButton } from '@mui/material'
 import React, { useMemo, useState } from 'react'
 import { ResponsiveChord, RibbonDatum } from '@nivo/chord'
 import { SolutionComponentType, SolutionComponentTypeEnum } from '@/lib/Types'
 import { generateEnvelopeSVG } from '@/lib/svgart'
+import { InfoIcon } from '@/lib/icons'
 
 interface InsightsSolutionViewProps {
 
@@ -187,11 +188,18 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
             </Grid>
             <Grid size={{ xs: 12, md: 8 }}>
                 <Paper className="p-6 rounded-2xl" elevation={2}>
-                    <Typography variant="h4" className="mb-6 font-semibold">
-                        Solution Relations
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h4" className="font-semibold">
+                            Solution Relations
+                        </Typography>
+                        <Tooltip title="This chord diagram visualizes shared components between different solutions. Each arc represents a solution, and ribbons show shared components. Hover over ribbons to see details about shared components. Click a ribbon to view the full list in the summary panel." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-                        This chord diagram visualizes shared components between different solutions. 
+                        This chord diagram visualizes shared components between different solutions.
                         The thickness of connections indicates the number of components shared between solutions.
                     </Typography>
                     

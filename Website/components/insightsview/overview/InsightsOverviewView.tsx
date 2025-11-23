@@ -2,7 +2,7 @@ import { InfoCard } from "@/components/shared/elements/InfoCard";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { ComponentIcon, InfoIcon, ProcessesIcon, SolutionIcon, WarningIcon } from "@/lib/icons";
 import { generateLiquidCheeseSVG } from "@/lib/svgart";
-import { Box, Grid, Paper, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import { Box, Grid, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
 import { useMemo } from "react";
@@ -301,9 +301,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={12}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Data Model Distribution: Standard vs Custom
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Data Model Distribution: Standard vs Custom
+                        </Typography>
+                        <Tooltip title="Shows the distribution of standard (out-of-the-box) versus custom entities, attributes, and relationships in your Dataverse environment. This helps identify customization levels across your data model." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsiveBar
                             data={barChartData}
@@ -454,9 +461,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={12}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Components by Publisher (Stacked by Explicit/Implicit)
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Components by Publisher (Stacked by Explicit/Implicit)
+                        </Typography>
+                        <Tooltip title="Displays the number of solution components grouped by publisher. Components are divided into explicit (directly added to the solution) and implicit (automatically included as dependencies). This helps understand solution composition and dependencies." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsiveBar
                             data={publisherComponentData}
@@ -593,9 +607,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Entity Features Distribution
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Entity Features Distribution
+                        </Typography>
+                        <Tooltip title="Shows the distribution of key entity features enabled in your data model, including audit tracking, activity entities, and notes functionality. This provides insight into which capabilities are being utilized." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsivePie
                             data={entityFeaturesData}
@@ -642,9 +663,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Attribute Types Distribution
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Attribute Types Distribution
+                        </Typography>
+                        <Tooltip title="Breaks down all attributes by their data type (e.g., String, Integer, Lookup, DateTime). This helps understand the composition of your data model and identify commonly used field types." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsivePie
                             data={attributeTypeData}
@@ -691,9 +719,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Attribute Process Dependencies by Type
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Attribute Process Dependencies by Type
+                        </Typography>
+                        <Tooltip title="Shows which types of components (plugins, flows, web resources, etc.) are using attributes from your data model. This identifies where attributes are referenced in business logic and automation." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsivePie
                             data={attributeUsageByComponentType}
@@ -740,9 +775,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Attribute Process Dependencies by Detection Source
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Attribute Process Dependencies by Detection Source
+                        </Typography>
+                        <Tooltip title="Compares attribute usages found by the analyzer (scanning component source code) versus those detected through dependency analysis. This shows the effectiveness of different detection methods." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsiveBar
                             data={attributeUsageBySource}
