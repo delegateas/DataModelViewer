@@ -183,41 +183,34 @@ public class SolutionComponentService
         }
 
         var results = new List<ComponentNodeInfo>();
-        const int batchSize = 500; // Query in batches to avoid URL length limits
-
-        for (int i = 0; i < nodeIds.Count; i += batchSize)
+        var query = new QueryExpression("dependencynode")
         {
-            var batch = nodeIds.Skip(i).Take(batchSize).ToList();
-
-            var query = new QueryExpression("dependencynode")
+            ColumnSet = new ColumnSet("dependencynodeid", "componenttype", "objectid", "basesolutionid"),
+            Criteria = new FilterExpression(LogicalOperator.And)
             {
-                ColumnSet = new ColumnSet("dependencynodeid", "componenttype", "objectid", "solutionid"),
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
+                Conditions =
                     {
-                        new ConditionExpression("dependencynodeid", ConditionOperator.In, batch.Cast<object>().ToArray())
+                        new ConditionExpression("dependencynodeid", ConditionOperator.In, nodeIds)
                     }
-                }
-            };
+            }
+        };
 
-            try
+        try
+        {
+            var response = _client.RetrieveMultiple(query);
+            foreach (var entity in response.Entities)
             {
-                var response = _client.RetrieveMultiple(query);
-                foreach (var entity in response.Entities)
-                {
-                    results.Add(new ComponentNodeInfo(
-                        entity.GetAttributeValue<Guid>("dependencynodeid"),
-                        entity.GetAttributeValue<OptionSetValue>("componenttype").Value,
-                        entity.GetAttributeValue<Guid>("objectid"),
-                        entity.GetAttributeValue<EntityReference>("solutionid")
-                    ));
-                }
+                results.Add(new ComponentNodeInfo(
+                    entity.GetAttributeValue<Guid>("dependencynodeid"),
+                    entity.GetAttributeValue<OptionSetValue>("componenttype").Value,
+                    entity.GetAttributeValue<Guid>("objectid"),
+                    entity.GetAttributeValue<EntityReference>("basesolutionid")
+                ));
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to retrieve component nodes for batch starting at index {i}");
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to retrieve component nodes.");
         }
 
         return results;
@@ -399,18 +392,23 @@ public class SolutionComponentService
         var dependencies = GetDependentComponents(attributes);
         _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {dependencies.Count} total dependencies for attributes");
 
-        // Get unique dependent component node IDs
-        var dependentNodeIds = dependencies.Select(d => d.DependentComponentNodeId).Distinct().ToList();
-        if (!dependentNodeIds.Any())
-        {
+        if (!dependencies.Any())
             return workflowDependencies;
-        }
 
-        // Retrieve component node information for all dependents
-        var dependentNodes = GetComponentNodes(dependentNodeIds);
+        // Get unique component node IDs for both dependents and required components
+        var allNodeIds = dependencies
+            .SelectMany(d => new[] { d.DependentComponentNodeId, d.RequiredComponentNodeId })
+            .Distinct()
+            .ToList();
+
+        if (!allNodeIds.Any())
+            return workflowDependencies;
+
+        // Retrieve component node information for all nodes
+        var allNodes = GetComponentNodes(allNodeIds);
 
         // Filter to only workflow components (type 29)
-        var workflowNodes = dependentNodes.Where(n => n.ComponentType == 29).ToList();
+        var workflowNodes = allNodes.Where(n => n.ComponentType == 29).ToList();
         _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {workflowNodes.Count} workflow dependencies");
 
         // Build mapping: attribute ObjectId -> list of workflow ObjectIds
@@ -420,7 +418,7 @@ public class SolutionComponentService
             if (workflowNode != null)
             {
                 // Find the attribute this dependency is for
-                var requiredNode = dependentNodes.FirstOrDefault(n => n.NodeId == dependency.RequiredComponentNodeId);
+                var requiredNode = allNodes.FirstOrDefault(n => n.NodeId == dependency.RequiredComponentNodeId);
                 if (requiredNode != null && requiredNode.ComponentType == 2) // Ensure it's an attribute
                 {
                     if (!workflowDependencies.ContainsKey(requiredNode.ObjectId))

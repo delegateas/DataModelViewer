@@ -126,6 +126,51 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             .sort((a, b) => b.components - a.components);
     }, [solutions]);
 
+    const attributeUsageByComponentType = useMemo(() => {
+        const allEntities = groups.flatMap(group => group.Entities);
+        const allAttributeUsages = allEntities.flatMap(entity =>
+            entity.Attributes.flatMap(attr => attr.AttributeUsages)
+        );
+
+        // Count by component type
+        const componentTypeCounts: Record<number, number> = {};
+        allAttributeUsages.forEach(usage => {
+            componentTypeCounts[usage.ComponentType] = (componentTypeCounts[usage.ComponentType] || 0) + 1;
+        });
+
+        // Map component type numbers to labels
+        const componentTypeLabels: Record<number, string> = {
+            0: 'Power Automate Flow',
+            1: 'Plugin',
+            2: 'Web Resource',
+            3: 'Workflow Activity',
+            4: 'Custom API',
+            5: 'Business Rule',
+            6: 'Classic Workflow'
+        };
+
+        return Object.entries(componentTypeCounts).map(([type, count]) => ({
+            id: componentTypeLabels[parseInt(type)] || `Type ${type}`,
+            label: componentTypeLabels[parseInt(type)] || `Type ${type}`,
+            value: count
+        }));
+    }, [groups]);
+
+    const attributeUsageBySource = useMemo(() => {
+        const allEntities = groups.flatMap(group => group.Entities);
+        const allAttributeUsages = allEntities.flatMap(entity =>
+            entity.Attributes.flatMap(attr => attr.AttributeUsages)
+        );
+
+        const analyzerDetected = allAttributeUsages.filter(usage => !usage.IsFromDependencyAnalysis).length;
+        const dependencyDetected = allAttributeUsages.filter(usage => usage.IsFromDependencyAnalysis).length;
+
+        return [
+            { id: 'Analyzer Detected', label: 'Analyzer Detected', value: analyzerDetected },
+            { id: 'Dependency Detected', label: 'Dependency Detected', value: dependencyDetected }
+        ].filter(item => item.value > 0);
+    }, [groups]);
+
     return (
         <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 7 }}>
@@ -217,7 +262,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             <Grid size={{ xs: 12, md: 4 }}>
                 <InfoCard
                     color="warning.main"
-                    title="Attribute Usages"
+                    title="Attribute Process Dependencies"
                     value={totalAttributeUsageCount}
                     iconSrc={ProcessesIcon}
                 />
@@ -534,6 +579,104 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                             cornerRadius={3}
                             activeOuterRadiusOffset={8}
                             colors={{ scheme: "blues" }}
+                            borderWidth={1}
+                            borderColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 0.2]
+                                ]
+                            }}
+                            arcLinkLabelsTextColor={theme.palette.text.primary}
+                            arcLinkLabelsThickness={2}
+                            arcLinkLabelsColor={{ from: 'color' }}
+                            arcLabelsSkipAngle={10}
+                            arcLabelsTextColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 2]
+                                ]
+                            }}
+                            theme={{
+                                background: 'transparent',
+                                text: {
+                                    fontSize: 12,
+                                    fill: theme.palette.text.primary,
+                                },
+                                tooltip: {
+                                    container: {
+                                        background: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                <Paper elevation={2} className="p-6 rounded-2xl">
+                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
+                        Attribute Process Dependencies by Type
+                    </Typography>
+                    <Box sx={{ height: 400 }}>
+                        <ResponsivePie
+                            data={attributeUsageByComponentType}
+                            margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                            innerRadius={0.5}
+                            padAngle={0.7}
+                            cornerRadius={3}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "category10" }}
+                            borderWidth={1}
+                            borderColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 0.2]
+                                ]
+                            }}
+                            arcLinkLabelsTextColor={theme.palette.text.primary}
+                            arcLinkLabelsThickness={2}
+                            arcLinkLabelsColor={{ from: 'color' }}
+                            arcLabelsSkipAngle={10}
+                            arcLabelsTextColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 2]
+                                ]
+                            }}
+                            theme={{
+                                background: 'transparent',
+                                text: {
+                                    fontSize: 12,
+                                    fill: theme.palette.text.primary,
+                                },
+                                tooltip: {
+                                    container: {
+                                        background: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                <Paper elevation={2} className="p-6 rounded-2xl">
+                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
+                        Attribute Process Dependencies by Detection Source
+                    </Typography>
+                    <Box sx={{ height: 400 }}>
+                        <ResponsivePie
+                            data={attributeUsageBySource}
+                            margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                            innerRadius={0.5}
+                            padAngle={0.7}
+                            cornerRadius={3}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "set2" }}
                             borderWidth={1}
                             borderColor={{
                                 from: 'color',

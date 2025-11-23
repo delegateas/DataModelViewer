@@ -9,6 +9,7 @@ using Generator.Services.PowerAutomate;
 using Generator.Services.WebResources;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerPlatform.Dataverse.Client;
+using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using System.Diagnostics;
 
@@ -166,7 +167,7 @@ namespace Generator
                         c.SolutionComponentId ?? Guid.Empty,
                         c.ComponentType,
                         c.RootComponentBehaviour,
-                        new Microsoft.Xrm.Sdk.EntityReference("solution", c.SolutionId)
+                        new EntityReference("solution", c.SolutionId)
                     ))
                 );
 

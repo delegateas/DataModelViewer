@@ -189,7 +189,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                         <Grid container spacing={2} className="mb-8">
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <StatCard
-                                    title="attribute usages"
+                                    title="Attribute process dependencies"
                                     value={typeDistribution[ComponentType.Plugin] || 0}
                                     highlightedWord="Plugin"
                                     tooltipTitle="Only includes registered plugin step triggers."
@@ -200,7 +200,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                             </Grid>
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <StatCard
-                                    title="attribute usages"
+                                    title="Attribute process dependencies"
                                     value={typeDistribution[ComponentType.PowerAutomateFlow] || 0}
                                     highlightedWord="Power Automate"
                                     tooltipTitle="Only includes CDS Actions."
@@ -211,7 +211,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                             </Grid>
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <StatCard
-                                    title="attribute usages"
+                                    title="Attribute process dependencies"
                                     value={typeDistribution[ComponentType.WebResource] || 0}
                                     highlightedWord="Web Resource"
                                     tooltipTitle="Only includes getAttribute/getControl from Web Resource."

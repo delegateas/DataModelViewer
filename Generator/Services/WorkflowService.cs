@@ -1,4 +1,5 @@
 using Microsoft.PowerPlatform.Dataverse.Client;
+using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
 namespace Generator.Services
@@ -44,8 +45,8 @@ namespace Generator.Services
                 e => new WorkflowInfo(
                     e.Id,
                     e.GetAttributeValue<string>("name"),
-                    e.GetAttributeValue<int>("category"),
-                    e.GetAttributeValue<int>("type")
+                    e.GetAttributeValue<OptionSetValue>("category").Value,
+                    e.GetAttributeValue<OptionSetValue>("type").Value
                 )
             );
         }
