@@ -26,7 +26,8 @@ namespace Generator.Services
             EntityMetadata entity,
             Dictionary<string, ExtendedEntityInformation> logicalToSchema,
             Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
-            Dictionary<Guid, ComponentInclusionType> inclusionMap)
+            Dictionary<Guid, bool> inclusionMap,
+            Dictionary<Guid, List<WorkflowInfo>> workflowDependencies)
         {
             Attribute attr = metadata switch
             {
@@ -46,15 +47,46 @@ namespace Generator.Services
                 _ => new GenericAttribute(metadata)
             };
 
+            // Get analyzer-based usages
             var schemaname = attributeUsages.GetValueOrDefault(entity.LogicalName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
             // also check the plural name, as some workflows like Power Automate use collectionname
             var pluralname = attributeUsages.GetValueOrDefault(entity.LogicalCollectionName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
+            var analyzerUsages = new List<AttributeUsage>([.. schemaname, .. pluralname]);
 
-            attr.AttributeUsages = [.. schemaname, .. pluralname];
-            attr.InclusionType = inclusionMap.GetValueOrDefault(metadata.MetadataId!.Value, ComponentInclusionType.Implicit);
+            // Get workflow dependency usages
+            var workflowUsages = workflowDependencies
+                .GetValueOrDefault(metadata.MetadataId!.Value, [])
+                .Select(w => new AttributeUsage(
+                    Name: w.Name,
+                    Usage: DetermineWorkflowUsageContext(w),
+                    OperationType: OperationType.Other,
+                    ComponentType: w.Category == 2 ? ComponentType.BusinessRule : ComponentType.ClassicWorkflow,
+                    IsFromDependencyAnalysis: true
+                ))
+                .ToList();
+
+            // Combine both sources
+            attr.AttributeUsages = [.. analyzerUsages, .. workflowUsages];
+            attr.IsExplicit = inclusionMap.GetValueOrDefault(metadata.MetadataId!.Value, false);
             attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty, entity.IsCustomEntity ?? false);
 
             return attr;
+        }
+
+        /// <summary>
+        /// Determines the usage context string for a workflow
+        /// </summary>
+        private static string DetermineWorkflowUsageContext(WorkflowInfo workflow)
+        {
+            return workflow.Category switch
+            {
+                2 => "Business Rule",
+                0 => "Workflow",
+                3 => "Action",
+                4 => "Business Process Flow",
+                5 => "Dialog",
+                _ => "Workflow"
+            };
         }
     }
 }

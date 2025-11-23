@@ -1,5 +1,4 @@
-﻿using Generator.Services;
-using Microsoft.Xrm.Sdk.Metadata;
+﻿using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator.DTO;
 
@@ -11,5 +10,5 @@ public record Relationship(
     string LookupDisplayName,
     string RelationshipSchema,
     bool IsManyToMany,
-    ComponentInclusionType InclusionType,
+    bool IsExplicit,
     CascadeConfiguration? CascadeConfiguration);

@@ -13,7 +13,7 @@ public class ComponentInfo
     public int ComponentType { get; set; }
     public Guid ObjectId { get; set; }
     public Guid? SolutionComponentId { get; set; }
-    public ComponentInclusionType InclusionType { get; set; }
+    public bool IsExplicit { get; set; }
     public int RootComponentBehaviour { get; set; }
     public Guid SolutionId { get; set; }
 
@@ -51,13 +51,6 @@ public record ComponentNodeInfo(
     Guid ObjectId,
     EntityReference SolutionId
     );
-
-public enum ComponentInclusionType
-{
-    Explicit = 0,      // Explicitly added to the solution
-    Implicit = 1,      // Implicitly included (subcomponent)
-    Required = 2       // Required dependency
-}
 
 public class SolutionComponentService
 {
@@ -97,7 +90,7 @@ public class SolutionComponentService
             // 0 (IncludeSubcomponents) = Explicitly added with all subcomponents
             // 1 (DoNotIncludeSubcomponents) = Explicitly added without subcomponents
             // 2 (IncludeAsShellOnly) = Only shell/definition included
-            // If not present or other values, treat as explicit
+            // If not present or other values, treat as implicit
             var isExplicitlyAdded = comp.RootComponentBehaviour == 0 || comp.RootComponentBehaviour == 1 || comp.RootComponentBehaviour == 2;
 
             allComponents.Add(new ComponentInfo
@@ -106,42 +99,46 @@ public class SolutionComponentService
                 ObjectId = comp.ObjectId,
                 SolutionComponentId = comp.SolutionComponentId,
                 RootComponentBehaviour = comp.RootComponentBehaviour,
-                InclusionType = isExplicitlyAdded ? ComponentInclusionType.Explicit : ComponentInclusionType.Implicit,
+                IsExplicit = isExplicitlyAdded,
                 SolutionId = comp.SolutionId.Id
             });
         }
 
-        // Get required dependencies
+        // Get required dependencies for attributes only (component type 2)
         try
         {
-            var dependencies = GetRequiredComponents(explicitComponents);
-            _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {dependencies.Count} dependency relationships");
-
-            // Get unique component node IDs
-            var requiredNodeIds = dependencies.Select(d => d.RequiredComponentNodeId).Distinct().ToList();
-            _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieving component information for {requiredNodeIds.Count} dependency nodes");
-
-            // Retrieve component node information
-            var componentNodes = GetComponentNodes(requiredNodeIds);
-            _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieved {componentNodes.Count} component nodes");
-
-            // Add required components
-            foreach (var node in componentNodes)
+            var attributeComponents = explicitComponents.Where(c => c.ComponentType == 2).ToList();
+            if (attributeComponents.Any())
             {
-                var componentInfo = new ComponentInfo
-                {
-                    ComponentType = node.ComponentType,
-                    ObjectId = node.ObjectId,
-                    SolutionComponentId = null,
-                    RootComponentBehaviour = -1,
-                    InclusionType = ComponentInclusionType.Required,
-                    SolutionId = node.SolutionId.Id
-                };
+                var dependencies = GetRequiredComponents(attributeComponents);
+                _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {dependencies.Count} dependency relationships for attributes");
 
-                // Only add if not already present as explicit component
-                if (!allComponents.Contains(componentInfo))
+                // Get unique component node IDs
+                var requiredNodeIds = dependencies.Select(d => d.RequiredComponentNodeId).Distinct().ToList();
+                _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieving component information for {requiredNodeIds.Count} dependency nodes");
+
+                // Retrieve component node information
+                var componentNodes = GetComponentNodes(requiredNodeIds);
+                _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieved {componentNodes.Count} component nodes");
+
+                // Add required components as implicit
+                foreach (var node in componentNodes)
                 {
-                    allComponents.Add(componentInfo);
+                    var componentInfo = new ComponentInfo
+                    {
+                        ComponentType = node.ComponentType,
+                        ObjectId = node.ObjectId,
+                        SolutionComponentId = null,
+                        RootComponentBehaviour = -1,
+                        IsExplicit = false, // Required dependencies are implicitly included
+                        SolutionId = node.SolutionId.Id
+                    };
+
+                    // Only add if not already present as explicit component
+                    if (!allComponents.Contains(componentInfo))
+                    {
+                        allComponents.Add(componentInfo);
+                    }
                 }
             }
         }
@@ -150,7 +147,7 @@ public class SolutionComponentService
             _logger.LogWarning(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to get required components, continuing without them");
         }
 
-        _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Total components found: {allComponents.Count} (Explicit: {allComponents.Count(c => c.InclusionType == ComponentInclusionType.Explicit)}, Implicit: {allComponents.Count(c => c.InclusionType == ComponentInclusionType.Implicit)}, Required: {allComponents.Count(c => c.InclusionType == ComponentInclusionType.Required)})");
+        _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Total components found: {allComponents.Count} (Explicit: {allComponents.Count(c => c.IsExplicit)}, Implicit: {allComponents.Count(c => !c.IsExplicit)})");
         return allComponents;
     }
 
@@ -376,5 +373,66 @@ public class SolutionComponentService
 
         _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Required components: Processed {processedCount}/{totalCount} components, {errorCount} errors, {results.Count} dependencies found");
         return results;
+    }
+
+    /// <summary>
+    /// Gets workflow dependencies for attributes by finding workflows (type 29) that depend on specified attributes
+    /// </summary>
+    /// <param name="attributeComponents">List of attribute components to check for dependencies</param>
+    /// <returns>Dictionary mapping attribute ObjectId to list of workflow ObjectIds that depend on it</returns>
+    public Dictionary<Guid, List<Guid>> GetWorkflowDependenciesForAttributes(IEnumerable<SolutionComponentInfo> attributeComponents)
+    {
+        var workflowDependencies = new Dictionary<Guid, List<Guid>>();
+
+        // Filter to only attributes (component type 2)
+        var attributes = attributeComponents.Where(c => c.ComponentType == 2).ToList();
+
+        if (!attributes.Any())
+        {
+            _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] No attributes to check for workflow dependencies");
+            return workflowDependencies;
+        }
+
+        _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Checking {attributes.Count} attributes for workflow dependencies");
+
+        // Get all dependent components for attributes
+        var dependencies = GetDependentComponents(attributes);
+        _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {dependencies.Count} total dependencies for attributes");
+
+        // Get unique dependent component node IDs
+        var dependentNodeIds = dependencies.Select(d => d.DependentComponentNodeId).Distinct().ToList();
+        if (!dependentNodeIds.Any())
+        {
+            return workflowDependencies;
+        }
+
+        // Retrieve component node information for all dependents
+        var dependentNodes = GetComponentNodes(dependentNodeIds);
+
+        // Filter to only workflow components (type 29)
+        var workflowNodes = dependentNodes.Where(n => n.ComponentType == 29).ToList();
+        _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {workflowNodes.Count} workflow dependencies");
+
+        // Build mapping: attribute ObjectId -> list of workflow ObjectIds
+        foreach (var dependency in dependencies)
+        {
+            var workflowNode = workflowNodes.FirstOrDefault(n => n.NodeId == dependency.DependentComponentNodeId);
+            if (workflowNode != null)
+            {
+                // Find the attribute this dependency is for
+                var requiredNode = dependentNodes.FirstOrDefault(n => n.NodeId == dependency.RequiredComponentNodeId);
+                if (requiredNode != null && requiredNode.ComponentType == 2) // Ensure it's an attribute
+                {
+                    if (!workflowDependencies.ContainsKey(requiredNode.ObjectId))
+                    {
+                        workflowDependencies[requiredNode.ObjectId] = new List<Guid>();
+                    }
+                    workflowDependencies[requiredNode.ObjectId].Add(workflowNode.ObjectId);
+                }
+            }
+        }
+
+        _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Mapped workflow dependencies to {workflowDependencies.Count} attributes");
+        return workflowDependencies;
     }
 }

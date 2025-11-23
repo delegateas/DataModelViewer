@@ -6,7 +6,7 @@ namespace Generator.ExtensionMethods;
 
 public static class RelationshipExtensions
 {
-    public static IEnumerable<Relationship> ConvertToRelationship(this IEnumerable<ManyToManyRelationshipMetadata> relationships, string entityLogicalName, Dictionary<Guid, ComponentInclusionType> inclusionMap)
+    public static IEnumerable<Relationship> ConvertToRelationship(this IEnumerable<ManyToManyRelationshipMetadata> relationships, string entityLogicalName, Dictionary<Guid, bool> inclusionMap)
     {
         return relationships.Select(rel => new Relationship(
                             rel.IsCustomRelationship ?? false,
@@ -19,7 +19,7 @@ public static class RelationshipExtensions
                             null));
     }
 
-    public static IEnumerable<Relationship> ConvertToRelationship(this IEnumerable<OneToManyRelationshipMetadata> relationships, string entityLogicalName, Dictionary<string, Dictionary<string, string>> attributeMapping, Dictionary<Guid, ComponentInclusionType> inclusionMap)
+    public static IEnumerable<Relationship> ConvertToRelationship(this IEnumerable<OneToManyRelationshipMetadata> relationships, string entityLogicalName, Dictionary<string, Dictionary<string, string>> attributeMapping, Dictionary<Guid, bool> inclusionMap)
     {
         return relationships.Select(rel => new Relationship(
                             rel.IsCustomRelationship ?? false,

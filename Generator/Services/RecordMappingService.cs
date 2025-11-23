@@ -38,11 +38,12 @@ namespace Generator.Services
             List<Key> keys,
             Dictionary<string, string> entityIconMap,
             Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
-            Dictionary<Guid, ComponentInclusionType> inclusionMap)
+            Dictionary<Guid, bool> inclusionMap,
+            Dictionary<Guid, List<WorkflowInfo>> workflowDependencies)
         {
             var attributes =
                 relevantAttributes
-                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages, inclusionMap))
+                .Select(metadata => attributeMappingService.MapAttribute(metadata, entity, logicalToSchema, attributeUsages, inclusionMap, workflowDependencies))
                 .Where(x => !string.IsNullOrEmpty(x.DisplayName))
                 .ToList();
 

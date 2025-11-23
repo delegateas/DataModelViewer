@@ -1,5 +1,4 @@
-﻿using Generator.Services;
-using Microsoft.Xrm.Sdk.Metadata;
+﻿using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator.DTO.Attributes;
 
@@ -10,7 +9,7 @@ public abstract class Attribute
     public bool IsPrimaryId { get; set; }
     public bool IsPrimaryName { get; set; }
     public List<AttributeUsage> AttributeUsages { get; set; } = new List<AttributeUsage>();
-    public ComponentInclusionType InclusionType { get; set; }
+    public bool IsExplicit { get; set; }
     public string DisplayName { get; }
     public string SchemaName { get; }
     public string Description { get; }

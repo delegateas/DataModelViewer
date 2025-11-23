@@ -57,6 +57,7 @@ services.AddSingleton<AttributeMappingService>();
 services.AddSingleton<RelationshipService>();
 services.AddSingleton<RecordMappingService>();
 services.AddSingleton<DataverseService>();
+services.AddSingleton<WorkflowService>();
 services.AddSingleton<SolutionComponentService>();
 
 // Build service provider

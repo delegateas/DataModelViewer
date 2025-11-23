@@ -80,7 +80,8 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
                     webResource.Name,
                     attributeName.Type,
                     attributeName.Operation,
-                    SupportedType
+                    SupportedType,
+                    false
                 ));
             }
         }
@@ -107,7 +108,8 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
                 webResource.Name,
                 reference.Context,
                 ConvertOperationString(reference.Operation),
-                SupportedType
+                SupportedType,
+                false
             ));
         }
 
@@ -127,7 +129,8 @@ public class WebResourceAnalyzer : BaseComponentAnalyzer<WebResource>
                 webResource.Name,
                 reference.Context,
                 ConvertOperationString(reference.Operation),
-                SupportedType
+                SupportedType,
+                false
             ));
         }
     }

@@ -79,7 +79,9 @@ export enum ComponentType {
     Plugin,
     WebResource,
     WorkflowActivity,
-    CustomApi
+    CustomApi,
+    BusinessRule,
+    ClassicWorkflow
 }
 
 export enum OperationType {
@@ -95,13 +97,8 @@ export type UsageType = {
     Name: string,
     ComponentType: ComponentType,
     Usage: string,
-    OperationType: OperationType
-}
-
-export enum InclusionTypeEnum {
-    Explicit = 0,      // Explicitly added to the solution
-    Implicit = 1,      // Implicitly included (subcomponent)
-    Required = 2       // Required dependency
+    OperationType: OperationType,
+    IsFromDependencyAnalysis: boolean
 }
 
 export type BaseAttribute = {
@@ -117,7 +114,7 @@ export type BaseAttribute = {
     IsAuditEnabled: boolean;
     IsColumnSecured: boolean;
     CalculationMethod: CalculationMethods | null;
-    InclusionType: InclusionTypeEnum;
+    IsExplicit: boolean;
 }
 
 export type ChoiceAttributeType = BaseAttribute & {
@@ -234,7 +231,7 @@ export type RelationshipType = {
     TableSchema: string,
     LookupDisplayName: string,
     RelationshipSchema: string,
-    InclusionType: InclusionTypeEnum,
+    IsExplicit: boolean,
     IsManyToMany: boolean,
     CascadeConfiguration: CascadeConfigurationType | null,
 }

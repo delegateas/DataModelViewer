@@ -107,7 +107,8 @@ public class PowerAutomateFlowAnalyzer : BaseComponentAnalyzer<PowerAutomateFlow
                                     flowName,
                                     $"{context} in action '{actionName}'",
                                     result.OperationType,
-                                    SupportedType));
+                                    SupportedType,
+                                    false));
                         }
                     }
                 }
@@ -234,7 +235,8 @@ public class PowerAutomateFlowAnalyzer : BaseComponentAnalyzer<PowerAutomateFlow
                         flowName,
                         $"Dynamic content: {fieldRef.Context}",
                         OperationType.Read,
-                        SupportedType));
+                        SupportedType,
+                        false));
             }
         }
     }

@@ -23,6 +23,7 @@ namespace Generator
         private readonly EntityIconService entityIconService;
         private readonly RecordMappingService recordMappingService;
         private readonly SolutionComponentService solutionComponentService;
+        private readonly WorkflowService workflowService;
 
         private readonly List<IAnalyzerRegistration> analyzerRegistrations;
 
@@ -34,7 +35,8 @@ namespace Generator
             SecurityRoleService securityRoleService,
             EntityIconService entityIconService,
             RecordMappingService recordMappingService,
-            SolutionComponentService solutionComponentService)
+            SolutionComponentService solutionComponentService,
+            WorkflowService workflowService)
         {
             this.logger = logger;
             this.entityMetadataService = entityMetadataService;
@@ -42,6 +44,7 @@ namespace Generator
             this.securityRoleService = securityRoleService;
             this.entityIconService = entityIconService;
             this.recordMappingService = recordMappingService;
+            this.workflowService = workflowService;
 
             // Register all analyzers with their query functions
             analyzerRegistrations = new List<IAnalyzerRegistration>
@@ -81,7 +84,7 @@ namespace Generator
                 logger.LogError(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to get solution components");
                 throw;
             }
-            var inclusionMap = solutionComponents.ToDictionary(s => s.ObjectId, s => s.InclusionType);
+            var inclusionMap = solutionComponents.ToDictionary(s => s.ObjectId, s => s.IsExplicit);
 
             /// ENTITIES
             var set = solutionComponents.Select(c => c.ObjectId).ToHashSet();
@@ -149,6 +152,43 @@ namespace Generator
             foreach (var registration in analyzerRegistrations)
                 await registration.RunAnalysisAsync(solutionIds, attributeUsages, warnings, logger, entitiesInSolutionMetadata.ToList());
 
+            /// WORKFLOW DEPENDENCIES
+            Dictionary<Guid, List<WorkflowInfo>> workflowDependencies;
+            try
+            {
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Getting workflow dependencies for attributes");
+
+                // Get workflow dependencies for attributes (returns attribute ObjectId -> list of workflow ObjectIds)
+                var explicitComponentsList = solutionComponents.ToList();
+                var workflowDependencyMap = solutionComponentService.GetWorkflowDependenciesForAttributes(
+                    explicitComponentsList.Where(c => c.ComponentType == 2).Select(c => new SolutionComponentInfo(
+                        c.ObjectId,
+                        c.SolutionComponentId ?? Guid.Empty,
+                        c.ComponentType,
+                        c.RootComponentBehaviour,
+                        new Microsoft.Xrm.Sdk.EntityReference("solution", c.SolutionId)
+                    ))
+                );
+
+                // Get workflow details for all unique workflow IDs
+                var allWorkflowIds = workflowDependencyMap.Values.SelectMany(ids => ids).Distinct().ToList();
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {allWorkflowIds.Count} unique workflow dependencies");
+
+                var workflowInfoMap = await workflowService.GetWorkflows(allWorkflowIds);
+
+                // Convert to attribute ObjectId -> list of WorkflowInfo
+                workflowDependencies = workflowDependencyMap.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Select(wid => workflowInfoMap.GetValueOrDefault(wid)).Where(w => w != null).Select(w => w!).ToList()
+                );
+
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Mapped workflow information for {workflowDependencies.Count} attributes");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to get workflow dependencies, continuing without them");
+                workflowDependencies = new Dictionary<Guid, List<WorkflowInfo>>();
+            }
 
             var records =
                 entitiesInSolutionMetadata
@@ -172,7 +212,8 @@ namespace Generator
                         keys ?? [],
                         entityIconMap,
                         attributeUsages,
-                        inclusionMap);
+                        inclusionMap,
+                        workflowDependencies);
                 })
                 .ToList();
 

@@ -6,7 +6,9 @@ public enum ComponentType
     Plugin,
     WebResource,
     WorkflowActivity,
-    CustomApi
+    CustomApi,
+    BusinessRule,
+    ClassicWorkflow
 }
 
 public enum OperationType
@@ -23,5 +25,6 @@ public record AttributeUsage(
     string Name,
     string Usage,
     OperationType OperationType,
-    ComponentType ComponentType
+    ComponentType ComponentType,
+    bool IsFromDependencyAnalysis
 );
