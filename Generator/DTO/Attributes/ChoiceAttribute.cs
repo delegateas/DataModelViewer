@@ -1,4 +1,5 @@
-﻿using Microsoft.Xrm.Sdk.Metadata;
+﻿using Generator.Extensions;
+using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator.DTO.Attributes;
 
@@ -13,10 +14,10 @@ public class ChoiceAttribute : Attribute
     public ChoiceAttribute(PicklistAttributeMetadata metadata) : base(metadata)
     {
         Options = metadata.OptionSet.Options.Select(x => new Option(
-            x.Label.UserLocalizedLabel?.Label ?? string.Empty,
+            x.Label.ToLabelString(),
             x.Value,
             x.Color,
-            x.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty));
+            x.Description.ToLabelString().PrettyDescription()));
         Type = "Single";
         DefaultValue = metadata.DefaultFormValue;
     }
@@ -24,10 +25,10 @@ public class ChoiceAttribute : Attribute
     public ChoiceAttribute(StateAttributeMetadata metadata) : base(metadata)
     {
         Options = metadata.OptionSet.Options.Select(x => new Option(
-            x.Label.UserLocalizedLabel?.Label ?? string.Empty,
+            x.Label.ToLabelString(),
             x.Value,
             x.Color,
-            x.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty));
+            x.Description.ToLabelString().PrettyDescription()));
         Type = "Single";
         DefaultValue = metadata.DefaultFormValue;
     }
@@ -35,10 +36,10 @@ public class ChoiceAttribute : Attribute
     public ChoiceAttribute(MultiSelectPicklistAttributeMetadata metadata) : base(metadata)
     {
         Options = metadata.OptionSet.Options.Select(x => new Option(
-            x.Label.UserLocalizedLabel?.Label ?? string.Empty,
+            x.Label.ToLabelString(),
             x.Value,
             x.Color,
-            x.Description.UserLocalizedLabel?.Label.PrettyDescription() ?? string.Empty));
+            x.Description.ToLabelString().PrettyDescription()));
         Type = "Multi";
         DefaultValue = metadata.DefaultFormValue;
     }

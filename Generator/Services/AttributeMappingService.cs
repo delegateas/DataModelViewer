@@ -1,5 +1,6 @@
 using Generator.DTO;
 using Generator.DTO.Attributes;
+using Generator.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xrm.Sdk.Metadata;
 using Attribute = Generator.DTO.Attributes.Attribute;
@@ -75,7 +76,7 @@ namespace Generator.Services
             attr.PublisherPrefix = pPrefix;
             attr.AttributeUsages = [.. analyzerUsages, .. workflowUsages];
             attr.IsExplicit = inclusionMap.GetValueOrDefault(metadata.MetadataId!.Value, false);
-            attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty, entity.IsCustomEntity ?? false);
+            attr.IsStandardFieldModified = MetadataExtensions.StandardFieldHasChanged(metadata, entity.DisplayName.ToLabelString(), entity.IsCustomEntity ?? false);
 
             // Get solution info for this attribute
             // If not found directly, inherit from parent entity (for attributes added via RootComponentBehaviour=0)

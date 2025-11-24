@@ -1,4 +1,5 @@
 using Generator.DTO;
+using Generator.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xrm.Sdk.Metadata;
@@ -57,7 +58,7 @@ internal class RelationshipService
     /// </summary>
     public (string? Group, string? Description) GetGroupAndDescription(EntityMetadata entity, IDictionary<string, string> tableGroups)
     {
-        var description = entity.Description.UserLocalizedLabel?.Label ?? string.Empty;
+        var description = entity.Description.ToLabelString();
         if (!description.StartsWith("#"))
         {
             if (tableGroups.TryGetValue(entity.LogicalName, out var tablegroup))
@@ -103,7 +104,7 @@ internal class RelationshipService
 
             return new Relationship(
                 rel.IsCustomRelationship ?? false,
-                $"{rel.Entity1AssociatedMenuConfiguration.Label.UserLocalizedLabel.Label} ⟷ {rel.Entity2AssociatedMenuConfiguration.Label.UserLocalizedLabel.Label}",
+                $"{rel.Entity1AssociatedMenuConfiguration.Label.ToLabelString()} ⟷ {rel.Entity2AssociatedMenuConfiguration.Label.ToLabelString()}",
                 entityLogicalName,
                 "-",
                 rel.SchemaName,
@@ -137,11 +138,15 @@ internal class RelationshipService
             var relationshipSolutions = componentSolutionMap.GetValueOrDefault(rel.MetadataId!.Value)
                 ?? componentSolutionMap.GetValueOrDefault(entityMetadataId, new List<SolutionInfo>());
 
+            string? lookupName = string.Empty;
+            if (attributeMapping.TryGetValue(rel.ReferencingEntity, out var entityMap))
+                entityMap.TryGetValue(rel.ReferencingAttribute, out lookupName);
+
             return new Relationship(
                 rel.IsCustomRelationship ?? false,
                 rel.ReferencingEntityNavigationPropertyName ?? rel.ReferencedEntity,
                 entityLogicalName,
-                attributeMapping[rel.ReferencingEntity][rel.ReferencingAttribute],
+                lookupName ?? "not found",
                 rel.SchemaName,
                 rel.RelationshipType is not RelationshipType.ManyToManyRelationship,
                 inclusionMap[rel.MetadataId!.Value],

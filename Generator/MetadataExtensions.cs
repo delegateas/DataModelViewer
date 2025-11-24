@@ -1,4 +1,5 @@
-﻿using Microsoft.Xrm.Sdk.Metadata;
+﻿using Generator.Extensions;
+using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator;
 
@@ -27,8 +28,8 @@ public static class MetadataExtensions
         var languagecode = attribute.DisplayName.UserLocalizedLabel?.LanguageCode;
 
         var fields = GetDefaultFields(entityDisplayName, languagecode);
-        var hasTextChanged = fields.StandardDescriptionHasChanged(attribute.LogicalName, attribute.Description.UserLocalizedLabel?.Label ?? string.Empty)
-            || fields.StandardDisplayNameHasChanged(attribute.LogicalName, attribute.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
+        var hasTextChanged = fields.StandardDescriptionHasChanged(attribute.LogicalName, attribute.Description.ToLabelString())
+            || fields.StandardDisplayNameHasChanged(attribute.LogicalName, attribute.DisplayName.ToLabelString());
 
         // Check if options have been added to statecode or statuscode
         var hasOptionsChanged = attribute switch

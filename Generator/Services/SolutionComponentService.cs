@@ -124,6 +124,7 @@ public class SolutionComponentService
                 // Add required components as implicit
                 foreach (var node in componentNodes)
                 {
+                    if (node.ComponentType is 1) continue; // skip entities (just adds hidden M-M tables)
                     var componentInfo = new ComponentInfo
                     {
                         ComponentType = node.ComponentType,
@@ -160,7 +161,7 @@ public class SolutionComponentService
             {
                 Conditions =
                     {
-                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 10, 20, 62 }), // 1=entity, 2=attribute, 10=1:N relationship, 20=security role, 62=N:N relationship (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
+                        new ConditionExpression("componenttype", ConditionOperator.In, new List<int>() { 1, 2, 10, 20, 62 }), // 1=entity, 2=attribute, 10=1:N relationship, 20=security role (https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent)
                         new ConditionExpression("solutionid", ConditionOperator.In, solutionIds)
                     }
             }

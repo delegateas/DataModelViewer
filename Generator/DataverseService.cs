@@ -1,6 +1,7 @@
 ﻿using Generator.DTO;
 using Generator.DTO.Attributes;
 using Generator.DTO.Warnings;
+using Generator.Extensions;
 using Generator.Queries;
 using Generator.Services;
 using Generator.Services.Plugins;
@@ -128,7 +129,8 @@ namespace Generator
             {
                 logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Calling entityMetadataService.GetEntityMetadataByObjectIds()");
                 entitiesInSolution = solutionComponents.Where(c => c.ComponentType is 1).DistinctBy(comp => comp.ObjectId);
-                entitiesInSolutionMetadata = await entityMetadataService.GetEntityMetadataByObjectIds(entitiesInSolution.Select(e => e.ObjectId));
+                entitiesInSolutionMetadata = (await entityMetadataService.GetEntityMetadataByObjectIds(entitiesInSolution.Select(e => e.ObjectId)))
+                    .Where(ent => ent.IsIntersect is false); // IsIntersect is true for standard hidden M-M entities
                 logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieved {entitiesInSolutionMetadata.Count()} entity metadata");
             }
             catch (Exception ex)
@@ -165,21 +167,38 @@ namespace Generator
             /// ATTRIBUTES
             var attributesInSolution = solutionComponents.Where(x => x.ComponentType == 2).Select(x => x.ObjectId).ToHashSet();
             var rootBehaviourEntities = entitiesInSolution.Where(ent => ent.RootComponentBehaviour is 0).Select(e => e.ObjectId).ToHashSet();
-            var attributesAllExplicitlyAdded = entitiesInSolutionMetadata.Where(e => rootBehaviourEntities.Contains(e.MetadataId!.Value)).SelectMany(e => e.Attributes.Select(a => a.MetadataId!.Value));
-            foreach (var attr in attributesAllExplicitlyAdded) attributesInSolution.Add(attr);
+            var attributesAllExplicitlyAdded = entitiesInSolutionMetadata.Where(e => rootBehaviourEntities.Contains(e.MetadataId!.Value))
+                .SelectMany(e => e.Attributes
+                    .Where(a => a.DisplayName.UserLocalizedLabel is not null)) // Sometimes Yomi columns and other hidden attributes are added. These wont have any localized labels.
+                    .Select(a => a.MetadataId!.Value);
+            foreach (var attr in attributesAllExplicitlyAdded)
+            {
+                attributesInSolution.Add(attr);
+                inclusionMap.TryAdd(attr, true);
+            }
 
             logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {attributesInSolution.Count} attributes");
-            var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.UserLocalizedLabel?.Label ?? attr.SchemaName) ?? []);
+            var attributeLogicalToSchema = allEntityMetadata.ToDictionary(x => x.LogicalName, x => x.Attributes?.ToDictionary(attr => attr.LogicalName, attr => attr.DisplayName.ToLabelString() ?? attr.SchemaName) ?? []);
 
             /// ENTITY RELATIONSHIPS
             var relationshipsInSolution = solutionComponents.Where(x => x.ComponentType == 10).Select(x => x.ObjectId).ToHashSet();
+            var relationshipsAllExplicitlyAdded = entitiesInSolutionMetadata.Where(e => rootBehaviourEntities.Contains(e.MetadataId!.Value)).SelectMany(e =>
+                e.ManyToManyRelationships.Select(a => a.MetadataId!.Value)
+                .Concat(e.OneToManyRelationships.Select(a => a.MetadataId!.Value))
+                .Concat(e.ManyToOneRelationships.Select(a => a.MetadataId!.Value)));
+            foreach (var rel in relationshipsAllExplicitlyAdded)
+            {
+                relationshipsInSolution.Add(rel);
+                inclusionMap.TryAdd(rel, true);
+            }
+
             logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {relationshipsInSolution.Count} relations");
 
             /// KEYS
             var logicalNameToKeys = entitiesInSolutionMetadata.ToDictionary(
                 entity => entity.LogicalName,
                 entity => entity.Keys.Select(key => new Key(
-                    key.DisplayName.UserLocalizedLabel?.Label ?? key.DisplayName.LocalizedLabels.First().Label,
+                    key.DisplayName.ToLabelString(),
                     key.LogicalName,
                     key.KeyAttributes)
                 ).ToList());

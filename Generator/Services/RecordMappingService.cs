@@ -1,5 +1,6 @@
 using Generator.DTO;
 using Generator.DTO.Attributes;
+using Generator.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xrm.Sdk.Metadata;
@@ -63,7 +64,7 @@ namespace Generator.Services
             var entitySolutions = componentSolutionMap.GetValueOrDefault(entity.MetadataId!.Value, new List<SolutionInfo>());
 
             return new Record(
-                    entity.DisplayName.UserLocalizedLabel?.Label ?? string.Empty,
+                    entity.DisplayName.ToLabelString(),
                     entity.SchemaName,
                     group,
                     description?.PrettyDescription(),
