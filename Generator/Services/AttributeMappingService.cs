@@ -54,7 +54,7 @@ namespace Generator.Services
             // Get analyzer-based usages
             var schemaname = attributeUsages.GetValueOrDefault(entity.LogicalName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
             // also check the plural name, as some workflows like Power Automate use collectionname
-            var pluralname = attributeUsages.GetValueOrDefault(entity.LogicalCollectionName)?.GetValueOrDefault(metadata.LogicalName) ?? [];
+            var pluralname = entity.LogicalCollectionName is not null ? attributeUsages.GetValueOrDefault(entity.LogicalCollectionName)?.GetValueOrDefault(metadata.LogicalName) ?? [] : [];
             var analyzerUsages = new List<AttributeUsage>([.. schemaname, .. pluralname]);
 
             // Get workflow dependency usages
