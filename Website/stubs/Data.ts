@@ -38,7 +38,8 @@ export let Groups: GroupType[] = [
             "IsExplicit": true,
             "Format": "Text",
             "MaxLength": 100,
-            "AttributeUsages": []
+            "AttributeUsages": [],
+            "Solutions": [],
           },
           {
             "AttributeType": "StringAttribute",
@@ -56,7 +57,8 @@ export let Groups: GroupType[] = [
             "Format": "Text",
             "IsExplicit": true,
             "MaxLength": 160,
-            "AttributeUsages": []
+            "AttributeUsages": [],
+            "Solutions": [],
           },
           {
             "AttributeType": "StringAttribute",
@@ -74,7 +76,8 @@ export let Groups: GroupType[] = [
             "CalculationMethod": null,
             "Format": "Phone",
             "MaxLength": 50,
-            "AttributeUsages": []
+            "AttributeUsages": [],
+            "Solutions": [],
           },
           {
             "AttributeType": "LookupAttribute",
@@ -91,6 +94,7 @@ export let Groups: GroupType[] = [
             "IsColumnSecured": false,
             "CalculationMethod": null,
             "AttributeUsages": [],
+            "Solutions": [],
             "Targets": [
               {
                 "Name": "Contact",
@@ -102,7 +106,8 @@ export let Groups: GroupType[] = [
         "Relationships": [],
         "SecurityRoles": [],
         "Keys": [],
-        "IconBase64": null
+        "IconBase64": null,
+        "Solutions": [],
       }
     ]
   }

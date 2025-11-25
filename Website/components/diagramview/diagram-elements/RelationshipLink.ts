@@ -97,11 +97,11 @@ export const updateLinkMarkers = (link: dia.Link) => {
 
     // Set markers based on included relationships
     includedRelationships.forEach((relInfo) => {
-        if (relInfo.RelationshipType === '1-M') {
+        if (relInfo.RelationshipType === '1:N') {
             link.attr('line/targetMarker', circleMarker);
-        } else if (relInfo.RelationshipType === 'M-1' || relInfo.RelationshipType === 'SELF') {
+        } else if (relInfo.RelationshipType === 'N:1' || relInfo.RelationshipType === 'SELF') {
             link.attr('line/sourceMarker', circleMarker);
-        } else if (relInfo.RelationshipType === 'M-M') {
+        } else if (relInfo.RelationshipType === 'N:N') {
             link.attr('line/targetMarker', circleMarker);
             link.attr('line/sourceMarker', circleMarker);
         }

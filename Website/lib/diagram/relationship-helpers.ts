@@ -17,7 +17,7 @@ export const getAllRelationshipsBetween = (sourceEntity: EntityType, targetEntit
     // Helper to add relationship if not duplicate
     const addRelationship = (rel: RelationshipInformation) => {
         // For M-M relationships, use schema to detect duplicates
-        if (rel.IsManyToMany && rel.RelationshipSchemaName) {
+        if (rel.RelationshipType === 'N:N' && rel.RelationshipSchemaName) {
             if (seenSchemas.has(rel.RelationshipSchemaName)) {
                 return; // Skip duplicate M-M relationship
             }
@@ -32,15 +32,13 @@ export const getAllRelationshipsBetween = (sourceEntity: EntityType, targetEntit
     if (sourceEntity.Relationships) {
         sourceEntity.Relationships.forEach(rel => {
             if (rel.TableSchema?.toLowerCase() === targetEntity.SchemaName.toLowerCase()) {
-                const direction = rel.IsManyToMany ? 'M-M' : (isSelfReferencing ? 'SELF' : '1-M');
                 addRelationship({
                     sourceEntitySchemaName: sourceEntity.SchemaName,
                     sourceEntityDisplayName: sourceEntity.DisplayName,
                     targetEntitySchemaName: targetEntity.SchemaName,
                     targetEntityDisplayName: targetEntity.DisplayName,
-                    RelationshipType: direction,
+                    RelationshipType: isSelfReferencing ? "SELF" : rel.RelationshipType,
                     RelationshipSchemaName: rel.RelationshipSchema,
-                    IsManyToMany: rel.IsManyToMany,
                 });
             }
         });
@@ -54,15 +52,13 @@ export const getAllRelationshipsBetween = (sourceEntity: EntityType, targetEntit
                 // Normalize to source -> target perspective
                 // Target pointing to source means: target (many) -> source (one)
                 // From source perspective: source (one) <- target (many) = M-1
-                const direction = rel.IsManyToMany ? 'M-M' : 'M-1';
                 addRelationship({
                     sourceEntitySchemaName: sourceEntity.SchemaName,
                     sourceEntityDisplayName: sourceEntity.DisplayName,
                     targetEntitySchemaName: targetEntity.SchemaName,
                     targetEntityDisplayName: targetEntity.DisplayName,
-                    RelationshipType: direction,
+                    RelationshipType: rel.RelationshipType,
                     RelationshipSchemaName: rel.RelationshipSchema,
-                    IsManyToMany: rel.IsManyToMany,
                 });
             }
         });

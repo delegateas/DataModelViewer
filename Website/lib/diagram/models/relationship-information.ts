@@ -3,8 +3,7 @@ export type RelationshipInformation = {
     sourceEntityDisplayName: string,
     targetEntitySchemaName: string,
     targetEntityDisplayName: string,
-    RelationshipType: '1-M' | 'M-1' | 'M-M' | 'SELF',
     RelationshipSchemaName: string,
-    IsManyToMany: boolean,
+    RelationshipType: "N:N" | "1:N" | "N:1" | "SELF",
     isIncluded?: boolean,
 }

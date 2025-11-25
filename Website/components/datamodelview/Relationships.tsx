@@ -60,8 +60,8 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
 
         if (typeFilter !== "all") {
             filteredRelationships = filteredRelationships.filter(rel =>
-                (typeFilter === "many-to-many" && rel.IsManyToMany) ||
-                (typeFilter === "one-to-many" && !rel.IsManyToMany)
+                (typeFilter === "many-to-many" && rel.RelationshipType === "N:N") ||
+                (typeFilter === "one-to-many" && rel.RelationshipType !== "N:N")
             )
         }
 
@@ -108,8 +108,8 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                     bValue = b.LookupDisplayName
                     break
                 case 'type':
-                    aValue = a.IsManyToMany
-                    bValue = b.IsManyToMany
+                    aValue = a.RelationshipType
+                    bValue = b.RelationshipType
                     break
                 case 'schemaName':
                     aValue = a.RelationshipSchema
@@ -434,7 +434,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                                         {relationship.LookupDisplayName}
                                     </TableCell>
                                     <TableCell className="py-1 md:py-1.5 text-xs md:text-sm">
-                                        {relationship.IsManyToMany}
+                                        {relationship.RelationshipType}
                                     </TableCell>
                                     <TableCell className="py-1 md:py-1.5">
                                         <CascadeConfiguration config={relationship.CascadeConfiguration} />

@@ -9,7 +9,7 @@ public record Relationship(
     string TableSchema,
     string LookupDisplayName,
     string RelationshipSchema,
-    string IsManyToMany,
+    string RelationshipType,
     bool IsExplicit,
     string PublisherName,
     string PublisherPrefix,
