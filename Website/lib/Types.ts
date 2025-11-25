@@ -228,7 +228,7 @@ export type RelationshipType = {
     LookupDisplayName: string,
     RelationshipSchema: string,
     IsExplicit: boolean,
-    IsManyToMany: boolean,
+    IsManyToMany: string,
     CascadeConfiguration: CascadeConfigurationType | null,
     PublisherName?: string,
     PublisherPrefix?: string,

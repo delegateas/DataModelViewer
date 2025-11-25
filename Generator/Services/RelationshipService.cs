@@ -1,4 +1,5 @@
 using Generator.DTO;
+using Generator.DTO.Attributes;
 using Generator.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -108,7 +109,7 @@ internal class RelationshipService
                 entityLogicalName,
                 "-",
                 rel.SchemaName,
-                rel.RelationshipType is RelationshipType.ManyToManyRelationship,
+                "N:N",
                 inclusionMap[rel.MetadataId!.Value],
                 pName,
                 pPrefix,
@@ -122,7 +123,8 @@ internal class RelationshipService
     /// </summary>
     public IEnumerable<Relationship> ConvertOneToManyRelationships(
         IEnumerable<OneToManyRelationshipMetadata> relationships,
-        string entityLogicalName,
+        bool isOneToMany,
+        Dictionary<string, ExtendedEntityInformation> logicalToSchema,
         Dictionary<string, Dictionary<string, string>> attributeMapping,
         Dictionary<Guid, bool> inclusionMap,
         Dictionary<Guid, (string Name, string Prefix)> publisherMap,
@@ -138,17 +140,21 @@ internal class RelationshipService
             var relationshipSolutions = componentSolutionMap.GetValueOrDefault(rel.MetadataId!.Value)
                 ?? componentSolutionMap.GetValueOrDefault(entityMetadataId, new List<SolutionInfo>());
 
-            string? lookupName = string.Empty;
-            if (attributeMapping.TryGetValue(rel.ReferencingEntity, out var entityMap))
-                entityMap.TryGetValue(rel.ReferencingAttribute, out lookupName);
+            var lookupName = !isOneToMany
+                ? (attributeMapping.ContainsKey(rel.ReferencingEntity) && attributeMapping[rel.ReferencingEntity].ContainsKey(rel.ReferencingAttribute) ? attributeMapping[rel.ReferencingEntity][rel.ReferencingAttribute] : "unknown")
+                : (attributeMapping.ContainsKey(rel.ReferencedEntity) && attributeMapping[rel.ReferencedEntity].ContainsKey(rel.ReferencedAttribute) ? attributeMapping[rel.ReferencedEntity][rel.ReferencedAttribute] : "unknown");
+
+            var tableSchema = isOneToMany
+                ? (logicalToSchema.ContainsKey(rel.ReferencingEntity) ? logicalToSchema[rel.ReferencingEntity].Name : rel.ReferencingEntity)
+                : (logicalToSchema.ContainsKey(rel.ReferencedEntity) ? logicalToSchema[rel.ReferencedEntity].Name : rel.ReferencedEntity);
 
             return new Relationship(
                 rel.IsCustomRelationship ?? false,
-                rel.ReferencingEntityNavigationPropertyName ?? rel.ReferencedEntity,
-                entityLogicalName,
-                lookupName ?? "not found",
+                rel.ReferencingEntityNavigationPropertyName ?? rel.ReferencingEntity,
+                tableSchema,
+                lookupName,
                 rel.SchemaName,
-                rel.RelationshipType is not RelationshipType.ManyToManyRelationship,
+                !isOneToMany ? "N:1" : "1:N",
                 inclusionMap[rel.MetadataId!.Value],
                 pName,
                 pPrefix,

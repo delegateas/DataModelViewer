@@ -252,8 +252,8 @@ namespace Generator
                 {
                     var relevantAttributes = entMeta.Attributes.Where(attr => attributesInSolution.Contains(attr.MetadataId!.Value)).ToList();
                     var relevantManyToManyRelations = relationshipService.ConvertManyToManyRelationships(entMeta.ManyToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, inclusionMap, publisherMap, componentSolutionMap, entMeta.MetadataId!.Value);
-                    var relevantOneToManyRelations = relationshipService.ConvertOneToManyRelationships(entMeta.OneToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, attributeLogicalToSchema, inclusionMap, publisherMap, componentSolutionMap, entMeta.MetadataId!.Value);
-                    var relevantManyToOneRelations = relationshipService.ConvertOneToManyRelationships(entMeta.ManyToOneRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), entMeta.LogicalName, attributeLogicalToSchema, inclusionMap, publisherMap, componentSolutionMap, entMeta.MetadataId!.Value);
+                    var relevantOneToManyRelations = relationshipService.ConvertOneToManyRelationships(entMeta.OneToManyRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), true, logicalToSchema, attributeLogicalToSchema, inclusionMap, publisherMap, componentSolutionMap, entMeta.MetadataId!.Value);
+                    var relevantManyToOneRelations = relationshipService.ConvertOneToManyRelationships(entMeta.ManyToOneRelationships.Where(rel => relationshipsInSolution.Contains(rel.MetadataId!.Value)), false, logicalToSchema, attributeLogicalToSchema, inclusionMap, publisherMap, componentSolutionMap, entMeta.MetadataId!.Value);
                     var relevantRelationships = relevantManyToManyRelations.Concat(relevantManyToOneRelations).Concat(relevantOneToManyRelations).ToList();
 
                     logicalNameToSecurityRoles.TryGetValue(entMeta.LogicalName, out var securityRoles);
