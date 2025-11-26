@@ -19,6 +19,7 @@
     "@nivo/bar": "^0.99.0",
     "@nivo/core": "^0.99.0",
     "@nivo/pie": "^0.99.0",
+    "@nivo/heatmap": "^0.99.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@tanstack/react-virtual": "^3.13.12",
     "class-variance-authority": "^0.7.1",
