@@ -15,9 +15,9 @@ import { useSearchParams } from 'next/navigation'
 interface IProcessesViewProps { }
 
 interface AttributeSearchResult {
-  attribute: AttributeType
-  entity: EntityType
-  group: string
+    attribute: AttributeType
+    entity: EntityType
+    group: string
 }
 
 export const ProcessesView = ({ }: IProcessesViewProps) => {
@@ -44,8 +44,8 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                     }))
                 )
             );
-            const foundAttribute = d.find(result => 
-                result.attribute.SchemaName === initialAttribute 
+            const foundAttribute = d.find(result =>
+                result.attribute.SchemaName === initialAttribute
                 && result.entity.SchemaName === initialEntity);
             if (foundAttribute) {
                 setSelectedAttribute(foundAttribute);
@@ -64,7 +64,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                 });
             });
             return acc;
-        }, { } as Record<ComponentType, number>);
+        }, {} as Record<ComponentType, number>);
     }, [groups])
 
     const chartData = useMemo(() => {
@@ -76,10 +76,10 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                 if (acc[componentTypeName]) {
                     acc[componentTypeName].value += 1;
                 } else {
-                    acc[componentTypeName] = { 
+                    acc[componentTypeName] = {
                         id: componentTypeName,
-                        label: componentTypeName, 
-                        value: 1 
+                        label: componentTypeName,
+                        value: 1
                     };
                 }
                 return acc;
@@ -102,7 +102,7 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
             group.Entities.forEach(entity => {
                 entity.Attributes.forEach(attribute => {
                     if (attribute.AttributeUsages.length === 0) return; // Only search attributes with usages
-                    const basicMatch = 
+                    const basicMatch =
                         attribute.DisplayName.toLowerCase().includes(query) ||
                         attribute.SchemaName.toLowerCase().includes(query) ||
                         (attribute.Description && attribute.Description.toLowerCase().includes(query))
@@ -110,16 +110,16 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                     // Check options for ChoiceAttribute and StatusAttribute
                     let optionsMatch = false
                     if (attribute.AttributeType === 'ChoiceAttribute' || attribute.AttributeType === 'StatusAttribute') {
-                        optionsMatch = attribute.Options.some(option => 
-                        option.Name.toLowerCase().includes(query)
+                        optionsMatch = attribute.Options.some(option =>
+                            option.Name.toLowerCase().includes(query)
                         )
                     }
 
                     if (basicMatch || optionsMatch) {
                         results.push({
-                        attribute,
-                        entity,
-                        group: group.Name
+                            attribute,
+                            entity,
+                            group: group.Name
                         })
                     }
                 })
@@ -149,16 +149,16 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
 
     const getAttributeTypeLabel = (attributeType: string) => {
         switch (attributeType) {
-        case 'ChoiceAttribute': return 'Choice'
-        case 'DateTimeAttribute': return 'Date Time'
-        case 'LookupAttribute': return 'Lookup'
-        case 'StringAttribute': return 'Text'
-        case 'IntegerAttribute': return 'Number'
-        case 'DecimalAttribute': return 'Decimal'
-        case 'BooleanAttribute': return 'Yes/No'
-        case 'StatusAttribute': return 'Status'
-        case 'FileAttribute': return 'File'
-        default: return attributeType.replace('Attribute', '')
+            case 'ChoiceAttribute': return 'Choice'
+            case 'DateTimeAttribute': return 'Date Time'
+            case 'LookupAttribute': return 'Lookup'
+            case 'StringAttribute': return 'Text'
+            case 'IntegerAttribute': return 'Number'
+            case 'DecimalAttribute': return 'Decimal'
+            case 'BooleanAttribute': return 'Yes/No'
+            case 'StatusAttribute': return 'Status'
+            case 'FileAttribute': return 'File'
+            default: return attributeType.replace('Attribute', '')
         }
     }
 
@@ -170,6 +170,10 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                 return <Chip variant="outlined" label="Power Automate" color="info" size='small' icon={<AccountTreeRounded color='info' />} />;
             case ComponentType.WebResource:
                 return <Chip variant="outlined" label="Web Resource" color="warning" size='small' icon={<JavascriptRounded color='warning' />} />;
+            case ComponentType.ClassicWorkflow:
+                return <Chip variant="outlined" label="Classic Workflow" color="primary" size='small' icon={<AccountTreeRounded color='primary' />} />;
+            case ComponentType.BusinessRule:
+                return <Chip variant="outlined" label="Business Rule" color="secondary" size='small' icon={<AccountTreeRounded color='secondary' />} />;
         }
     }
 
@@ -189,10 +193,10 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                         <Grid container spacing={2} className="mb-8">
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <StatCard
-                                    title="attribute usages"
+                                    title="Attribute process dependencies"
                                     value={typeDistribution[ComponentType.Plugin] || 0}
                                     highlightedWord="Plugin"
-                                    tooltipTitle="Only includes registered plugin step triggers."
+                                    tooltipTitle="Includes registered plugin step triggers."
                                     tooltipWarning="Limitations"
                                     imageSrc="/plugin.svg"
                                     imageAlt="Plugin icon"
@@ -200,10 +204,10 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                             </Grid>
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <StatCard
-                                    title="attribute usages"
+                                    title="Attribute process dependencies"
                                     value={typeDistribution[ComponentType.PowerAutomateFlow] || 0}
                                     highlightedWord="Power Automate"
-                                    tooltipTitle="Only includes CDS Actions."
+                                    tooltipTitle="Includes CDS Dataverse connector, standard actions and expressions inside other actions."
                                     tooltipWarning="Limitations"
                                     imageSrc="/powerautomate.svg"
                                     imageAlt="Power Automate icon"
@@ -211,359 +215,377 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                             </Grid>
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <StatCard
-                                    title="attribute usages"
+                                    title="Attribute process dependencies"
+                                    value={typeDistribution[ComponentType.ClassicWorkflow] || 0}
+                                    highlightedWord="Classic Workflow"
+                                    imageSrc="/classicalworkflow.svg"
+                                    imageAlt="Classic Workflow icon"
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <StatCard
+                                    title="Attribute process dependencies"
                                     value={typeDistribution[ComponentType.WebResource] || 0}
                                     highlightedWord="Web Resource"
-                                    tooltipTitle="Only includes getAttribute/getControl from Web Resource."
+                                    tooltipTitle="Includes getAttribute/getControl, XrmQuery and WebAPI with certain limitation from Web Resource."
                                     tooltipWarning="Limitations"
                                     imageSrc="/webresource.svg"
                                     imageAlt="Web Resource icon"
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <StatCard
+                                    title="Attribute process dependencies"
+                                    value={typeDistribution[ComponentType.BusinessRule] || 0}
+                                    highlightedWord="Business Rule"
+                                    imageSrc="/businessrule.svg"
+                                    imageAlt="Business Rule icon"
                                 />
                             </Grid>
                         </Grid>
 
                         {/* Search Bar */}
                         <Box className="mb-8">
-                        <TextField
-                            fullWidth
-                            variant="outlined"
-                            placeholder="Search attributes across all entities..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            slotProps={{
-                            input: {
-                                startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchRounded className="w-5 h-5" />
-                                </InputAdornment>
-                                ),
-                            }
-                            }}
-                            sx={{
-                            '& .MuiOutlinedInput-root': {
-                                backgroundColor: 'background.paper',
-                                borderRadius: '8px',
-                                '& fieldset': {
-                                borderColor: 'divider',
-                                },
-                                '&:hover fieldset': {
-                                borderColor: 'primary.main',
-                                },
-                                '&.Mui-focused fieldset': {
-                                borderColor: 'primary.main',
-                                },
-                            },
-                            '& .MuiInputBase-input': {
-                                fontSize: '1.1rem',
-                                padding: '14px 16px',
-                            },
-                            }}
-                        />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Search attributes across all entities..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                slotProps={{
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchRounded className="w-5 h-5" />
+                                            </InputAdornment>
+                                        ),
+                                    }
+                                }}
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        backgroundColor: 'background.paper',
+                                        borderRadius: '8px',
+                                        '& fieldset': {
+                                            borderColor: 'divider',
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: 'primary.main',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: 'primary.main',
+                                        },
+                                    },
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '1.1rem',
+                                        padding: '14px 16px',
+                                    },
+                                }}
+                            />
                         </Box>
 
                         {/* Search Results */}
                         {searchTerm.trim() && searchTerm.length >= 2 && !isSearching && (
-                        <Box className="mb-8">
-                            <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                                Attribute Search Results ({searchResults.length})
-                            </Typography>
-                            
-                            {searchResults.length > 0 ? (
-                                <Paper 
-                                    elevation={1}
-                                    sx={{ 
-                                    borderRadius: 2,
-                                    backgroundColor: 'background.paper',
-                                    maxHeight: '400px',
-                                    overflow: 'auto'
-                                }}
-                            >
-                                <List>
-                                {searchResults.map((result, index) => (
-                                    <ListItem key={`${result.entity.SchemaName}-${result.attribute.SchemaName}-${index}`} disablePadding>
-                                    <ListItemButton 
-                                        onClick={() => handleAttributeSelect(result)}
-                                        selected={selectedAttribute?.attribute.SchemaName === result.attribute.SchemaName && 
-                                                selectedAttribute?.entity.SchemaName === result.entity.SchemaName}
+                            <Box className="mb-8">
+                                <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
+                                    Attribute Search Results ({searchResults.length})
+                                </Typography>
+
+                                {searchResults.length > 0 ? (
+                                    <Paper
+                                        elevation={1}
+                                        sx={{
+                                            borderRadius: 2,
+                                            backgroundColor: 'background.paper',
+                                            maxHeight: '400px',
+                                            overflow: 'auto'
+                                        }}
                                     >
-                                        <ListItemText
-                                            primary={
-                                                <Box className="flex items-center gap-2">
-                                                <Typography variant="body1" sx={{ color: 'text.primary' }}>
-                                                    {result.attribute.DisplayName}
-                                                </Typography>
-                                                <Chip 
-                                                    label={getAttributeTypeLabel(result.attribute.AttributeType)}
-                                                    size="small"
-                                                    variant="outlined"
-                                                />
-                                                {result.attribute.IsCustomAttribute && (
-                                                    <Chip 
-                                                    label="Custom"
-                                                    size="small"
-                                                    color="secondary"
-                                                    variant="outlined"
-                                                    />
-                                                )}
-                                            </Box>
-                                        }
-                                        secondary={
-                                            <Box>
-                                            <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>
-                                                {result.entity.DisplayName} • {result.group}
-                                            </Typography>
-                                            <Typography component="div" variant="caption" sx={{ color: 'text.secondary' }}>
-                                                {result.attribute.SchemaName}
-                                            </Typography>
-                                            </Box>
-                                        }
-                                        />
-                                    </ListItemButton>
-                                    </ListItem>
-                                ))}
-                                </List>
-                            </Paper>
-                            ) : (
-                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                                No attributes found matching &quot;{searchTerm}&quot;
-                            </Typography>
-                            )}
-                        </Box>
+                                        <List>
+                                            {searchResults.map((result, index) => (
+                                                <ListItem key={`${result.entity.SchemaName}-${result.attribute.SchemaName}-${index}`} disablePadding>
+                                                    <ListItemButton
+                                                        onClick={() => handleAttributeSelect(result)}
+                                                        selected={selectedAttribute?.attribute.SchemaName === result.attribute.SchemaName &&
+                                                            selectedAttribute?.entity.SchemaName === result.entity.SchemaName}
+                                                    >
+                                                        <ListItemText
+                                                            primary={
+                                                                <Box className="flex items-center gap-2">
+                                                                    <Typography variant="body1" sx={{ color: 'text.primary' }}>
+                                                                        {result.attribute.DisplayName}
+                                                                    </Typography>
+                                                                    <Chip
+                                                                        label={getAttributeTypeLabel(result.attribute.AttributeType)}
+                                                                        size="small"
+                                                                        variant="outlined"
+                                                                    />
+                                                                    {result.attribute.IsCustomAttribute && (
+                                                                        <Chip
+                                                                            label="Custom"
+                                                                            size="small"
+                                                                            color="secondary"
+                                                                            variant="outlined"
+                                                                        />
+                                                                    )}
+                                                                </Box>
+                                                            }
+                                                            secondary={
+                                                                <Box>
+                                                                    <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>
+                                                                        {result.entity.DisplayName} • {result.group}
+                                                                    </Typography>
+                                                                    <Typography component="div" variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        {result.attribute.SchemaName}
+                                                                    </Typography>
+                                                                </Box>
+                                                            }
+                                                        />
+                                                    </ListItemButton>
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    </Paper>
+                                ) : (
+                                    <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                        No attributes found matching &quot;{searchTerm}&quot;
+                                    </Typography>
+                                )}
+                            </Box>
                         )}
 
                         {searchTerm.trim() && searchTerm.length < 2 && (
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }} className="mb-8">
-                            Enter at least 2 characters to search attributes
-                        </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }} className="mb-8">
+                                Enter at least 2 characters to search attributes
+                            </Typography>
                         )}
 
                         {/* GRID WITH SELECTED ATTRIBUTE */}
                         {selectedAttribute && (
-                        <Grid container spacing={2}>
-                            <Grid size={{ xs: 12, md: 4 }}>
-                                <NotchedBox 
-                                    variant="outlined"
-                                    notchContent={<IconButton onClick={() => setSelectedAttribute(null)}><CloseRounded /></IconButton>}
-                                    className='flex flex-col items-center justify-center h-full w-full'
-                                >
-                                    <Box p={2}>
-                                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
-                                            Selected Attribute
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                            [{selectedAttribute.group} ({selectedAttribute.entity.DisplayName})]: <b>{selectedAttribute.attribute.DisplayName}</b>
-                                        </Typography>
-                                    </Box>
-                                    <Box className='flex flex-grow' style={{ height: '300px', width: '100%' }}>
-                                        {chartData.length > 0 ? (
-                                            <ResponsivePie
-                                                data={chartData}
-                                                margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
-                                                innerRadius={0.5}
-                                                padAngle={0.7}
-                                                cornerRadius={3}
-                                                activeOuterRadiusOffset={8}
-                                                borderWidth={1}
-                                                colors={{ scheme: 'blues' }}
-                                                borderColor={{
-                                                    from: 'color',
-                                                    modifiers: [
-                                                        [
-                                                            'darker',
-                                                            0.2
-                                                        ]
-                                                    ]
-                                                }}
-                                                arcLinkLabelsSkipAngle={10}
-                                                arcLinkLabelsTextColor={theme.palette.text.secondary}
-                                                arcLinkLabelsThickness={2}
-                                                arcLinkLabelsColor={{ from: 'color' }}
-                                                arcLabelsSkipAngle={10}
-                                                arcLabelsTextColor={{
-                                                    from: 'color',
-                                                    modifiers: [
-                                                        [
-                                                            'darker',
-                                                            2
-                                                        ]
-                                                    ]
-                                                }}
-                                                theme={{
-                                                    text: {
-                                                        color: theme.palette.text.primary,
-                                                    },
-                                                    tooltip: {
-                                                        container: {
-                                                            background: theme.palette.background.paper,
-                                                            color: theme.palette.text.primary,
-                                                            border: `1px solid ${theme.palette.divider}`,
-                                                            borderRadius: theme.shape.borderRadius,
-                                                        }
-                                                    }
-                                                }}
-                                                legends={[
-                                                    {
-                                                        anchor: 'bottom',
-                                                        direction: 'row',
-                                                        justify: false,
-                                                        translateX: 0,
-                                                        translateY: 56,
-                                                        itemsSpacing: 0,
-                                                        itemWidth: 100,
-                                                        itemHeight: 18,
-                                                        itemTextColor: theme.palette.text.secondary,
-                                                        itemDirection: 'left-to-right',
-                                                        itemOpacity: 1,
-                                                        symbolSize: 12,
-                                                        symbolShape: 'circle'
-                                                    }
-                                                ]}
-                                            />
-                                        ) : (
-                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                No usage data available
+                            <Grid container spacing={2}>
+                                <Grid size={{ xs: 12, md: 4 }}>
+                                    <NotchedBox
+                                        variant="outlined"
+                                        notchContent={<IconButton onClick={() => setSelectedAttribute(null)}><CloseRounded /></IconButton>}
+                                        className='flex flex-col items-center justify-center h-full w-full'
+                                    >
+                                        <Box p={2}>
+                                            <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                                                Selected Attribute
                                             </Typography>
-                                        )}
-                                    </Box>
-                                </NotchedBox>
-                            </Grid>
-                            <Grid size={{ xs: 12, md: 8 }}>
-                                <Paper variant='outlined' className='rounded-2xl h-full' sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Box className="p-4 border-b" sx={{ borderColor: 'border.main' }}>
-                                        <Typography variant='h6'>Processes</Typography>
-                                    </Box>
-                                    <Box sx={{ flex: 1, overflowX: 'auto' }}>
-                                        {selectedAttribute?.attribute.AttributeUsages.length === 0 ? (
-                                            <Box className="p-4 text-center" sx={{ color: 'text.secondary' }}>
-                                                <Typography variant="body2">No process usage data available for this attribute</Typography>
-                                            </Box>
-                                        ) : (
-                                            <Box 
-                                                className="overflow-x-auto md:overflow-x-visible rounded-b-2xl"
-                                                sx={{ 
-                                                    borderTop: 1, 
-                                                    borderColor: 'border.main',
-                                                    maxHeight: '400px',
-                                                    overflowY: 'auto',
-                                                    // Mobile: allow horizontal scrolling within the component
-                                                    maxWidth: '100%',
-                                                    '@media (max-width: 768px)': {
-                                                        overflowX: 'auto',
-                                                        '&::-webkit-scrollbar': {
-                                                            height: '8px',
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                [{selectedAttribute.group} ({selectedAttribute.entity.DisplayName})]: <b>{selectedAttribute.attribute.DisplayName}</b>
+                                            </Typography>
+                                        </Box>
+                                        <Box className='flex flex-grow' style={{ height: '300px', width: '100%' }}>
+                                            {chartData.length > 0 ? (
+                                                <ResponsivePie
+                                                    data={chartData}
+                                                    margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                                                    innerRadius={0.5}
+                                                    padAngle={0.7}
+                                                    cornerRadius={3}
+                                                    activeOuterRadiusOffset={8}
+                                                    borderWidth={1}
+                                                    colors={{ scheme: 'blues' }}
+                                                    borderColor={{
+                                                        from: 'color',
+                                                        modifiers: [
+                                                            [
+                                                                'darker',
+                                                                0.2
+                                                            ]
+                                                        ]
+                                                    }}
+                                                    arcLinkLabelsSkipAngle={10}
+                                                    arcLinkLabelsTextColor={theme.palette.text.secondary}
+                                                    arcLinkLabelsThickness={2}
+                                                    arcLinkLabelsColor={{ from: 'color' }}
+                                                    arcLabelsSkipAngle={10}
+                                                    arcLabelsTextColor={{
+                                                        from: 'color',
+                                                        modifiers: [
+                                                            [
+                                                                'darker',
+                                                                2
+                                                            ]
+                                                        ]
+                                                    }}
+                                                    theme={{
+                                                        text: {
+                                                            color: theme.palette.text.primary,
                                                         },
-                                                        '&::-webkit-scrollbar-track': {
-                                                            backgroundColor: 'rgba(0,0,0,0.1)',
-                                                        },
-                                                        '&::-webkit-scrollbar-thumb': {
-                                                            backgroundColor: 'rgba(0,0,0,0.3)',
-                                                            borderRadius: '4px',
-                                                        },
-                                                    }
-                                                }}
-                                            >
-                                                <Table 
-                                                    stickyHeader
-                                                    className="w-full min-w-[600px] md:min-w-0 rounded-b-2xl"
-                                                    sx={{ 
-                                                        borderColor: 'border.main'
+                                                        tooltip: {
+                                                            container: {
+                                                                background: theme.palette.background.paper,
+                                                                color: theme.palette.text.primary,
+                                                                border: `1px solid ${theme.palette.divider}`,
+                                                                borderRadius: theme.shape.borderRadius,
+                                                            }
+                                                        }
+                                                    }}
+                                                    legends={[
+                                                        {
+                                                            anchor: 'bottom',
+                                                            direction: 'row',
+                                                            justify: false,
+                                                            translateX: 0,
+                                                            translateY: 56,
+                                                            itemsSpacing: 0,
+                                                            itemWidth: 100,
+                                                            itemHeight: 18,
+                                                            itemTextColor: theme.palette.text.secondary,
+                                                            itemDirection: 'left-to-right',
+                                                            itemOpacity: 1,
+                                                            symbolSize: 12,
+                                                            symbolShape: 'circle'
+                                                        }
+                                                    ]}
+                                                />
+                                            ) : (
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                    No usage data available
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </NotchedBox>
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 8 }}>
+                                    <Paper variant='outlined' className='rounded-2xl h-full' sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Box className="p-4 border-b" sx={{ borderColor: 'border.main' }}>
+                                            <Typography variant='h6'>Processes</Typography>
+                                        </Box>
+                                        <Box sx={{ flex: 1, overflowX: 'auto' }}>
+                                            {selectedAttribute?.attribute.AttributeUsages.length === 0 ? (
+                                                <Box className="p-4 text-center" sx={{ color: 'text.secondary' }}>
+                                                    <Typography variant="body2">No process usage data available for this attribute</Typography>
+                                                </Box>
+                                            ) : (
+                                                <Box
+                                                    className="overflow-x-auto md:overflow-x-visible rounded-b-2xl"
+                                                    sx={{
+                                                        borderTop: 1,
+                                                        borderColor: 'border.main',
+                                                        maxHeight: '400px',
+                                                        overflowY: 'auto',
+                                                        // Mobile: allow horizontal scrolling within the component
+                                                        maxWidth: '100%',
+                                                        '@media (max-width: 768px)': {
+                                                            overflowX: 'auto',
+                                                            '&::-webkit-scrollbar': {
+                                                                height: '8px',
+                                                            },
+                                                            '&::-webkit-scrollbar-track': {
+                                                                backgroundColor: 'rgba(0,0,0,0.1)',
+                                                            },
+                                                            '&::-webkit-scrollbar-thumb': {
+                                                                backgroundColor: 'rgba(0,0,0,0.3)',
+                                                                borderRadius: '4px',
+                                                            },
+                                                        }
                                                     }}
                                                 >
-                                                    <TableHead sx={{ backgroundColor: 'background.paper' }}>
-                                                        <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
-                                                            <TableCell align='center'
-                                                                className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
-                                                                sx={{ 
-                                                                    color: 'text.primary',
-                                                                    backgroundColor: 'background.paper',
-                                                                    position: 'sticky',
-                                                                    top: 0,
-                                                                    zIndex: 1
-                                                                }}
-                                                            >
-                                                                Process
-                                                            </TableCell>
-                                                            <TableCell 
-                                                                className="w-[35%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
-                                                                sx={{ 
-                                                                    color: 'text.primary',
-                                                                    backgroundColor: 'background.paper',
-                                                                    position: 'sticky',
-                                                                    top: 0,
-                                                                    zIndex: 1
-                                                                }}
-                                                            >
-                                                                Name
-                                                            </TableCell>
-                                                            <TableCell 
-                                                                className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
-                                                                sx={{ 
-                                                                    color: 'text.primary',
-                                                                    backgroundColor: 'background.paper',
-                                                                    position: 'sticky',
-                                                                    top: 0,
-                                                                    zIndex: 1
-                                                                }}
-                                                            >
-                                                                Type
-                                                            </TableCell>
-                                                            <TableCell 
-                                                                className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
-                                                                sx={{ 
-                                                                    color: 'text.primary',
-                                                                    backgroundColor: 'background.paper',
-                                                                    position: 'sticky',
-                                                                    top: 0,
-                                                                    zIndex: 1
-                                                                }}
-                                                            >
-                                                                Usage
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    </TableHead>
-                                                    <TableBody>
-                                                        {selectedAttribute?.attribute.AttributeUsages.map((usage, idx) => (
-                                                            <TableRow 
-                                                                key={usage.Name + idx}
-                                                                className="transition-colors duration-150 border-b"
-                                                                sx={{
-                                                                    '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
-                                                                    borderColor: 'border.main',
-                                                                    backgroundColor: idx % 2 === 0 
-                                                                        ? 'background.paper' 
-                                                                        : theme.palette.mode === 'dark' 
-                                                                            ? 'rgba(255, 255, 255, 0.02)' 
-                                                                            : 'rgba(0, 0, 0, 0.02)'
-                                                                }}
-                                                            >
-                                                                <TableCell align='center' className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                                                    {getProcessChip(usage.ComponentType)}
+                                                    <Table
+                                                        stickyHeader
+                                                        className="w-full min-w-[600px] md:min-w-0 rounded-b-2xl"
+                                                        sx={{
+                                                            borderColor: 'border.main'
+                                                        }}
+                                                    >
+                                                        <TableHead sx={{ backgroundColor: 'background.paper' }}>
+                                                            <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
+                                                                <TableCell align='center'
+                                                                    className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                                                    sx={{
+                                                                        color: 'text.primary',
+                                                                        backgroundColor: 'background.paper',
+                                                                        position: 'sticky',
+                                                                        top: 0,
+                                                                        zIndex: 1
+                                                                    }}
+                                                                >
+                                                                    Process
                                                                 </TableCell>
-                                                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                                                    {usage.Name}
+                                                                <TableCell
+                                                                    className="w-[35%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                                                    sx={{
+                                                                        color: 'text.primary',
+                                                                        backgroundColor: 'background.paper',
+                                                                        position: 'sticky',
+                                                                        top: 0,
+                                                                        zIndex: 1
+                                                                    }}
+                                                                >
+                                                                    Name
                                                                 </TableCell>
-                                                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                                                    {OperationType[usage.OperationType]}
+                                                                <TableCell
+                                                                    className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                                                    sx={{
+                                                                        color: 'text.primary',
+                                                                        backgroundColor: 'background.paper',
+                                                                        position: 'sticky',
+                                                                        top: 0,
+                                                                        zIndex: 1
+                                                                    }}
+                                                                >
+                                                                    Type
                                                                 </TableCell>
-                                                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                                                    {usage.Usage}
+                                                                <TableCell
+                                                                    className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                                                    sx={{
+                                                                        color: 'text.primary',
+                                                                        backgroundColor: 'background.paper',
+                                                                        position: 'sticky',
+                                                                        top: 0,
+                                                                        zIndex: 1
+                                                                    }}
+                                                                >
+                                                                    Usage
                                                                 </TableCell>
                                                             </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </Paper>
-                            </Grid>
-                        </Grid>)}
+                                                        </TableHead>
+                                                        <TableBody>
+                                                            {selectedAttribute?.attribute.AttributeUsages.map((usage, idx) => (
+                                                                <TableRow
+                                                                    key={usage.Name + idx}
+                                                                    className="transition-colors duration-150 border-b"
+                                                                    sx={{
+                                                                        '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
+                                                                        borderColor: 'border.main',
+                                                                        backgroundColor: idx % 2 === 0
+                                                                            ? 'background.paper'
+                                                                            : theme.palette.mode === 'dark'
+                                                                                ? 'rgba(255, 255, 255, 0.02)'
+                                                                                : 'rgba(0, 0, 0, 0.02)'
+                                                                    }}
+                                                                >
+                                                                    <TableCell align='center' className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                                        {getProcessChip(usage.ComponentType)}
+                                                                    </TableCell>
+                                                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                                        {usage.Name}
+                                                                    </TableCell>
+                                                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                                        {OperationType[usage.OperationType]}
+                                                                    </TableCell>
+                                                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                                                        {usage.Usage}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+                            </Grid>)}
 
                         <Divider className='my-8' />
 
                         {/* Warnings */}
-                        <Accordion 
-                            variant="outlined" 
+                        <Accordion
+                            variant="outlined"
                             className="w-full rounded-2xl"
                             sx={{
                                 '&:before': {
@@ -602,9 +624,9 @@ export const ProcessesView = ({ }: IProcessesViewProps) => {
                                 {warnings.filter(warning => warning.Type === WarningType.Attribute).length > 0 ? (
                                     <Box className="space-y-2">
                                         {warnings.filter(warning => warning.Type === WarningType.Attribute).map((warning, index) => (
-                                            <Alert 
-                                                key={`warning-${index}`} 
-                                                severity="error" 
+                                            <Alert
+                                                key={`warning-${index}`}
+                                                severity="error"
                                                 className='rounded-lg'
                                             >
                                                 {warning.Message}

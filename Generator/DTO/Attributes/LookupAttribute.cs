@@ -13,10 +13,17 @@ internal class LookupAttribute : Attribute
 {
     public IEnumerable<ExtendedEntityInformation> Targets { get; }
 
-    public LookupAttribute(LookupAttributeMetadata metadata, Dictionary<string, ExtendedEntityInformation> logicalToSchema, ILogger<DataverseService> logger)
+    public LookupAttribute(LookupAttributeMetadata metadata, Dictionary<string, ExtendedEntityInformation> logicalToSchema, ILogger? logger = null)
         : base(metadata)
     {
-        foreach (var target in metadata.Targets) { if (!logicalToSchema.ContainsKey(target)) logger.LogError($"Missing logicalname in logicalToSchema {target}, on entity {metadata.EntityLogicalName}."); }
+        if (logger != null)
+        {
+            foreach (var target in metadata.Targets)
+            {
+                if (!logicalToSchema.ContainsKey(target))
+                    logger.LogError($"Missing logicalname in logicalToSchema {target}, on entity {metadata.EntityLogicalName}.");
+            }
+        }
 
         Targets =
             metadata.Targets

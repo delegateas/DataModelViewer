@@ -2,7 +2,7 @@ import { InfoCard } from "@/components/shared/elements/InfoCard";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
 import { ComponentIcon, InfoIcon, ProcessesIcon, SolutionIcon, WarningIcon } from "@/lib/icons";
 import { generateLiquidCheeseSVG } from "@/lib/svgart";
-import { Box, Grid, Paper, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import { Box, Grid, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ResponsiveBar } from "@nivo/bar";
 import { ResponsivePie } from "@nivo/pie";
 import { useMemo } from "react";
@@ -14,10 +14,14 @@ interface InsightsOverviewViewProps {
 const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
     const theme = useTheme();
 
-    const { groups, solutions } = useDatamodelData();
+    const { groups, solutionCount } = useDatamodelData();
 
     const totalAttributeUsageCount = useMemo(() => {
         return groups.reduce((acc, group) => acc + group.Entities.reduce((acc, entity) => acc + entity.Attributes.reduce((acc, attr) => acc + attr.AttributeUsages.length, 0), 0), 0);
+    }, [groups])
+
+    const totalComponentsCount = useMemo(() => {
+        return groups.reduce((acc, group) => acc + 1 + group.Entities.reduce((acc, entity) => acc + entity.Attributes.length + entity.Relationships.length, 0), 0);
     }, [groups])
 
     const missingIconEntities = useMemo(() => {
@@ -71,17 +75,13 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
         const allEntities = groups.flatMap(group => group.Entities);
 
         const auditEnabled = allEntities.filter(entity => entity.IsAuditEnabled).length;
-        const auditDisabled = allEntities.filter(entity => !entity.IsAuditEnabled).length;
         const activities = allEntities.filter(entity => entity.IsActivity).length;
         const notesEnabled = allEntities.filter(entity => entity.IsNotesEnabled).length;
-        const notesDisabled = allEntities.filter(entity => !entity.IsNotesEnabled).length;
 
         return [
             { id: 'Audit Enabled', label: 'Audit Enabled', value: auditEnabled },
-            { id: 'Audit Disabled', label: 'Audit Disabled', value: auditDisabled },
             { id: 'Activities', label: 'Activities', value: activities },
             { id: 'Notes Enabled', label: 'Notes Enabled', value: notesEnabled },
-            { id: 'Notes Disabled', label: 'Notes Disabled', value: notesDisabled },
         ].filter(item => item.value > 0); // Only show categories with values
     }, [groups]);
 
@@ -104,27 +104,112 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
     }, [groups]);
 
     const publisherComponentData = useMemo(() => {
-        // Count components per publisher by looking at each component's publisher
-        const publisherCounts: Record<string, number> = {};
+        // Get all entities to look up IsExplicit for attributes and relationships
+        const allEntities = groups.flatMap(group => group.Entities);
 
-        solutions.forEach(solution => {
-            solution.Components.forEach(component => {
-                const publisher = component.PublisherName;
-                if (!publisherCounts[publisher]) {
-                    publisherCounts[publisher] = 0;
-                }
-                publisherCounts[publisher]++;
+        // Create lookup maps for attributes and relationships by schema name
+        const attributeMap = new Map<string, boolean>();
+        const relationshipMap = new Map<string, boolean>();
+
+        allEntities.forEach(entity => {
+            entity.Attributes.forEach(attr => {
+                attributeMap.set(attr.SchemaName, attr.IsExplicit);
+            });
+            entity.Relationships.forEach(rel => {
+                relationshipMap.set(rel.RelationshipSchema, rel.IsExplicit);
             });
         });
 
-        // Convert to chart format and sort by component count (descending)
+        // Count components per publisher with explicit/implicit breakdown
+        const publisherCounts: Record<string, { explicit: number, implicit: number }> = {};
+
+        groups.forEach(group => {
+            group.Entities.forEach(entity => {
+                const publisher = entity.PublisherName || "Unknown Publisher";
+                if (!publisherCounts[publisher]) {
+                    publisherCounts[publisher] = { explicit: 0, implicit: 0 };
+                }
+                publisherCounts[publisher].explicit++;
+
+                entity.Attributes.forEach(attr => {
+                    const isExplicit = attr.IsExplicit;
+                    const publisher = entity.PublisherName || "Unknown Publisher";
+                    if (!publisherCounts[publisher]) {
+                        publisherCounts[publisher] = { explicit: 0, implicit: 0 };
+                    }
+                    if (isExplicit) publisherCounts[publisher].explicit++;
+                    else publisherCounts[publisher].implicit++;
+                });
+
+                entity.Relationships.forEach(rel => {
+                    const isExplicit = rel.IsExplicit;
+                    const publisher = entity.PublisherName || "Unknown Publisher";
+                    if (!publisherCounts[publisher]) {
+                        publisherCounts[publisher] = { explicit: 0, implicit: 0 };
+                    }
+                    if (isExplicit) publisherCounts[publisher].explicit++;
+                    else publisherCounts[publisher].implicit++;
+                });
+            });
+        });
+
+        // Convert to chart format and sort by total component count (descending)
         return Object.entries(publisherCounts)
-            .map(([publisher, count]) => ({
+            .map(([publisher, counts]) => ({
                 publisher: publisher,
-                components: count
+                explicit: counts.explicit,
+                implicit: counts.implicit
             }))
-            .sort((a, b) => b.components - a.components);
-    }, [solutions]);
+            .sort((a, b) => (b.explicit + b.implicit) - (a.explicit + a.implicit));
+    }, [groups]);
+
+    const attributeUsageByComponentType = useMemo(() => {
+        const allEntities = groups.flatMap(group => group.Entities);
+        const allAttributeUsages = allEntities.flatMap(entity =>
+            entity.Attributes.flatMap(attr => attr.AttributeUsages)
+        );
+
+        // Count by component type
+        const componentTypeCounts: Record<number, number> = {};
+        allAttributeUsages.forEach(usage => {
+            componentTypeCounts[usage.ComponentType] = (componentTypeCounts[usage.ComponentType] || 0) + 1;
+        });
+
+        // Map component type numbers to labels
+        const componentTypeLabels: Record<number, string> = {
+            0: 'Power Automate Flow',
+            1: 'Plugin',
+            2: 'Web Resource',
+            3: 'Workflow Activity',
+            4: 'Custom API',
+            5: 'Business Rule',
+            6: 'Classic Workflow'
+        };
+
+        return Object.entries(componentTypeCounts).map(([type, count]) => ({
+            id: componentTypeLabels[parseInt(type)] || `Type ${type}`,
+            label: componentTypeLabels[parseInt(type)] || `Type ${type}`,
+            value: count
+        }));
+    }, [groups]);
+
+    const attributeUsageBySource = useMemo(() => {
+        const allEntities = groups.flatMap(group => group.Entities);
+        const allAttributeUsages = allEntities.flatMap(entity =>
+            entity.Attributes.flatMap(attr => attr.AttributeUsages)
+        );
+
+        const analyzerDetected = allAttributeUsages.filter(usage => !usage.IsFromDependencyAnalysis).length;
+        const dependencyDetected = allAttributeUsages.filter(usage => usage.IsFromDependencyAnalysis).length;
+
+        return [
+            {
+                category: 'Detection Source',
+                'Analyzer Detected': analyzerDetected,
+                'Dependency Detected': dependencyDetected
+            }
+        ];
+    }, [groups]);
 
     return (
         <Grid container spacing={4}>
@@ -200,7 +285,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 <InfoCard
                     color="success.main"
                     title="Solutions"
-                    value={solutions.length}
+                    value={solutionCount}
                     iconSrc={SolutionIcon}
                 />
             </Grid>
@@ -209,7 +294,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 <InfoCard
                     color="primary.main"
                     title="Components"
-                    value={solutions.reduce((acc, solution) => acc + solution.Components.length, 0)}
+                    value={totalComponentsCount}
                     iconSrc={ComponentIcon}
                 />
             </Grid>
@@ -217,7 +302,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             <Grid size={{ xs: 12, md: 4 }}>
                 <InfoCard
                     color="warning.main"
-                    title="Attribute Usages"
+                    title="Attribute Process Dependencies"
                     value={totalAttributeUsageCount}
                     iconSrc={ProcessesIcon}
                 />
@@ -225,9 +310,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={12}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Data Model Distribution: Standard vs Custom
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Data Model Distribution: Standard vs Custom
+                        </Typography>
+                        <Tooltip title="Shows the distribution of standard (out-of-the-box) versus custom entities, attributes, and relationships in your Dataverse environment. This helps identify customization levels across your data model." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsiveBar
                             data={barChartData}
@@ -378,17 +470,25 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={12}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Components by Publisher
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Components by Publisher (Stacked by Explicit/Implicit)
+                        </Typography>
+                        <Tooltip title="Displays the number of solution components grouped by publisher. Components are divided into explicit (directly added to the solution) and implicit (automatically included as dependencies). This helps understand solution composition and dependencies." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsiveBar
                             data={publisherComponentData}
-                            keys={['components']}
+                            keys={['explicit', 'implicit']}
                             indexBy="publisher"
-                            margin={{ top: 50, right: 50, bottom: 80, left: 150 }}
+                            margin={{ top: 50, right: 130, bottom: 80, left: 150 }}
                             padding={0.3}
                             layout="horizontal"
+                            groupMode="stacked"
                             valueScale={{ type: 'linear' }}
                             indexScale={{ type: 'band', round: true }}
                             colors={{ scheme: "blues" }}
@@ -417,9 +517,33 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                             labelSkipWidth={12}
                             labelSkipHeight={12}
                             labelTextColor={{ from: 'color', modifiers: [['darker', 3]] }}
+                            legends={[
+                                {
+                                    dataFrom: 'keys',
+                                    anchor: 'bottom-right',
+                                    direction: 'column',
+                                    justify: false,
+                                    translateX: 120,
+                                    translateY: 0,
+                                    itemsSpacing: 2,
+                                    itemWidth: 100,
+                                    itemHeight: 20,
+                                    itemDirection: 'left-to-right',
+                                    itemOpacity: 0.85,
+                                    symbolSize: 20,
+                                    effects: [
+                                        {
+                                            on: 'hover',
+                                            style: {
+                                                itemOpacity: 1
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]}
                             role="application"
                             ariaLabel="Components by publisher bar chart"
-                            barAriaLabel={e => `${e.indexValue}: ${e.formattedValue} components`}
+                            barAriaLabel={e => `${e.indexValue}: ${e.formattedValue} ${e.id} components`}
                             theme={{
                                 background: 'transparent',
                                 text: {
@@ -459,6 +583,25 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                         strokeDasharray: '4 4'
                                     }
                                 },
+                                legends: {
+                                    title: {
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    text: {
+                                        fontSize: 11,
+                                        fill: theme.palette.text.primary
+                                    },
+                                    ticks: {
+                                        line: {},
+                                        text: {
+                                            fontSize: 10,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    }
+                                },
                                 tooltip: {
                                     container: {
                                         background: theme.palette.background.paper,
@@ -473,9 +616,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Entity Features Distribution
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Entity Features Distribution
+                        </Typography>
+                        <Tooltip title="Shows the distribution of key entity features enabled in your data model, including audit tracking, activity entities, and notes functionality. This provides insight into which capabilities are being utilized." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsivePie
                             data={entityFeaturesData}
@@ -522,9 +672,16 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
             <Grid size={{ xs: 12, sm: 12, md: 6 }}>
                 <Paper elevation={2} className="p-6 rounded-2xl">
-                    <Typography variant="h6" className="mb-4" sx={{ color: 'text.primary' }}>
-                        Attribute Types Distribution
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Attribute Types Distribution
+                        </Typography>
+                        <Tooltip title="Breaks down all attributes by their data type (e.g., String, Integer, Lookup, DateTime). This helps understand the composition of your data model and identify commonly used field types." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                     <Box sx={{ height: 400 }}>
                         <ResponsivePie
                             data={attributeTypeData}
@@ -556,6 +713,202 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                                 text: {
                                     fontSize: 12,
                                     fill: theme.palette.text.primary,
+                                },
+                                tooltip: {
+                                    container: {
+                                        background: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                <Paper elevation={2} className="p-6 rounded-2xl">
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Attribute Process Dependencies by Type
+                        </Typography>
+                        <Tooltip title="Shows which types of components (plugins, flows, web resources, etc.) are using attributes from your data model. This identifies where attributes are referenced in business logic and automation." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                    <Box sx={{ height: 400 }}>
+                        <ResponsivePie
+                            data={attributeUsageByComponentType}
+                            margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                            innerRadius={0.5}
+                            padAngle={0.7}
+                            cornerRadius={3}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "blues" }}
+                            borderWidth={1}
+                            borderColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 0.2]
+                                ]
+                            }}
+                            arcLinkLabelsTextColor={theme.palette.text.primary}
+                            arcLinkLabelsThickness={2}
+                            arcLinkLabelsColor={{ from: 'color' }}
+                            arcLabelsSkipAngle={10}
+                            arcLabelsTextColor={{
+                                from: 'color',
+                                modifiers: [
+                                    ['darker', 2]
+                                ]
+                            }}
+                            theme={{
+                                background: 'transparent',
+                                text: {
+                                    fontSize: 12,
+                                    fill: theme.palette.text.primary,
+                                },
+                                tooltip: {
+                                    container: {
+                                        background: theme.palette.background.paper,
+                                        color: theme.palette.text.primary,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                <Paper elevation={2} className="p-6 rounded-2xl">
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                            Attribute Process Dependencies by Detection Source
+                        </Typography>
+                        <Tooltip title="Compares attribute usages found by the analyzer (scanning component source code) versus those detected through dependency analysis. This shows the effectiveness of different detection methods." arrow placement="left">
+                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                    <Box sx={{ height: 400 }}>
+                        <ResponsiveBar
+                            data={attributeUsageBySource}
+                            keys={['Analyzer Detected', 'Dependency Detected']}
+                            indexBy="category"
+                            margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
+                            padding={0.6}
+                            layout="horizontal"
+                            valueScale={{ type: 'linear' }}
+                            indexScale={{ type: 'band', round: true }}
+                            colors={{ scheme: "blues" }}
+                            borderRadius={4}
+                            borderWidth={1}
+                            borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+                            axisTop={null}
+                            axisRight={null}
+                            axisBottom={{
+                                tickSize: 5,
+                                tickPadding: 5,
+                                tickRotation: 0,
+                                legend: 'Count',
+                                legendPosition: 'middle',
+                                legendOffset: 40
+                            }}
+                            axisLeft={null}
+                            enableGridX={true}
+                            enableGridY={false}
+                            enableLabel={true}
+                            labelSkipWidth={40}
+                            labelSkipHeight={12}
+                            labelTextColor={{ from: 'color', modifiers: [['darker', 3]] }}
+                            legends={[
+                                {
+                                    dataFrom: 'keys',
+                                    anchor: 'bottom-right',
+                                    direction: 'column',
+                                    justify: false,
+                                    translateX: 120,
+                                    translateY: 0,
+                                    itemsSpacing: 2,
+                                    itemWidth: 100,
+                                    itemHeight: 20,
+                                    itemDirection: 'left-to-right',
+                                    itemOpacity: 0.85,
+                                    symbolSize: 20,
+                                    effects: [
+                                        {
+                                            on: 'hover',
+                                            style: {
+                                                itemOpacity: 1
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]}
+                            role="application"
+                            ariaLabel="Attribute process dependencies by detection source"
+                            barAriaLabel={e => `${e.id}: ${e.formattedValue}`}
+                            theme={{
+                                background: 'transparent',
+                                text: {
+                                    fontSize: 12,
+                                    fill: theme.palette.text.primary,
+                                    outlineWidth: 0,
+                                    outlineColor: 'transparent'
+                                },
+                                axis: {
+                                    domain: {
+                                        line: {
+                                            stroke: theme.palette.divider,
+                                            strokeWidth: 1
+                                        }
+                                    },
+                                    legend: {
+                                        text: {
+                                            fontSize: 12,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    ticks: {
+                                        line: {
+                                            stroke: theme.palette.divider,
+                                            strokeWidth: 1
+                                        },
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    }
+                                },
+                                grid: {
+                                    line: {
+                                        stroke: theme.palette.divider,
+                                        strokeWidth: 1,
+                                        strokeDasharray: '4 4'
+                                    }
+                                },
+                                legends: {
+                                    title: {
+                                        text: {
+                                            fontSize: 11,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    },
+                                    text: {
+                                        fontSize: 11,
+                                        fill: theme.palette.text.primary
+                                    },
+                                    ticks: {
+                                        line: {},
+                                        text: {
+                                            fontSize: 10,
+                                            fill: theme.palette.text.primary
+                                        }
+                                    }
                                 },
                                 tooltip: {
                                     container: {

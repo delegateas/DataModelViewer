@@ -237,8 +237,8 @@ export const TimeSlicedSearch = ({
   };
 
   const searchInput = (
-    <Box className={`fixed top-20 right-0 z-50 transition-opacity bg-transparent duration-200 ${shouldHideSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-      <Paper component="form" className='p-1 rounded-lg flex items-center w-[320px]' sx={{ backgroundColor: 'background.paper' }}>
+    <Box className={`fixed flex top-20 md:top-24 m-auto w-full justify-center md:justify-end md:right-4 z-50 transition-opacity bg-transparent duration-200 pointer-events-none ${shouldHideSearch ? 'opacity-0' : 'opacity-100'}`}>
+      <Paper component="form" className={`p-1 rounded-lg flex items-center w-[320px] ${shouldHideSearch ? 'pointer-events-none' : 'pointer-events-auto'}`} sx={{ backgroundColor: 'background.paper' }}>
         <InputAdornment position="start" className='ml-1'>
           <SearchRounded color="action" />
         </InputAdornment>

@@ -1,5 +1,5 @@
-﻿using Microsoft.Xrm.Sdk.Metadata;
-using Newtonsoft.Json;
+﻿using Generator.Extensions;
+using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator.DTO.Attributes;
 
@@ -13,12 +13,12 @@ internal class StatusAttribute : Attribute
         var stateToName =
             stateAttribute.OptionSet.Options
             .Where(x => x.Value != null)
-            .ToDictionary(x => x.Value!.Value, x => x.Label.UserLocalizedLabel?.Label ?? string.Empty);
+            .ToDictionary(x => x.Value!.Value, x => x.Label.ToLabelString());
 
         Options = metadata.OptionSet.Options
             .Select(x => (StatusOptionMetadata)x)
             .Select(x => new StatusOption(
-                x.Label.UserLocalizedLabel?.Label ?? string.Empty,
+                x.Label.ToLabelString(),
                 x.Value,
                 x.State == null ? "Unknown State" : stateToName[x.State.Value]));
     }

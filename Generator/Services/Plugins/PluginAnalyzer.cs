@@ -24,7 +24,7 @@ public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
 
             // Populate the attributeUsages dictionary
             foreach (var attribute in filteringAttributes)
-                AddAttributeUsage(attributeUsages, logicalTableName, attribute, new AttributeUsage(pluginName, $"Used in filterattributes", OperationType.Other, SupportedType));
+                AddAttributeUsage(attributeUsages, logicalTableName, attribute, new AttributeUsage(pluginName, $"Used in filterattributes", OperationType.Other, SupportedType, false));
 
         }
         catch (Exception ex)

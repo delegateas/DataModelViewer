@@ -24,6 +24,13 @@ export const HomeView = ({ }: IHomeViewProps) => {
     // Carousel data
     const carouselItems: CarouselItem[] = [
         {
+            image: '/processes.jpg',
+            title: 'Implicit data!',
+            text: "Now you can see the implicit components automatically added by the Platform (hidden in the solution components). And while we were at it, we also chose to display the dependent classical workflows and business rules that the Platform makes visible to you. Don't forget to check out the Insights for new additional dashboards.",
+            type: '(v2.2.6) Patch update',
+            action: () => router.push('/processes')
+        },
+        {
             image: '/documentation.jpg',
             title: 'Connect to your Azure DevOps!',
             text: 'The diagram tool is the first to take advantage of the new integration. Save and load your diagrams directly from your Azure DevOps repository to keep version control on your diagrams. Check out the documentation to get started.',
@@ -47,12 +54,6 @@ export const HomeView = ({ }: IHomeViewProps) => {
             actionlabel: 'Try it out',
             action: () => router.push('/processes')
         },
-        {
-            image: '/upgrade.jpg',
-            title: 'Data Model Viewer 2.0.0!',
-            text: "The UI has been refreshed for an even cleaner, more modern look with enhanced functionality. And we've upgraded the tech stack to ensure easier maintainability.",
-            type: '(v2.0.0) Announcement'
-        }
     ];
 
     const goToPrevious = () => {

@@ -233,7 +233,7 @@ export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttri
                         ))}
                     </Select>
                 </FormControl>
-                <Tooltip title={hideStandardFields ? "Show standard columns" : "Hide standard columns"}>
+                <Tooltip title={hideStandardFields ? "Show unchanged columns" : "Hide unchanged columns"}>
                     <Button
                         variant="outlined"
                         size="small"

@@ -4,10 +4,11 @@ import { EntityType } from "@/lib/Types"
 import { CascadeConfiguration } from "./entity/CascadeConfiguration"
 import { useState, useEffect } from "react"
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext"
+import { useDatamodelData } from "@/contexts/DatamodelDataContext"
 import React from "react"
 import { highlightMatch } from "../datamodelview/List";
-import { Button, FormControl, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, InputAdornment, Box, Typography, useTheme } from "@mui/material"
-import { SearchRounded, ClearRounded, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
+import { Button, FormControl, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, InputAdornment, Box, Typography, useTheme, Tooltip, Chip } from "@mui/material"
+import { SearchRounded, ClearRounded, ArrowUpwardRounded, ArrowDownwardRounded, Visibility, VisibilityOff, ContentPasteSearchRounded, ContentPasteOffRounded } from "@mui/icons-material"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'tableSchema' | 'lookupField' | 'type' | 'behavior' | 'schemaName' | null
@@ -23,11 +24,20 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
+    const [hideImplicitRelationships, setHideImplicitRelationships] = useState<boolean>(true)
 
     const theme = useTheme();
 
     const dispatch = useDatamodelViewDispatch();
     const { scrollToSection } = useDatamodelView();
+    const { groups } = useDatamodelData();
+
+    // Helper function to check if an entity is in the solution
+    const isEntityInSolution = (entitySchemaName: string): boolean => {
+        return groups.some(group =>
+            group.Entities.some(e => e.SchemaName === entitySchemaName)
+        );
+    };
 
     const handleSort = (column: SortColumn) => {
         if (sortColumn === column) {
@@ -47,17 +57,17 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
 
     const getSortedRelationships = () => {
         let filteredRelationships = entity.Relationships
-        
+
         if (typeFilter !== "all") {
-            filteredRelationships = filteredRelationships.filter(rel => 
-                (typeFilter === "many-to-many" && rel.IsManyToMany) || 
-                (typeFilter === "one-to-many" && !rel.IsManyToMany)
+            filteredRelationships = filteredRelationships.filter(rel =>
+                (typeFilter === "many-to-many" && rel.RelationshipType === "N:N") ||
+                (typeFilter === "one-to-many" && rel.RelationshipType !== "N:N")
             )
         }
-        
+
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
-            filteredRelationships = filteredRelationships.filter(rel => 
+            filteredRelationships = filteredRelationships.filter(rel =>
                 rel.Name.toLowerCase().includes(query) ||
                 rel.TableSchema.toLowerCase().includes(query) ||
                 rel.LookupDisplayName.toLowerCase().includes(query) ||
@@ -68,13 +78,15 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
         // Also filter by parent search prop if provided
         if (search && search.length >= 3) {
             const query = search.toLowerCase()
-            filteredRelationships = filteredRelationships.filter(rel => 
+            filteredRelationships = filteredRelationships.filter(rel =>
                 rel.Name.toLowerCase().includes(query) ||
                 rel.TableSchema.toLowerCase().includes(query) ||
                 rel.LookupDisplayName.toLowerCase().includes(query) ||
                 rel.RelationshipSchema.toLowerCase().includes(query)
             )
         }
+
+        filteredRelationships = filteredRelationships.filter(rel => rel.IsExplicit || !hideImplicitRelationships);
 
         if (!sortColumn || !sortDirection) return filteredRelationships
 
@@ -96,8 +108,8 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                     bValue = b.LookupDisplayName
                     break
                 case 'type':
-                    aValue = a.IsManyToMany ? "N:N" : "1:N"
-                    bValue = b.IsManyToMany ? "N:N" : "1:N"
+                    aValue = a.RelationshipType
+                    bValue = b.RelationshipType
                     break
                 case 'schemaName':
                     aValue = a.RelationshipSchema
@@ -137,9 +149,9 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
     }, [sortedRelationships.length, onVisibleCountChange]);
 
     return <>
-        <Box 
+        <Box
             className="p-1 md:p-2 gap-1 md:gap-2 border-b flex flex-col"
-            sx={{ 
+            sx={{
                 borderColor: 'border.main',
                 backgroundColor: 'background.paper'
             }}
@@ -156,7 +168,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                         }
                     }}
                     className="flex-grow"
-                    sx={{ 
+                    sx={{
                         '& .MuiInputBase-input': {
                             fontSize: { xs: '0.75rem', md: '0.875rem' }
                         }
@@ -178,10 +190,10 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                                 </InputAdornment>
                             )
                         }
-                    }}   
+                    }}
                 />
                 <FormControl size="small">
-                    <InputLabel id="relationship-type-filter-label" className="text-xs md:text-sm">
+                    <InputLabel id="relationship-type-filter-label" sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
                         Filter by type
                     </InputLabel>
                     <Select
@@ -189,7 +201,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                         onChange={(e) => setTypeFilter(e.target.value)}
                         label="Filter by type"
                         labelId="relationship-type-filter-label"
-                        className="text-xs md:text-sm"
+                        sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
                     >
                         {relationshipTypes.map(type => (
                             <MenuItem key={type.value} value={type.value} className="text-xs md:text-sm">
@@ -198,6 +210,21 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                         ))}
                     </Select>
                 </FormControl>
+                <Tooltip title={hideImplicitRelationships ? "Show implicitly added relationships (often lookups)" : "Hide implicitly added relationships"}>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setHideImplicitRelationships(!hideImplicitRelationships)}
+                        className="min-w-0 p-0 h-8 w-8 md:h-10 md:w-10"
+                        sx={{
+                            borderColor: 'border.main'
+                        }}
+                    >
+                        {
+                            hideImplicitRelationships ? <VisibilityOff className="text-xs md:text-base" /> : <Visibility className="text-xs md:text-base" />
+                        }
+                    </Button>
+                </Tooltip>
                 {(searchQuery || typeFilter !== "all") && (
                     <Button
                         variant="text"
@@ -214,9 +241,9 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                 )}
             </Box>
             {search && search.length >= 3 && searchQuery && (
-                <Box 
+                <Box
                     className="flex items-center gap-1 text-xs md:text-sm px-1 py-0.5 rounded border"
-                    sx={{ 
+                    sx={{
                         color: 'warning.dark',
                         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255, 243, 224, 1)',
                         borderColor: 'warning.main'
@@ -235,9 +262,9 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                     {searchQuery || typeFilter !== "all" ? (
                         <Box className="flex flex-col items-center gap-1">
                             <Typography variant="body2" className="text-xs md:text-sm">
-                                {searchQuery && typeFilter !== "all" 
+                                {searchQuery && typeFilter !== "all"
                                     ? `No ${typeFilter === "many-to-many" ? "many-to-many" : "one-to-many"} relationships found matching "${searchQuery}"`
-                                    : searchQuery 
+                                    : searchQuery
                                         ? `No relationships found matching "${searchQuery}"`
                                         : `No ${typeFilter === "many-to-many" ? "many-to-many" : "one-to-many"} relationships available`
                                 }
@@ -259,9 +286,9 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                     )}
                 </Box>
             ) : (
-                <Box 
+                <Box
                     className="border-t max-w-full overflow-x-auto md:overflow-x-visible"
-                    sx={{ 
+                    sx={{
                         borderColor: 'border.main',
                         '@media (max-width: 768px)': {
                             '&::-webkit-scrollbar': {
@@ -277,121 +304,148 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                         }
                     }}
                 >
-                    <Table 
+                    <Table
                         className="w-full min-w-[900px] md:min-w-0"
                         sx={{ borderColor: 'border.main' }}
                     >
-                    <TableHead sx={{ backgroundColor: 'background.paper' }}>
-                        <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
-                            <TableCell 
-                                className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('name')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Name
-                                    <SortIcon column="name" />
-                                </Box>
-                            </TableCell>
-                            <TableCell 
-                                className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('tableSchema')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Related Table
-                                    <SortIcon column="tableSchema" />
-                                </Box>
-                            </TableCell>
-                            <TableCell 
-                                className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('lookupField')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Lookup Field
-                                    <SortIcon column="lookupField" />
-                                </Box>
-                            </TableCell>
-                            <TableCell 
-                                className="w-[10%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('type')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Type
-                                    <SortIcon column="type" />
-                                </Box>
-                            </TableCell>
-                            <TableCell 
-                                className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
-                                sx={{ color: 'text.primary' }}
-                            >
-                                Behavior
-                            </TableCell>
-                            <TableCell 
-                                className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
-                                onClick={() => handleSort('schemaName')}
-                                sx={{ color: 'text.primary' }}
-                            >
-                                <Box className="flex items-center">
-                                    Schema Name
-                                    <SortIcon column="schemaName" />
-                                </Box>
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {sortedRelationships.map((relationship, index) =>
-                            <TableRow 
-                                key={relationship.RelationshipSchema}
-                                className="transition-colors duration-150 border-b"
-                                sx={{
-                                    '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
-                                    borderColor: 'border.main',
-                                    backgroundColor: index % 2 === 0 
-                                        ? 'background.paper' 
-                                        : theme.palette.mode === 'dark' 
-                                            ? 'rgba(255, 255, 255, 0.02)' 
-                                            : 'rgba(0, 0, 0, 0.02)'
-                                }}
-                            >
-                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                    {highlightMatch(relationship.Name, highlightTerm)}
+                        <TableHead sx={{ backgroundColor: 'background.paper' }}>
+                            <TableRow className="border-b-2" sx={{ borderColor: 'border.main' }}>
+                                <TableCell
+                                    className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('name')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Name
+                                        <SortIcon column="name" />
+                                    </Box>
                                 </TableCell>
-                                <TableCell className="py-1 md:py-1.5">
-                                    <Button
-                                        key={relationship.TableSchema}
-                                        variant="text"
-                                        className="p-0 text-xs md:text-base break-words text-left justify-start underline hover:no-underline"
-                                        sx={{ 
-                                            color: 'primary.main'
-                                        }}
-                                        onClick={() => {
-                                            dispatch({ type: 'SET_LOADING_SECTION', payload: relationship.TableSchema });
-                                            dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema });
-                                            scrollToSection(relationship.TableSchema);
-                                        }}
-                                    >
-                                        {highlightMatch(relationship.TableSchema, highlightTerm)}
-                                    </Button>
+                                <TableCell
+                                    className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('tableSchema')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Related Table
+                                        <SortIcon column="tableSchema" />
+                                    </Box>
                                 </TableCell>
-                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                    {relationship.LookupDisplayName}
+                                <TableCell
+                                    className="w-[15%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('lookupField')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Lookup Field
+                                        <SortIcon column="lookupField" />
+                                    </Box>
                                 </TableCell>
-                                <TableCell className="py-1 md:py-1.5 text-xs md:text-sm">
-                                    {relationship.IsManyToMany ? "N:N" : "1:N"}
+                                <TableCell
+                                    className="w-[10%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('type')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Type
+                                        <SortIcon column="type" />
+                                    </Box>
                                 </TableCell>
-                                <TableCell className="py-1 md:py-1.5">
-                                    <CascadeConfiguration config={relationship.CascadeConfiguration} />
+                                <TableCell
+                                    className="w-[25%] font-semibold py-1 md:py-1.5 text-xs md:text-sm"
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    Behavior
                                 </TableCell>
-                                <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                    {relationship.RelationshipSchema}
+                                <TableCell
+                                    className="w-[20%] font-semibold py-1 md:py-1.5 text-xs md:text-sm cursor-pointer"
+                                    onClick={() => handleSort('schemaName')}
+                                    sx={{ color: 'text.primary' }}
+                                >
+                                    <Box className="flex items-center">
+                                        Schema Name
+                                        <SortIcon column="schemaName" />
+                                    </Box>
                                 </TableCell>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                        </TableHead>
+                        <TableBody>
+                            {sortedRelationships.map((relationship, index) =>
+                                <TableRow
+                                    key={relationship.RelationshipSchema}
+                                    className="transition-colors duration-150 border-b"
+                                    sx={{
+                                        '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
+                                        borderColor: 'border.main',
+                                        backgroundColor: index % 2 === 0
+                                            ? 'background.paper'
+                                            : theme.palette.mode === 'dark'
+                                                ? 'rgba(255, 255, 255, 0.02)'
+                                                : 'rgba(0, 0, 0, 0.02)'
+                                    }}
+                                >
+                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                        {highlightMatch(relationship.Name, highlightTerm)}
+                                    </TableCell>
+                                    <TableCell className="py-1 md:py-1.5">
+                                        {isEntityInSolution(relationship.TableSchema) ? (
+                                            <Button
+                                                key={relationship.TableSchema}
+                                                variant="outlined"
+                                                size="small"
+                                                startIcon={<ContentPasteSearchRounded className="w-2 h-2 md:w-3 md:h-3" />}
+                                                onClick={() => {
+                                                    dispatch({ type: 'SET_LOADING_SECTION', payload: relationship.TableSchema });
+                                                    dispatch({ type: "SET_CURRENT_SECTION", payload: relationship.TableSchema });
+                                                    scrollToSection(relationship.TableSchema);
+                                                }}
+                                                sx={{
+                                                    fontSize: { xs: '0.625rem', md: '0.875rem' },
+                                                    height: { xs: '16px', md: '24px' },
+                                                    minWidth: 'auto',
+                                                    px: { xs: 0.75, md: 1 },
+                                                    '& .MuiButton-startIcon': {
+                                                        marginLeft: 0,
+                                                        marginRight: { xs: '2px', md: '4px' }
+                                                    }
+                                                }}
+                                            >
+                                                {highlightMatch(relationship.TableSchema, highlightTerm)}
+                                            </Button>
+                                        ) : (
+                                            <Chip
+                                                key={relationship.TableSchema}
+                                                icon={<ContentPasteOffRounded className="w-2 h-2 md:w-3 md:h-3" />}
+                                                label={highlightMatch(relationship.TableSchema, highlightTerm)}
+                                                size="small"
+                                                disabled
+                                                sx={{
+                                                    fontSize: { xs: '0.625rem', md: '0.875rem' },
+                                                    height: { xs: '16px', md: '24px' },
+                                                    backgroundColor: 'grey.100',
+                                                    color: 'grey.600',
+                                                    '& .MuiChip-icon': {
+                                                        fontSize: { xs: '0.5rem', md: '0.75rem' }
+                                                    }
+                                                }}
+                                            />
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                        {relationship.LookupDisplayName}
+                                    </TableCell>
+                                    <TableCell className="py-1 md:py-1.5 text-xs md:text-sm">
+                                        {relationship.RelationshipType}
+                                    </TableCell>
+                                    <TableCell className="py-1 md:py-1.5">
+                                        <CascadeConfiguration config={relationship.CascadeConfiguration} />
+                                    </TableCell>
+                                    <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
+                                        {relationship.RelationshipSchema}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                 </Box>
             )}
         </Box>

@@ -1,4 +1,5 @@
-﻿using Microsoft.Xrm.Sdk.Metadata;
+﻿using Generator.Extensions;
+using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator;
 
@@ -27,8 +28,8 @@ public static class MetadataExtensions
         var languagecode = attribute.DisplayName.UserLocalizedLabel?.LanguageCode;
 
         var fields = GetDefaultFields(entityDisplayName, languagecode);
-        var hasTextChanged = fields.StandardDescriptionHasChanged(attribute.LogicalName, attribute.Description.UserLocalizedLabel?.Label ?? string.Empty)
-            || fields.StandardDisplayNameHasChanged(attribute.LogicalName, attribute.DisplayName.UserLocalizedLabel?.Label ?? string.Empty);
+        var hasTextChanged = fields.StandardDescriptionHasChanged(attribute.LogicalName, attribute.Description.ToLabelString())
+            || fields.StandardDisplayNameHasChanged(attribute.LogicalName, attribute.DisplayName.ToLabelString());
 
         // Check if options have been added to statecode or statuscode
         var hasOptionsChanged = attribute switch
@@ -183,7 +184,9 @@ public static class MetadataExtensions
         ( "actualend", "Faktisk slutning", "Aktivitetens faktiske sluttidspunkt." ),
         ( "actualstart", "Faktisk start", "Aktivitetens faktiske starttidspunkt." ),
         ( "bcc", "Bcc", "Angiv de modtagere, der er inkluderet i maildistributionen, men som ikke vises til andre modtagere." ),
+        ( "bcc", "Bcc", "Bcc-modtagere af aktiviteten." ),
         ( "cc", "Cc", "Angiv de modtagere, der skal have en kopi af mailen." ),
+        ( "cc", "Cc", "Cc-modtagere af aktiviteten." ),
         ( "allparties", "Alle parter i aktiviteter", "Alle aktivitetsparter, der er knyttet til denne aktivitet." ),
         ( "community", "Social kanal", "Viser, hvor kontakt om den sociale aktivitet stammer fra, f.eks. fra Twitter eller Facebook. Dette felt er skrivebeskyttet." ),
         ( "createdby", "Oprettet af", "Entydigt id for den bruger, der oprettede aktiviteten." ),
@@ -249,5 +252,12 @@ public static class MetadataExtensions
         ( "versionnumber", "Versionsnummer", "Versionsnummer" ),
         ( "versionnumber", "Versionsnummer", "Versionsnummer for aktiviteten." ),
         ( "organizationid", "Organisations-id", "Entydigt id for organisationen" ),
+        ( "organizer", "Arrangør", "Den person, der organiserede aktiviteten." ),
+        ( "from", "Fra", "Person, som aktiviteten stammer fra." ),
+        ( "to", "Til", "Person, der er modtager af aktiviteten." ),
+        ( "customers", "Kunder", "Kunde, som aktiviteten er tilknyttet." ),
+        ( "partners", "Underleverandører", "Underleverandør, som aktiviteten er tilknyttet." ),
+        ( "requiredattendees", "Nødvendige deltagere", "Liste over nødvendige deltagere i denne aktivitet." ),
+        ( "optionalattendees", "Valgfrie deltagere", "Liste over valgfrie deltagere i denne aktivitet." ),
     };
 }

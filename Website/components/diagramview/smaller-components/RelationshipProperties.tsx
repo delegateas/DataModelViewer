@@ -100,7 +100,7 @@ const RelationshipProperties = ({ relationships, linkId }: IRelationshipProperti
                                 )}
                                 <Box className="flex gap-1 mt-1 items-center justify-between">
                                     <Box className="flex gap-1">
-                                        {rel.IsManyToMany && (
+                                        {rel.RelationshipType === "N:N" && (
                                             <Chip label="Many-to-Many" size="small" variant="outlined" className='text-xs h-5' />
                                         )}
                                         {rel.isIncluded === undefined && (

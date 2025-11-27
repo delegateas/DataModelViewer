@@ -13,22 +13,6 @@ export type GroupType = {
     Entities: EntityType[]
 }
 
-export type SolutionType = {
-    Name: string,
-    PublisherName: string,
-    PublisherPrefix: string,
-    Components: SolutionComponentType[]
-}
-
-export type SolutionComponentType = {
-    Name: string,
-    SchemaName: string,
-    Description: string | null,
-    ComponentType: SolutionComponentTypeEnum,
-    PublisherName: string,
-    PublisherPrefix: string,
-}
-
 export const enum OwnershipType {
     None = 0,
     UserOwned = 1,
@@ -36,6 +20,11 @@ export const enum OwnershipType {
     BusinessOwned = 4,
     OrganizationOwned = 8,
     BusinessParented = 16
+}
+
+export type SolutionInfoType = {
+    Id: string,
+    Name: string,
 }
 
 export type EntityType = {
@@ -54,6 +43,10 @@ export type EntityType = {
     Keys: Key[],
     IconBase64: string | null,
     visibleAttributeSchemaNames?: string[],
+    PublisherName?: string,
+    PublisherPrefix?: string,
+    Solutions: SolutionInfoType[],
+
 }
 
 export const enum SolutionComponentTypeEnum {
@@ -74,17 +67,17 @@ export const enum CalculationMethods {
     Rollup = 1,
 }
 
-export enum ComponentType
-{
+export enum ComponentType {
     PowerAutomateFlow,
     Plugin,
     WebResource,
     WorkflowActivity,
-    CustomApi
+    CustomApi,
+    BusinessRule,
+    ClassicWorkflow
 }
 
-export enum OperationType
-{
+export enum OperationType {
     Create,
     Read,
     Update,
@@ -97,7 +90,8 @@ export type UsageType = {
     Name: string,
     ComponentType: ComponentType,
     Usage: string,
-    OperationType: OperationType
+    OperationType: OperationType,
+    IsFromDependencyAnalysis: boolean
 }
 
 export type BaseAttribute = {
@@ -106,13 +100,17 @@ export type BaseAttribute = {
     IsPrimaryName: boolean;
     IsCustomAttribute: boolean;
     IsStandardFieldModified: boolean;
-    DisplayName: string,
-    SchemaName: string,
-    Description: string | null,
-    RequiredLevel: RequiredLevel,
-    IsAuditEnabled: boolean,
-    IsColumnSecured: boolean,
-    CalculationMethod: CalculationMethods | null,
+    DisplayName: string;
+    SchemaName: string;
+    Description: string | null;
+    RequiredLevel: RequiredLevel;
+    IsAuditEnabled: boolean;
+    IsColumnSecured: boolean;
+    CalculationMethod: CalculationMethods | null;
+    IsExplicit: boolean;
+    PublisherName?: string,
+    PublisherPrefix?: string,
+    Solutions: SolutionInfoType[],
 }
 
 export type ChoiceAttributeType = BaseAttribute & {
@@ -229,8 +227,12 @@ export type RelationshipType = {
     TableSchema: string,
     LookupDisplayName: string,
     RelationshipSchema: string,
-    IsManyToMany: boolean,
-    CascadeConfiguration: CascadeConfigurationType | null
+    IsExplicit: boolean,
+    RelationshipType: "N:N" | "1:N" | "N:1",
+    CascadeConfiguration: CascadeConfigurationType | null,
+    PublisherName?: string,
+    PublisherPrefix?: string,
+    Solutions: SolutionInfoType[],
 }
 
 export enum PrivilegeDepth {

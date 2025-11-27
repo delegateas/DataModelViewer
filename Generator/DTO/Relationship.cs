@@ -9,5 +9,9 @@ public record Relationship(
     string TableSchema,
     string LookupDisplayName,
     string RelationshipSchema,
-    bool IsManyToMany,
-    CascadeConfiguration? CascadeConfiguration);
+    string RelationshipType,
+    bool IsExplicit,
+    string PublisherName,
+    string PublisherPrefix,
+    CascadeConfiguration? CascadeConfiguration,
+    List<SolutionInfo> Solutions);

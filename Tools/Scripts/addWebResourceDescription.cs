@@ -1,17 +1,16 @@
 #!/usr/bin/dotnet run
-#:package Microsoft.PowerPlatform.Dataverse.Client@1.2.*
-#:package Azure.Identity@1.13.*
-#:package System.Text.RegularExpressions@*
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// DOES NOT WORK AS SERVICECLIENT IS NOT SUPPORTED IN .NET 10
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#:package Microsoft.PowerPlatform.Dataverse.Client@1.2.10
+#:package Azure.Identity@1.13.2
+#:package System.Text.RegularExpressions@*
+#:property PublishAot=false
 
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using System;
 using System.Text.RegularExpressions;
 
 // Validate command-line arguments
@@ -141,28 +140,88 @@ Console.WriteLine("Authentication: Azure DefaultAzureCredential (Azure CLI, Mana
 try
 {
     // Token provider function using DefaultAzureCredential
+    // This will try credentials in order: Environment, Managed Identity, Visual Studio, Azure CLI, etc.
     var credential = new DefaultAzureCredential();
 
-    string TokenProviderFunction(string url)
+    // Calculate resource scope once (use UriPartial.Authority like the working example)
+    var resource = $"{new Uri(dataverseUrl).GetLeftPart(UriPartial.Authority)}/.default";
+    Console.WriteLine($"Testing authentication with scope: {resource}");
+
+    try
     {
-        var scope = $"{GetCoreUrl(url)}/.default";
-        var tokenRequestContext = new TokenRequestContext([scope]);
-        var token = credential.GetToken(tokenRequestContext, CancellationToken.None);
+        var tokenRequestContext = new TokenRequestContext([resource]);
+        var testToken = await credential.GetTokenAsync(tokenRequestContext, default);
+        Console.WriteLine($"✓ Successfully obtained access token (expires: {testToken.ExpiresOn:yyyy-MM-dd HH:mm:ss})\n");
+    }
+    catch (Exception authEx)
+    {
+        Console.WriteLine($"❌ Failed to obtain access token.");
+        Console.WriteLine($"Error: {authEx.Message}\n");
+        Console.WriteLine("Troubleshooting:");
+        Console.WriteLine("  - Run 'az login' to authenticate with Azure CLI");
+        Console.WriteLine("  - Run 'az account show' to verify your login");
+        Console.WriteLine($"  - Verify you have access to: {dataverseUrl}");
+        return 1;
+    }
+
+    // Token provider function - ignore the url parameter and use our pre-calculated resource
+    async Task<string> TokenProvider(string url)
+    {
+        var tokenRequestContext = new TokenRequestContext([resource]);
+        var token = await credential.GetTokenAsync(tokenRequestContext, default);
         return token.Token;
     }
 
-    using var serviceClient = new ServiceClient(
-        instanceUrl: new Uri(dataverseUrl),
-        tokenProviderFunction: url => TokenProviderFunction(url));
+    Console.WriteLine("Creating ServiceClient...");
+    ServiceClient serviceClient;
 
-    if (!serviceClient.IsReady)
+    try
     {
-        Console.WriteLine($"Error: Failed to connect to Dataverse.");
-        Console.WriteLine($"Details: {serviceClient.LastError}");
+        serviceClient = new ServiceClient(
+            instanceUrl: new Uri(dataverseUrl),
+            tokenProviderFunction: TokenProvider);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Exception during ServiceClient creation:");
+        Console.WriteLine($"Message: {ex.Message}");
+        Console.WriteLine($"Type: {ex.GetType().FullName}");
+        Console.WriteLine($"\nStack Trace:\n{ex.StackTrace}");
+
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"\nInner Exception:");
+            Console.WriteLine($"Message: {ex.InnerException.Message}");
+            Console.WriteLine($"Type: {ex.InnerException.GetType().FullName}");
+            Console.WriteLine($"\nInner Stack Trace:\n{ex.InnerException.StackTrace}");
+        }
+        return 1;
+    }
+
+    if (serviceClient == null || !serviceClient.IsReady)
+    {
+        var errorMsg = serviceClient?.LastError ?? "ServiceClient failed to initialize";
+        Console.WriteLine($"❌ ServiceClient created but not ready.");
+        Console.WriteLine($"LastError: {errorMsg}");
+
+        if (serviceClient?.LastException != null)
+        {
+            Console.WriteLine($"\nLastException Message: {serviceClient.LastException.Message}");
+            Console.WriteLine($"LastException Type: {serviceClient.LastException.GetType().FullName}");
+            Console.WriteLine($"\nLastException Stack Trace:\n{serviceClient.LastException.StackTrace}");
+
+            if (serviceClient.LastException.InnerException != null)
+            {
+                Console.WriteLine($"\nLastException Inner Exception:");
+                Console.WriteLine($"Message: {serviceClient.LastException.InnerException.Message}");
+                Console.WriteLine($"Type: {serviceClient.LastException.InnerException.GetType().FullName}");
+            }
+        }
+
         Console.WriteLine("\nTroubleshooting:");
-        Console.WriteLine("  - Run 'az login' to authenticate with Azure CLI");
-        Console.WriteLine("  - Verify you have access to the Dataverse environment");
-        Console.WriteLine("  - Check the Dataverse URL is correct");
+        Console.WriteLine("  - Verify you have the System Administrator or System Customizer role");
+        Console.WriteLine("  - Check firewall/network access to the Dataverse URL");
+        Console.WriteLine("  - Try accessing the URL in a browser to verify it's reachable");
         return 1;
     }
 
@@ -264,10 +323,3 @@ catch (Exception ex)
 }
 
 return 0;
-
-// Helper function to extract core URL from Dataverse URL
-static string GetCoreUrl(string dataverseUrl)
-{
-    var uri = new Uri(dataverseUrl);
-    return $"{uri.Scheme}://{uri.Host}";
-}
