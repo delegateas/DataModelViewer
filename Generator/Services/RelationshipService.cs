@@ -89,6 +89,7 @@ internal class RelationshipService
     public IEnumerable<Relationship> ConvertManyToManyRelationships(
         IEnumerable<ManyToManyRelationshipMetadata> relationships,
         string entityLogicalName,
+        Dictionary<string, ExtendedEntityInformation> logicalToSchema,
         Dictionary<Guid, bool> inclusionMap,
         Dictionary<Guid, (string Name, string Prefix)> publisherMap,
         Dictionary<Guid, List<SolutionInfo>> componentSolutionMap,
@@ -103,12 +104,21 @@ internal class RelationshipService
             var relationshipSolutions = componentSolutionMap.GetValueOrDefault(rel.MetadataId!.Value)
                 ?? componentSolutionMap.GetValueOrDefault(entityMetadataId, new List<SolutionInfo>());
 
+            var relatedTable = rel.Entity1LogicalName.Equals(entityLogicalName, StringComparison.OrdinalIgnoreCase)
+                ? rel.Entity2LogicalName
+                : rel.Entity1LogicalName;
+
+            var relatedSchemaName = logicalToSchema.ContainsKey(relatedTable)
+                ? logicalToSchema[relatedTable].Name
+                : relatedTable;
+
             return new Relationship(
                 rel.IsCustomRelationship ?? false,
-                $"{rel.Entity1AssociatedMenuConfiguration.Label.ToLabelString()} ⟷ {rel.Entity2AssociatedMenuConfiguration.Label.ToLabelString()}",
-                entityLogicalName,
+                $"{rel.Entity1LogicalName} ⟷ {rel.Entity2LogicalName}",
+                relatedSchemaName,
                 "-",
                 rel.SchemaName,
+                rel.IntersectEntityName,
                 "N:N",
                 inclusionMap[rel.MetadataId!.Value],
                 pName,
@@ -154,6 +164,7 @@ internal class RelationshipService
                 tableSchema,
                 lookupName,
                 rel.SchemaName,
+                null,
                 !isOneToMany ? "N:1" : "1:N",
                 inclusionMap[rel.MetadataId!.Value],
                 pName,

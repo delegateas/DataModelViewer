@@ -25,6 +25,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
     const [typeFilter, setTypeFilter] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [hideImplicitRelationships, setHideImplicitRelationships] = useState<boolean>(true)
+    const [hideOutOfSolutionRelationships, setHideOutOfSolutionRelationships] = useState<boolean>(true)
 
     const theme = useTheme();
 
@@ -87,6 +88,11 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
         }
 
         filteredRelationships = filteredRelationships.filter(rel => rel.IsExplicit || !hideImplicitRelationships);
+
+        // Filter out relationships where related table is not in solution
+        if (hideOutOfSolutionRelationships) {
+            filteredRelationships = filteredRelationships.filter(rel => isEntityInSolution(rel.TableSchema));
+        }
 
         if (!sortColumn || !sortDirection) return filteredRelationships
 
@@ -222,6 +228,21 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                     >
                         {
                             hideImplicitRelationships ? <VisibilityOff className="text-xs md:text-base" /> : <Visibility className="text-xs md:text-base" />
+                        }
+                    </Button>
+                </Tooltip>
+                <Tooltip title={hideOutOfSolutionRelationships ? "Show relationships to tables not in solution" : "Hide relationships to tables not in solution"}>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setHideOutOfSolutionRelationships(!hideOutOfSolutionRelationships)}
+                        className="min-w-0 p-0 h-8 w-8 md:h-10 md:w-10"
+                        sx={{
+                            borderColor: 'border.main'
+                        }}
+                    >
+                        {
+                            hideOutOfSolutionRelationships ? <ContentPasteOffRounded className="text-xs md:text-base" /> : <ContentPasteSearchRounded className="text-xs md:text-base" />
                         }
                     </Button>
                 </Tooltip>
@@ -441,6 +462,8 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                                     </TableCell>
                                     <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
                                         {relationship.RelationshipSchema}
+                                        {relationship.IntersectEntitySchemaName &&
+                                            (<Typography variant="body2" className="text-xs md:text-sm text-secondary"><b>Intersecting table:</b> {relationship.IntersectEntitySchemaName}</Typography>)}
                                     </TableCell>
                                 </TableRow>
                             )}
