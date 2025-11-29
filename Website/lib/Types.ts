@@ -227,6 +227,7 @@ export type RelationshipType = {
     TableSchema: string,
     LookupDisplayName: string,
     RelationshipSchema: string,
+    IntersectEntitySchemaName: string | null,
     IsExplicit: boolean,
     RelationshipType: "N:N" | "1:N" | "N:1",
     CascadeConfiguration: CascadeConfigurationType | null,

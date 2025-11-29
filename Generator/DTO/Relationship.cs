@@ -9,6 +9,7 @@ public record Relationship(
     string TableSchema,
     string LookupDisplayName,
     string RelationshipSchema,
+    string? IntersectEntitySchemaName,
     string RelationshipType,
     bool IsExplicit,
     string PublisherName,
