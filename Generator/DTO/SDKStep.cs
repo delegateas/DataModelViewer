@@ -7,4 +7,5 @@ public record SDKStep(
         string Name,
         string FilteringAttributes,
         string PrimaryObjectTypeCode,
+        string SdkMessageName,
         OptionSetValue State) : Analyzeable();
