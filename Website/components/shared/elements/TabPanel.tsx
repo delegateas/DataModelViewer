@@ -20,7 +20,7 @@ const CustomTabPanel = (props: TabPanelProps) => {
             className={className}
             {...other}
         >
-            {value === index && <Box sx={{ p: 0 }}>{children}</Box>}
+            <Box sx={{ p: 0, display: value === index ? 'block' : 'none' }}>{children}</Box>
         </div>
     );
 }
