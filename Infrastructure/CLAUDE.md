@@ -193,7 +193,20 @@ Before enabling EntraID authentication:
 4. Click **Register**
 5. Note the **Application (client) ID** and **Directory (tenant) ID** from the Overview page
 
-### Step 2: Configure App Registration API Permissions
+### Step 2: Enable Implicit Grant Flow
+
+**CRITICAL**: Azure App Service Easy Auth requires ID tokens to be enabled.
+
+1. In your App Registration, go to **Authentication**
+2. Scroll down to **Implicit grant and hybrid flows** section
+3. Check these boxes:
+   - ✅ **ID tokens** (required for Easy Auth)
+   - ✅ **Access tokens** (recommended)
+4. Click **Save**
+
+**Note**: Without this step, users will get error `AADSTS700054: response_type 'id_token' is not enabled for the application`
+
+### Step 3: Configure App Registration API Permissions
 
 1. In your App Registration, go to **API permissions**
 2. Click **Add a permission** → **Microsoft Graph** → **Delegated permissions**
@@ -203,7 +216,7 @@ Before enabling EntraID authentication:
 4. Click **Add permissions**
 5. **Grant admin consent** if required by your organization
 
-### Step 3: Configure Token Claims (Optional - for Group-Based Access)
+### Step 4: Configure Token Claims (Optional - for Group-Based Access)
 
 To enable group-based access control:
 
@@ -213,7 +226,7 @@ To enable group-based access control:
 4. Check both **ID** and **Access tokens**
 5. Click **Add**
 
-### Step 4: Get Security Group Object IDs (Optional)
+### Step 5: Get Security Group Object IDs (Optional)
 
 If restricting access to specific groups:
 
@@ -222,7 +235,7 @@ If restricting access to specific groups:
 3. Click on each group and copy the **Object ID**
 4. Prepare comma-separated list: `abc123-...,def456-...,ghi789-...`
 
-### Step 5: Deploy with EntraID Enabled
+### Step 6: Deploy with EntraID Enabled
 
 #### Option A: Enable on New Deployment
 
@@ -307,6 +320,20 @@ az deployment group create \
 7. **Application Access**: Middleware parses header, creates session, grants access
 
 ### Troubleshooting EntraID Authentication
+
+#### Users Get "AADSTS700054: response_type 'id_token' is not enabled" Error
+
+**Problem**: Implicit grant flow not enabled in App Registration
+
+**Solution**:
+1. Go to Azure Portal → Azure Active Directory → App registrations
+2. Select your Data Model Viewer app registration
+3. Go to **Authentication** → **Implicit grant and hybrid flows**
+4. Check ✅ **ID tokens** (required)
+5. Check ✅ **Access tokens** (recommended)
+6. Click **Save**
+7. Wait 1-2 minutes for changes to propagate
+8. Try logging in again
 
 #### Users Get "Redirect URI Mismatch" Error
 
