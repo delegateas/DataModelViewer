@@ -2,7 +2,7 @@ import React, { FormEvent, useEffect, useState } from 'react'
 import LoadingOverlay from '../shared/LoadingOverlay'
 import { useLoading } from '@/hooks/useLoading'
 import { useAuth } from '@/contexts/AuthContext'
-import { Alert, Box, Button, Container, FormControl, IconButton, InputAdornment, InputLabel, OutlinedInput, Typography, CircularProgress } from '@mui/material'
+import { Alert, Box, Button, Container, Divider, FormControl, IconButton, InputAdornment, InputLabel, OutlinedInput, Typography, CircularProgress } from '@mui/material'
 import { Info, Visibility, VisibilityOff, Warning } from '@mui/icons-material'
 import { createSession } from '@/lib/session'
 import { LastSynched } from '@/stubs/Data'
@@ -29,15 +29,25 @@ const LoginView = ({ }: LoginViewProps) => {
     const [version, setVersion] = useState<string | null>(null);
     const [showIncorrectPassword, setShowIncorrectPassword] = useState<boolean>(false);
     const [animateError, setAnimateError] = useState<boolean>(false);
+    const [entraIdEnabled, setEntraIdEnabled] = useState<boolean>(false);
+    const [passwordAuthDisabled, setPasswordAuthDisabled] = useState<boolean>(false);
 
     useEffect(() => {
         fetch('/api/version')
             .then((res) => res.json())
-            .then((data) => setVersion(data.version))
+            .then((data) => {
+                setVersion(data.version);
+                setEntraIdEnabled(data.entraIdEnabled || false);
+                setPasswordAuthDisabled(data.passwordAuthDisabled || false);
+            })
             .catch(() => setVersion('Unknown'))
     }, []);
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
+
+    const handleEntraIdLogin = () => {
+        window.location.href = '/.auth/login/aad?post_login_redirect_uri=/';
+    };
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -107,19 +117,40 @@ const LoginView = ({ }: LoginViewProps) => {
                         }) : '...'}</b>
                     </Alert>
                     {showIncorrectPassword && (
-                        <Alert 
-                            icon={<Warning />} 
-                            severity="warning" 
+                        <Alert
+                            icon={<Warning />}
+                            severity="warning"
                             className={`w-full rounded-lg mt-4 transition-all duration-300 ease-out ${
-                                animateError 
-                                    ? 'translate-x-0 opacity-100' 
+                                animateError
+                                    ? 'translate-x-0 opacity-100'
                                     : 'translate-x-4 opacity-0'
                             }`}
                         >
                             The <b>password</b> is incorrect.
                         </Alert>
                     )}
-                    <form onSubmit={handleSubmit} className="w-full">
+
+                    {entraIdEnabled && (
+                        <>
+                            <Button
+                                fullWidth
+                                variant="contained"
+                                color="primary"
+                                onClick={handleEntraIdLogin}
+                                className='rounded-lg mt-4'
+                            >
+                                Sign in with Microsoft
+                            </Button>
+                            {!passwordAuthDisabled && (
+                                <Divider className='w-full my-4'>
+                                    <Typography variant="caption" color="textSecondary">OR</Typography>
+                                </Divider>
+                            )}
+                        </>
+                    )}
+
+                    {!passwordAuthDisabled && (
+                        <form onSubmit={handleSubmit} className="w-full">
                         <FormControl className='w-full my-4' variant="outlined"
                             sx={{
                                 '& input:-webkit-autofill': {
@@ -165,6 +196,7 @@ const LoginView = ({ }: LoginViewProps) => {
                             {isAuthenticating ? 'Signing In...' : 'Sign In'}
                         </Button>
                     </form>
+                    )}
 
                     <Typography variant="caption" color="textSecondary" className="mt-4 w-full text-end">
                         Version: <b>{version ?? '...'}</b>

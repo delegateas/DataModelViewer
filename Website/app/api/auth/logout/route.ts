@@ -1,17 +1,23 @@
 'use server';
 
 import { NextResponse } from "next/server";
-import { deleteSession } from "@/lib/session";
+import { deleteSession, getSession } from "@/lib/session";
 
 export async function POST() {
     try {
+        const session = await getSession();
+        const wasEntraId = session?.authType === 'entraid';
+
         await deleteSession();
-        // Return success response instead of redirect since we handle navigation client-side
-        return NextResponse.json({ success: true });
+
+        return NextResponse.json({
+            success: true,
+            redirectToEntraIdLogout: wasEntraId
+        });
     } catch (error) {
         console.error('Logout error:', error);
         return NextResponse.json(
-            { error: 'Failed to logout' }, 
+            { success: false, error: 'Logout failed' },
             { status: 500 }
         );
     }

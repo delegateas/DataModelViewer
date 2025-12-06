@@ -8,6 +8,21 @@ param adoOrganizationUrl string = ''
 param adoProjectName string = ''
 param adoRepositoryName string = ''
 
+@description('Enable EntraID authentication via Easy Auth')
+param enableEntraIdAuth bool = false
+
+@description('Azure AD App Registration Client ID')
+param entraIdClientId string = ''
+
+@description('Azure AD Tenant ID (defaults to subscription tenant)')
+param entraIdTenantId string = subscription().tenantId
+
+@description('Comma-separated list of Azure AD Group Object IDs allowed to access (empty = all tenant users)')
+param entraIdAllowedGroups string = ''
+
+@description('Disable password authentication (EntraID only)')
+param disablePasswordAuth bool = false
+
 var location = resourceGroup().location
 
 @description('Create an App Service Plan')
@@ -61,7 +76,53 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           name: 'ADO_REPOSITORY_NAME'
           value: adoRepositoryName
         }
+        {
+          name: 'ENABLE_ENTRAID_AUTH'
+          value: string(enableEntraIdAuth)
+        }
+        {
+          name: 'ENTRAID_ALLOWED_GROUPS'
+          value: entraIdAllowedGroups
+        }
+        {
+          name: 'DISABLE_PASSWORD_AUTH'
+          value: string(disablePasswordAuth)
+        }
       ]
+    }
+  }
+}
+
+@description('Configure Easy Auth for EntraID authentication')
+resource authSettings 'Microsoft.Web/sites/config@2022-09-01' = if (enableEntraIdAuth) {
+  name: 'authsettingsV2'
+  parent: webApp
+  properties: {
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'RedirectToLoginPage'
+      redirectToProvider: 'azureactivedirectory'
+    }
+    identityProviders: {
+      azureActiveDirectory: {
+        enabled: true
+        registration: {
+          openIdIssuer: 'https://sts.windows.net/${entraIdTenantId}/'
+          clientId: entraIdClientId
+        }
+        validation: {
+          allowedAudiences: [
+            'api://${entraIdClientId}'
+            entraIdClientId
+          ]
+        }
+      }
+    }
+    login: {
+      tokenStore: {
+        enabled: true
+      }
+      allowedExternalRedirectUrls: []
     }
   }
 }

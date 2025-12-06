@@ -64,6 +64,21 @@ param adoProjectName string = ''
 
 @description('Azure DevOps repository name for diagram storage')
 param adoRepositoryName string = ''
+
+@description('Enable EntraID authentication via Easy Auth')
+param enableEntraIdAuth bool = false
+
+@description('Azure AD App Registration Client ID')
+param entraIdClientId string = ''
+
+@description('Azure AD Tenant ID (defaults to subscription tenant)')
+param entraIdTenantId string = subscription().tenantId
+
+@description('Comma-separated list of Azure AD Group Object IDs allowed to access (empty = all tenant users)')
+param entraIdAllowedGroups string = ''
+
+@description('Disable password authentication (EntraID only)')
+param disablePasswordAuth bool = false
 ```
 
 ### Resource Naming Convention
@@ -86,6 +101,9 @@ The template configures these environment variables for the Website:
 | `ADO_ORGANIZATION_URL` | Parameter | Azure DevOps org URL |
 | `ADO_PROJECT_NAME` | Parameter | ADO project name |
 | `ADO_REPOSITORY_NAME` | Parameter | Diagram storage repo |
+| `ENABLE_ENTRAID_AUTH` | Parameter | Enable EntraID auth |
+| `ENTRAID_ALLOWED_GROUPS` | Parameter | Group-based access control |
+| `DISABLE_PASSWORD_AUTH` | Parameter | Disable password login |
 
 ## Deployment
 
@@ -140,6 +158,203 @@ The Azure Pipeline (`azure-pipelines-deploy-jobs.yml`) deploys using:
       -adoProjectName $(ADO_PROJECT_NAME)
       -adoRepositoryName $(AdoRepositoryName)
 ```
+
+## EntraID Authentication Setup
+
+The application supports **optional** Microsoft EntraID (Azure AD) authentication using App Service Easy Auth. This provides enterprise single sign-on (SSO) with your organization's Microsoft accounts.
+
+### Authentication Modes
+
+Three authentication modes are supported:
+
+1. **Password Only** (default): Traditional password-based login
+2. **EntraID Only**: Microsoft SSO authentication, password login disabled
+3. **Dual Mode**: Users can choose between password or Microsoft SSO
+
+### EntraID Prerequisites
+
+Before enabling EntraID authentication:
+
+1. **Azure AD App Registration**
+2. **User access to Azure AD tenant**
+3. **Optional**: Azure AD security groups for access control
+
+### Step 1: Create Azure AD App Registration
+
+1. Navigate to [Azure Portal](https://portal.azure.com) → **Azure Active Directory** → **App registrations**
+2. Click **New registration**
+3. Configure:
+   - **Name**: `Data Model Viewer - {environment}` (e.g., `Data Model Viewer - Production`)
+   - **Supported account types**: `Accounts in this organizational directory only (Single tenant)`
+   - **Redirect URI**:
+     - Platform: `Web`
+     - URI: `https://wa-{solutionId}.azurewebsites.net/.auth/login/aad/callback`
+     - Replace `{solutionId}` with your actual solution ID
+4. Click **Register**
+5. Note the **Application (client) ID** and **Directory (tenant) ID** from the Overview page
+
+### Step 2: Configure App Registration API Permissions
+
+1. In your App Registration, go to **API permissions**
+2. Click **Add a permission** → **Microsoft Graph** → **Delegated permissions**
+3. Add these permissions:
+   - `User.Read` (required - basic user profile)
+   - `Group.Read.All` (optional - required for group-based access control)
+4. Click **Add permissions**
+5. **Grant admin consent** if required by your organization
+
+### Step 3: Configure Token Claims (Optional - for Group-Based Access)
+
+To enable group-based access control:
+
+1. Go to **Token configuration** in your App Registration
+2. Click **Add groups claim**
+3. Select **Security groups**
+4. Check both **ID** and **Access tokens**
+5. Click **Add**
+
+### Step 4: Get Security Group Object IDs (Optional)
+
+If restricting access to specific groups:
+
+1. Navigate to **Azure Active Directory** → **Groups**
+2. Find the group(s) that should have access
+3. Click on each group and copy the **Object ID**
+4. Prepare comma-separated list: `abc123-...,def456-...,ghi789-...`
+
+### Step 5: Deploy with EntraID Enabled
+
+#### Option A: Enable on New Deployment
+
+```bash
+az deployment group create \
+  --resource-group rg-datamodelviewer \
+  --template-file main.bicep \
+  --parameters solutionId=myorg-dmv \
+               websitePassword='SecurePassword123!' \
+               sessionSecret='<32-byte-random-string>' \
+               enableEntraIdAuth=true \
+               entraIdClientId='<your-client-id>' \
+               entraIdTenantId='<your-tenant-id>' \
+               entraIdAllowedGroups='<group-id-1>,<group-id-2>' \
+               disablePasswordAuth=false \
+               adoOrganizationUrl='https://dev.azure.com/myorg' \
+               adoProjectName='MyProject' \
+               adoRepositoryName='DataModelViewer'
+```
+
+#### Option B: Update Existing Deployment
+
+```bash
+az deployment group create \
+  --resource-group rg-datamodelviewer \
+  --template-file main.bicep \
+  --parameters @previous-parameters.json \
+               enableEntraIdAuth=true \
+               entraIdClientId='<your-client-id>' \
+               entraIdTenantId='<your-tenant-id>'
+```
+
+### EntraID Parameter Reference
+
+| Parameter | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `enableEntraIdAuth` | No | `false` | Enables EntraID authentication via Easy Auth |
+| `entraIdClientId` | Yes if enabled | `''` | Application (client) ID from App Registration |
+| `entraIdTenantId` | No | Subscription tenant | Directory (tenant) ID for your Azure AD |
+| `entraIdAllowedGroups` | No | `''` | Comma-separated group Object IDs. Empty = all tenant users |
+| `disablePasswordAuth` | No | `false` | Set to `true` for EntraID-only mode |
+
+### Authentication Mode Examples
+
+#### Example 1: Dual Mode (Password + EntraID)
+```bash
+--parameters enableEntraIdAuth=true \
+             entraIdClientId='abc123...' \
+             disablePasswordAuth=false
+```
+- Users see both "Sign in with Microsoft" and password form
+- Existing password auth continues to work
+- Ideal for gradual migration
+
+#### Example 2: EntraID Only
+```bash
+--parameters enableEntraIdAuth=true \
+             entraIdClientId='abc123...' \
+             disablePasswordAuth=true
+```
+- Only "Sign in with Microsoft" button shown
+- Password login disabled
+- Full enterprise SSO
+
+#### Example 3: EntraID with Group Restrictions
+```bash
+--parameters enableEntraIdAuth=true \
+             entraIdClientId='abc123...' \
+             entraIdAllowedGroups='group-id-1,group-id-2'
+```
+- Only users in specified security groups can access
+- Returns 403 Forbidden for unauthorized users
+
+### How EntraID Authentication Works
+
+1. **User Access**: User navigates to `https://wa-{solutionId}.azurewebsites.net/`
+2. **Easy Auth Intercepts**: App Service Easy Auth detects unauthenticated request
+3. **Redirect to Microsoft**: User redirected to `login.microsoftonline.com`
+4. **User Signs In**: User authenticates with Microsoft account
+5. **Token Exchange**: Microsoft returns ID token to Easy Auth
+6. **Header Injection**: Easy Auth validates token and injects `X-MS-CLIENT-PRINCIPAL` header
+7. **Application Access**: Middleware parses header, creates session, grants access
+
+### Troubleshooting EntraID Authentication
+
+#### Users Get "Redirect URI Mismatch" Error
+
+**Problem**: App Registration redirect URI doesn't match deployed URL
+
+**Solution**:
+1. Check App Registration → Authentication → Redirect URIs
+2. Ensure it matches: `https://wa-{solutionId}.azurewebsites.net/.auth/login/aad/callback`
+3. Verify HTTPS (not HTTP)
+4. No trailing slash
+
+#### Users Get "AADSTS50020: User account does not exist" Error
+
+**Problem**: User's account is not in the specified tenant
+
+**Solution**:
+1. Verify user belongs to correct Azure AD tenant
+2. Check App Registration is "Single tenant" type
+3. Ensure user account is not external/guest (or add multi-tenant support)
+
+#### Users Get 403 Forbidden After Login
+
+**Problem**: User not in allowed security groups
+
+**Solution**:
+1. Check `entraIdAllowedGroups` parameter includes user's group
+2. Verify group claim is configured in token configuration
+3. Check API permission `Group.Read.All` is granted
+4. Wait 5-10 minutes for group membership cache to refresh
+
+#### EntraID Login Doesn't Work Locally
+
+**Expected Behavior**: Easy Auth only works on Azure App Service
+
+**Solution**:
+- Use password authentication for local development
+- Set `ENABLE_ENTRAID_AUTH=false` in `.env.local`
+- Test EntraID in deployed dev environment
+
+#### Can't Find App Service Managed Identity in Azure AD
+
+**Problem**: Looking for wrong object
+
+**Solution**:
+- Managed Identity is for **backend services** (Dataverse, ADO)
+- **EntraID/Easy Auth** is for **user authentication**
+- These are separate authentication mechanisms
+- Don't add users to Managed Identity
 
 ## Post-Deployment Configuration
 

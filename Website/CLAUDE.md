@@ -194,6 +194,71 @@ Authentication uses either:
 
 File operations always specify branch (default: 'main') and commit messages.
 
+## Authentication System
+
+The application supports two authentication methods that can be used independently or together:
+
+### Password Authentication (Default)
+- Traditional password-based login
+- JWT session stored in HTTP-only cookie
+- Configured via `WebsitePassword` environment variable
+- Session managed by [lib/session.ts](lib/session.ts)
+
+### EntraID Authentication (Optional)
+- Microsoft single sign-on (SSO) using Azure Active Directory
+- Enabled via App Service Easy Auth
+- Optional group-based access control
+- User information extracted from `X-MS-CLIENT-PRINCIPAL` header
+
+### Authentication Architecture
+
+**Unified Session Model**: Both auth types use the same session cookie format with `authType` field:
+
+```typescript
+type Session = {
+  authType: 'password' | 'entraid';
+  expiresAt: Date;
+  password?: string;              // Password auth
+  userPrincipalName?: string;     // EntraID auth
+  userId?: string;                // EntraID auth
+  name?: string;                  // EntraID auth
+  groups?: string[];              // EntraID auth (for access control)
+}
+```
+
+**Authentication Flow**:
+1. [middleware.ts](middleware.ts) checks authentication on every request
+2. If EntraID enabled: Parse `X-MS-CLIENT-PRINCIPAL` header → validate groups → create session
+3. If password enabled: Validate existing JWT session cookie
+4. [AuthContext.tsx](contexts/AuthContext.tsx) provides auth state to React components
+5. Login page conditionally shows password form and/or "Sign in with Microsoft" button
+
+### EntraID Configuration
+
+**Environment Variables** ([.env.local](.env.local) for local, App Service settings for production):
+
+```bash
+# Enable EntraID authentication
+ENABLE_ENTRAID_AUTH=false              # Set to true to enable
+
+# Group-based access control (optional)
+ENTRAID_ALLOWED_GROUPS=                # Comma-separated Azure AD group Object IDs
+                                       # Empty = all tenant users allowed
+
+# Disable password authentication (optional)
+DISABLE_PASSWORD_AUTH=false            # Set to true for EntraID-only mode
+```
+
+**Key Files**:
+- [lib/auth/entraid.ts](lib/auth/entraid.ts) - EntraID utilities (parse headers, validate groups)
+- [middleware.ts](middleware.ts) - Authentication middleware (checks both auth types)
+- [lib/session.ts](lib/session.ts) - Session management (unified for both auth types)
+- [components/loginview/LoginView.tsx](components/loginview/LoginView.tsx) - Login UI
+
+**Setup Instructions**: See [Infrastructure/CLAUDE.md](../Infrastructure/CLAUDE.md) for complete Azure AD App Registration setup guide.
+
+**Local Development**: EntraID requires deployment to Azure App Service (Easy Auth doesn't work locally). Use password auth for local development.
+
 ## Styling Guidelines
 
 **CRITICAL**: This project uses a specific MUI + Tailwind integration pattern.

@@ -1,31 +1,81 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { getSession } from './lib/session'
+import { getSession, createEntraIdSession } from './lib/session'
+import {
+    isEntraIdEnabled,
+    isPasswordAuthDisabled,
+    parseEntraIdPrincipal,
+    validateGroupAccess
+} from './lib/auth/entraid'
 
 export async function middleware(request: NextRequest) {
-    const session = await getSession();
-    const isAuthenticated = session !== null;
+    let isAuthenticated = false;
 
-    // If the user is authenticated, continue as normal
-    if (isAuthenticated) {
-        return NextResponse.next()
+    // 1. Check EntraID authentication first (if enabled)
+    if (isEntraIdEnabled()) {
+        const principalHeader = request.headers.get('X-MS-CLIENT-PRINCIPAL');
+
+        if (principalHeader) {
+            const userInfo = parseEntraIdPrincipal(principalHeader);
+
+            if (userInfo) {
+                // Validate group access
+                if (!validateGroupAccess(userInfo.groups)) {
+                    return NextResponse.json(
+                        { error: 'Access denied. You are not in an allowed group.' },
+                        { status: 403 }
+                    );
+                }
+
+                // Check if we need to create/update session
+                const session = await getSession();
+                if (!session || session.authType !== 'entraid' || session.userId !== userInfo.userId) {
+                    // Create new session for this EntraID user
+                    await createEntraIdSession(userInfo);
+                }
+
+                isAuthenticated = true;
+            }
+        }
     }
 
-    // Allow access to public API endpoints without authentication
+    // 2. Check password session (if not authenticated via EntraID)
+    if (!isAuthenticated && !isPasswordAuthDisabled()) {
+        const session = await getSession();
+        if (session && session.authType === 'password') {
+            isAuthenticated = true;
+        }
+    }
+
+    // 3. Handle authentication result
+    if (isAuthenticated) {
+        return NextResponse.next();
+    }
+
+    // Allow access to public endpoints
     const publicApiEndpoints = ['/api/auth/login', '/api/version'];
     if (publicApiEndpoints.includes(request.nextUrl.pathname)) {
-        return NextResponse.next()
+        return NextResponse.next();
     }
 
-    // For API routes, return 401 Unauthorized
+    // For API routes, return 401
     if (request.nextUrl.pathname.startsWith('/api')) {
         return NextResponse.json(
             { error: 'Unauthorized' },
             { status: 401 }
-        )
+        );
     }
 
-    // For page routes, redirect to login page
-    return NextResponse.redirect(new URL('/login', request.url))
+    // For page routes, redirect based on auth type
+    if (isEntraIdEnabled() && !isPasswordAuthDisabled()) {
+        // Dual mode: redirect to custom login page that offers both options
+        return NextResponse.redirect(new URL('/login', request.url));
+    } else if (isEntraIdEnabled()) {
+        // EntraID only: redirect to Easy Auth login
+        return NextResponse.redirect(new URL('/.auth/login/aad', request.url));
+    } else {
+        // Password only: redirect to login page
+        return NextResponse.redirect(new URL('/login', request.url));
+    }
 }
 
 export const config = {
