@@ -1,5 +1,3 @@
-'use server';
-
 interface EntraIdPrincipal {
   auth_typ: string; // "aad"
   claims: Array<{ typ: string; val: string }>;
