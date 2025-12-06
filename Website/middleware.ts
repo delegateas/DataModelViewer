@@ -65,17 +65,9 @@ export async function middleware(request: NextRequest) {
         );
     }
 
-    // For page routes, redirect based on auth type
-    if (isEntraIdEnabled() && !isPasswordAuthDisabled()) {
-        // Dual mode: redirect to custom login page that offers both options
-        return NextResponse.redirect(new URL('/login', request.url));
-    } else if (isEntraIdEnabled()) {
-        // EntraID only: redirect to Easy Auth login
-        return NextResponse.redirect(new URL('/.auth/login/aad', request.url));
-    } else {
-        // Password only: redirect to login page
-        return NextResponse.redirect(new URL('/login', request.url));
-    }
+    // For page routes, redirect to login page
+    // The login page will show appropriate options based on config
+    return NextResponse.redirect(new URL('/login', request.url));
 }
 
 export const config = {
