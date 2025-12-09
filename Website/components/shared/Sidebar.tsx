@@ -41,12 +41,14 @@ const Sidebar = ({ }: SidebarProps) => {
       href: '/insights',
       icon: InsightsIcon,
       active: pathname === '/insights',
+      new: true,
     },
     {
       label: 'Metadata',
       href: '/metadata',
       icon: MetadataIcon,
       active: pathname === '/metadata',
+      new: true,
     },
     {
       label: 'Diagram',
@@ -60,6 +62,7 @@ const Sidebar = ({ }: SidebarProps) => {
       href: '/processes',
       icon: ProcessesIcon,
       active: pathname === '/processes',
+      new: true,
     }
   ];
 

@@ -12,7 +12,7 @@ export function AttributeDetails({ entityName, attribute, isEntityAuditEnabled }
     }
 
     if (attribute.IsPrimaryName) {
-        details.push({ icon: <BadgeRounded className="h-4 w-4" />, tooltip: "Primary column: Its value is shown in the header of forms for this table, and as the display value of lookup-fields pointing to this table" });
+        details.push({ icon: <BadgeRounded className="h-4 w-4" />, tooltip: "Primary Name" });
     }
 
     switch (attribute.RequiredLevel) {
