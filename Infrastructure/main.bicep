@@ -14,6 +14,10 @@ param enableEntraIdAuth bool = false
 @description('Azure AD App Registration Client ID')
 param entraIdClientId string = ''
 
+@description('Azure AD App Registration Client Secret')
+@secure()
+param entraIdClientSecret string = ''
+
 @description('Azure AD Tenant ID (defaults to subscription tenant)')
 param entraIdTenantId string = subscription().tenantId
 
@@ -61,6 +65,14 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           value: sessionSecret
         }
         {
+          name: 'AUTH_SECRET'
+          value: sessionSecret
+        }
+        {
+          name: 'NEXTAUTH_URL'
+          value: 'https://wa-${solutionId}.azurewebsites.net'
+        }
+        {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
           value: '~20'
         }
@@ -81,6 +93,18 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           value: string(enableEntraIdAuth)
         }
         {
+          name: 'AZURE_AD_CLIENT_ID'
+          value: entraIdClientId
+        }
+        {
+          name: 'AZURE_AD_CLIENT_SECRET'
+          value: entraIdClientSecret
+        }
+        {
+          name: 'AZURE_AD_TENANT_ID'
+          value: entraIdTenantId
+        }
+        {
           name: 'ENTRAID_ALLOWED_GROUPS'
           value: entraIdAllowedGroups
         }
@@ -89,40 +113,6 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           value: string(disablePasswordAuth)
         }
       ]
-    }
-  }
-}
-
-@description('Configure Easy Auth for EntraID authentication')
-resource authSettings 'Microsoft.Web/sites/config@2022-09-01' = if (enableEntraIdAuth) {
-  name: 'authsettingsV2'
-  parent: webApp
-  properties: {
-    globalValidation: {
-      requireAuthentication: true
-      unauthenticatedClientAction: 'RedirectToLoginPage'
-      redirectToProvider: 'azureactivedirectory'
-    }
-    identityProviders: {
-      azureActiveDirectory: {
-        enabled: true
-        registration: {
-          openIdIssuer: 'https://sts.windows.net/${entraIdTenantId}/'
-          clientId: entraIdClientId
-        }
-        validation: {
-          allowedAudiences: [
-            'api://${entraIdClientId}'
-            entraIdClientId
-          ]
-        }
-      }
-    }
-    login: {
-      tokenStore: {
-        enabled: true
-      }
-      allowedExternalRedirectUrls: []
     }
   }
 }

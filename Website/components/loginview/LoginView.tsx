@@ -45,8 +45,10 @@ const LoginView = ({ }: LoginViewProps) => {
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
 
-    const handleEntraIdLogin = () => {
-        window.location.href = '/.auth/login/aad?post_login_redirect_uri=/';
+    const handleEntraIdLogin = async () => {
+        // Use NextAuth signIn
+        const { signIn } = await import('next-auth/react');
+        await signIn('microsoft-entra-id', { callbackUrl: '/' });
     };
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {

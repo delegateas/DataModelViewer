@@ -161,14 +161,16 @@ The Azure Pipeline (`azure-pipelines-deploy-jobs.yml`) deploys using:
 
 ## EntraID Authentication Setup
 
-The application supports **optional** Microsoft EntraID (Azure AD) authentication using App Service Easy Auth. This provides enterprise single sign-on (SSO) with your organization's Microsoft accounts.
+The application supports **optional** Microsoft EntraID (Azure AD) authentication using **OpenID Connect** (via NextAuth.js). This provides enterprise single sign-on (SSO) with your organization's Microsoft accounts.
+
+**Important**: This implementation uses standard OpenID Connect flow, NOT Azure App Service Easy Auth. Users can always access the login page - authentication only occurs when they click "Sign in with Microsoft".
 
 ### Authentication Modes
 
 Three authentication modes are supported:
 
 1. **Password Only** (default): Traditional password-based login
-2. **EntraID Only**: Microsoft SSO authentication, password login disabled
+2. **EntraID Only**: Microsoft SSO authentication via OpenID Connect, password login disabled
 3. **Dual Mode**: Users can choose between password or Microsoft SSO
 
 ### EntraID Prerequisites
@@ -188,23 +190,25 @@ Before enabling EntraID authentication:
    - **Supported account types**: `Accounts in this organizational directory only (Single tenant)`
    - **Redirect URI**:
      - Platform: `Web`
-     - URI: `https://wa-{solutionId}.azurewebsites.net/.auth/login/aad/callback`
+     - URI: `https://wa-{solutionId}.azurewebsites.net/api/auth/callback/microsoft-entra-id`
      - Replace `{solutionId}` with your actual solution ID
 4. Click **Register**
 5. Note the **Application (client) ID** and **Directory (tenant) ID** from the Overview page
 
-### Step 2: Enable Implicit Grant Flow
+### Step 2: Create Client Secret
 
-**CRITICAL**: Azure App Service Easy Auth requires ID tokens to be enabled.
+**CRITICAL**: Azure App Service Easy Auth requires a client secret to avoid using deprecated implicit grant flow.
 
-1. In your App Registration, go to **Authentication**
-2. Scroll down to **Implicit grant and hybrid flows** section
-3. Check these boxes:
-   - ✅ **ID tokens** (required for Easy Auth)
-   - ✅ **Access tokens** (recommended)
-4. Click **Save**
+1. In your App Registration, go to **Certificates & secrets**
+2. Click **Client secrets** → **New client secret**
+3. Enter:
+   - **Description**: `App Service SSO`
+   - **Expires**: Choose appropriate duration (e.g., 24 months)
+4. Click **Add**
+5. **IMPORTANT**: Copy the **Value** (not the Secret ID) immediately - it won't be shown again
+6. Save this value securely - you'll use it in the deployment
 
-**Note**: Without this step, users will get error `AADSTS700054: response_type 'id_token' is not enabled for the application`
+**Alternative (Preview)**: Azure supports using a managed identity with federated credentials instead of a client secret. This approach is currently in preview and requires additional setup. For production deployments, the client secret approach is recommended. See Microsoft's documentation on [using a managed identity instead of a secret](https://learn.microsoft.com/en-us/azure/app-service/configure-authentication-provider-aad?tabs=workforce-configuration%2Cworkforce-tenant#use-a-managed-identity-instead-of-a-secret-preview) if interested.
 
 ### Step 3: Configure App Registration API Permissions
 
@@ -248,6 +252,7 @@ az deployment group create \
                sessionSecret='<32-byte-random-string>' \
                enableEntraIdAuth=true \
                entraIdClientId='<your-client-id>' \
+               entraIdClientSecret='<your-client-secret>' \
                entraIdTenantId='<your-tenant-id>' \
                entraIdAllowedGroups='<group-id-1>,<group-id-2>' \
                disablePasswordAuth=false \
@@ -265,6 +270,7 @@ az deployment group create \
   --parameters @previous-parameters.json \
                enableEntraIdAuth=true \
                entraIdClientId='<your-client-id>' \
+               entraIdClientSecret='<your-client-secret>' \
                entraIdTenantId='<your-tenant-id>'
 ```
 
@@ -274,6 +280,7 @@ az deployment group create \
 |-----------|----------|---------|-------------|
 | `enableEntraIdAuth` | No | `false` | Enables EntraID authentication via Easy Auth |
 | `entraIdClientId` | Yes if enabled | `''` | Application (client) ID from App Registration |
+| `entraIdClientSecret` | Yes if enabled | `''` | Client secret value from App Registration |
 | `entraIdTenantId` | No | Subscription tenant | Directory (tenant) ID for your Azure AD |
 | `entraIdAllowedGroups` | No | `''` | Comma-separated group Object IDs. Empty = all tenant users |
 | `disablePasswordAuth` | No | `false` | Set to `true` for EntraID-only mode |
@@ -284,6 +291,7 @@ az deployment group create \
 ```bash
 --parameters enableEntraIdAuth=true \
              entraIdClientId='abc123...' \
+             entraIdClientSecret='secret123...' \
              disablePasswordAuth=false
 ```
 - Users see both "Sign in with Microsoft" and password form
@@ -294,6 +302,7 @@ az deployment group create \
 ```bash
 --parameters enableEntraIdAuth=true \
              entraIdClientId='abc123...' \
+             entraIdClientSecret='secret123...' \
              disablePasswordAuth=true
 ```
 - Only "Sign in with Microsoft" button shown
@@ -304,6 +313,7 @@ az deployment group create \
 ```bash
 --parameters enableEntraIdAuth=true \
              entraIdClientId='abc123...' \
+             entraIdClientSecret='secret123...' \
              entraIdAllowedGroups='group-id-1,group-id-2'
 ```
 - Only users in specified security groups can access
@@ -323,17 +333,26 @@ az deployment group create \
 
 #### Users Get "AADSTS700054: response_type 'id_token' is not enabled" Error
 
-**Problem**: Implicit grant flow not enabled in App Registration
+**Problem**: No client secret configured - Easy Auth is falling back to deprecated implicit grant flow
 
 **Solution**:
-1. Go to Azure Portal → Azure Active Directory → App registrations
-2. Select your Data Model Viewer app registration
-3. Go to **Authentication** → **Implicit grant and hybrid flows**
-4. Check ✅ **ID tokens** (required)
-5. Check ✅ **Access tokens** (recommended)
-6. Click **Save**
-7. Wait 1-2 minutes for changes to propagate
-8. Try logging in again
+1. Create a client secret in your App Registration:
+   - Go to Azure Portal → Azure Active Directory → App registrations
+   - Select your Data Model Viewer app registration
+   - Go to **Certificates & secrets** → **Client secrets** → **New client secret**
+   - Copy the secret **Value** (not Secret ID)
+2. Redeploy with the client secret parameter:
+   ```bash
+   az deployment group create \
+     --resource-group rg-datamodelviewer \
+     --template-file main.bicep \
+     --parameters @previous-parameters.json \
+                  entraIdClientSecret='<paste-your-client-secret-here>'
+   ```
+3. Wait 2-3 minutes for App Service to restart
+4. Try logging in again
+
+**Note**: Easy Auth requires a client secret to avoid using the deprecated OAuth 2.0 implicit grant flow
 
 #### Users Get "Redirect URI Mismatch" Error
 
