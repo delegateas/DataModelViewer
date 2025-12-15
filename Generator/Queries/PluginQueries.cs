@@ -44,6 +44,16 @@ public static class PluginQueries
                         {
                             Columns = new ColumnSet("primaryobjecttypecode"),
                             EntityAlias = "filter"
+                        },
+                        new LinkEntity(
+                            "sdkmessageprocessingstep",
+                            "sdkmessage",
+                            "sdkmessageid",
+                            "sdkmessageid",
+                            JoinOperator.Inner)
+                        {
+                            Columns = new ColumnSet("name"),
+                            EntityAlias = "message"
                         }
                             //new LinkEntity
                             //{
@@ -66,17 +76,19 @@ public static class PluginQueries
         var steps = result.Entities.Select(e =>
         {
             var sdkMessageId = e.GetAttributeValue<AliasedValue>("step.sdkmessageid")?.Value as EntityReference;
-            var sdkMessageName = e.GetAttributeValue<AliasedValue>("step.name")?.Value as string;
+            var sdkStepName = e.GetAttributeValue<AliasedValue>("step.name")?.Value as string;
             var sdkFilterAttributes = e.GetAttributeValue<AliasedValue>("step.filteringattributes")?.Value as string;
             var sdkState = e.GetAttributeValue<AliasedValue>("step.statecode")?.Value as OptionSetValue;
             var filterTypeCode = e.GetAttributeValue<AliasedValue>("filter.primaryobjecttypecode")?.Value as string;
+            var sdkMessageName = e.GetAttributeValue<AliasedValue>("message.name")?.Value as string;
 
             return new SDKStep(
-                sdkMessageId.Id.ToString(),
-                sdkMessageName ?? "Unknown Name",
+                sdkMessageId?.Id.ToString() ?? "Unknown",
+                sdkStepName ?? "Unknown Name",
                 sdkFilterAttributes ?? "",
-                filterTypeCode,
-                sdkState
+                filterTypeCode ?? "Unknown",
+                sdkMessageName ?? "Unknown",
+                sdkState ?? new OptionSetValue(0)
             );
         });
 

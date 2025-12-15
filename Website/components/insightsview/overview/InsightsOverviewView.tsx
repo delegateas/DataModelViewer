@@ -54,12 +54,12 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
 
         return [
             {
-                category: 'Entities',
+                category: 'Tables',
                 standard: standardEntities.length,
                 custom: customEntities.length,
             },
             {
-                category: 'Attributes',
+                category: 'Columns',
                 standard: standardAttributes.length,
                 custom: customAttributes.length,
             },
@@ -251,21 +251,21 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             <Grid size={{ xs: 12, md: 5 }}>
                 <Paper elevation={0} className="p-4 flex rounded-2xl">
                     <Stack className="w-full" direction="column" spacing={2} alignItems="center" justifyContent="center">
-                        {/* Ungrouped Entities */}
-                        <Tooltip title={"Entities: " + ungroupedEntities.map(entity => entity.SchemaName).join(", ")}>
+                        {/* Ungrouped Tables */}
+                        <Tooltip title={"Tables: " + ungroupedEntities.map(entity => entity.SchemaName).join(", ")}>
                             <Box className="text-center px-4 py-1 rounded-lg flex items-center w-full" gap={2} sx={{ backgroundColor: 'background.default' }}>
                                 <Box className="h-8 w-8" sx={{ color: 'error.main' }}>{WarningIcon}</Box>
                                 <Typography variant="h4" className="font-semibold p-0 m-0" sx={{ color: 'text.primary' }}>{ungroupedEntities.length}</Typography>
-                                <Typography variant="body2" className="p-0 m-0" sx={{ color: 'text.secondary' }}>Entities ungrouped</Typography>
+                                <Typography variant="body2" className="p-0 m-0" sx={{ color: 'text.secondary' }}>Tables ungrouped</Typography>
                             </Box>
                         </Tooltip>
 
-                        {/* No Icon Entities */}
-                        <Tooltip title={"Entities: " + missingIconEntities.map(entity => entity.SchemaName).join(", ")}>
+                        {/* No Icon Tables */}
+                        <Tooltip title={"Tables: " + missingIconEntities.map(entity => entity.SchemaName).join(", ")}>
                             <Box className="text-center px-4 py-1 rounded-lg flex items-center w-full" gap={2} sx={{ backgroundColor: 'background.default' }}>
                                 <Box className="h-8 w-8" sx={{ color: 'error.main' }}>{WarningIcon}</Box>
                                 <Typography variant="h4" className="font-semibold p-0 m-0" sx={{ color: 'text.primary' }}>{missingIconEntities.length}</Typography>
-                                <Typography variant="body2" className="p-0 m-0" sx={{ color: 'text.secondary' }}>Entities without icons</Typography>
+                                <Typography variant="body2" className="p-0 m-0" sx={{ color: 'text.secondary' }}>Tables without icons</Typography>
                             </Box>
                         </Tooltip>
 
@@ -302,7 +302,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
             <Grid size={{ xs: 12, md: 4 }}>
                 <InfoCard
                     color="warning.main"
-                    title="Attribute Process Dependencies"
+                    title="Column Process Dependencies"
                     value={totalAttributeUsageCount}
                     iconSrc={ProcessesIcon}
                 />
@@ -314,7 +314,7 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                         <Typography variant="h6" sx={{ color: 'text.primary' }}>
                             Data Model Distribution: Standard vs Custom
                         </Typography>
-                        <Tooltip title="Shows the distribution of standard (out-of-the-box) versus custom entities, attributes, and relationships in your Dataverse environment. This helps identify customization levels across your data model." arrow placement="left">
+                        <Tooltip title="Shows the distribution of standard (out-of-the-box) versus custom tables, columns, and relationships in your Dataverse environment. This helps identify customization levels across your data model." arrow placement="left">
                             <IconButton size="small" sx={{ color: 'text.secondary' }}>
                                 <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
                             </IconButton>
@@ -618,9 +618,9 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 <Paper elevation={2} className="p-6 rounded-2xl">
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                         <Typography variant="h6" sx={{ color: 'text.primary' }}>
-                            Entity Features Distribution
+                            Table Features Distribution
                         </Typography>
-                        <Tooltip title="Shows the distribution of key entity features enabled in your data model, including audit tracking, activity entities, and notes functionality. This provides insight into which capabilities are being utilized." arrow placement="left">
+                        <Tooltip title="Shows the distribution of key table features enabled in your data model, including audit tracking, activity tables, and notes functionality. This provides insight into which capabilities are being utilized." arrow placement="left">
                             <IconButton size="small" sx={{ color: 'text.secondary' }}>
                                 <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
                             </IconButton>
@@ -674,9 +674,9 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 <Paper elevation={2} className="p-6 rounded-2xl">
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                         <Typography variant="h6" sx={{ color: 'text.primary' }}>
-                            Attribute Types Distribution
+                            Column Types Distribution
                         </Typography>
-                        <Tooltip title="Breaks down all attributes by their data type (e.g., String, Integer, Lookup, DateTime). This helps understand the composition of your data model and identify commonly used field types." arrow placement="left">
+                        <Tooltip title="Breaks down all columns by their data type (e.g., String, Integer, Lookup, DateTime). This helps understand the composition of your data model and identify commonly used field types." arrow placement="left">
                             <IconButton size="small" sx={{ color: 'text.secondary' }}>
                                 <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
                             </IconButton>
@@ -730,9 +730,9 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 <Paper elevation={2} className="p-6 rounded-2xl">
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                         <Typography variant="h6" sx={{ color: 'text.primary' }}>
-                            Attribute Process Dependencies by Type
+                            Column Process Dependencies by Type
                         </Typography>
-                        <Tooltip title="Shows which types of components (plugins, flows, web resources, etc.) are using attributes from your data model. This identifies where attributes are referenced in business logic and automation." arrow placement="left">
+                        <Tooltip title="Shows which types of components (plugins, flows, web resources, etc.) are using columns from your data model. This identifies where columns are referenced in business logic and automation." arrow placement="left">
                             <IconButton size="small" sx={{ color: 'text.secondary' }}>
                                 <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
                             </IconButton>
@@ -786,9 +786,9 @@ const InsightsOverviewView = ({ }: InsightsOverviewViewProps) => {
                 <Paper elevation={2} className="p-6 rounded-2xl">
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                         <Typography variant="h6" sx={{ color: 'text.primary' }}>
-                            Attribute Process Dependencies by Detection Source
+                            Column Process Dependencies by Detection Source
                         </Typography>
-                        <Tooltip title="Compares attribute usages found by the analyzer (scanning component source code) versus those detected through dependency analysis. This shows the effectiveness of different detection methods." arrow placement="left">
+                        <Tooltip title="Compares column usages found by the analyzer (scanning component source code) versus those detected through dependency analysis. This shows the effectiveness of different detection methods." arrow placement="left">
                             <IconButton size="small" sx={{ color: 'text.secondary' }}>
                                 <Box sx={{ width: 20, height: 20 }}>{InfoIcon}</Box>
                             </IconButton>
