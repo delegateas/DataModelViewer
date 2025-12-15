@@ -24,6 +24,13 @@ export const HomeView = ({ }: IHomeViewProps) => {
     // Carousel data
     const carouselItems: CarouselItem[] = [
         {
+            image: '/MSAuthentication.jpg',
+            title: 'Microsoft Entra ID Authentication!',
+            text: 'Enhanced security with Microsoft Entra ID (Azure AD) authentication. Support for group-based access control, allowing administrators to restrict access to specific security groups. Seamlessly integrates with your organization\'s identity provider for secure single sign-on (SSO).',
+            type: '(v2.3.0) Security Feature',
+            actionlabel: 'Learn More'
+        },
+        {
             image: '/processes.jpg',
             title: 'Implicit data!',
             text: "Now you can see the implicit components automatically added by the Platform (hidden in the solution components). And while we were at it, we also chose to display the dependent classical workflows and business rules that the Platform makes visible to you. Don't forget to check out the Insights for new additional dashboards.",
