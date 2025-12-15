@@ -95,3 +95,6 @@ stages:
               adoOrganizationUrl: $(System.CollectionUri)
               adoProjectName: $(System.TeamProject)
               adoRepositoryName: $(AdoRepositoryName)
+              entraIdTenantId: $(AzureTenantId)
+              entraIdClientId: $(AzureClientId)
+              entraIdClientSecret: $(AzureClientSecret)

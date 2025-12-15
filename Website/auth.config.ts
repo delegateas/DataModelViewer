@@ -4,11 +4,11 @@ import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
 export const authConfig = {
   providers: [
     MicrosoftEntraID({
-      clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
-      clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
+      clientId: process.env.AZURE_AD_CLIENT_ID,
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
       issuer: process.env.AZURE_TENANT_ID
         ? `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`
-        : process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
+        : undefined,
     }),
   ],
   pages: {
