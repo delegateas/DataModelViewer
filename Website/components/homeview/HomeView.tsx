@@ -128,7 +128,6 @@ export const HomeView = ({ }: IHomeViewProps) => {
                                 </IconButton>
                             </Box>
                         }
-                        backgroundImage={carouselItems[currentCarouselIndex]?.image}
                         className='h-96'
                     >
                         <Carousel
