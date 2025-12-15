@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useDatamodelData } from '@/contexts/DatamodelDataContext'
-import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, ListItemText, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme, Alert, Divider, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
+import { Box, Typography, Paper, TextField, InputAdornment, Grid, List, ListItem, ListItemButton, Chip, IconButton, Table, TableHead, TableBody, TableRow, TableCell, useTheme, Alert, Divider, Accordion, AccordionSummary, AccordionDetails, Popper, ClickAwayListener } from '@mui/material'
 import { AccountTreeRounded, CloseRounded, ExtensionRounded, JavascriptRounded, SearchRounded, WarningRounded, ExpandMoreRounded } from '@mui/icons-material'
 import { AttributeType, EntityType, ComponentType, OperationType, WarningType } from '@/lib/Types'
 import LoadingOverlay from '@/components/shared/LoadingOverlay'
