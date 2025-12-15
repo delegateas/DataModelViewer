@@ -2,7 +2,7 @@ import React, { FormEvent, useEffect, useState } from 'react'
 import LoadingOverlay from '../shared/LoadingOverlay'
 import { useLoading } from '@/hooks/useLoading'
 import { useAuth } from '@/contexts/AuthContext'
-import { Alert, Box, Button, Container, Divider, FormControl, IconButton, InputAdornment, InputLabel, OutlinedInput, Typography, CircularProgress } from '@mui/material'
+import { Alert, Box, Button, Container, Divider, FormControl, IconButton, InputAdornment, InputLabel, OutlinedInput, Typography, CircularProgress, Skeleton } from '@mui/material'
 import { Info, Visibility, VisibilityOff, Warning } from '@mui/icons-material'
 import { createSession } from '@/lib/session'
 import { LastSynched } from '@/stubs/Data'
@@ -31,6 +31,8 @@ const LoginView = ({ }: LoginViewProps) => {
     const [animateError, setAnimateError] = useState<boolean>(false);
     const [entraIdEnabled, setEntraIdEnabled] = useState<boolean>(false);
     const [passwordAuthDisabled, setPasswordAuthDisabled] = useState<boolean>(false);
+    const [isLoadingConfig, setIsLoadingConfig] = useState<boolean>(true);
+    const [isEntraIdAuthenticating, setIsEntraIdAuthenticating] = useState<boolean>(false);
 
     useEffect(() => {
         fetch('/api/version')
@@ -41,14 +43,21 @@ const LoginView = ({ }: LoginViewProps) => {
                 setPasswordAuthDisabled(data.passwordAuthDisabled || false);
             })
             .catch(() => setVersion('Unknown'))
+            .finally(() => setIsLoadingConfig(false));
     }, []);
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
 
     const handleEntraIdLogin = async () => {
-        // Use NextAuth signIn
-        const { signIn } = await import('next-auth/react');
-        await signIn('microsoft-entra-id', { callbackUrl: '/' });
+        setIsEntraIdAuthenticating(true);
+        try {
+            // Use NextAuth signIn
+            const { signIn } = await import('next-auth/react');
+            await signIn('microsoft-entra-id', { callbackUrl: '/' });
+        } catch (error) {
+            console.error('EntraID login error:', error);
+            setIsEntraIdAuthenticating(false);
+        }
     };
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -131,71 +140,95 @@ const LoginView = ({ }: LoginViewProps) => {
                         </Alert>
                     )}
 
-                    {entraIdEnabled && (
+                    {isLoadingConfig ? (
                         <>
-                            <Button
-                                fullWidth
-                                variant="outlined"
-                                onClick={handleEntraIdLogin}
-                                className='rounded-lg mt-4'
-                            >
-                                <Box component="img" src="/MS_LOGO.svg" alt="Microsoft logo" className="w-6 h-6 mr-2" /> Sign in with Microsoft
-                            </Button>
-                            {!passwordAuthDisabled && (
-                                <Divider className='w-full my-4'>
-                                    <Typography variant="caption" color="textSecondary">OR</Typography>
-                                </Divider>
-                            )}
+                            <Skeleton variant="rectangular" className='w-full rounded-lg mt-4' height={42} />
+                            <Divider className='w-full my-4'>
+                                <Typography variant="caption" color="textSecondary">OR</Typography>
+                            </Divider>
                         </>
+                    ) : (
+                        entraIdEnabled && (
+                            <>
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    onClick={handleEntraIdLogin}
+                                    disabled={isEntraIdAuthenticating}
+                                    className='rounded-lg mt-4'
+                                    startIcon={isEntraIdAuthenticating ? <CircularProgress size={16} color="inherit" /> : undefined}
+                                >
+                                    {isEntraIdAuthenticating ? (
+                                        'Signing in with Microsoft...'
+                                    ) : (
+                                        <>
+                                            <Box component="img" src="/MS_LOGO.svg" alt="Microsoft logo" className="w-6 h-6 mr-2" /> Sign in with Microsoft
+                                        </>
+                                    )}
+                                </Button>
+                                {!passwordAuthDisabled && (
+                                    <Divider className='w-full my-4'>
+                                        <Typography variant="caption" color="textSecondary">OR</Typography>
+                                    </Divider>
+                                )}
+                            </>
+                        )
                     )}
 
-                    {!passwordAuthDisabled && (
-                        <form onSubmit={handleSubmit} className="w-full">
-                            <FormControl className='w-full my-4' variant="outlined"
-                                sx={{
-                                    '& input:-webkit-autofill': {
-                                        WebkitBoxShadow: '0 0 0 100px var(--mui-palette-background-default) inset !important',
-                                        WebkitTextFillColor: 'var(--mui-palette-text-primary) !important',
-                                        transition: 'background-color 5000s ease-in-out 0s',
-                                    },
-                                }}>
-                                <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
-                                <OutlinedInput
-                                    className='rounded-lg'
-                                    id="outlined-adornment-password"
-                                    name="password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    autoComplete='current-password'
+                    {isLoadingConfig ? (
+                        <Box className="w-full">
+                            <Skeleton variant="rectangular" className='w-full rounded-lg my-4' height={56} />
+                            <Skeleton variant="rectangular" className='w-full rounded-lg' height={42} />
+                        </Box>
+                    ) : (
+                        !passwordAuthDisabled && (
+                            <form onSubmit={handleSubmit} className="w-full">
+                                <FormControl className='w-full my-4' variant="outlined"
+                                    sx={{
+                                        '& input:-webkit-autofill': {
+                                            WebkitBoxShadow: '0 0 0 100px var(--mui-palette-background-default) inset !important',
+                                            WebkitTextFillColor: 'var(--mui-palette-text-primary) !important',
+                                            transition: 'background-color 5000s ease-in-out 0s',
+                                        },
+                                    }}>
+                                    <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+                                    <OutlinedInput
+                                        className='rounded-lg'
+                                        id="outlined-adornment-password"
+                                        name="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        autoComplete='current-password'
+                                        disabled={isAuthenticating}
+                                        endAdornment={
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    aria-label={
+                                                        showPassword ? 'hide the password' : 'display the password'
+                                                    }
+                                                    onClick={handleClickShowPassword}
+                                                    disabled={isAuthenticating}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        }
+                                        label="Password"
+                                    />
+                                </FormControl>
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    color="primary"
+                                    type="submit"
                                     disabled={isAuthenticating}
-                                    endAdornment={
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label={
-                                                    showPassword ? 'hide the password' : 'display the password'
-                                                }
-                                                onClick={handleClickShowPassword}
-                                                disabled={isAuthenticating}
-                                                edge="end"
-                                            >
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    }
-                                    label="Password"
-                                />
-                            </FormControl>
-                            <Button
-                                fullWidth
-                                variant="contained"
-                                color="primary"
-                                type="submit"
-                                disabled={isAuthenticating}
-                                className='rounded-lg'
-                                startIcon={isAuthenticating ? <CircularProgress size={16} color="inherit" /> : undefined}
-                            >
-                                {isAuthenticating ? 'Signing In...' : 'Sign In'}
-                            </Button>
-                        </form>
+                                    className='rounded-lg'
+                                    startIcon={isAuthenticating ? <CircularProgress size={16} color="inherit" /> : undefined}
+                                >
+                                    {isAuthenticating ? 'Signing In...' : 'Sign In'}
+                                </Button>
+                            </form>
+                        )
                     )}
 
                     <Typography variant="caption" color="textSecondary" className="mt-4 w-full text-end">
