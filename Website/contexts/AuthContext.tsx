@@ -66,9 +66,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const logout = useCallback(async () => {
         try {
-            // Call logout API to clear session
-            const response = await fetch('/api/auth/logout', { method: 'POST' });
-            const data = await response.json();
+            // Call logout API to clear both custom session and NextAuth session
+            await fetch('/api/auth/logout', { method: 'POST' });
 
             setState({
                 isAuthenticated: false,
@@ -77,14 +76,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 user: undefined
             });
 
-            // If EntraID, redirect to Easy Auth logout
-            if (data.redirectToEntraIdLogout) {
-                window.location.href = '/.auth/logout';
-            } else {
-                window.location.href = '/login';
-            }
+            // Redirect to login page
+            window.location.href = '/login';
         } catch (error) {
             console.error('Logout failed:', error);
+            // Still redirect to login even if API call fails
+            setState({
+                isAuthenticated: false,
+                isLoading: false,
+                authType: undefined,
+                user: undefined
+            });
+            window.location.href = '/login';
         }
     }, []);
 
