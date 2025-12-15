@@ -41,6 +41,15 @@ parameters:
   - name: entraIdClientSecret
     type: string
     default: ''
+  - name: enableEntraIdAuth
+    type: boolean
+    default: false
+  - name: disablePasswordAuth
+    type: boolean
+    default: false
+  - name: entraIdAllowedGroups
+    type: string
+    default: ''
 
 steps:
   - task: AzureCLI@2
@@ -66,6 +75,9 @@ steps:
           --parameters entraIdTenantId="${{ parameters.entraIdTenantId }}" `
           --parameters entraIdClientId="${{ parameters.entraIdClientId }}" `
           --parameters entraIdClientSecret="${{ parameters.entraIdClientSecret }}" `
+          --parameters enableEntraIdAuth=${{ parameters.enableEntraIdAuth }} `
+          --parameters disablePasswordAuth=${{ parameters.disablePasswordAuth }} `
+          --parameters entraIdAllowedGroups="${{ parameters.entraIdAllowedGroups }}" `
           | ConvertFrom-Json
         
         # Extract outputs

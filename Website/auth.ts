@@ -8,23 +8,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     async signIn({ user, account, profile }) {
-      // Create custom session cookie for EntraID users
+      // Validate EntraID users before creating session
       if (account?.provider === 'microsoft-entra-id' && profile) {
+        // Groups are now fetched via the profile callback and available in user object
+        const userGroups = (user as any).groups || (profile as any).groups || [];
+        const allowedGroups = getEntraIdAllowedGroups();
+
+        // If groups are configured, validate access
+        if (allowedGroups.length > 0) {
+          const hasAccess = userGroups.some((group: string) => allowedGroups.includes(group));
+          if (!hasAccess) return false;
+        }
+
+        // Create custom session cookie only after group validation passes
         await createEntraIdSession({
-          userPrincipalName: (profile as any).email || (profile as any).preferred_username || user.email || '',
-          userId: (profile as any).oid || user.id || '',
-          name: user.name || (profile as any).name || '',
-          groups: (profile as any).groups || []
+          userPrincipalName: (user as any).preferred_username || user.email || '',
+          userId: (user as any).oid || user.id || '',
+          name: user.name || '',
+          groups: userGroups
         });
       }
 
       return true;
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile, user }) {
       // On initial sign in, add custom claims
       if (account && profile) {
         token.tenantId = (profile as any).tid;
-        token.groups = (profile as any).groups || [];
+        token.groups = (user as any)?.groups || (profile as any).groups || [];
         token.userId = (profile as any).oid;
       }
       return token;

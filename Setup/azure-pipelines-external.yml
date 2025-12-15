@@ -23,6 +23,7 @@
 #   - AdoWikiName
 #   - AdoWikiPagePath
 #   - AdoRepositoryName
+#   - EntraIdAllowedGroups
 
 trigger: none
 pr: none
@@ -95,6 +96,9 @@ stages:
               adoOrganizationUrl: $(System.CollectionUri)
               adoProjectName: $(System.TeamProject)
               adoRepositoryName: $(AdoRepositoryName)
+              enableEntraIdAuth: $(EnableEntraIdAuth)
               entraIdTenantId: $(AzureTenantId)
               entraIdClientId: $(AzureClientId)
               entraIdClientSecret: $(AzureClientSecret)
+              entraIdAllowedGroups: $(EntraIdAllowedGroups)
+              disablePasswordAuth: $(DisablePasswordAuth)

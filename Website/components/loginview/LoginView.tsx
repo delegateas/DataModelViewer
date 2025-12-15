@@ -6,7 +6,7 @@ import { Alert, Box, Button, Container, Divider, FormControl, IconButton, InputA
 import { Info, Visibility, VisibilityOff, Warning } from '@mui/icons-material'
 import { createSession } from '@/lib/session'
 import { LastSynched } from '@/stubs/Data'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface LoginViewProps {
 
@@ -15,6 +15,7 @@ interface LoginViewProps {
 const LoginView = ({ }: LoginViewProps) => {
 
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { setAuthenticated } = useAuth();
     const {
         isAuthenticating,
@@ -33,6 +34,16 @@ const LoginView = ({ }: LoginViewProps) => {
     const [passwordAuthDisabled, setPasswordAuthDisabled] = useState<boolean>(false);
     const [isLoadingConfig, setIsLoadingConfig] = useState<boolean>(true);
     const [isEntraIdAuthenticating, setIsEntraIdAuthenticating] = useState<boolean>(false);
+    const [authError, setAuthError] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Check for authentication errors in URL
+        const error = searchParams.get('error');
+        if (error) {
+            setAuthError('Access denied. You are not a member of an authorized security group or not in a correct tenant.');
+            setIsEntraIdAuthenticating(false);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         fetch('/api/version')
@@ -137,6 +148,16 @@ const LoginView = ({ }: LoginViewProps) => {
                                 }`}
                         >
                             The <b>password</b> is incorrect.
+                        </Alert>
+                    )}
+                    {authError && (
+                        <Alert
+                            icon={<Warning />}
+                            severity="error"
+                            className="w-full rounded-lg mt-4"
+                            onClose={() => setAuthError(null)}
+                        >
+                            {authError}
                         </Alert>
                     )}
 
