@@ -35,6 +35,8 @@ const LoginView = ({ }: LoginViewProps) => {
     const [isLoadingConfig, setIsLoadingConfig] = useState<boolean>(true);
     const [isEntraIdAuthenticating, setIsEntraIdAuthenticating] = useState<boolean>(false);
     const [authError, setAuthError] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string>('The password is incorrect.');
+    const [isLockedOut, setIsLockedOut] = useState<boolean>(false);
 
     useEffect(() => {
         // Check for authentication errors in URL
@@ -77,6 +79,7 @@ const LoginView = ({ }: LoginViewProps) => {
         startAuthentication();
         setShowIncorrectPassword(false);
         setAnimateError(false);
+        setIsLockedOut(false);
 
         const formData = new FormData(event.currentTarget);
         const password = formData.get("password")
@@ -96,6 +99,18 @@ const LoginView = ({ }: LoginViewProps) => {
                 startRedirection();
                 router.push("/");
             } else {
+                const data = await response.json();
+
+                if (response.status === 429) {
+                    // Rate limited / locked out
+                    setIsLockedOut(true);
+                    setErrorMessage(data.error || 'Too many failed attempts. Please try again later.');
+                } else if (response.status === 401) {
+                    // Invalid password
+                    setIsLockedOut(false);
+                    setErrorMessage(data.error || 'The password is incorrect.');
+                }
+
                 setShowIncorrectPassword(true);
                 setTimeout(() => setAnimateError(true), 10);
                 stopAuthentication();
@@ -103,6 +118,8 @@ const LoginView = ({ }: LoginViewProps) => {
         } catch (error) {
             console.error('Login error:', error);
             setShowIncorrectPassword(true);
+            setIsLockedOut(false);
+            setErrorMessage('An error occurred. Please try again.');
             setTimeout(() => setAnimateError(true), 10);
             resetAuthState();
         }
@@ -141,13 +158,13 @@ const LoginView = ({ }: LoginViewProps) => {
                     {showIncorrectPassword && (
                         <Alert
                             icon={<Warning />}
-                            severity="warning"
+                            severity={isLockedOut ? "error" : "warning"}
                             className={`w-full rounded-lg mt-4 transition-all duration-300 ease-out ${animateError
                                 ? 'translate-x-0 opacity-100'
                                 : 'translate-x-4 opacity-0'
                                 }`}
                         >
-                            The <b>password</b> is incorrect.
+                            {errorMessage}
                         </Alert>
                     )}
                     {authError && (
@@ -219,7 +236,7 @@ const LoginView = ({ }: LoginViewProps) => {
                                         name="password"
                                         type={showPassword ? 'text' : 'password'}
                                         autoComplete='current-password'
-                                        disabled={isAuthenticating}
+                                        disabled={isAuthenticating || isLockedOut}
                                         endAdornment={
                                             <InputAdornment position="end">
                                                 <IconButton
@@ -242,11 +259,11 @@ const LoginView = ({ }: LoginViewProps) => {
                                     variant="contained"
                                     color="primary"
                                     type="submit"
-                                    disabled={isAuthenticating}
+                                    disabled={isAuthenticating || isLockedOut}
                                     className='rounded-lg'
                                     startIcon={isAuthenticating ? <CircularProgress size={16} color="inherit" /> : undefined}
                                 >
-                                    {isAuthenticating ? 'Signing In...' : 'Sign In'}
+                                    {isAuthenticating ? 'Signing In...' : isLockedOut ? 'Account Locked' : 'Sign In'}
                                 </Button>
                             </form>
                         )
