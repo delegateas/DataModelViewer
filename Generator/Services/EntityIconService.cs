@@ -27,20 +27,25 @@ namespace Generator.Services
                 .Where(x => x.IconVectorName != null)
                 .ToDictionary(x => x.LogicalName, x => x.IconVectorName);
 
-            var query = new QueryExpression("webresource")
-            {
-                ColumnSet = new ColumnSet("content", "name"),
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression("name", ConditionOperator.In, logicalNameToIconName.Values.ToList())
-                    }
-                }
-            };
+            var iconNameToSvg = new Dictionary<string, string>();
 
-            var webresources = await client.RetrieveMultipleAsync(query);
-            var iconNameToSvg = webresources.Entities.ToDictionary(x => x.GetAttributeValue<string>("name"), x => x.GetAttributeValue<string>("content"));
+            if (logicalNameToIconName.Count > 0)
+            {
+                var query = new QueryExpression("webresource")
+                {
+                    ColumnSet = new ColumnSet("content", "name"),
+                    Criteria = new FilterExpression(LogicalOperator.And)
+                    {
+                        Conditions =
+                        {
+                            new ConditionExpression("name", ConditionOperator.In, logicalNameToIconName.Values.ToList())
+                        }
+                    }
+                };
+
+                var webresources = await client.RetrieveMultipleAsync(query);
+                iconNameToSvg = webresources.Entities.ToDictionary(x => x.GetAttributeValue<string>("name"), x => x.GetAttributeValue<string>("content"));
+            }
 
             var logicalNameToSvg =
                 logicalNameToIconName
