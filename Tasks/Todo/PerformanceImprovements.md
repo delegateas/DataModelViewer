@@ -1,0 +1,1 @@
+NPM install takes forever, generally slow on compile and other areas.
