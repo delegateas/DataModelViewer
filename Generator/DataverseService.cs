@@ -24,6 +24,7 @@ namespace Generator
         private readonly EntityIconService entityIconService;
         private readonly RecordMappingService recordMappingService;
         private readonly SolutionComponentService solutionComponentService;
+        private readonly SolutionComponentExtractor solutionComponentExtractor;
         private readonly WorkflowService workflowService;
         private readonly RelationshipService relationshipService;
 
@@ -38,6 +39,7 @@ namespace Generator
             EntityIconService entityIconService,
             RecordMappingService recordMappingService,
             SolutionComponentService solutionComponentService,
+            SolutionComponentExtractor solutionComponentExtractor,
             WorkflowService workflowService,
             RelationshipService relationshipService)
         {
@@ -49,6 +51,7 @@ namespace Generator
             this.recordMappingService = recordMappingService;
             this.workflowService = workflowService;
             this.relationshipService = relationshipService;
+            this.solutionComponentExtractor = solutionComponentExtractor;
 
             // Register all analyzers with their query functions
             analyzerRegistrations = new List<IAnalyzerRegistration>
@@ -69,7 +72,7 @@ namespace Generator
             this.solutionComponentService = solutionComponentService;
         }
 
-        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>)> GetFilteredMetadata()
+        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<SolutionComponentCollection>)> GetFilteredMetadata()
         {
             // used to collect warnings for the insights dashboard
             var warnings = new List<SolutionWarning>();
@@ -275,8 +278,55 @@ namespace Generator
                 })
                 .ToList();
 
-            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] GetFilteredMetadata completed - returning empty results");
-            return (records, warnings);
+            /// SOLUTION COMPONENTS FOR INSIGHTS
+            List<SolutionComponentCollection> solutionComponentCollections;
+            try
+            {
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Extracting solution components for insights view");
+
+                // Build name lookups from entity metadata for the extractor
+                var entityNameLookup = entitiesInSolutionMetadata.ToDictionary(
+                    e => e.MetadataId!.Value,
+                    e => e.DisplayName.ToLabelString() ?? e.SchemaName);
+
+                var attributeNameLookup = entitiesInSolutionMetadata
+                    .SelectMany(e => e.Attributes.Where(a => a.MetadataId.HasValue))
+                    .ToDictionary(
+                        a => a.MetadataId!.Value,
+                        a => a.DisplayName.ToLabelString() ?? a.SchemaName);
+
+                var relationshipNameLookup = entitiesInSolutionMetadata
+                    .SelectMany(e => e.ManyToManyRelationships.Cast<RelationshipMetadataBase>()
+                        .Concat(e.OneToManyRelationships)
+                        .Concat(e.ManyToOneRelationships))
+                    .Where(r => r.MetadataId.HasValue)
+                    .DistinctBy(r => r.MetadataId!.Value)
+                    .ToDictionary(
+                        r => r.MetadataId!.Value,
+                        r => r.SchemaName);
+
+                // Build solution name lookup
+                var solutionNameLookup = solutionLookup.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Name);
+
+                solutionComponentCollections = await solutionComponentExtractor.ExtractSolutionComponentsAsync(
+                    solutionIds,
+                    solutionNameLookup,
+                    entityNameLookup,
+                    attributeNameLookup,
+                    relationshipNameLookup);
+
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Extracted components for {solutionComponentCollections.Count} solutions");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Failed to extract solution components for insights, continuing without them");
+                solutionComponentCollections = new List<SolutionComponentCollection>();
+            }
+
+            logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] GetFilteredMetadata completed");
+            return (records, warnings, solutionComponentCollections);
         }
     }
 

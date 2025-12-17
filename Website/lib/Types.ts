@@ -49,11 +49,160 @@ export type EntityType = {
 
 }
 
+/// Solution component types matching Dataverse codes
+/// See: https://learn.microsoft.com/en-us/power-apps/developer/data-platform/reference/entities/solutioncomponent
 export const enum SolutionComponentTypeEnum {
     Entity = 1,
     Attribute = 2,
-    Relationship = 3,
+    OptionSet = 9,
+    Relationship = 10,
+    EntityKey = 14,
+    SecurityRole = 20,
+    SavedQuery = 26,
+    Workflow = 29,
+    RibbonCustomization = 50,
+    SavedQueryVisualization = 59,
+    SystemForm = 60,
+    WebResource = 61,
+    SiteMap = 62,
+    ConnectionRole = 63,
+    HierarchyRule = 65,
+    CustomControl = 66,
+    FieldSecurityProfile = 70,
+    ModelDrivenApp = 80,
+    PluginAssembly = 91,
+    SDKMessageProcessingStep = 92,
+    CanvasApp = 300,
+    ConnectionReference = 372,
+    EnvironmentVariableDefinition = 380,
+    EnvironmentVariableValue = 381,
+    Dataflow = 418,
+    ConnectionRoleObjectTypeCode = 3233,
+    CustomAPI = 10240,
+    CustomAPIRequestParameter = 10241,
+    CustomAPIResponseProperty = 10242,
+    PluginPackage = 10639,
+    OrganizationSetting = 10563,
+    AppAction = 10645,
+    AppActionRule = 10948,
+    FxExpression = 11492,
+    DVFileSearch = 11723,
+    DVFileSearchAttribute = 11724,
+    DVFileSearchEntity = 11725,
+    AISkillConfig = 12075,
 }
+
+/// Solution component data for insights view
+export type SolutionComponentDataType = {
+    Name: string;
+    SchemaName: string;
+    ComponentType: SolutionComponentTypeEnum;
+    ObjectId: string;
+    IsExplicit: boolean;
+}
+
+/// Collection of solution components grouped by solution
+export type SolutionComponentCollectionType = {
+    SolutionId: string;
+    SolutionName: string;
+    Components: SolutionComponentDataType[];
+}
+
+/// Component type categories for UI grouping
+export const ComponentTypeCategories: Record<string, SolutionComponentTypeEnum[]> = {
+    'Data Model': [
+        SolutionComponentTypeEnum.Entity,
+        SolutionComponentTypeEnum.Attribute,
+        SolutionComponentTypeEnum.Relationship,
+        SolutionComponentTypeEnum.OptionSet,
+        SolutionComponentTypeEnum.EntityKey,
+        SolutionComponentTypeEnum.HierarchyRule,
+        SolutionComponentTypeEnum.Dataflow,
+        SolutionComponentTypeEnum.DVFileSearch,
+        SolutionComponentTypeEnum.DVFileSearchAttribute,
+        SolutionComponentTypeEnum.DVFileSearchEntity,
+    ],
+    'User Interface': [
+        SolutionComponentTypeEnum.SystemForm,
+        SolutionComponentTypeEnum.SavedQuery,
+        SolutionComponentTypeEnum.SavedQueryVisualization,
+        SolutionComponentTypeEnum.SiteMap,
+        SolutionComponentTypeEnum.CustomControl,
+        SolutionComponentTypeEnum.RibbonCustomization,
+    ],
+    'Apps': [
+        SolutionComponentTypeEnum.ModelDrivenApp,
+        SolutionComponentTypeEnum.CanvasApp,
+        SolutionComponentTypeEnum.AppAction,
+        SolutionComponentTypeEnum.AppActionRule,
+    ],
+    'Code': [
+        SolutionComponentTypeEnum.Workflow,
+        SolutionComponentTypeEnum.PluginAssembly,
+        SolutionComponentTypeEnum.SDKMessageProcessingStep,
+        SolutionComponentTypeEnum.WebResource,
+        SolutionComponentTypeEnum.CustomAPI,
+        SolutionComponentTypeEnum.CustomAPIRequestParameter,
+        SolutionComponentTypeEnum.CustomAPIResponseProperty,
+        SolutionComponentTypeEnum.PluginPackage,
+        SolutionComponentTypeEnum.FxExpression,
+    ],
+    'Security': [
+        SolutionComponentTypeEnum.SecurityRole,
+        SolutionComponentTypeEnum.FieldSecurityProfile,
+    ],
+    'Configuration': [
+        SolutionComponentTypeEnum.EnvironmentVariableDefinition,
+        SolutionComponentTypeEnum.EnvironmentVariableValue,
+        SolutionComponentTypeEnum.ConnectionReference,
+        SolutionComponentTypeEnum.ConnectionRole,
+        SolutionComponentTypeEnum.ConnectionRoleObjectTypeCode,
+        SolutionComponentTypeEnum.OrganizationSetting,
+        SolutionComponentTypeEnum.AISkillConfig,
+    ],
+};
+
+/// Human-readable labels for component types
+export const ComponentTypeLabels: Record<SolutionComponentTypeEnum, string> = {
+    [SolutionComponentTypeEnum.Entity]: 'Table',
+    [SolutionComponentTypeEnum.Attribute]: 'Column',
+    [SolutionComponentTypeEnum.OptionSet]: 'Choice',
+    [SolutionComponentTypeEnum.Relationship]: 'Relationship',
+    [SolutionComponentTypeEnum.EntityKey]: 'Key',
+    [SolutionComponentTypeEnum.SecurityRole]: 'Security Role',
+    [SolutionComponentTypeEnum.SavedQuery]: 'View',
+    [SolutionComponentTypeEnum.Workflow]: 'Cloud Flow',
+    [SolutionComponentTypeEnum.RibbonCustomization]: 'Ribbon',
+    [SolutionComponentTypeEnum.SavedQueryVisualization]: 'Chart',
+    [SolutionComponentTypeEnum.SystemForm]: 'Form',
+    [SolutionComponentTypeEnum.WebResource]: 'Web Resource',
+    [SolutionComponentTypeEnum.SiteMap]: 'Site Map',
+    [SolutionComponentTypeEnum.ConnectionRole]: 'Connection Role',
+    [SolutionComponentTypeEnum.HierarchyRule]: 'Hierarchy Rule',
+    [SolutionComponentTypeEnum.CustomControl]: 'Custom Control',
+    [SolutionComponentTypeEnum.FieldSecurityProfile]: 'Field Security',
+    [SolutionComponentTypeEnum.ModelDrivenApp]: 'Model-driven App',
+    [SolutionComponentTypeEnum.PluginAssembly]: 'Plugin Assembly',
+    [SolutionComponentTypeEnum.SDKMessageProcessingStep]: 'Plugin Step',
+    [SolutionComponentTypeEnum.CanvasApp]: 'Canvas App',
+    [SolutionComponentTypeEnum.ConnectionReference]: 'Connection Reference',
+    [SolutionComponentTypeEnum.EnvironmentVariableDefinition]: 'Environment Variable',
+    [SolutionComponentTypeEnum.EnvironmentVariableValue]: 'Env Variable Value',
+    [SolutionComponentTypeEnum.Dataflow]: 'Dataflow',
+    [SolutionComponentTypeEnum.ConnectionRoleObjectTypeCode]: 'Connection Role Type',
+    [SolutionComponentTypeEnum.CustomAPI]: 'Custom API',
+    [SolutionComponentTypeEnum.CustomAPIRequestParameter]: 'Custom API Parameter',
+    [SolutionComponentTypeEnum.CustomAPIResponseProperty]: 'Custom API Response',
+    [SolutionComponentTypeEnum.PluginPackage]: 'Plugin Package',
+    [SolutionComponentTypeEnum.OrganizationSetting]: 'Org Setting',
+    [SolutionComponentTypeEnum.AppAction]: 'App Action',
+    [SolutionComponentTypeEnum.AppActionRule]: 'App Action Rule',
+    [SolutionComponentTypeEnum.FxExpression]: 'Fx Expression',
+    [SolutionComponentTypeEnum.DVFileSearch]: 'DV File Search',
+    [SolutionComponentTypeEnum.DVFileSearchAttribute]: 'DV File Search Attr',
+    [SolutionComponentTypeEnum.DVFileSearchEntity]: 'DV File Search Entity',
+    [SolutionComponentTypeEnum.AISkillConfig]: 'AI Skill Config',
+};
 
 export const enum RequiredLevel {
     None = 0,
