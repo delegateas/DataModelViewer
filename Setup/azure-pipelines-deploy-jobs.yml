@@ -42,11 +42,11 @@ parameters:
     type: string
     default: ''
   - name: enableEntraIdAuth
-    type: boolean
-    default: false
+    type: string
+    default: 'false'
   - name: disablePasswordAuth
-    type: boolean
-    default: false
+    type: string
+    default: 'false'
   - name: entraIdAllowedGroups
     type: string
     default: ''
@@ -75,8 +75,8 @@ steps:
           --parameters entraIdTenantId="${{ parameters.azureTenantId }}" `
           --parameters entraIdClientId="${{ parameters.azureClientId }}" `
           --parameters entraIdClientSecret="${{ parameters.azureClientSecret }}" `
-          --parameters enableEntraIdAuth=${{ parameters.enableEntraIdAuth }} `
-          --parameters disablePasswordAuth=${{ parameters.disablePasswordAuth }} `
+          --parameters enableEntraIdAuth="${{ parameters.enableEntraIdAuth }}" `
+          --parameters disablePasswordAuth="${{ parameters.disablePasswordAuth }}" `
           --parameters entraIdAllowedGroups="${{ parameters.entraIdAllowedGroups }}" `
           | ConvertFrom-Json
         

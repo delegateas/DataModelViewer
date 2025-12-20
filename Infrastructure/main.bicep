@@ -8,7 +8,7 @@ param adoOrganizationUrl string = ''
 param adoProjectName string = ''
 param adoRepositoryName string = ''
 
-@description('Enable EntraID authentication via Easy Auth')
+@description('Enable EntraID authentication')
 param enableEntraIdAuth bool = false
 
 @description('Azure AD App Registration Client ID')
@@ -24,7 +24,7 @@ param entraIdTenantId string = subscription().tenantId
 @description('Comma-separated list of Azure AD Group Object IDs allowed to access (empty = all tenant users)')
 param entraIdAllowedGroups string = ''
 
-@description('Disable password authentication (EntraID only)')
+@description('Disable password authentication')
 param disablePasswordAuth bool = false
 
 var location = resourceGroup().location
