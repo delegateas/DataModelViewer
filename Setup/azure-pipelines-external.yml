@@ -16,13 +16,18 @@
 #   - WebsitePassword
 #   - WebsiteSessionSecret
 #   - WebsiteName
-#   - AzureTenantId
-#   - AzureClientId
-#   - AzureClientSecret
+#   - AzureTenantId (for Dataverse access during build)
+#   - AzureClientId (for Dataverse access during build)
+#   - AzureClientSecret (for Dataverse access during build)
 #   - DataverseUrl
 #   - AdoWikiName
 #   - AdoWikiPagePath
 #   - AdoRepositoryName
+#
+# Optional variables (for Entra ID authentication):
+#   - EnableEntraIdAuth (string: 'true' or 'false', default: 'false')
+#   - DisablePasswordAuth (string: 'true' or 'false', default: 'false')
+#   - EntraIdAllowedGroups (comma-separated list of Entra ID group object IDs)
 
 trigger: none
 pr: none
@@ -94,4 +99,10 @@ stages:
               websiteName: $(WebsiteName)
               adoOrganizationUrl: $(System.CollectionUri)
               adoProjectName: $(System.TeamProject)
-              adoRepositoryName: $(AdoRepositoryName)
+              adoRepositoryName: ${{ coalesce(variables.AdoRepositoryName, '') }}
+              enableEntraIdAuth: ${{ coalesce(variables.EnableEntraIdAuth, false) }}
+              azureTenantId: ${{ coalesce(variables.AzureTenantId, '') }}
+              azureClientId: ${{ coalesce(variables.AzureClientId, '') }}
+              azureClientSecret: ${{ coalesce(variables.AzureClientSecret, '') }}
+              entraIdAllowedGroups: ${{ coalesce(variables.EntraIdAllowedGroups, '') }}
+              disablePasswordAuth: ${{ coalesce(variables.DisablePasswordAuth, false) }}

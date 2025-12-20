@@ -5,17 +5,24 @@ import { createContext, ReactNode, useContext, useState, useEffect, useCallback 
 export interface AuthState {
     isAuthenticated: boolean | null; // null = loading
     isLoading: boolean;
+    authType?: 'password' | 'entraid';
+    user?: {
+        userPrincipalName?: string;
+        name?: string;
+    };
 }
 
 const initialState: AuthState = {
     isAuthenticated: null,
-    isLoading: true
+    isLoading: true,
+    authType: undefined,
+    user: undefined
 }
 
 interface AuthContextType extends AuthState {
     checkAuth: () => Promise<void>;
     setAuthenticated: (authenticated: boolean) => void;
-    logout: () => void;
+    logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,13 +41,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const data = await response.json();
             setState({
                 isAuthenticated: data.isAuthenticated,
-                isLoading: false
+                isLoading: false,
+                authType: data.authType,
+                user: data.user
             });
         } catch (error) {
             console.error('Auth check failed:', error);
             setState({
                 isAuthenticated: false,
-                isLoading: false
+                isLoading: false,
+                authType: undefined,
+                user: undefined
             });
         }
     }, []);
@@ -53,11 +64,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }));
     }, []);
 
-    const logout = useCallback(() => {
-        setState({
-            isAuthenticated: false,
-            isLoading: false
-        });
+    const logout = useCallback(async () => {
+        try {
+            // Call logout API to clear both custom session and NextAuth session
+            await fetch('/api/auth/logout', { method: 'POST' });
+
+            setState({
+                isAuthenticated: false,
+                isLoading: false,
+                authType: undefined,
+                user: undefined
+            });
+
+            // Redirect to login page
+            window.location.href = '/login';
+        } catch (error) {
+            console.error('Logout failed:', error);
+            // Still redirect to login even if API call fails
+            setState({
+                isAuthenticated: false,
+                isLoading: false,
+                authType: undefined,
+                user: undefined
+            });
+            window.location.href = '/login';
+        }
     }, []);
 
     useEffect(() => {

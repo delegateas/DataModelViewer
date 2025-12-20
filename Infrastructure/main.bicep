@@ -8,6 +8,25 @@ param adoOrganizationUrl string = ''
 param adoProjectName string = ''
 param adoRepositoryName string = ''
 
+@description('Enable EntraID authentication')
+param enableEntraIdAuth bool = false
+
+@description('Azure AD App Registration Client ID')
+param entraIdClientId string = ''
+
+@description('Azure AD App Registration Client Secret')
+@secure()
+param entraIdClientSecret string = ''
+
+@description('Azure AD Tenant ID (defaults to subscription tenant)')
+param entraIdTenantId string = subscription().tenantId
+
+@description('Comma-separated list of Azure AD Group Object IDs allowed to access (empty = all tenant users)')
+param entraIdAllowedGroups string = ''
+
+@description('Disable password authentication')
+param disablePasswordAuth bool = false
+
 var location = resourceGroup().location
 
 @description('Create an App Service Plan')
@@ -46,6 +65,14 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           value: sessionSecret
         }
         {
+          name: 'AUTH_SECRET'
+          value: sessionSecret
+        }
+        {
+          name: 'NEXTAUTH_URL'
+          value: 'https://wa-${solutionId}.azurewebsites.net'
+        }
+        {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
           value: '~20'
         }
@@ -60,6 +87,30 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
         {
           name: 'ADO_REPOSITORY_NAME'
           value: adoRepositoryName
+        }
+        {
+          name: 'ENABLE_ENTRAID_AUTH'
+          value: string(enableEntraIdAuth)
+        }
+        {
+          name: 'AZURE_AD_CLIENT_ID'
+          value: entraIdClientId
+        }
+        {
+          name: 'AZURE_AD_CLIENT_SECRET'
+          value: entraIdClientSecret
+        }
+        {
+          name: 'AZURE_AD_TENANT_ID'
+          value: entraIdTenantId
+        }
+        {
+          name: 'ENTRAID_ALLOWED_GROUPS'
+          value: entraIdAllowedGroups
+        }
+        {
+          name: 'DISABLE_PASSWORD_AUTH'
+          value: string(disablePasswordAuth)
         }
       ]
     }

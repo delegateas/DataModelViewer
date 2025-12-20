@@ -28,13 +28,13 @@ const Carousel = ({ items, currentIndex = 0, slideDirection = null, className }:
     if (currentIndex !== prevIndex && slideDirection) {
       setAnimationState('sliding');
       setShowPrevious(true);
-      
+
       const timer = setTimeout(() => {
         setPrevIndex(currentIndex);
         setAnimationState('idle');
         setShowPrevious(false);
       }, 500);
-      
+
       return () => clearTimeout(timer);
     } else if (currentIndex !== prevIndex) {
       setPrevIndex(currentIndex);
@@ -46,6 +46,36 @@ const Carousel = ({ items, currentIndex = 0, slideDirection = null, className }:
 
   return (
     <Box className={`relative w-full h-full overflow-hidden ${className || ''}`}>
+      {/* Previous background image - animating out */}
+      {showPrevious && animationState === 'sliding' && previousItem.image && (
+        <Box
+          className={`absolute inset-0 z-0 bg-cover bg-center transition-all duration-500 ease-out ${
+            slideDirection === 'right'
+              ? 'animate-slideOutRight'
+              : 'animate-slideOutLeft'
+          }`}
+          sx={{
+            backgroundImage: `url(${previousItem.image})`
+          }}
+        />
+      )}
+
+      {/* Current background image - animating in or static */}
+      {currentItem.image && (
+        <Box
+          className={`absolute inset-0 z-0 bg-cover bg-center transition-all duration-500 ease-out ${
+            animationState === 'sliding'
+              ? slideDirection === 'right'
+                ? 'animate-slideInLeft'
+                : 'animate-slideInRight'
+              : ''
+          }`}
+          sx={{
+            backgroundImage: `url(${currentItem.image})`
+          }}
+        />
+      )}
+
       {/* Gradient overlay for text readability */}
       <Box className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 to-black/90" />
       

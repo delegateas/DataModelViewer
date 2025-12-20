@@ -8,6 +8,9 @@
   </a>
 </p>
 
+> [!NOTE]
+> The README is slowly being moved to [Git Wiki](https://github.com/delegateas/DataModelViewer/wiki). Newer features are documented in the wiki whilst older ones are documented in this Readme.
+
 # 👋 Introduction
 
 <p className="text-gray-700 mb-4">

@@ -32,6 +32,24 @@ parameters:
   - name: adoRepositoryName
     type: string
     default: ''
+  - name: azureTenantId
+    type: string
+    default: ''
+  - name: azureClientId
+    type: string
+    default: ''
+  - name: azureClientSecret
+    type: string
+    default: ''
+  - name: enableEntraIdAuth
+    type: string
+    default: 'false'
+  - name: disablePasswordAuth
+    type: string
+    default: 'false'
+  - name: entraIdAllowedGroups
+    type: string
+    default: ''
 
 steps:
   - task: AzureCLI@2
@@ -54,6 +72,12 @@ steps:
           --parameters adoOrganizationUrl="${{ parameters.adoOrganizationUrl }}" `
           --parameters adoProjectName="${{ parameters.adoProjectName }}" `
           --parameters adoRepositoryName="${{ parameters.adoRepositoryName }}" `
+          --parameters entraIdTenantId="${{ parameters.azureTenantId }}" `
+          --parameters entraIdClientId="${{ parameters.azureClientId }}" `
+          --parameters entraIdClientSecret="${{ parameters.azureClientSecret }}" `
+          --parameters enableEntraIdAuth="${{ parameters.enableEntraIdAuth }}" `
+          --parameters disablePasswordAuth="${{ parameters.disablePasswordAuth }}" `
+          --parameters entraIdAllowedGroups="${{ parameters.entraIdAllowedGroups }}" `
           | ConvertFrom-Json
         
         # Extract outputs

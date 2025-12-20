@@ -7,8 +7,17 @@ const secretKey = process.env.WebsiteSessionSecret;
 const encodedKey = new TextEncoder().encode(secretKey);
 
 export type Session = {
-    password: string;
+    authType: 'password' | 'entraid';
     expiresAt: Date;
+
+    // Password auth
+    password?: string;
+
+    // EntraID auth
+    userPrincipalName?: string;
+    userId?: string;
+    name?: string;
+    groups?: string[];
 }
 
 export async function encrypt(payload: Session) {
@@ -34,7 +43,35 @@ export async function decrypt(session: string | undefined = '') {
 
 export async function createSession(password: string) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const session = await encrypt({ password, expiresAt });
+    const session = await encrypt({
+        authType: 'password',
+        password,
+        expiresAt
+    });
+    (await cookies()).set(
+        "session",
+        session,
+        {
+            httpOnly: true,
+            secure: true,
+            expires: expiresAt,
+            sameSite: "lax",
+            path: "/",
+        });
+}
+
+export async function createEntraIdSession(userInfo: {
+    userPrincipalName: string;
+    userId: string;
+    name?: string;
+    groups?: string[];
+}) {
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const session = await encrypt({
+        authType: 'entraid',
+        expiresAt,
+        ...userInfo
+    });
     (await cookies()).set(
         "session",
         session,
