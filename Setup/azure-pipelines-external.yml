@@ -96,9 +96,9 @@ stages:
               adoOrganizationUrl: $(System.CollectionUri)
               adoProjectName: $(System.TeamProject)
               adoRepositoryName: $(AdoRepositoryName)
-              enableEntraIdAuth: $(EnableEntraIdAuth)
+              enableEntraIdAuth: ${{ coalesce(variables.EnableEntraIdAuth, false) }}
               entraIdTenantId: $(AzureTenantId)
               entraIdClientId: $(AzureClientId)
               entraIdClientSecret: $(AzureClientSecret)
               entraIdAllowedGroups: $(EntraIdAllowedGroups)
-              disablePasswordAuth: $(DisablePasswordAuth)
+              disablePasswordAuth: ${{ coalesce(variables.DisablePasswordAuth, false) }}
