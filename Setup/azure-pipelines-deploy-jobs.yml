@@ -32,13 +32,13 @@ parameters:
   - name: adoRepositoryName
     type: string
     default: ''
-  - name: entraIdTenantId
+  - name: azureTenantId
     type: string
     default: ''
-  - name: entraIdClientId
+  - name: azureClientId
     type: string
     default: ''
-  - name: entraIdClientSecret
+  - name: azureClientSecret
     type: string
     default: ''
   - name: enableEntraIdAuth
@@ -72,9 +72,9 @@ steps:
           --parameters adoOrganizationUrl="${{ parameters.adoOrganizationUrl }}" `
           --parameters adoProjectName="${{ parameters.adoProjectName }}" `
           --parameters adoRepositoryName="${{ parameters.adoRepositoryName }}" `
-          --parameters entraIdTenantId="${{ parameters.entraIdTenantId }}" `
-          --parameters entraIdClientId="${{ parameters.entraIdClientId }}" `
-          --parameters entraIdClientSecret="${{ parameters.entraIdClientSecret }}" `
+          --parameters azureTenantId="${{ parameters.azureTenantId }}" `
+          --parameters azureClientId="${{ parameters.azureClientId }}" `
+          --parameters azureClientSecret="${{ parameters.azureClientSecret }}" `
           --parameters enableEntraIdAuth=${{ parameters.enableEntraIdAuth }} `
           --parameters disablePasswordAuth=${{ parameters.disablePasswordAuth }} `
           --parameters entraIdAllowedGroups="${{ parameters.entraIdAllowedGroups }}" `
