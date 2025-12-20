@@ -95,10 +95,10 @@ stages:
               websiteName: $(WebsiteName)
               adoOrganizationUrl: $(System.CollectionUri)
               adoProjectName: $(System.TeamProject)
-              adoRepositoryName: $(AdoRepositoryName)
+              adoRepositoryName: ${{ coalesce(variables.AdoRepositoryName, '') }}
               enableEntraIdAuth: ${{ coalesce(variables.EnableEntraIdAuth, false) }}
-              azureTenantId: $(AzureTenantId)
-              azureClientId: $(AzureClientId)
-              azureClientSecret: $(AzureClientSecret)
-              entraIdAllowedGroups: $(EntraIdAllowedGroups)
+              azureTenantId: ${{ coalesce(variables.AzureTenantId, '') }}
+              azureClientId: ${{ coalesce(variables.AzureClientId, '') }}
+              azureClientSecret: ${{ coalesce(variables.AzureClientSecret, '') }}
+              entraIdAllowedGroups: ${{ coalesce(variables.EntraIdAllowedGroups, '') }}
               disablePasswordAuth: ${{ coalesce(variables.DisablePasswordAuth, false) }}

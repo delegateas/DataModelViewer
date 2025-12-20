@@ -72,9 +72,9 @@ steps:
           --parameters adoOrganizationUrl="${{ parameters.adoOrganizationUrl }}" `
           --parameters adoProjectName="${{ parameters.adoProjectName }}" `
           --parameters adoRepositoryName="${{ parameters.adoRepositoryName }}" `
-          --parameters azureTenantId="${{ parameters.azureTenantId }}" `
-          --parameters azureClientId="${{ parameters.azureClientId }}" `
-          --parameters azureClientSecret="${{ parameters.azureClientSecret }}" `
+          --parameters entraIdTenantId="${{ parameters.azureTenantId }}" `
+          --parameters entraIdClientId="${{ parameters.azureClientId }}" `
+          --parameters entraIdClientSecret="${{ parameters.azureClientSecret }}" `
           --parameters enableEntraIdAuth=${{ parameters.enableEntraIdAuth }} `
           --parameters disablePasswordAuth=${{ parameters.disablePasswordAuth }} `
           --parameters entraIdAllowedGroups="${{ parameters.entraIdAllowedGroups }}" `
