@@ -5,8 +5,28 @@ import { createPortal } from 'react-dom';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Box, CircularProgress, Divider, IconButton, InputAdornment, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, Paper, Typography } from '@mui/material';
-import { ClearRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, NavigateBeforeRounded, NavigateNextRounded, SearchRounded } from '@mui/icons-material';
+import { Box, CircularProgress, Divider, IconButton, InputAdornment, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, Paper, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
+import { AbcRounded, AccountTreeRounded, ClearRounded, DataObjectRounded, DescriptionRounded, ExpandMoreRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, LockPersonRounded, NavigateBeforeRounded, NavigateNextRounded, RestartAltRounded, SearchRounded, TableChartRounded } from '@mui/icons-material';
+
+export const SEARCH_SCOPE_KEYS = {
+  COLUMN_NAMES: 'columnNames',
+  COLUMN_DESCRIPTIONS: 'columnDescriptions',
+  COLUMN_DATA_TYPES: 'columnDataTypes',
+  TABLE_DESCRIPTIONS: 'tableDescriptions',
+  SECURITY_ROLES: 'securityRoles',
+  RELATIONSHIPS: 'relationships',
+} as const;
+
+export type SearchScopeKey = typeof SEARCH_SCOPE_KEYS[keyof typeof SEARCH_SCOPE_KEYS];
+
+export interface SearchScope {
+  columnNames: boolean;
+  columnDescriptions: boolean;
+  columnDataTypes: boolean;
+  tableDescriptions: boolean;
+  securityRoles: boolean;
+  relationships: boolean;
+}
 
 interface TimeSlicedSearchProps {
   onSearch: (value: string) => void;
@@ -17,7 +37,17 @@ interface TimeSlicedSearchProps {
   currentIndex?: number;
   totalResults?: number;
   placeholder?: string;
+  onSearchScopeChange?: (scope: SearchScope) => void;
 }
+
+const DEFAULT_SEARCH_SCOPE: SearchScope = {
+  columnNames: true,
+  columnDescriptions: true,
+  columnDataTypes: false,
+  tableDescriptions: false,
+  securityRoles: false,
+  relationships: false,
+};
 
 // Time-sliced input that maintains 60fps regardless of background work
 export const TimeSlicedSearch = ({
@@ -29,11 +59,14 @@ export const TimeSlicedSearch = ({
   currentIndex,
   totalResults,
   placeholder = "Search attributes...",
+  onSearchScopeChange,
 }: TimeSlicedSearchProps) => {
   const [localValue, setLocalValue] = useState(initialLocalValue);
   const [isTyping, setIsTyping] = useState(false);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [lastValidSearch, setLastValidSearch] = useState('');
+  const [searchScope, setSearchScope] = useState<SearchScope>(DEFAULT_SEARCH_SCOPE);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { isOpen } = useSidebar();
   const { isSettingsOpen } = useSettings();
   const isMobile = useIsMobile();
@@ -44,6 +77,53 @@ export const TimeSlicedSearch = ({
 
   // Hide search on mobile when sidebar is open, or when settings are open
   const shouldHideSearch = (isMobile && isOpen) || isSettingsOpen;
+
+  // Notify parent when search scope changes
+  useEffect(() => {
+    onSearchScopeChange?.(searchScope);
+  }, [searchScope, onSearchScopeChange]);
+
+  // Convert searchScope to array format for ToggleButtonGroup
+  const scopeToArray = useCallback((scope: SearchScope): SearchScopeKey[] => {
+    const result: SearchScopeKey[] = [];
+    if (scope.columnNames) result.push(SEARCH_SCOPE_KEYS.COLUMN_NAMES);
+    if (scope.columnDescriptions) result.push(SEARCH_SCOPE_KEYS.COLUMN_DESCRIPTIONS);
+    if (scope.columnDataTypes) result.push(SEARCH_SCOPE_KEYS.COLUMN_DATA_TYPES);
+    if (scope.tableDescriptions) result.push(SEARCH_SCOPE_KEYS.TABLE_DESCRIPTIONS);
+    if (scope.securityRoles) result.push(SEARCH_SCOPE_KEYS.SECURITY_ROLES);
+    if (scope.relationships) result.push(SEARCH_SCOPE_KEYS.RELATIONSHIPS);
+    return result;
+  }, []);
+
+  // Convert array format back to searchScope
+  const arrayToScope = useCallback((arr: SearchScopeKey[]): SearchScope => {
+    return {
+      columnNames: arr.includes(SEARCH_SCOPE_KEYS.COLUMN_NAMES),
+      columnDescriptions: arr.includes(SEARCH_SCOPE_KEYS.COLUMN_DESCRIPTIONS),
+      columnDataTypes: arr.includes(SEARCH_SCOPE_KEYS.COLUMN_DATA_TYPES),
+      tableDescriptions: arr.includes(SEARCH_SCOPE_KEYS.TABLE_DESCRIPTIONS),
+      securityRoles: arr.includes(SEARCH_SCOPE_KEYS.SECURITY_ROLES),
+      relationships: arr.includes(SEARCH_SCOPE_KEYS.RELATIONSHIPS),
+    };
+  }, []);
+
+  // Handle toggle button group changes
+  const handleScopeChange = useCallback((
+    _event: React.MouseEvent<HTMLElement>,
+    newScopes: SearchScopeKey[],
+  ) => {
+    if (newScopes.length > 0) { // Ensure at least one scope is selected
+      setSearchScope(arrayToScope(newScopes));
+    }
+  }, [arrayToScope]);
+
+  const resetScope = useCallback(() => {
+    setSearchScope(DEFAULT_SEARCH_SCOPE);
+  }, []);
+
+  const toggleAdvanced = useCallback(() => {
+    setShowAdvanced(prev => !prev);
+  }, []);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -237,55 +317,136 @@ export const TimeSlicedSearch = ({
   };
 
   const searchInput = (
-    <Box className={`fixed flex top-20 md:top-24 m-auto w-full justify-center md:justify-end md:right-4 z-50 transition-opacity bg-transparent duration-200 pointer-events-none ${shouldHideSearch ? 'opacity-0' : 'opacity-100'}`}>
-      <Paper component="form" className={`p-1 rounded-lg flex items-center w-[320px] ${shouldHideSearch ? 'pointer-events-none' : 'pointer-events-auto'}`} sx={{ backgroundColor: 'background.paper' }}>
-        <InputAdornment position="start" className='ml-1'>
-          <SearchRounded color="action" />
-        </InputAdornment>
+    <Box className={`fixed flex flex-col gap-2 top-20 md:top-24 m-auto w-full items-center md:items-end md:right-4 z-50 transition-opacity bg-transparent duration-200 pointer-events-none ${shouldHideSearch ? 'opacity-0' : 'opacity-100'}`}>
+      <Paper
+        component="form"
+        className={`rounded-lg w-[320px] ${shouldHideSearch ? 'pointer-events-none' : 'pointer-events-auto'}`}
+        sx={{ backgroundColor: 'background.paper' }}
+      >
+        {/* Main Search Bar */}
+        <Box className='p-1 flex items-center'>
+          <InputAdornment position="start" className='ml-1'>
+            <SearchRounded color="action" />
+          </InputAdornment>
 
-        <Divider orientation="vertical" className='mr-1 h-6' />
+          <Divider orientation="vertical" className='mr-1 h-6' />
 
-        <InputBase
-          className='ml-1 flex-1'
-          type="text"
-          placeholder={placeholder}
-          aria-label="Search attributes in tables"
-          value={localValue}
-          onChange={handleChange}
-          onFocus={handleSearchFocus}
-          spellCheck={false}
-          autoComplete="off"
-          autoCapitalize="off"
-          sx={{ backgroundColor: 'transparent' }}
-        />
+          <InputBase
+            className='ml-1 flex-1'
+            type="text"
+            placeholder={placeholder}
+            aria-label="Search attributes in tables"
+            value={localValue}
+            onChange={handleChange}
+            onFocus={handleSearchFocus}
+            spellCheck={false}
+            autoComplete="off"
+            autoCapitalize="off"
+            sx={{ backgroundColor: 'transparent' }}
+          />
 
-        <InputAdornment position="end">
-          {isTyping && localValue.length >= 3 ? (
-            <CircularProgress size={20} />
-          ) : localValue && totalResults !== undefined && totalResults > 0 ? (
-            <Typography
-              variant='caption'
-              color="text.secondary"
-              className='px-2 font-mono'
-              sx={{ minWidth: '40px', textAlign: 'center' }}
+          <InputAdornment position="end">
+            {isTyping && localValue.length >= 3 ? (
+              <CircularProgress size={20} />
+            ) : localValue && totalResults !== undefined && totalResults > 0 ? (
+              <Typography
+                variant='caption'
+                color="text.secondary"
+                className='px-2 font-mono'
+                sx={{ minWidth: '40px', textAlign: 'center' }}
+              >
+                {currentIndex}/{totalResults}
+              </Typography>
+            ) : null}
+          </InputAdornment>
+
+          <Divider orientation="vertical" className='mx-1 h-6' />
+
+          <Tooltip title="Advanced search options">
+            <IconButton
+              onClick={toggleAdvanced}
+              size="small"
+              sx={{
+                transform: showAdvanced ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s',
+              }}
             >
-              {currentIndex}/{totalResults}
-            </Typography>
-          ) : null}
-        </InputAdornment>
+              <ExpandMoreRounded fontSize="small" color="action" />
+            </IconButton>
+          </Tooltip>
 
-        <Divider orientation="vertical" className='mx-1 h-6' />
+          <IconButton onClick={handleClick} size="small">
+            <InfoRounded fontSize="small" color="action" />
+          </IconButton>
+        </Box>
 
-        <IconButton onClick={handleClick} size="small">
-          <InfoRounded fontSize="small" color="action" />
-        </IconButton>
+        {/* Advanced Search Section */}
+        {showAdvanced && (
+          <>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                padding: '8px',
+                gap: 0.5,
+              }}
+            >
+              <ToggleButtonGroup
+                size="small"
+                value={scopeToArray(searchScope)}
+                onChange={handleScopeChange}
+                aria-label="search scope"
+                sx={{
+                  flex: 1,
+                }}
+              >
+                <ToggleButton value={SEARCH_SCOPE_KEYS.COLUMN_NAMES} aria-label="column names">
+                  <Tooltip title="Search in column/attribute names">
+                    <AbcRounded fontSize="small" />
+                  </Tooltip>
+                </ToggleButton>
+                <ToggleButton value={SEARCH_SCOPE_KEYS.COLUMN_DESCRIPTIONS} aria-label="column descriptions">
+                  <Tooltip title="Search in column descriptions">
+                    <DescriptionRounded fontSize="small" />
+                  </Tooltip>
+                </ToggleButton>
+                <ToggleButton value={SEARCH_SCOPE_KEYS.COLUMN_DATA_TYPES} aria-label="column data types">
+                  <Tooltip title="Search in column data types">
+                    <DataObjectRounded fontSize="small" />
+                  </Tooltip>
+                </ToggleButton>
+                <ToggleButton value={SEARCH_SCOPE_KEYS.TABLE_DESCRIPTIONS} aria-label="table descriptions">
+                  <Tooltip title="Search in table descriptions">
+                    <TableChartRounded fontSize="small" />
+                  </Tooltip>
+                </ToggleButton>
+                <ToggleButton value={SEARCH_SCOPE_KEYS.SECURITY_ROLES} aria-label="security roles">
+                  <Tooltip title="Search in security role names">
+                    <LockPersonRounded fontSize="small" />
+                  </Tooltip>
+                </ToggleButton>
+                <ToggleButton value={SEARCH_SCOPE_KEYS.RELATIONSHIPS} aria-label="relationships">
+                  <Tooltip title="Search in relationship names">
+                    <AccountTreeRounded fontSize="small" />
+                  </Tooltip>
+                </ToggleButton>
+              </ToggleButtonGroup>
+              <Tooltip title="Reset to default search scope">
+                <IconButton size="small" onClick={resetScope} aria-label="reset scope" sx={{ width: 36, height: 36 }}>
+                  <RestartAltRounded fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </>
+        )}
       </Paper>
 
       <Menu
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        className='mt-2'
+        className={`${showAdvanced ? 'mt-16' : 'mt-2'}`}
       >
         <MenuList dense className='w-64'>
           <MenuItem disabled={localValue.length < 3} onClick={onNavigateNext}>

@@ -6,6 +6,7 @@ import { SecurityRoles } from "./entity/SecurityRoles"
 import Keys from "./Keys"
 import { Attributes } from "./Attributes"
 import { Relationships } from "./Relationships"
+import { highlightMatch } from "./List"
 import React from "react"
 import { Box, Paper, Tab, Tabs } from "@mui/material"
 import CustomTabPanel from "../shared/elements/TabPanel"
@@ -42,7 +43,7 @@ export const Section = React.memo(
                         <EntityHeader entity={entity} />
                         {entity.SecurityRoles.length > 0 && (
                             <div className="md:w-full xl:w-2/3 md:border-t xl:border-t-0 mt-6 xl:mt-0 xl:pt-0">
-                                <SecurityRoles roles={entity.SecurityRoles} />
+                                <SecurityRoles roles={entity.SecurityRoles} highlightMatch={highlightMatch} highlightTerm={search || ''} />
                             </div>
                         )}
                     </Box>

@@ -3,18 +3,19 @@
 import { SecurityRole, PrivilegeDepth } from "@/lib/Types";
 import { AccountTreeRounded, BlockRounded, BusinessRounded, PeopleRounded, PersonRounded, RemoveRounded } from "@mui/icons-material";
 import { Tooltip, Box, Typography, Paper, useTheme } from "@mui/material";
+import React from "react";
 
-export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
+export function SecurityRoles({ roles, highlightMatch, highlightTerm }: { roles: SecurityRole[], highlightMatch?: (text: string, term: string) => string | React.JSX.Element, highlightTerm?: string }) {
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
             {roles.map(role => (
-                <SecurityRoleRow key={role.Name} role={role} />
+                <SecurityRoleRow key={role.Name} role={role} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />
             ))}
         </Box>
     );
 }
 
-function SecurityRoleRow({ role }: { role: SecurityRole }) {
+function SecurityRoleRow({ role, highlightMatch, highlightTerm }: { role: SecurityRole, highlightMatch?: (text: string, term: string) => string | React.JSX.Element, highlightTerm?: string }) {
     const theme = useTheme();
 
     return (
@@ -43,7 +44,7 @@ function SecurityRoleRow({ role }: { role: SecurityRole }) {
                     color: 'text.primary'
                 }}
             >
-                {role.Name}
+                {highlightMatch && highlightTerm ? highlightMatch(role.Name, highlightTerm) : role.Name}
             </Typography>
             <Box
                 sx={{

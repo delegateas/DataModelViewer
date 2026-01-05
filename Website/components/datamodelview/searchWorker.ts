@@ -11,10 +11,20 @@ interface EntityFilterState {
   typeFilter: string;
 }
 
+interface SearchScope {
+  columnNames: boolean;
+  columnDescriptions: boolean;
+  columnDataTypes: boolean;
+  tableDescriptions: boolean;
+  securityRoles: boolean;
+  relationships: boolean;
+}
+
 interface SearchMessage {
   type: 'search';
   data: string;
   entityFilters?: Record<string, EntityFilterState>;
+  searchScope?: SearchScope;
 }
 
 type WorkerMessage = InitMessage | SearchMessage | string;
@@ -55,6 +65,21 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
   // Handle search
   const search = (typeof e.data === 'string' ? e.data : e.data?.data || '').trim().toLowerCase();
   const entityFilters: Record<string, EntityFilterState> = (typeof e.data === 'object' && 'entityFilters' in e.data) ? e.data.entityFilters || {} : {};
+  const searchScope: SearchScope = (typeof e.data === 'object' && 'searchScope' in e.data) ? e.data.searchScope || {
+    columnNames: true,
+    columnDescriptions: true,
+    columnDataTypes: false,
+    tableDescriptions: false,
+    securityRoles: false,
+    relationships: false,
+  } : {
+    columnNames: true,
+    columnDescriptions: true,
+    columnDataTypes: false,
+    tableDescriptions: false,
+    securityRoles: false,
+    relationships: false,
+  };
 
   if (!search) {
     const response: WorkerResponse = { type: 'results', data: [], complete: true };
@@ -103,23 +128,87 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
           }
         }
 
-        // Apply search matching
-        const basicMatch = attr.SchemaName.toLowerCase().includes(search) ||
-          (attr.DisplayName && attr.DisplayName.toLowerCase().includes(search)) ||
-          (attr.Description && attr.Description.toLowerCase().includes(search));
-        let optionsMatch = false;
-        if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
-          optionsMatch = attr.Options.some(option => option.Name.toLowerCase().includes(search));
+        // Apply search matching based on scope
+        let matches = false;
+
+        // Column names (SchemaName and DisplayName)
+        if (searchScope.columnNames) {
+          if (attr.SchemaName.toLowerCase().includes(search)) matches = true;
+          if (attr.DisplayName && attr.DisplayName.toLowerCase().includes(search)) matches = true;
         }
 
-        return basicMatch || optionsMatch;
+        // Column descriptions
+        if (searchScope.columnDescriptions) {
+          if (attr.Description && attr.Description.toLowerCase().includes(search)) matches = true;
+        }
+
+        // Column data types
+        if (searchScope.columnDataTypes) {
+          if (attr.AttributeType.toLowerCase().includes(search)) matches = true;
+
+          // Also search in specific type properties
+          if (attr.AttributeType === 'ChoiceAttribute' || attr.AttributeType === 'StatusAttribute') {
+            if (attr.Options.some(option => option.Name.toLowerCase().includes(search))) matches = true;
+          } else if (attr.AttributeType === 'DateTimeAttribute') {
+            if (attr.Format.toLowerCase().includes(search) || attr.Behavior.toLowerCase().includes(search)) matches = true;
+          } else if (attr.AttributeType === 'IntegerAttribute') {
+            if (attr.Format.toLowerCase().includes(search)) matches = true;
+          } else if (attr.AttributeType === 'StringAttribute') {
+            if (attr.Format.toLowerCase().includes(search)) matches = true;
+          } else if (attr.AttributeType === 'DecimalAttribute') {
+            if (attr.Type.toLowerCase().includes(search)) matches = true;
+          } else if (attr.AttributeType === 'LookupAttribute') {
+            if (attr.Targets.some(target => target.Name.toLowerCase().includes(search))) matches = true;
+          } else if (attr.AttributeType === 'BooleanAttribute') {
+            if (attr.TrueLabel.toLowerCase().includes(search) || attr.FalseLabel.toLowerCase().includes(search)) matches = true;
+          }
+        }
+
+        return matches;
       });
 
-      // If we have matching attributes, add the entity first (for sidebar) then the attributes
-      if (matchingAttributes.length > 0) {
+      // Check for table description matches
+      let tableDescriptionMatches = false;
+      if (searchScope.tableDescriptions) {
+        if (entity.Description && entity.Description.toLowerCase().includes(search)) {
+          tableDescriptionMatches = true;
+        }
+        if (entity.DisplayName && entity.DisplayName.toLowerCase().includes(search)) {
+          tableDescriptionMatches = true;
+        }
+        if (entity.SchemaName.toLowerCase().includes(search)) {
+          tableDescriptionMatches = true;
+        }
+      }
+
+      // Check for security role matches
+      let securityRoleMatches = false;
+      if (searchScope.securityRoles && entity.SecurityRoles) {
+        securityRoleMatches = entity.SecurityRoles.some(role =>
+          role.Name.toLowerCase().includes(search) || role.LogicalName.toLowerCase().includes(search)
+        );
+      }
+
+      // Check for relationship matches
+      let relationshipMatches = false;
+      if (searchScope.relationships && entity.Relationships) {
+        relationshipMatches = entity.Relationships.some(rel =>
+          rel.Name.toLowerCase().includes(search) ||
+          rel.TableSchema.toLowerCase().includes(search) ||
+          rel.RelationshipSchema.toLowerCase().includes(search) ||
+          (rel.LookupDisplayName && rel.LookupDisplayName.toLowerCase().includes(search))
+        );
+      }
+
+      // If we have any matches, add the entity
+      const hasMatches = matchingAttributes.length > 0 || tableDescriptionMatches || securityRoleMatches || relationshipMatches;
+
+      if (hasMatches) {
         if (!groupUsed) allItems.push({ type: 'group', group });
         groupUsed = true;
         allItems.push({ type: 'entity', group, entity });
+
+        // Add matching attributes
         for (const attr of matchingAttributes) {
           allItems.push({ type: 'attribute', group, entity, attribute: attr });
         }

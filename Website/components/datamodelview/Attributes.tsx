@@ -432,9 +432,9 @@ function getAttributeComponent(entity: EntityType, attribute: AttributeType, hig
         case 'ChoiceAttribute':
             return <ChoiceAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'DateTimeAttribute':
-            return <DateTimeAttribute key={key} attribute={attribute} />;
+            return <DateTimeAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'GenericAttribute':
-            return <GenericAttribute key={key} attribute={attribute} />;
+            return <GenericAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'IntegerAttribute':
             return <IntegerAttribute key={key} attribute={attribute} />;
         case 'LookupAttribute':
@@ -442,11 +442,11 @@ function getAttributeComponent(entity: EntityType, attribute: AttributeType, hig
         case 'DecimalAttribute':
             return <DecimalAttribute key={key} attribute={attribute} />;
         case 'StatusAttribute':
-            return <StatusAttribute key={key} attribute={attribute} />;
+            return <StatusAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'StringAttribute':
-            return <StringAttribute key={key} attribute={attribute} />;
+            return <StringAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'BooleanAttribute':
-            return <BooleanAttribute key={key} attribute={attribute} />;
+            return <BooleanAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'FileAttribute':
             return <FileAttribute key={key} attribute={attribute} />;
         default:

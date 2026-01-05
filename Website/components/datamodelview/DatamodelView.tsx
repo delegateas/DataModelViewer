@@ -4,7 +4,7 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { List } from "./List";
-import { TimeSlicedSearch } from "./TimeSlicedSearch";
+import { TimeSlicedSearch, SearchScope } from "./TimeSlicedSearch";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/DatamodelDataContext";
 import { updateURL } from "@/lib/url-utils";
@@ -34,12 +34,20 @@ export function DatamodelView() {
 function DatamodelViewContent() {
     const { scrollToSection, scrollToAttribute, restoreSection } = useDatamodelView();
     const datamodelDispatch = useDatamodelViewDispatch();
-    const { groups, filtered } = useDatamodelData();
+    const { groups, filtered, search } = useDatamodelData();
     const datamodelDataDispatch = useDatamodelDataDispatch();
     const { filters: entityFilters } = useEntityFilters();
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
     const accumulatedResultsRef = useRef<SearchResultItem[]>([]); // Track all results during search
+    const [searchScope, setSearchScope] = useState<SearchScope>({
+        columnNames: true,
+        columnDescriptions: true,
+        columnDataTypes: false,
+        tableDescriptions: false,
+        securityRoles: false,
+        relationships: false,
+    });
 
     // Calculate total search results (prioritize attributes, fallback to entities)
     const totalResults = useMemo(() => {
@@ -47,7 +55,10 @@ function DatamodelViewContent() {
 
         const attributeCount = filtered.filter(item => item.type === 'attribute').length;
         if (attributeCount > 0) return attributeCount;
-        return 0;
+
+        // If no attributes, count entity-level matches (for security roles, relationships, table descriptions)
+        const entityCount = filtered.filter(item => item.type === 'entity').length;
+        return entityCount;
     }, [filtered]);
     const initialLocalValue = useSearchParams().get('globalsearch') || "";
 
@@ -64,7 +75,8 @@ function DatamodelViewContent() {
                 workerRef.current.postMessage({
                     type: 'search',
                     data: searchValue,
-                    entityFilters: filtersObject
+                    entityFilters: filtersObject,
+                    searchScope: searchScope
                 });
             } else {
                 // Clear search - reset to show all groups
@@ -79,11 +91,23 @@ function DatamodelViewContent() {
         updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })
         datamodelDataDispatch({ type: "SET_SEARCH", payload: searchValue.length >= 3 ? searchValue : "" });
         setCurrentSearchIndex(searchValue.length >= 3 ? 1 : 0); // Reset to first result when searching, 0 when cleared
-    }, [groups, datamodelDataDispatch, restoreSection, entityFilters]);
+    }, [groups, datamodelDataDispatch, restoreSection, entityFilters, searchScope]);
 
     const handleLoadingChange = useCallback((isLoading: boolean) => {
         datamodelDispatch({ type: "SET_LOADING", payload: isLoading });
     }, [datamodelDispatch]);
+
+    const handleSearchScopeChange = useCallback((newScope: SearchScope) => {
+        setSearchScope(newScope);
+    }, []);
+
+    // Re-trigger search when scope changes
+    useEffect(() => {
+        if (search && search.length >= 3) {
+            handleSearch(search);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchScope]); // Only trigger on searchScope change, not handleSearch to avoid infinite loop
 
     // Helper function to sort results by their Y position on the page
     const sortResultsByYPosition = useCallback((results: Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }>) => {
@@ -356,6 +380,7 @@ function DatamodelViewContent() {
                     initialLocalValue={initialLocalValue}
                     currentIndex={currentSearchIndex}
                     totalResults={totalResults}
+                    onSearchScopeChange={handleSearchScopeChange}
                 />
                 <List setCurrentIndex={setCurrentSearchIndex} />
             </div>
