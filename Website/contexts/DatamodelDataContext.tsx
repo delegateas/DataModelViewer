@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, ReactNode } from "react";
-import { AttributeType, EntityType, GroupType, SolutionWarningType } from "@/lib/Types";
+import { AttributeType, EntityType, GroupType, RelationshipType, SolutionWarningType } from "@/lib/Types";
 import { useSearchParams } from "next/navigation";
 
 interface DataModelAction {
@@ -18,6 +18,7 @@ interface DatamodelDataState extends DataModelAction {
     | { type: 'group'; group: GroupType }
     | { type: 'entity'; group: GroupType; entity: EntityType }
     | { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }
+    | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType }
   >;
 }
 

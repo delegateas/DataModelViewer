@@ -1,4 +1,4 @@
-import { GroupType, EntityType, AttributeType } from "@/lib/Types";
+import { GroupType, EntityType, AttributeType, RelationshipType } from "@/lib/Types";
 
 // Worker message types
 interface InitMessage {
@@ -36,6 +36,7 @@ interface ResultsMessage {
     | { type: 'group'; group: GroupType }
     | { type: 'entity'; group: GroupType; entity: EntityType }
     | { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }
+    | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType }
   >;
   complete: boolean;
   progress?: number;
@@ -99,6 +100,7 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
     | { type: 'group'; group: GroupType }
     | { type: 'entity'; group: GroupType; entity: EntityType }
     | { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }
+    | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType }
   > = [];
 
   ////////////////////////////////////////////////
@@ -193,16 +195,32 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
         );
       }
 
-      // Check for relationship matches
-      let relationshipMatches = false;
-      if (searchScope.relationships && entity.Relationships) {
-        relationshipMatches = entity.Relationships.some(rel =>
-          rel.Name.toLowerCase().includes(search) ||
-          rel.TableSchema.toLowerCase().includes(search) ||
-          rel.RelationshipSchema.toLowerCase().includes(search) ||
-          (rel.LookupDisplayName && rel.LookupDisplayName.toLowerCase().includes(search))
-        );
+      // Check for relationship matches and collect matching relationships
+      const matchingRelationships = [];
+      if (searchScope.relationships && entity.Relationships && groups) {
+        // Helper function to check if an entity is in the solution (exists in groups)
+        const isEntityInSolution = (entitySchemaName: string): boolean => {
+          return groups!.some(group =>
+            group.Entities.some(e => e.SchemaName === entitySchemaName)
+          );
+        };
+
+        for (const rel of entity.Relationships) {
+          // Apply same default filters as the Relationships component:
+          // 1. Hide implicit relationships by default (only show IsExplicit === true)
+          // 2. Hide relationships to tables not in solution
+          if (!rel.IsExplicit) continue;
+          if (!isEntityInSolution(rel.TableSchema)) continue;
+
+          if (
+            rel.RelationshipSchema.toLowerCase().includes(search) ||
+            (rel.LookupDisplayName && rel.LookupDisplayName.toLowerCase().includes(search))
+          ) {
+            matchingRelationships.push(rel);
+          }
+        }
       }
+      const relationshipMatches = matchingRelationships.length > 0;
 
       // If we have any matches, add the entity
       const hasMatches = matchingAttributes.length > 0 || tableDescriptionMatches || securityRoleMatches || relationshipMatches;
@@ -215,6 +233,11 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
         // Add matching attributes
         for (const attr of matchingAttributes) {
           allItems.push({ type: 'attribute', group, entity, attribute: attr });
+        }
+
+        // Add matching relationships
+        for (const rel of matchingRelationships) {
+          allItems.push({ type: 'relationship', group, entity, relationship: rel });
         }
       }
     }

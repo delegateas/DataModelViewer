@@ -16,11 +16,19 @@ interface ISectionProps {
     entity: EntityType;
     group: GroupType;
     search?: string;
+    activeTab?: number; // External tab control for search navigation
 }
 
 export const Section = React.memo(
-    ({ entity, group, search }: ISectionProps) => {
+    ({ entity, group, search, activeTab }: ISectionProps) => {
         const [tab, setTab] = React.useState(0);
+
+        // Update local tab state when external activeTab prop changes
+        React.useEffect(() => {
+            if (activeTab !== undefined) {
+                setTab(activeTab);
+            }
+        }, [activeTab]);
         const [visibleAttributeCount, setVisibleAttributeCount] = React.useState(entity.Attributes.length);
         const [visibleRelationshipCount, setVisibleRelationshipCount] = React.useState(entity.Relationships.length);
 
@@ -115,10 +123,11 @@ export const Section = React.memo(
     },
     // Custom comparison function to prevent unnecessary re-renders
     (prevProps, nextProps) => {
-        // Only re-render if entity, search or group changes
+        // Only re-render if entity, search, group, or activeTab changes
         return prevProps.entity.SchemaName === nextProps.entity.SchemaName &&
             prevProps.search === nextProps.search &&
-            prevProps.group.Name === nextProps.group.Name;
+            prevProps.group.Name === nextProps.group.Name &&
+            prevProps.activeTab === nextProps.activeTab;
     }
 );
 

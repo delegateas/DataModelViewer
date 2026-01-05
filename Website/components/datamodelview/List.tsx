@@ -12,6 +12,7 @@ import { Box, CircularProgress, debounce, Tooltip } from '@mui/material';
 
 interface IListProps {
     setCurrentIndex: (index: number) => void;
+    entityActiveTabs: Map<string, number>;
 }
 
 // Helper to highlight search matches
@@ -22,7 +23,7 @@ export function highlightMatch(text: string, search: string) {
     return <>{text.slice(0, idx)}<mark className="bg-yellow-200 text-black px-0.5 rounded">{text.slice(idx, idx + search.length)}</mark>{text.slice(idx + search.length)}</>;
 }
 
-export const List = ({ setCurrentIndex }: IListProps) => {
+export const List = ({ setCurrentIndex, entityActiveTabs }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
     const { currentSection, loadingSection } = useDatamodelView();
     const { groups, filtered, search } = useDatamodelData();
@@ -43,7 +44,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
 
     // Only recalculate items when filtered or search changes
     const flatItems = useMemo(() => {
-        if (filtered && filtered.length > 0) return filtered.filter(item => item.type !== 'attribute');
+        if (filtered && filtered.length > 0) return filtered.filter(item => item.type !== 'attribute' && item.type !== 'relationship');
 
         const lowerSearch = search.trim().toLowerCase();
         const items: Array<
@@ -192,6 +193,25 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         }
     }, [scrollToSection]);
 
+    const scrollToRelationship = useCallback((sectionId: string, relSchema: string) => {
+        const relId = `rel-${sectionId}-${relSchema}`;
+        const relationshipLocation = document.getElementById(relId);
+
+        if (relationshipLocation) {
+            // Relationship is already rendered, scroll directly to it
+            relationshipLocation.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            // Relationship not found, need to scroll to section first
+            scrollToSection(sectionId);
+            setTimeout(() => {
+                const relationshipLocationAfterScroll = document.getElementById(relId);
+                if (relationshipLocationAfterScroll) {
+                    relationshipLocationAfterScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+    }, [scrollToSection]);
+
     const scrollToGroup = useCallback((groupName: string) => {
         const groupIndex = flatItems.findIndex(item =>
             item.type === 'group' && item.group.Name === groupName
@@ -214,9 +234,10 @@ export const List = ({ setCurrentIndex }: IListProps) => {
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
         dispatch({ type: 'SET_SCROLL_TO_ATTRIBUTE', payload: scrollToAttribute });
+        dispatch({ type: 'SET_SCROLL_TO_RELATIONSHIP', payload: scrollToRelationship });
         dispatch({ type: 'SET_SCROLL_TO_GROUP', payload: scrollToGroup });
         dispatch({ type: 'SET_RESTORE_SECTION', payload: restoreSection });
-    }, [dispatch, scrollToSection, scrollToAttribute, scrollToGroup]);
+    }, [dispatch, scrollToSection, scrollToAttribute, scrollToRelationship, scrollToGroup, restoreSection]);
 
     const smartScrollToIndex = useCallback((index: number) => {
         rowVirtualizer.scrollToIndex(index, { align: 'start' });
@@ -301,6 +322,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                             entity={item.entity}
                                             group={item.group}
                                             search={search}
+                                            activeTab={entityActiveTabs.get(item.entity.SchemaName)}
                                         />
                                     </div>
                                 )}

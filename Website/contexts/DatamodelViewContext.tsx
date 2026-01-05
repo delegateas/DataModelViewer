@@ -10,6 +10,7 @@ export interface DatamodelViewState {
     scrollToSection: (sectionId: string) => void;
     scrollToGroup: (groupName: string) => void;
     scrollToAttribute: (sectionId: string, attrSchema: string) => void;
+    scrollToRelationship: (sectionId: string, relSchema: string) => void;
     loading: boolean;
     loadingSection: string | null;
     restoreSection: () => void;
@@ -21,6 +22,7 @@ const initialState: DatamodelViewState = {
     scrollToSection: () => { throw new Error("scrollToSection not initialized yet!"); },
     scrollToGroup: () => { throw new Error("scrollToGroup not initialized yet!"); },
     scrollToAttribute: () => { throw new Error("scrollToAttribute not initialized yet!"); },
+    scrollToRelationship: () => { throw new Error("scrollToRelationship not initialized yet!"); },
     loading: true,
     loadingSection: null,
     restoreSection: () => { throw new Error("restoreSection not initialized yet!"); },
@@ -34,7 +36,8 @@ type DatamodelViewAction =
     | { type: 'SET_LOADING', payload: boolean }
     | { type: 'SET_LOADING_SECTION', payload: string | null }
     | { type: 'SET_RESTORE_SECTION', payload: () => void }
-    | { type: 'SET_SCROLL_TO_ATTRIBUTE', payload: (sectionId: string, attrSchema: string) => void };
+    | { type: 'SET_SCROLL_TO_ATTRIBUTE', payload: (sectionId: string, attrSchema: string) => void }
+    | { type: 'SET_SCROLL_TO_RELATIONSHIP', payload: (sectionId: string, relSchema: string) => void };
 
 
 const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAction): DatamodelViewState => {
@@ -55,6 +58,8 @@ const datamodelViewReducer = (state: DatamodelViewState, action: DatamodelViewAc
             return { ...state, restoreSection: action.payload }
         case 'SET_SCROLL_TO_ATTRIBUTE':
             return { ...state, scrollToAttribute: action.payload }
+        case 'SET_SCROLL_TO_RELATIONSHIP':
+            return { ...state, scrollToRelationship: action.payload }
         default:
             return state;
     }
