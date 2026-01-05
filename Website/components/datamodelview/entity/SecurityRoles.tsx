@@ -17,7 +17,7 @@ export function SecurityRoles({ roles, highlightMatch, highlightTerm }: { roles:
 
 function SecurityRoleRow({ role, highlightMatch, highlightTerm }: { role: SecurityRole, highlightMatch?: (text: string, term: string) => string | React.JSX.Element, highlightTerm?: string }) {
     const theme = useTheme();
-    
+
     return (
         <Paper
             variant="outlined"
@@ -28,16 +28,16 @@ function SecurityRoleRow({ role, highlightMatch, highlightTerm }: { role: Securi
                 justifyContent: 'space-between',
                 gap: 1,
                 p: 2,
-                backgroundColor: theme.palette.mode === 'dark' 
-                    ? 'rgba(255, 255, 255, 0.02)' 
+                backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.02)'
                     : 'rgba(0, 0, 0, 0.02)',
                 borderColor: 'border.main',
                 width: '100%',
             }}
         >
-            <Typography 
-                variant="subtitle1" 
-                sx={{ 
+            <Typography
+                variant="subtitle1"
+                sx={{
                     fontWeight: 700,
                     wordWrap: 'break-word',
                     maxWidth: { xs: '100%', sm: '180px', md: '240px' },
@@ -46,12 +46,12 @@ function SecurityRoleRow({ role, highlightMatch, highlightTerm }: { role: Securi
             >
                 {highlightMatch && highlightTerm ? highlightMatch(role.Name, highlightTerm) : role.Name}
             </Typography>
-            <Box 
-                sx={{ 
-                    display: 'flex', 
-                    flexWrap: { xs: 'wrap', sm: 'nowrap' }, 
-                    gap: 1, 
-                    alignItems: 'flex-end' 
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                    gap: 1,
+                    alignItems: 'flex-end'
                 }}
             >
                 <PrivilegeIcon privilege="Create" name="Create" depth={role.Create} />
@@ -107,7 +107,7 @@ function GetDepthIcon({ privilege, depth }: { privilege: string, depth: Privileg
     const getTooltipText = (priv: string, d: PrivilegeDepth): string => {
         const depthDescriptions: Record<PrivilegeDepth, string> = {
             [PrivilegeDepth.None]: "No access",
-            [PrivilegeDepth.Basic]: "User - Only records owned by the user",
+            [PrivilegeDepth.Basic]: "User (or team) - Only records owned by the user themselves or owned by teams the user is a member of. This doesn't give access to rows owned by other members of those teams.",
             [PrivilegeDepth.Local]: "Business Unit - Records owned by the user's business unit",
             [PrivilegeDepth.Deep]: "Parent: Child Business Units - Records owned by the user's business unit and all child business units",
             [PrivilegeDepth.Global]: "Organization - All records in the organization"
@@ -118,8 +118,8 @@ function GetDepthIcon({ privilege, depth }: { privilege: string, depth: Privileg
             "Read": "View records",
             "Write": "Modify existing records",
             "Delete": "Remove records",
-            "Append": "Attach other records to this record (e.g., add notes, activities)",
-            "AppendTo": "Attach this record to other records (e.g., be selected in a lookup)",
+            "Append": "Access to attach other tables to me. (e.g. fill a lookup on table record with other table record)",
+            "AppendTo": "Access to attach me to other tables. (e.g. this table can be selected in a lookup from another table)",
             "Assign": "Change the owner of records",
             "Share": "Share records with other users or teams"
         };

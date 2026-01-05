@@ -323,9 +323,9 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                                                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                                         {component.Name} ({
                                                             component.ComponentType === SolutionComponentTypeEnum.Entity
-                                                                ? 'Entity'
+                                                                ? 'Table'
                                                                 : component.ComponentType === SolutionComponentTypeEnum.Attribute
-                                                                    ? 'Attribute'
+                                                                    ? 'Column'
                                                                     : component.ComponentType === SolutionComponentTypeEnum.Relationship
                                                                         ? 'Relationship'
                                                                         : 'Unknown'

@@ -22,9 +22,12 @@ public class PluginAnalyzer : BaseComponentAnalyzer<SDKStep>
             // Retrieve the logical name of the entity from the linked SDK Message entity
             var logicalTableName = sdkStep.PrimaryObjectTypeCode;
 
+            // Map SDK message name to operation type
+            var operationType = AttributeUsage.MapSdkMessageToOperationType(sdkStep.SdkMessageName);
+
             // Populate the attributeUsages dictionary
             foreach (var attribute in filteringAttributes)
-                AddAttributeUsage(attributeUsages, logicalTableName, attribute, new AttributeUsage(pluginName, $"Used in filterattributes", OperationType.Other, SupportedType, false));
+                AddAttributeUsage(attributeUsages, logicalTableName, attribute, new AttributeUsage(pluginName, $"Used in filterattributes", operationType, SupportedType, false));
 
         }
         catch (Exception ex)
