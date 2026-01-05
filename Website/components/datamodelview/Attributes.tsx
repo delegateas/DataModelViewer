@@ -106,7 +106,7 @@ export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttri
             filteredAttributes = filteredAttributes.filter(attr => attributeMatchesSearch(attr, query))
         }
 
-        if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => (attr.IsCustomAttribute || attr.IsStandardFieldModified) && !attr.SchemaName.endsWith("Base"));
+        if (hideStandardFields) filteredAttributes = filteredAttributes.filter(attr => attr.IsCustomAttribute || attr.IsStandardFieldModified);
 
         if (!sortColumn || !sortDirection) return filteredAttributes
 
