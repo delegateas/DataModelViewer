@@ -25,6 +25,7 @@ interface SearchMessage {
   data: string;
   entityFilters?: Record<string, EntityFilterState>;
   searchScope?: SearchScope;
+  requestId?: number;
 }
 
 type WorkerMessage = InitMessage | SearchMessage | string;
@@ -38,10 +39,12 @@ interface ResultsMessage {
   >;
   complete: boolean;
   progress?: number;
+  requestId?: number;
 }
 
 interface StartedMessage {
   type: 'started';
+  requestId?: number;
 }
 
 type WorkerResponse = ResultsMessage | StartedMessage;
@@ -65,6 +68,7 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
   // Handle search
   const search = (typeof e.data === 'string' ? e.data : e.data?.data || '').trim().toLowerCase();
   const entityFilters: Record<string, EntityFilterState> = (typeof e.data === 'object' && 'entityFilters' in e.data) ? e.data.entityFilters || {} : {};
+  const requestId = (typeof e.data === 'object' && 'requestId' in e.data) ? e.data.requestId : undefined;
   const searchScope: SearchScope = (typeof e.data === 'object' && 'searchScope' in e.data) ? e.data.searchScope || {
     columnNames: true,
     columnDescriptions: true,
@@ -82,13 +86,13 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
   };
 
   if (!search) {
-    const response: WorkerResponse = { type: 'results', data: [], complete: true };
+    const response: WorkerResponse = { type: 'results', data: [], complete: true, requestId };
     self.postMessage(response);
     return;
   }
 
   // First quickly send back a "started" message
-  const startedMessage: WorkerResponse = { type: 'started' };
+  const startedMessage: WorkerResponse = { type: 'started', requestId };
   self.postMessage(startedMessage);
 
   const allItems: Array<
@@ -225,7 +229,8 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
       type: 'results',
       data: chunk,
       complete: isLastChunk,
-      progress: Math.min(100, Math.round((i + CHUNK_SIZE) / allItems.length * 100))
+      progress: Math.min(100, Math.round((i + CHUNK_SIZE) / allItems.length * 100)),
+      requestId
     };
 
     self.postMessage(response);

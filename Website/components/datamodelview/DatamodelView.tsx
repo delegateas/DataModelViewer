@@ -40,6 +40,7 @@ function DatamodelViewContent() {
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
     const accumulatedResultsRef = useRef<SearchResultItem[]>([]); // Track all results during search
+    const searchRequestIdRef = useRef(0); // Track search requests to ignore stale results
     const [searchScope, setSearchScope] = useState<SearchScope>({
         columnNames: true,
         columnDescriptions: true,
@@ -66,6 +67,10 @@ function DatamodelViewContent() {
     const handleSearch = useCallback((searchValue: string) => {
         if (workerRef.current && groups) {
             if (searchValue.length >= 3) {
+                // Increment request ID to invalidate previous searches
+                searchRequestIdRef.current += 1;
+                const currentRequestId = searchRequestIdRef.current;
+
                 // Convert Map to plain object for worker
                 const filtersObject: Record<string, { hideStandardFields: boolean; typeFilter: string }> = {};
                 entityFilters.forEach((filter, entitySchemaName) => {
@@ -76,7 +81,8 @@ function DatamodelViewContent() {
                     type: 'search',
                     data: searchValue,
                     entityFilters: filtersObject,
-                    searchScope: searchScope
+                    searchScope: searchScope,
+                    requestId: currentRequestId // Send request ID to worker
                 });
             } else {
                 // Clear search - reset to show all groups
@@ -135,28 +141,13 @@ function DatamodelViewContent() {
         );
     }, [filtered]);
 
-    // Cached sorted results - only re-sort when attribute results change
-    const [cachedSortedResults, setCachedSortedResults] = useState<Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }>>([]);
-
-    // Update cached sorted results when attribute results change
-    useEffect(() => {
-        if (attributeResults.length > 0) {
-            // Wait a bit for DOM to settle, then sort and cache
-            const timeoutId = setTimeout(() => {
-                const sorted = sortResultsByYPosition([...attributeResults]);
-                setCachedSortedResults(sorted);
-            }, 200);
-
-            return () => clearTimeout(timeoutId);
-        } else {
-            setCachedSortedResults([]);
-        }
-    }, [attributeResults, sortResultsByYPosition]);
-
-    // Helper function to get sorted attribute results
+    // Helper function to get sorted attribute results on-demand (lazy sorting)
+    // This prevents blocking the main thread during typing - sorting only happens during navigation
     const getSortedAttributeResults = useCallback(() => {
-        return cachedSortedResults;
-    }, [cachedSortedResults]);
+        if (attributeResults.length === 0) return [];
+        // Sort on-demand when needed for navigation
+        return sortResultsByYPosition([...attributeResults]);
+    }, [attributeResults, sortResultsByYPosition]);
 
     // Navigation handlers
     const handleNavigateNext = useCallback(() => {
@@ -241,6 +232,11 @@ function DatamodelViewContent() {
 
         const handleMessage = (e: MessageEvent) => {
             const message = e.data;
+
+            // Ignore stale search results
+            if (message.requestId && message.requestId < searchRequestIdRef.current) {
+                return; // Discard results from outdated searches
+            }
 
             if (message.type === 'started') {
                 datamodelDispatch({ type: "SET_LOADING", payload: true });
