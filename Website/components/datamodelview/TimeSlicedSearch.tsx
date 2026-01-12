@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -60,11 +61,33 @@ export const TimeSlicedSearch = ({
   placeholder = "Search attributes...",
   onSearchScopeChange,
 }: TimeSlicedSearchProps) => {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+
   const [localValue, setLocalValue] = useState(initialLocalValue);
   const [isTyping, setIsTyping] = useState(false);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [lastValidSearch, setLastValidSearch] = useState('');
-  const [searchScope, setSearchScope] = useState<SearchScope>(DEFAULT_SEARCH_SCOPE);
+  const [searchScope, setSearchScope] = useState<SearchScope>(() => {
+    // Initialize from URL params if available
+    const scopeParam = searchParams.get('scope');
+    if (scopeParam) {
+      try {
+        const scopes = scopeParam.split(',');
+        return {
+          columnNames: scopes.includes('cn'),
+          columnDescriptions: scopes.includes('cd'),
+          columnDataTypes: scopes.includes('cdt'),
+          tableDescriptions: scopes.includes('td'),
+          relationships: scopes.includes('rel'),
+        };
+      } catch {
+        return DEFAULT_SEARCH_SCOPE;
+      }
+    }
+    return DEFAULT_SEARCH_SCOPE;
+  });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const { isOpen } = useSidebar();
   const { isSettingsOpen } = useSettings();
@@ -99,6 +122,54 @@ export const TimeSlicedSearch = ({
 
   // Hide search on mobile when sidebar is open, or when settings are open
   const shouldHideSearch = (isMobile && isOpen) || isSettingsOpen;
+
+  // Initialize security roles from URL params on mount
+  useEffect(() => {
+    const rolesParam = searchParams.get('roles');
+    if (rolesParam) {
+      try {
+        const roles = rolesParam.split(',').filter(Boolean);
+        entityFiltersDispatch({ type: 'SET_SECURITY_ROLES', roles });
+      } catch {
+        // Ignore invalid param
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Update URL params when search scope or security roles change
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Update scope param
+    const scopeKeys: string[] = [];
+    if (searchScope.columnNames) scopeKeys.push('cn');
+    if (searchScope.columnDescriptions) scopeKeys.push('cd');
+    if (searchScope.columnDataTypes) scopeKeys.push('cdt');
+    if (searchScope.tableDescriptions) scopeKeys.push('td');
+    if (searchScope.relationships) scopeKeys.push('rel');
+
+    if (scopeKeys.length > 0 && JSON.stringify(searchScope) !== JSON.stringify(DEFAULT_SEARCH_SCOPE)) {
+      params.set('scope', scopeKeys.join(','));
+    } else {
+      params.delete('scope');
+    }
+
+    // Update roles param
+    if (selectedSecurityRoles.length > 0) {
+      params.set('roles', selectedSecurityRoles.join(','));
+    } else {
+      params.delete('roles');
+    }
+
+    // Build URL, preserving existing params like 'globalsearch'
+    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+
+    // Only update if the URL actually changed to avoid infinite loops
+    const currentUrl = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    if (newUrl !== currentUrl) {
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [searchScope, selectedSecurityRoles, pathname, router, searchParams]);
 
   // Notify parent when search scope changes
   useEffect(() => {
