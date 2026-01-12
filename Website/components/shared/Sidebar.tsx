@@ -47,6 +47,7 @@ const Sidebar = ({ }: SidebarProps) => {
       href: '/metadata',
       icon: MetadataIcon,
       active: pathname === '/metadata',
+      new: true,
     },
     {
       label: 'Diagram',
