@@ -1,19 +1,20 @@
 'use client'
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Box, CircularProgress, Divider, IconButton, InputAdornment, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, Paper, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
-import { AbcRounded, AccountTreeRounded, ClearRounded, DataObjectRounded, DescriptionRounded, ExpandMoreRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, LockPersonRounded, NavigateBeforeRounded, NavigateNextRounded, RestartAltRounded, SearchRounded, TableChartRounded } from '@mui/icons-material';
+import { useDatamodelData } from '@/contexts/DatamodelDataContext';
+import { useEntityFilters, useEntityFiltersDispatch } from '@/contexts/EntityFiltersContext';
+import { Box, Chip, CircularProgress, Divider, FormControl, IconButton, InputAdornment, InputBase, InputLabel, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, OutlinedInput, Paper, Select, SelectChangeEvent, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
+import { AbcRounded, AccountTreeRounded, ClearRounded, DataObjectRounded, DescriptionRounded, ExpandMoreRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, NavigateBeforeRounded, NavigateNextRounded, RestartAltRounded, SearchRounded, TableChartRounded } from '@mui/icons-material';
 
 export const SEARCH_SCOPE_KEYS = {
   COLUMN_NAMES: 'columnNames',
   COLUMN_DESCRIPTIONS: 'columnDescriptions',
   COLUMN_DATA_TYPES: 'columnDataTypes',
   TABLE_DESCRIPTIONS: 'tableDescriptions',
-  SECURITY_ROLES: 'securityRoles',
   RELATIONSHIPS: 'relationships',
 } as const;
 
@@ -24,7 +25,6 @@ export interface SearchScope {
   columnDescriptions: boolean;
   columnDataTypes: boolean;
   tableDescriptions: boolean;
-  securityRoles: boolean;
   relationships: boolean;
 }
 
@@ -45,7 +45,6 @@ const DEFAULT_SEARCH_SCOPE: SearchScope = {
   columnDescriptions: true,
   columnDataTypes: false,
   tableDescriptions: false,
-  securityRoles: false,
   relationships: false,
 };
 
@@ -70,10 +69,33 @@ export const TimeSlicedSearch = ({
   const { isOpen } = useSidebar();
   const { isSettingsOpen } = useSettings();
   const isMobile = useIsMobile();
+  const { groups } = useDatamodelData();
+  const { selectedSecurityRoles } = useEntityFilters();
+  const entityFiltersDispatch = useEntityFiltersDispatch();
+
+  // Collect all unique security roles across all entities
+  const availableRoles = useMemo(() => {
+    if (!groups) return [];
+
+    const roleSet = new Set<string>();
+
+    for (const group of groups) {
+      for (const entity of group.Entities) {
+        if (entity.SecurityRoles) {
+          for (const role of entity.SecurityRoles) {
+            roleSet.add(role.Name);
+          }
+        }
+      }
+    }
+
+    return Array.from(roleSet).sort((a, b) => a.localeCompare(b));
+  }, [groups]);
 
   const searchTimeoutRef = useRef<number>();
   const typingTimeoutRef = useRef<number>();
   const frameRef = useRef<number>();
+  const paperRef = useRef<HTMLFormElement>(null);
 
   // Hide search on mobile when sidebar is open, or when settings are open
   const shouldHideSearch = (isMobile && isOpen) || isSettingsOpen;
@@ -90,7 +112,6 @@ export const TimeSlicedSearch = ({
     if (scope.columnDescriptions) result.push(SEARCH_SCOPE_KEYS.COLUMN_DESCRIPTIONS);
     if (scope.columnDataTypes) result.push(SEARCH_SCOPE_KEYS.COLUMN_DATA_TYPES);
     if (scope.tableDescriptions) result.push(SEARCH_SCOPE_KEYS.TABLE_DESCRIPTIONS);
-    if (scope.securityRoles) result.push(SEARCH_SCOPE_KEYS.SECURITY_ROLES);
     if (scope.relationships) result.push(SEARCH_SCOPE_KEYS.RELATIONSHIPS);
     return result;
   }, []);
@@ -102,7 +123,6 @@ export const TimeSlicedSearch = ({
       columnDescriptions: arr.includes(SEARCH_SCOPE_KEYS.COLUMN_DESCRIPTIONS),
       columnDataTypes: arr.includes(SEARCH_SCOPE_KEYS.COLUMN_DATA_TYPES),
       tableDescriptions: arr.includes(SEARCH_SCOPE_KEYS.TABLE_DESCRIPTIONS),
-      securityRoles: arr.includes(SEARCH_SCOPE_KEYS.SECURITY_ROLES),
       relationships: arr.includes(SEARCH_SCOPE_KEYS.RELATIONSHIPS),
     };
   }, []);
@@ -124,6 +144,19 @@ export const TimeSlicedSearch = ({
   const toggleAdvanced = useCallback(() => {
     setShowAdvanced(prev => !prev);
   }, []);
+
+  const handleSecurityRoleChange = useCallback((event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    entityFiltersDispatch({ type: 'SET_SECURITY_ROLES', roles: typeof value === 'string' ? value.split(',') : value });
+  }, [entityFiltersDispatch]);
+
+  const handleDeleteSecurityRole = useCallback((roleToDelete: string) => () => {
+    entityFiltersDispatch({ type: 'SET_SECURITY_ROLES', roles: selectedSecurityRoles.filter(role => role !== roleToDelete) });
+  }, [selectedSecurityRoles, entityFiltersDispatch]);
+
+  const handleClearSecurityRoles = useCallback(() => {
+    entityFiltersDispatch({ type: 'SET_SECURITY_ROLES', roles: [] });
+  }, [entityFiltersDispatch]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -319,6 +352,7 @@ export const TimeSlicedSearch = ({
   const searchInput = (
     <Box className={`fixed flex flex-col gap-2 top-20 md:top-24 m-auto w-full items-center md:items-end md:right-4 z-50 transition-opacity bg-transparent duration-200 pointer-events-none ${shouldHideSearch ? 'opacity-0' : 'opacity-100'}`}>
       <Paper
+        ref={paperRef}
         component="form"
         className={`rounded-lg w-[320px] ${shouldHideSearch ? 'pointer-events-none' : 'pointer-events-auto'}`}
         sx={{ backgroundColor: 'background.paper' }}
@@ -362,7 +396,7 @@ export const TimeSlicedSearch = ({
 
           <Divider orientation="vertical" className='mx-1 h-6' />
 
-          <Tooltip title="Advanced search options">
+          <Tooltip title="Advanced search options" PopperProps={{ sx: { zIndex: 10001 } }}>
             <IconButton
               onClick={toggleAdvanced}
               size="small"
@@ -394,6 +428,7 @@ export const TimeSlicedSearch = ({
             >
               <ToggleButtonGroup
                 size="small"
+                className='w-full'
                 value={scopeToArray(searchScope)}
                 onChange={handleScopeChange}
                 aria-label="search scope"
@@ -402,37 +437,32 @@ export const TimeSlicedSearch = ({
                 }}
               >
                 <ToggleButton value={SEARCH_SCOPE_KEYS.COLUMN_NAMES} aria-label="column names">
-                  <Tooltip title="Search in column/attribute names">
+                  <Tooltip title="Search in column/attribute names" slotProps={{ popper: { sx: { zIndex: 10001 } } }}>
                     <AbcRounded fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
                 <ToggleButton value={SEARCH_SCOPE_KEYS.COLUMN_DESCRIPTIONS} aria-label="column descriptions">
-                  <Tooltip title="Search in column descriptions">
+                  <Tooltip title="Search in column descriptions" slotProps={{ popper: { sx: { zIndex: 10001 } } }}>
                     <DescriptionRounded fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
                 <ToggleButton value={SEARCH_SCOPE_KEYS.COLUMN_DATA_TYPES} aria-label="column data types">
-                  <Tooltip title="Search in column data types">
+                  <Tooltip title="Search in column data types" slotProps={{ popper: { sx: { zIndex: 10001 } } }}>
                     <DataObjectRounded fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
                 <ToggleButton value={SEARCH_SCOPE_KEYS.TABLE_DESCRIPTIONS} aria-label="table descriptions">
-                  <Tooltip title="Search in table descriptions">
+                  <Tooltip title="Search in table descriptions" slotProps={{ popper: { sx: { zIndex: 10001 } } }}>
                     <TableChartRounded fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
-                <ToggleButton value={SEARCH_SCOPE_KEYS.SECURITY_ROLES} aria-label="security roles">
-                  <Tooltip title="Search in security role names">
-                    <LockPersonRounded fontSize="small" />
-                  </Tooltip>
-                </ToggleButton>
                 <ToggleButton value={SEARCH_SCOPE_KEYS.RELATIONSHIPS} aria-label="relationships">
-                  <Tooltip title="Search in relationship names">
+                  <Tooltip title="Search in relationship names" slotProps={{ popper: { sx: { zIndex: 10001 } } }}>
                     <AccountTreeRounded fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
               </ToggleButtonGroup>
-              <Tooltip title="Reset to default search scope">
+              <Tooltip title="Reset to default search scope" PopperProps={{ sx: { zIndex: 10001 } }}>
                 <IconButton size="small" onClick={resetScope} aria-label="reset scope" sx={{ width: 36, height: 36 }}>
                   <RestartAltRounded fontSize="small" />
                 </IconButton>
@@ -440,13 +470,109 @@ export const TimeSlicedSearch = ({
             </Box>
           </>
         )}
+
+        {/* Security Role Impersonation */}
+        {showAdvanced && availableRoles.length > 0 && (
+          <>
+            <Divider />
+            <Box className="p-2 flex items-center gap-1">
+              <FormControl size="small" className="flex-1">
+                <InputLabel id="security-role-selector-label">Security Role Impersonation</InputLabel>
+                <Select
+                  labelId="security-role-selector-label"
+                  id="security-role-selector"
+                  multiple
+                  fullWidth
+                  className="mt-1"
+                  value={selectedSecurityRoles}
+                  onChange={handleSecurityRoleChange}
+                  input={<OutlinedInput label="Security Role Impersonation" />}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (
+                        <Chip
+                          key={value}
+                          label={value}
+                          size="small"
+                          onDelete={handleDeleteSecurityRole(value)}
+                          onMouseDown={(event) => {
+                            event.stopPropagation();
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        width: 'inherit',
+                        maxWidth: 'inherit',
+                        maxHeight: 300,
+                      },
+                      sx: {
+                        zIndex: 10000, // Higher than portal root z-index
+                        width: 'inherit',
+                      }
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left',
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left',
+                    },
+                    sx: {
+                      zIndex: 10000, // Higher z-index for the menu itself
+                    },
+                  }}
+                >
+                  {availableRoles.map((role) => (
+                    <MenuItem
+                      key={role}
+                      value={role}
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Tooltip title={role} placement="right" PopperProps={{ sx: { zIndex: 10002 } }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {role}
+                        </span>
+                      </Tooltip>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {selectedSecurityRoles.length > 0 && (
+                <Tooltip title="Clear all selected roles" PopperProps={{ sx: { zIndex: 10001 } }}>
+                  <IconButton size="small" onClick={handleClearSecurityRoles} sx={{ width: 36, height: 36 }}>
+                    <ClearRounded fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          </>
+        )}
       </Paper>
 
       <Menu
-        anchorEl={anchorEl}
+        anchorEl={paperRef.current}
         open={open}
         onClose={handleClose}
-        className={`${showAdvanced ? 'mt-16' : 'mt-2'}`}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        sx={{
+          mt: 1,
+        }}
       >
         <MenuList dense className='w-64'>
           <MenuItem disabled={localValue.length < 3} onClick={onNavigateNext}>

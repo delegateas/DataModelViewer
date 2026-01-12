@@ -8,6 +8,7 @@ import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { updateURL } from "@/lib/url-utils";
 import { copyToClipboard, generateGroupLink } from "@/lib/clipboard-utils";
 import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useEntityFilters } from "@/contexts/EntityFiltersContext";
 import { Box, CircularProgress, debounce, Tooltip } from '@mui/material';
 
 interface IListProps {
@@ -27,10 +28,21 @@ export const List = ({ setCurrentIndex, entityActiveTabs }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
     const { currentSection, loadingSection } = useDatamodelView();
     const { groups, filtered, search } = useDatamodelData();
+    const { selectedSecurityRoles } = useEntityFilters();
     const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
     // used to relocate section after search/filter
     const [sectionVirtualItem, setSectionVirtualItem] = useState<string | null>(null);
+
+    // Helper function to check if entity has access from selected security roles
+    const hasSecurityRoleAccess = useCallback((entity: EntityType): boolean => {
+        if (selectedSecurityRoles.length === 0) return false;
+
+        return entity.SecurityRoles.some(role =>
+            selectedSecurityRoles.includes(role.Name) &&
+            (role.Read !== null && role.Read >= 0) // Has any read access
+        );
+    }, [selectedSecurityRoles]);
 
     const handleCopyGroupLink = useCallback(async (groupName: string) => {
         const link = generateGroupLink(groupName);
@@ -55,6 +67,13 @@ export const List = ({ setCurrentIndex, entityActiveTabs }: IListProps) => {
             // Filter entities in this group
             const filteredEntities = group.Entities.filter((entity: EntityType) => {
                 const typedEntity = entity;
+
+                // If security roles are selected, only show entities with access
+                if (selectedSecurityRoles.length > 0) {
+                    const hasAccess = hasSecurityRoleAccess(typedEntity);
+                    if (!hasAccess) return false;
+                }
+
                 if (!lowerSearch) return true;
                 // Match entity schema or display name
                 const entityMatch = typedEntity.SchemaName.toLowerCase().includes(lowerSearch) ||
@@ -74,7 +93,7 @@ export const List = ({ setCurrentIndex, entityActiveTabs }: IListProps) => {
             }
         }
         return items;
-    }, [filtered, search, groups]);
+    }, [filtered, search, groups, selectedSecurityRoles, hasSecurityRoleAccess]);
 
     const debouncedOnChange = debounce((instance, sync) => {
         if (!sync) {
@@ -323,6 +342,7 @@ export const List = ({ setCurrentIndex, entityActiveTabs }: IListProps) => {
                                             group={item.group}
                                             search={search}
                                             activeTab={entityActiveTabs.get(item.entity.SchemaName)}
+                                            highlightSecurityRole={selectedSecurityRoles.length > 0 && hasSecurityRoleAccess(item.entity)}
                                         />
                                     </div>
                                 )}

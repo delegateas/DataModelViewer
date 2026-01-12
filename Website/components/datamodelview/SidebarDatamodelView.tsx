@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { TextField } from "@mui/material";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { useDatamodelData } from "@/contexts/DatamodelDataContext";
+import { useEntityFilters } from "@/contexts/EntityFiltersContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EntityGroupAccordion } from "@/components/shared/elements/EntityGroupAccordion";
 
@@ -21,6 +22,17 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
     const dataModelDispatch = useDatamodelViewDispatch();
 
     const { groups, filtered, search } = useDatamodelData();
+    const { selectedSecurityRoles } = useEntityFilters();
+
+    // Helper function to check if entity has access from selected security roles
+    const hasSecurityRoleAccess = useCallback((entity: EntityType): boolean => {
+        if (selectedSecurityRoles.length === 0) return true; // Show all if no roles selected
+
+        return entity.SecurityRoles.some(role =>
+            selectedSecurityRoles.includes(role.Name) &&
+            (role.Read !== null && role.Read >= 0) // Has any read access
+        );
+    }, [selectedSecurityRoles]);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [displaySearchTerm, setDisplaySearchTerm] = useState("");
@@ -66,17 +78,25 @@ export const SidebarDatamodelView = ({ }: ISidebarDatamodelViewProps) => {
 
     // Memoize search results to prevent recalculation on every render
     const filteredGroups = useMemo(() => {
-        if (!searchTerm.trim() && !search) return groups;
-        
         return groups.map(group => ({
             ...group,
-            Entities: group.Entities.filter(entity => 
-                (entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase())) &&
-                (!search || filtered.some(f => f.type === 'entity' && f.entity.SchemaName === entity.SchemaName))
-            )
+            Entities: group.Entities.filter(entity => {
+                // Filter by security roles if any are selected
+                if (!hasSecurityRoleAccess(entity)) return false;
+
+                // Filter by local search term
+                const matchesLocalSearch = !searchTerm.trim() ||
+                    entity.SchemaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    entity.DisplayName.toLowerCase().includes(searchTerm.toLowerCase());
+
+                // Filter by global search results
+                const matchesGlobalSearch = !search ||
+                    filtered.some(f => f.type === 'entity' && f.entity.SchemaName === entity.SchemaName);
+
+                return matchesLocalSearch && matchesGlobalSearch;
+            })
         })).filter(group => group.Entities.length > 0);
-    }, [groups, searchTerm, filtered]);
+    }, [groups, searchTerm, filtered, search, hasSecurityRoleAccess]);
     
     // Debounced search to reduce performance impact
     useEffect(() => {

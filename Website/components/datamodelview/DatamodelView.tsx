@@ -47,7 +47,6 @@ function DatamodelViewContent() {
         columnDescriptions: true,
         columnDataTypes: false,
         tableDescriptions: false,
-        securityRoles: false,
         relationships: false,
     });
     // Track which tab should be active for each entity during search navigation
