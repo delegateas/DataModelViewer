@@ -9,7 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useDatamodelData } from '@/contexts/DatamodelDataContext';
 import { useEntityFilters, useEntityFiltersDispatch } from '@/contexts/EntityFiltersContext';
 import { Box, Chip, CircularProgress, Divider, FormControl, IconButton, InputAdornment, InputBase, InputLabel, ListItemIcon, ListItemText, Menu, MenuItem, MenuList, OutlinedInput, Paper, Select, SelectChangeEvent, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
-import { AbcRounded, AccountTreeRounded, ClearRounded, DataObjectRounded, DescriptionRounded, ExpandMoreRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, NavigateBeforeRounded, NavigateNextRounded, RestartAltRounded, SearchRounded, TableChartRounded } from '@mui/icons-material';
+import { AbcRounded, AccountTreeRounded, AlignHorizontalLeftRounded, ClearRounded, ExpandMoreRounded, FormatListBulletedRounded, InfoRounded, KeyboardArrowDownRounded, KeyboardArrowUpRounded, NavigateBeforeRounded, NavigateNextRounded, NotesRounded, RestartAltRounded, SearchRounded } from '@mui/icons-material';
 
 export const SEARCH_SCOPE_KEYS = {
   COLUMN_NAMES: 'columnNames',
@@ -514,17 +514,17 @@ export const TimeSlicedSearch = ({
                 </ToggleButton>
                 <ToggleButton value={SEARCH_SCOPE_KEYS.COLUMN_DESCRIPTIONS} aria-label="column descriptions">
                   <Tooltip title="Search in column descriptions" slotProps={{ popper: { sx: { zIndex: 10001 } } }}>
-                    <DescriptionRounded fontSize="small" />
+                    <NotesRounded fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
                 <ToggleButton value={SEARCH_SCOPE_KEYS.COLUMN_DATA_TYPES} aria-label="column data types">
                   <Tooltip title="Search in column data types" slotProps={{ popper: { sx: { zIndex: 10001 } } }}>
-                    <DataObjectRounded fontSize="small" />
+                    <FormatListBulletedRounded fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
                 <ToggleButton value={SEARCH_SCOPE_KEYS.TABLE_DESCRIPTIONS} aria-label="table descriptions">
                   <Tooltip title="Search in table descriptions" slotProps={{ popper: { sx: { zIndex: 10001 } } }}>
-                    <TableChartRounded fontSize="small" />
+                    <AlignHorizontalLeftRounded fontSize="small" />
                   </Tooltip>
                 </ToggleButton>
                 <ToggleButton value={SEARCH_SCOPE_KEYS.RELATIONSHIPS} aria-label="relationships">
