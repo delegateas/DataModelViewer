@@ -31,7 +31,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
 
     const dispatch = useDatamodelViewDispatch();
     const { scrollToSection } = useDatamodelView();
-    const { groups } = useDatamodelData();
+    const { groups, searchScope } = useDatamodelData();
 
     // Helper function to check if an entity is in the solution
     const isEntityInSolution = (entitySchemaName: string): boolean => {
@@ -147,7 +147,10 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
     ]
 
     const sortedRelationships = getSortedRelationships();
-    const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
+    // Only highlight if search scope includes relationships
+    // Use internal search query first, or parent search if relationships scope is enabled
+    const highlightTerm = searchQuery ||
+        (search && searchScope.relationships ? search : "");
 
     // Notify parent of visible count changes
     useEffect(() => {

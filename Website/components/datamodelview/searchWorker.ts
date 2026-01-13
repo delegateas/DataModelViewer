@@ -25,6 +25,7 @@ interface SearchMessage {
   data: string;
   entityFilters?: Record<string, EntityFilterState>;
   searchScope?: SearchScope;
+  selectedSecurityRoles?: string[];
   requestId?: number;
 }
 
@@ -70,6 +71,7 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
   const search = (typeof e.data === 'string' ? e.data : e.data?.data || '').trim().toLowerCase();
   const entityFilters: Record<string, EntityFilterState> = (typeof e.data === 'object' && 'entityFilters' in e.data) ? e.data.entityFilters || {} : {};
   const requestId = (typeof e.data === 'object' && 'requestId' in e.data) ? e.data.requestId : undefined;
+  const selectedSecurityRoles: string[] = (typeof e.data === 'object' && 'selectedSecurityRoles' in e.data) ? e.data.selectedSecurityRoles || [] : [];
   const searchScope: SearchScope = (typeof e.data === 'object' && 'searchScope' in e.data) ? e.data.searchScope || {
     columnNames: true,
     columnDescriptions: true,
@@ -103,12 +105,27 @@ self.onmessage = async function (e: MessageEvent<WorkerMessage>) {
     | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType }
   > = [];
 
+  // Helper function to check if entity has access from selected security roles
+  const hasSecurityRoleAccess = (entity: EntityType): boolean => {
+    if (selectedSecurityRoles.length === 0) return true; // No filter means show all
+
+    return entity.SecurityRoles.some(role =>
+      selectedSecurityRoles.includes(role.Name) &&
+      (role.Read !== null && role.Read >= 0) // Has any read access
+    );
+  };
+
   ////////////////////////////////////////////////
   // Finding matches part
   ////////////////////////////////////////////////
   for (const group of groups) {
     let groupUsed = false;
     for (const entity of group.Entities) {
+      // Filter by security roles first - skip entity if no access
+      if (!hasSecurityRoleAccess(entity)) {
+        continue;
+      }
+
       // Get entity-specific filters (default to showing all if not set)
       const entityFilter = entityFilters[entity.SchemaName] || { hideStandardFields: true, typeFilter: 'all' };
 

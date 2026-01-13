@@ -18,6 +18,7 @@ import { highlightMatch } from "../datamodelview/List";
 import { Box, Button, FormControl, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography, useTheme } from "@mui/material"
 import { ClearRounded, SearchRounded, Visibility, VisibilityOff, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
 import { useEntityFiltersDispatch } from "@/contexts/EntityFiltersContext"
+import { useDatamodelData } from "@/contexts/DatamodelDataContext"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
@@ -37,6 +38,7 @@ export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttri
 
     const theme = useTheme();
     const entityFiltersDispatch = useEntityFiltersDispatch();
+    const { searchScope } = useDatamodelData();
 
     // Report filter state changes to context
     useEffect(() => {
@@ -144,7 +146,10 @@ export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttri
     }
 
     const sortedAttributes = getSortedAttributes();
-    const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
+    // Only highlight if search scope includes columns
+    // Use internal search query first, or parent search if column scopes are enabled
+    const highlightTerm = searchQuery ||
+        (search && (searchScope.columnNames || searchScope.columnDescriptions || searchScope.columnDataTypes) ? search : "");
 
     // Notify parent of visible count changes
     useEffect(() => {

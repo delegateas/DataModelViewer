@@ -214,21 +214,25 @@ export const List = ({ setCurrentIndex, entityActiveTabs }: IListProps) => {
 
     const scrollToRelationship = useCallback((sectionId: string, relSchema: string) => {
         const relId = `rel-${sectionId}-${relSchema}`;
-        const relationshipLocation = document.getElementById(relId);
 
-        if (relationshipLocation) {
-            // Relationship is already rendered, scroll directly to it
-            relationshipLocation.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-            // Relationship not found, need to scroll to section first
-            scrollToSection(sectionId);
-            setTimeout(() => {
-                const relationshipLocationAfterScroll = document.getElementById(relId);
-                if (relationshipLocationAfterScroll) {
-                    relationshipLocationAfterScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 100);
-        }
+        // Helper function to attempt scrolling to relationship with retries
+        const attemptScroll = (attemptsLeft: number) => {
+            const relationshipLocation = document.getElementById(relId);
+
+            if (relationshipLocation) {
+                // Relationship found, scroll to it
+                relationshipLocation.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (attemptsLeft > 0) {
+                // Relationship not rendered yet, retry after delay
+                setTimeout(() => attemptScroll(attemptsLeft - 1), 100);
+            } else {
+                // Give up after all retries, just scroll to section
+                scrollToSection(sectionId);
+            }
+        };
+
+        // Start attempting to scroll with 5 retries (total 500ms wait time)
+        attemptScroll(5);
     }, [scrollToSection]);
 
     const scrollToGroup = useCallback((groupName: string) => {

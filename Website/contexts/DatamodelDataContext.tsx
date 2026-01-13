@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from "react";
 import { AttributeType, EntityType, GroupType, RelationshipType, SolutionWarningType } from "@/lib/Types";
 import { useSearchParams } from "next/navigation";
+import { SearchScope } from "@/components/datamodelview/TimeSlicedSearch";
 
 interface DataModelAction {
   getEntityDataBySchemaName: (schemaName: string) => EntityType | undefined;
@@ -14,6 +15,7 @@ interface DatamodelDataState extends DataModelAction {
   warnings: SolutionWarningType[];
   solutionCount: number;
   search: string;
+  searchScope: SearchScope;
   filtered: Array<
     | { type: 'group'; group: GroupType }
     | { type: 'entity'; group: GroupType; entity: EntityType }
@@ -27,6 +29,13 @@ const initialState: DatamodelDataState = {
   warnings: [],
   solutionCount: 0,
   search: "",
+  searchScope: {
+    columnNames: true,
+    columnDescriptions: true,
+    columnDataTypes: false,
+    tableDescriptions: false,
+    relationships: false,
+  },
   filtered: [],
 
   getEntityDataBySchemaName: () => { throw new Error("getEntityDataBySchemaName not implemented.") },
@@ -47,6 +56,8 @@ const datamodelDataReducer = (state: DatamodelDataState, action: any): Datamodel
       return { ...state, solutionCount: action.payload };
     case "SET_SEARCH":
       return { ...state, search: action.payload };
+    case "SET_SEARCH_SCOPE":
+      return { ...state, searchScope: action.payload };
     case "SET_FILTERED":
       return { ...state, filtered: action.payload };
     case "APPEND_FILTERED":

@@ -37,7 +37,7 @@ function DatamodelViewContent() {
     const datamodelDispatch = useDatamodelViewDispatch();
     const { groups, filtered, search } = useDatamodelData();
     const datamodelDataDispatch = useDatamodelDataDispatch();
-    const { filters: entityFilters } = useEntityFilters();
+    const { filters: entityFilters, selectedSecurityRoles } = useEntityFilters();
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
     const accumulatedResultsRef = useRef<SearchResultItem[]>([]); // Track all results during search
@@ -67,11 +67,29 @@ function DatamodelViewContent() {
     const totalResults = useMemo(() => {
         if (filtered.length === 0) return 0;
 
-        const attributeCount = filtered.filter(item => item.type === 'attribute').length;
-        const relationshipCount = filtered.filter(item => item.type === 'relationship').length;
-        const itemCount = attributeCount + relationshipCount;
+        // Get combined results and deduplicate to match navigation behavior
+        const combinedResults = filtered.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType } =>
+            item.type === 'attribute' || item.type === 'relationship'
+        );
 
-        if (itemCount > 0) return itemCount;
+        if (combinedResults.length > 0) {
+            // Deduplicate to match getSortedCombinedResults behavior
+            // Note: We don't check DOM element existence here because relationships on inactive tabs
+            // won't have DOM elements yet, but they should still be counted for navigation
+            const seen = new Set<string>();
+            let count = 0;
+            for (const item of combinedResults) {
+                const key = item.type === 'attribute'
+                    ? `attr-${item.entity.SchemaName}-${item.attribute.SchemaName}`
+                    : `rel-${item.entity.SchemaName}-${item.relationship.RelationshipSchema}`;
+
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    count++;
+                }
+            }
+            return count;
+        }
 
         // If no attributes or relationships, count entity-level matches (for security roles, table descriptions)
         const entityCount = filtered.filter(item => item.type === 'entity').length;
@@ -98,6 +116,7 @@ function DatamodelViewContent() {
                     data: searchValue,
                     entityFilters: filtersObject,
                     searchScope: searchScope,
+                    selectedSecurityRoles: selectedSecurityRoles,
                     requestId: currentRequestId // Send request ID to worker
                 });
             } else {
@@ -113,7 +132,7 @@ function DatamodelViewContent() {
         updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })
         datamodelDataDispatch({ type: "SET_SEARCH", payload: searchValue.length >= 3 ? searchValue : "" });
         setCurrentSearchIndex(searchValue.length >= 3 ? 1 : 0); // Reset to first result when searching, 0 when cleared
-    }, [groups, datamodelDataDispatch, restoreSection, entityFilters, searchScope]);
+    }, [groups, datamodelDataDispatch, restoreSection, entityFilters, searchScope, selectedSecurityRoles]);
 
     const handleLoadingChange = useCallback((isLoading: boolean) => {
         datamodelDispatch({ type: "SET_LOADING", payload: isLoading });
@@ -121,15 +140,16 @@ function DatamodelViewContent() {
 
     const handleSearchScopeChange = useCallback((newScope: SearchScope) => {
         setSearchScope(newScope);
-    }, []);
+        datamodelDataDispatch({ type: "SET_SEARCH_SCOPE", payload: newScope });
+    }, [datamodelDataDispatch]);
 
-    // Re-trigger search when scope changes
+    // Re-trigger search when scope or security roles change
     useEffect(() => {
         if (search && search.length >= 3) {
             handleSearch(search);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchScope]); // Only trigger on searchScope change, not handleSearch to avoid infinite loop
+    }, [searchScope, selectedSecurityRoles]); // Only trigger on searchScope or selectedSecurityRoles change, not handleSearch to avoid infinite loop
 
     // Helper function to get sorted combined results (attributes + relationships) on-demand
     // This prevents blocking the main thread during typing - sorting only happens during navigation
@@ -165,44 +185,69 @@ function DatamodelViewContent() {
             resultsByEntity.get(entityKey)!.push(result);
         }
 
-        // Sort entities by the Y position of their first attribute (or use first result if no attributes)
-        const sortedEntities = Array.from(resultsByEntity.entries()).sort((a, b) => {
-            const [, resultsA] = a;
-            const [, resultsB] = b;
-
-            // Find first attribute for each entity
-            const firstAttrA = resultsA.find(r => r.type === 'attribute') as { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | undefined;
-            const firstAttrB = resultsB.find(r => r.type === 'attribute') as { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | undefined;
-
-            // If both have attributes, compare by Y position
-            if (firstAttrA && firstAttrB) {
-                const elementA = document.getElementById(`attr-${firstAttrA.entity.SchemaName}-${firstAttrA.attribute.SchemaName}`);
-                const elementB = document.getElementById(`attr-${firstAttrB.entity.SchemaName}-${firstAttrB.attribute.SchemaName}`);
-
-                if (elementA && elementB) {
-                    const rectA = elementA.getBoundingClientRect();
-                    const rectB = elementB.getBoundingClientRect();
-                    return rectA.top - rectB.top;
-                }
+        // Create a stable sort order based on the groups data structure
+        // This ensures consistent navigation order regardless of scroll position or tab state
+        const entityOrder = new Map<string, number>();
+        let orderIndex = 0;
+        for (const group of groups) {
+            for (const entity of group.Entities) {
+                entityOrder.set(entity.SchemaName, orderIndex++);
             }
+        }
 
-            // Fallback: maintain original order
-            return 0;
+        // Sort entities by their position in the groups data structure
+        const sortedEntities = Array.from(resultsByEntity.entries()).sort((a, b) => {
+            const [entitySchemaA] = a;
+            const [entitySchemaB] = b;
+
+            const orderA = entityOrder.get(entitySchemaA) ?? Number.MAX_SAFE_INTEGER;
+            const orderB = entityOrder.get(entitySchemaB) ?? Number.MAX_SAFE_INTEGER;
+
+            return orderA - orderB;
         });
 
-        // Flatten back to array, keeping attributes before relationships within each entity
+        // Flatten back to array, keeping attributes BEFORE relationships within each entity
         const result: Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType }> = [];
         for (const [, entityResults] of sortedEntities) {
             // Separate attributes and relationships for this entity
             const attributes = entityResults.filter((r): r is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } => r.type === 'attribute');
             const relationships = entityResults.filter((r): r is { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType } => r.type === 'relationship');
 
-            // Add all attributes first (in their original order), then relationships
+            // Sort attributes by Y position within the entity (if they exist in DOM)
+            // Note: We don't filter out attributes that don't exist in DOM because the search worker
+            // already applied all component-level filters
+            attributes.sort((a, b) => {
+                const elementA = document.getElementById(`attr-${a.entity.SchemaName}-${a.attribute.SchemaName}`);
+                const elementB = document.getElementById(`attr-${b.entity.SchemaName}-${b.attribute.SchemaName}`);
+
+                if (elementA && elementB) {
+                    const rectA = elementA.getBoundingClientRect();
+                    const rectB = elementB.getBoundingClientRect();
+                    return rectA.top - rectB.top;
+                }
+                return 0;
+            });
+
+            // Sort relationships by Y position within the entity (if they exist in DOM)
+            // Note: Relationships on inactive tabs won't have DOM elements, so we keep them in original order
+            relationships.sort((a, b) => {
+                const elementA = document.getElementById(`rel-${a.entity.SchemaName}-${a.relationship.RelationshipSchema}`);
+                const elementB = document.getElementById(`rel-${b.entity.SchemaName}-${b.relationship.RelationshipSchema}`);
+
+                if (elementA && elementB) {
+                    const rectA = elementA.getBoundingClientRect();
+                    const rectB = elementB.getBoundingClientRect();
+                    return rectA.top - rectB.top;
+                }
+                return 0;
+            });
+
+            // Add all attributes first, then all relationships
             result.push(...attributes, ...relationships);
         }
 
         return result;
-    }, [filtered]);
+    }, [filtered, groups]);
 
     // Navigation handlers
     const handleNavigateNext = useCallback(() => {
