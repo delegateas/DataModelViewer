@@ -12,13 +12,15 @@ internal class WebsiteBuilder
     private readonly IEnumerable<Record> records;
     private readonly IEnumerable<SolutionWarning> warnings;
     private readonly IEnumerable<Solution> solutions;
+    private readonly Dictionary<string, GlobalOptionSetUsage> globalOptionSetUsages;
     private readonly string OutputFolder;
 
-    public WebsiteBuilder(IConfiguration configuration, IEnumerable<Record> records, IEnumerable<SolutionWarning> warnings)
+    public WebsiteBuilder(IConfiguration configuration, IEnumerable<Record> records, IEnumerable<SolutionWarning> warnings, Dictionary<string, GlobalOptionSetUsage> globalOptionSetUsages)
     {
         this.configuration = configuration;
         this.records = records;
         this.warnings = warnings;
+        this.globalOptionSetUsages = globalOptionSetUsages;
 
         // Assuming execution in bin/xxx/net8.0
         OutputFolder = configuration["OutputFolder"] ?? Path.Combine(System.Reflection.Assembly.GetExecutingAssembly().Location, "../../../../../Website/generated");
@@ -65,6 +67,15 @@ internal class WebsiteBuilder
             sb.AppendLine($"  {JsonConvert.SerializeObject(warning)},");
         }
         sb.AppendLine("]");
+
+        // GLOBAL OPTION SETS
+        sb.AppendLine("");
+        sb.AppendLine("export const GlobalOptionSets: Record<string, { Name: string; DisplayName: string; Usages: { EntitySchemaName: string; EntityDisplayName: string; AttributeSchemaName: string; AttributeDisplayName: string }[] }> = {");
+        foreach (var (key, usage) in globalOptionSetUsages)
+        {
+            sb.AppendLine($"  \"{key}\": {JsonConvert.SerializeObject(usage)},");
+        }
+        sb.AppendLine("};");
 
         File.WriteAllText(Path.Combine(OutputFolder, "Data.ts"), sb.ToString());
     }

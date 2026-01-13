@@ -3,6 +3,7 @@ import { ChoiceAttributeType } from "@/lib/Types"
 import { formatNumberSeperator } from "@/lib/utils"
 import { Box, Typography, Chip } from "@mui/material"
 import { CheckBoxOutlineBlankRounded, CheckBoxRounded, CheckRounded, RadioButtonCheckedRounded, RadioButtonUncheckedRounded } from "@mui/icons-material"
+import OptionSetScopeIndicator from "./OptionSetScopeIndicator"
 
 export default function ChoiceAttribute({ attribute, highlightMatch, highlightTerm }: { attribute: ChoiceAttributeType, highlightMatch: (text: string, term: string) => string | React.JSX.Element, highlightTerm: string }) {
 
@@ -11,9 +12,10 @@ export default function ChoiceAttribute({ attribute, highlightMatch, highlightTe
     return (
         <Box className="flex flex-col gap-1">
             <Box className="flex items-center gap-2">
+                <OptionSetScopeIndicator globalOptionSetName={attribute.GlobalOptionSetName} />
                 <Typography className="font-semibold text-xs md:text-sm md:font-bold">{attribute.Type}-select</Typography>
                 {attribute.DefaultValue !== null && attribute.DefaultValue !== -1 && !isMobile && (
-                    <Chip 
+                    <Chip
                         icon={<CheckRounded className="w-2 h-2 md:w-3 md:h-3" />}
                         label={`Default: ${attribute.Options.find(o => o.Value === attribute.DefaultValue)?.Name}`}
                         size="small"

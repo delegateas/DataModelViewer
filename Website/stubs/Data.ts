@@ -114,3 +114,5 @@ export let Groups: GroupType[] = [
 ];
 
 export let SolutionWarnings: SolutionWarningType[] = [];
+
+export const GlobalOptionSets: Record<string, { Name: string; DisplayName: string; Usages: { EntitySchemaName: string; EntityDisplayName: string; AttributeSchemaName: string; AttributeDisplayName: string }[] }> = {};
