@@ -4,19 +4,20 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { SidebarDatamodelView } from "./SidebarDatamodelView";
 import { useDatamodelView, useDatamodelViewDispatch } from "@/contexts/DatamodelViewContext";
 import { List } from "./List";
-import { TimeSlicedSearch } from "./TimeSlicedSearch";
+import { TimeSlicedSearch, SearchScope } from "./TimeSlicedSearch";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useDatamodelData, useDatamodelDataDispatch } from "@/contexts/DatamodelDataContext";
 import { updateURL } from "@/lib/url-utils";
 import { useSearchParams } from "next/navigation";
-import { AttributeType, EntityType, GroupType } from "@/lib/Types";
+import { AttributeType, EntityType, GroupType, RelationshipType } from "@/lib/Types";
 import { useEntityFilters } from "@/contexts/EntityFiltersContext";
 
 // Type for search results
 type SearchResultItem =
     | { type: 'group'; group: GroupType }
     | { type: 'entity'; group: GroupType; entity: EntityType }
-    | { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType };
+    | { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }
+    | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType };
 
 export function DatamodelView() {
     const { setElement, expand } = useSidebar();
@@ -32,22 +33,67 @@ export function DatamodelView() {
 }
 
 function DatamodelViewContent() {
-    const { scrollToSection, scrollToAttribute, restoreSection } = useDatamodelView();
+    const { scrollToSection, scrollToAttribute, scrollToRelationship, restoreSection } = useDatamodelView();
     const datamodelDispatch = useDatamodelViewDispatch();
-    const { groups, filtered } = useDatamodelData();
+    const { groups, filtered, search } = useDatamodelData();
     const datamodelDataDispatch = useDatamodelDataDispatch();
-    const { filters: entityFilters } = useEntityFilters();
+    const { filters: entityFilters, selectedSecurityRoles } = useEntityFilters();
     const workerRef = useRef<Worker | null>(null);
     const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
     const accumulatedResultsRef = useRef<SearchResultItem[]>([]); // Track all results during search
+    const searchRequestIdRef = useRef(0); // Track search requests to ignore stale results
+    const [searchScope, setSearchScope] = useState<SearchScope>({
+        columnNames: true,
+        columnDescriptions: true,
+        columnDataTypes: false,
+        tableDescriptions: false,
+        relationships: false,
+    });
+    // Track which tab should be active for each entity during search navigation
+    const [entityActiveTabs, setEntityActiveTabs] = useState<Map<string, number>>(new Map());
 
-    // Calculate total search results (prioritize attributes, fallback to entities)
+    // Helper function to get the tab index for a given type
+    const getTabIndexForType = useCallback((entity: EntityType, type: 'attribute' | 'relationship') => {
+        // Tab 0 is always Attributes
+        if (type === 'attribute') return 0;
+
+        // Tab 1 is Relationships if they exist, otherwise it would be Keys
+        if (type === 'relationship' && entity.Relationships.length > 0) return 1;
+
+        return 0; // fallback to attributes
+    }, []);
+
+    // Calculate total search results (count attributes and relationships)
     const totalResults = useMemo(() => {
         if (filtered.length === 0) return 0;
 
-        const attributeCount = filtered.filter(item => item.type === 'attribute').length;
-        if (attributeCount > 0) return attributeCount;
-        return 0;
+        // Get combined results and deduplicate to match navigation behavior
+        const combinedResults = filtered.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType } =>
+            item.type === 'attribute' || item.type === 'relationship'
+        );
+
+        if (combinedResults.length > 0) {
+            // Deduplicate to match getSortedCombinedResults behavior
+            // Note: We don't check DOM element existence here because relationships on inactive tabs
+            // won't have DOM elements yet, but they should still be counted for navigation
+            const seen = new Set<string>();
+            let count = 0;
+            for (const item of combinedResults) {
+                const key = item.type === 'attribute'
+                    ? `attr-${item.entity.SchemaName}-${item.attribute.SchemaName}`
+                    : `rel-${item.entity.SchemaName}-${item.relationship.RelationshipSchema}`;
+
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        // If no attributes or relationships, count entity-level matches (for security roles, table descriptions)
+        const entityCount = filtered.filter(item => item.type === 'entity').length;
+        return entityCount;
     }, [filtered]);
     const initialLocalValue = useSearchParams().get('globalsearch') || "";
 
@@ -55,6 +101,10 @@ function DatamodelViewContent() {
     const handleSearch = useCallback((searchValue: string) => {
         if (workerRef.current && groups) {
             if (searchValue.length >= 3) {
+                // Increment request ID to invalidate previous searches
+                searchRequestIdRef.current += 1;
+                const currentRequestId = searchRequestIdRef.current;
+
                 // Convert Map to plain object for worker
                 const filtersObject: Record<string, { hideStandardFields: boolean; typeFilter: string }> = {};
                 entityFilters.forEach((filter, entitySchemaName) => {
@@ -64,7 +114,10 @@ function DatamodelViewContent() {
                 workerRef.current.postMessage({
                     type: 'search',
                     data: searchValue,
-                    entityFilters: filtersObject
+                    entityFilters: filtersObject,
+                    searchScope: searchScope,
+                    selectedSecurityRoles: selectedSecurityRoles,
+                    requestId: currentRequestId // Send request ID to worker
                 });
             } else {
                 // Clear search - reset to show all groups
@@ -79,60 +132,122 @@ function DatamodelViewContent() {
         updateURL({ query: { globalsearch: searchValue.length >= 3 ? searchValue : "" } })
         datamodelDataDispatch({ type: "SET_SEARCH", payload: searchValue.length >= 3 ? searchValue : "" });
         setCurrentSearchIndex(searchValue.length >= 3 ? 1 : 0); // Reset to first result when searching, 0 when cleared
-    }, [groups, datamodelDataDispatch, restoreSection, entityFilters]);
+    }, [groups, datamodelDataDispatch, restoreSection, entityFilters, searchScope, selectedSecurityRoles]);
 
     const handleLoadingChange = useCallback((isLoading: boolean) => {
         datamodelDispatch({ type: "SET_LOADING", payload: isLoading });
     }, [datamodelDispatch]);
 
-    // Helper function to sort results by their Y position on the page
-    const sortResultsByYPosition = useCallback((results: Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }>) => {
-        return results.sort((a, b) => {
-            // Get the actual DOM elements for attributes
-            const elementA = document.getElementById(`attr-${a.entity.SchemaName}-${a.attribute.SchemaName}`);
-            const elementB = document.getElementById(`attr-${b.entity.SchemaName}-${b.attribute.SchemaName}`);
+    const handleSearchScopeChange = useCallback((newScope: SearchScope) => {
+        setSearchScope(newScope);
+        datamodelDataDispatch({ type: "SET_SEARCH_SCOPE", payload: newScope });
+    }, [datamodelDataDispatch]);
 
-            // If both elements are found, compare their Y positions
-            if (elementA && elementB) {
-                const rectA = elementA.getBoundingClientRect();
-                const rectB = elementB.getBoundingClientRect();
-                return rectA.top - rectB.top;
-            }
-
-            // Fallback: if elements can't be found, maintain original order
-            return 0;
-        });
-    }, []);
-
-    // Get attribute results (not sorted initially)
-    const attributeResults = useMemo(() => {
-        return filtered.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
-            item.type === 'attribute'
-        );
-    }, [filtered]);
-
-    // Cached sorted results - only re-sort when attribute results change
-    const [cachedSortedResults, setCachedSortedResults] = useState<Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType }>>([]);
-
-    // Update cached sorted results when attribute results change
+    // Re-trigger search when scope or security roles change
     useEffect(() => {
-        if (attributeResults.length > 0) {
-            // Wait a bit for DOM to settle, then sort and cache
-            const timeoutId = setTimeout(() => {
-                const sorted = sortResultsByYPosition([...attributeResults]);
-                setCachedSortedResults(sorted);
-            }, 200);
-
-            return () => clearTimeout(timeoutId);
-        } else {
-            setCachedSortedResults([]);
+        if (search && search.length >= 3) {
+            handleSearch(search);
         }
-    }, [attributeResults, sortResultsByYPosition]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchScope, selectedSecurityRoles]); // Only trigger on searchScope or selectedSecurityRoles change, not handleSearch to avoid infinite loop
 
-    // Helper function to get sorted attribute results
-    const getSortedAttributeResults = useCallback(() => {
-        return cachedSortedResults;
-    }, [cachedSortedResults]);
+    // Helper function to get sorted combined results (attributes + relationships) on-demand
+    // This prevents blocking the main thread during typing - sorting only happens during navigation
+    const getSortedCombinedResults = useCallback(() => {
+        const combinedResults = filtered.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType } =>
+            item.type === 'attribute' || item.type === 'relationship'
+        );
+
+        if (combinedResults.length === 0) return [];
+
+        // Deduplicate results - use a Set with unique keys
+        const seen = new Set<string>();
+        const deduplicatedResults = combinedResults.filter(item => {
+            const key = item.type === 'attribute'
+                ? `attr-${item.entity.SchemaName}-${item.attribute.SchemaName}`
+                : `rel-${item.entity.SchemaName}-${item.relationship.RelationshipSchema}`;
+
+            if (seen.has(key)) {
+                return false;
+            }
+            seen.add(key);
+            return true;
+        });
+
+        // Group results by entity to keep them together
+        const resultsByEntity = new Map<string, Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType }>>();
+
+        for (const result of deduplicatedResults) {
+            const entityKey = result.entity.SchemaName;
+            if (!resultsByEntity.has(entityKey)) {
+                resultsByEntity.set(entityKey, []);
+            }
+            resultsByEntity.get(entityKey)!.push(result);
+        }
+
+        // Create a stable sort order based on the groups data structure
+        // This ensures consistent navigation order regardless of scroll position or tab state
+        const entityOrder = new Map<string, number>();
+        let orderIndex = 0;
+        for (const group of groups) {
+            for (const entity of group.Entities) {
+                entityOrder.set(entity.SchemaName, orderIndex++);
+            }
+        }
+
+        // Sort entities by their position in the groups data structure
+        const sortedEntities = Array.from(resultsByEntity.entries()).sort((a, b) => {
+            const [entitySchemaA] = a;
+            const [entitySchemaB] = b;
+
+            const orderA = entityOrder.get(entitySchemaA) ?? Number.MAX_SAFE_INTEGER;
+            const orderB = entityOrder.get(entitySchemaB) ?? Number.MAX_SAFE_INTEGER;
+
+            return orderA - orderB;
+        });
+
+        // Flatten back to array, keeping attributes BEFORE relationships within each entity
+        const result: Array<{ type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType }> = [];
+        for (const [, entityResults] of sortedEntities) {
+            // Separate attributes and relationships for this entity
+            const attributes = entityResults.filter((r): r is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } => r.type === 'attribute');
+            const relationships = entityResults.filter((r): r is { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType } => r.type === 'relationship');
+
+            // Sort attributes by Y position within the entity (if they exist in DOM)
+            // Note: We don't filter out attributes that don't exist in DOM because the search worker
+            // already applied all component-level filters
+            attributes.sort((a, b) => {
+                const elementA = document.getElementById(`attr-${a.entity.SchemaName}-${a.attribute.SchemaName}`);
+                const elementB = document.getElementById(`attr-${b.entity.SchemaName}-${b.attribute.SchemaName}`);
+
+                if (elementA && elementB) {
+                    const rectA = elementA.getBoundingClientRect();
+                    const rectB = elementB.getBoundingClientRect();
+                    return rectA.top - rectB.top;
+                }
+                return 0;
+            });
+
+            // Sort relationships by Y position within the entity (if they exist in DOM)
+            // Note: Relationships on inactive tabs won't have DOM elements, so we keep them in original order
+            relationships.sort((a, b) => {
+                const elementA = document.getElementById(`rel-${a.entity.SchemaName}-${a.relationship.RelationshipSchema}`);
+                const elementB = document.getElementById(`rel-${b.entity.SchemaName}-${b.relationship.RelationshipSchema}`);
+
+                if (elementA && elementB) {
+                    const rectA = elementA.getBoundingClientRect();
+                    const rectB = elementB.getBoundingClientRect();
+                    return rectA.top - rectB.top;
+                }
+                return 0;
+            });
+
+            // Add all attributes first, then all relationships
+            result.push(...attributes, ...relationships);
+        }
+
+        return result;
+    }, [filtered, groups]);
 
     // Navigation handlers
     const handleNavigateNext = useCallback(() => {
@@ -140,21 +255,29 @@ function DatamodelViewContent() {
             const nextIndex = currentSearchIndex + 1;
             setCurrentSearchIndex(nextIndex);
 
-            // Get sorted attribute results
-            const sortedAttributeResults = getSortedAttributeResults();
+            // Get sorted combined results (attributes sorted by Y position, relationships in original order)
+            const combinedResults = getSortedCombinedResults();
 
-            // If we have attribute results, use them
-            if (sortedAttributeResults.length > 0) {
-                const nextResult = sortedAttributeResults[nextIndex - 1];
+            if (combinedResults.length > 0) {
+                const nextResult = combinedResults[nextIndex - 1];
                 if (nextResult) {
                     datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: nextResult.entity.SchemaName });
                     datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: nextResult.group.Name });
 
-                    // Always scroll to the attribute since we only have attribute results
-                    scrollToAttribute(nextResult.entity.SchemaName, nextResult.attribute.SchemaName);
+                    // Set the active tab based on result type
+                    const tabIndex = getTabIndexForType(nextResult.entity, nextResult.type === 'attribute' ? 'attribute' : 'relationship');
+                    setEntityActiveTabs(prev => new Map(prev).set(nextResult.entity.SchemaName, tabIndex));
+
+                    // Scroll to the appropriate element
+                    if (nextResult.type === 'attribute') {
+                        scrollToAttribute(nextResult.entity.SchemaName, nextResult.attribute.SchemaName);
+                    } else {
+                        // For relationships, scroll to the specific relationship
+                        scrollToRelationship(nextResult.entity.SchemaName, nextResult.relationship.RelationshipSchema);
+                    }
                 }
             } else {
-                // Fallback to entity results if no attributes found (e.g., searching by entity name)
+                // Fallback to entity results if no attributes/relationships found (e.g., searching by entity name)
                 const entityResults = filtered.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
                     item.type === 'entity'
                 );
@@ -167,27 +290,36 @@ function DatamodelViewContent() {
                 }
             }
         }
-    }, [currentSearchIndex, totalResults, getSortedAttributeResults, filtered, datamodelDispatch, scrollToAttribute, scrollToSection]);
+    }, [currentSearchIndex, totalResults, getSortedCombinedResults, filtered, datamodelDispatch, scrollToAttribute, scrollToRelationship, scrollToSection, getTabIndexForType]);
 
     const handleNavigatePrevious = useCallback(() => {
         if (currentSearchIndex > 1) {
             const prevIndex = currentSearchIndex - 1;
             setCurrentSearchIndex(prevIndex);
 
-            // Get sorted attribute results
-            const sortedAttributeResults = getSortedAttributeResults();
+            // Get sorted combined results (attributes sorted by Y position, relationships in original order)
+            const combinedResults = getSortedCombinedResults();
 
-            // If we have attribute results, use them
-            if (sortedAttributeResults.length > 0) {
-                const prevResult = sortedAttributeResults[prevIndex - 1];
+            if (combinedResults.length > 0) {
+                const prevResult = combinedResults[prevIndex - 1];
                 if (prevResult) {
                     datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: prevResult.entity.SchemaName });
                     datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: prevResult.group.Name });
-                    // Always scroll to the attribute since we only have attribute results
-                    scrollToAttribute(prevResult.entity.SchemaName, prevResult.attribute.SchemaName);
+
+                    // Set the active tab based on result type
+                    const tabIndex = getTabIndexForType(prevResult.entity, prevResult.type === 'attribute' ? 'attribute' : 'relationship');
+                    setEntityActiveTabs(prev => new Map(prev).set(prevResult.entity.SchemaName, tabIndex));
+
+                    // Scroll to the appropriate element
+                    if (prevResult.type === 'attribute') {
+                        scrollToAttribute(prevResult.entity.SchemaName, prevResult.attribute.SchemaName);
+                    } else {
+                        // For relationships, scroll to the specific relationship
+                        scrollToRelationship(prevResult.entity.SchemaName, prevResult.relationship.RelationshipSchema);
+                    }
                 }
             } else {
-                // Fallback to entity results if no attributes found (e.g., searching by entity name)
+                // Fallback to entity results if no attributes/relationships found (e.g., searching by entity name)
                 const entityResults = filtered.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
                     item.type === 'entity'
                 );
@@ -200,7 +332,7 @@ function DatamodelViewContent() {
                 }
             }
         }
-    }, [currentSearchIndex, getSortedAttributeResults, filtered, datamodelDispatch, scrollToAttribute, scrollToSection]);
+    }, [currentSearchIndex, getSortedCombinedResults, filtered, datamodelDispatch, scrollToAttribute, scrollToRelationship, scrollToSection, getTabIndexForType]);
 
     useEffect(() => {
         if (!workerRef.current) {
@@ -217,6 +349,11 @@ function DatamodelViewContent() {
 
         const handleMessage = (e: MessageEvent) => {
             const message = e.data;
+
+            // Ignore stale search results
+            if (message.requestId && message.requestId < searchRequestIdRef.current) {
+                return; // Discard results from outdated searches
+            }
 
             if (message.type === 'started') {
                 datamodelDispatch({ type: "SET_LOADING", payload: true });
@@ -239,24 +376,31 @@ function DatamodelViewContent() {
                 if (message.complete) {
                     datamodelDispatch({ type: "SET_LOADING", payload: false });
                     // Set to first result if we have any and auto-navigate to it
-                    // Prioritize attributes, fallback to entities
-                    const attributeResults = accumulatedResultsRef.current.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
-                        item.type === 'attribute'
+                    // Get combined attribute and relationship results
+                    const combinedResults = accumulatedResultsRef.current.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType } =>
+                        item.type === 'attribute' || item.type === 'relationship'
                     );
 
-                    if (attributeResults.length > 0) {
+                    if (combinedResults.length > 0) {
                         setCurrentSearchIndex(1);
-                        // Use the first result from the array (will be sorted when user navigates)
-                        const firstResult = attributeResults[0];
+                        const firstResult = combinedResults[0];
                         datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstResult.entity.SchemaName });
                         datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstResult.group.Name });
+
+                        // Set the active tab based on result type
+                        const tabIndex = getTabIndexForType(firstResult.entity, firstResult.type === 'attribute' ? 'attribute' : 'relationship');
+                        setEntityActiveTabs(prev => new Map(prev).set(firstResult.entity.SchemaName, tabIndex));
+
                         // Small delay to ensure virtual list is ready
                         setTimeout(() => {
-                            // Always scroll to attribute since we have attribute results
-                            scrollToAttribute(firstResult.entity.SchemaName, firstResult.attribute.SchemaName);
+                            if (firstResult.type === 'attribute') {
+                                scrollToAttribute(firstResult.entity.SchemaName, firstResult.attribute.SchemaName);
+                            } else {
+                                scrollToRelationship(firstResult.entity.SchemaName, firstResult.relationship.RelationshipSchema);
+                            }
                         }, 100);
                     } else {
-                        // Fallback to entity results
+                        // Fallback to entity results if no attributes/relationships found
                         const entityResults = accumulatedResultsRef.current.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
                             item.type === 'entity'
                         );
@@ -278,23 +422,32 @@ function DatamodelViewContent() {
                 const messageData = message as SearchResultItem[];
                 datamodelDataDispatch({ type: "SET_FILTERED", payload: messageData });
                 datamodelDispatch({ type: "SET_LOADING", payload: false });
-                // Set to first result if we have any and auto-navigate to it - prioritize attributes
-                const attributeResults = messageData.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } =>
-                    item.type === 'attribute'
+                // Set to first result if we have any and auto-navigate to it
+                // Get combined attribute and relationship results
+                const combinedResults = messageData.filter((item): item is { type: 'attribute'; group: GroupType; entity: EntityType; attribute: AttributeType } | { type: 'relationship'; group: GroupType; entity: EntityType; relationship: RelationshipType } =>
+                    item.type === 'attribute' || item.type === 'relationship'
                 );
 
-                if (attributeResults.length > 0) {
+                if (combinedResults.length > 0) {
                     setCurrentSearchIndex(1);
-                    const firstResult = attributeResults[0];
+                    const firstResult = combinedResults[0];
                     datamodelDispatch({ type: "SET_CURRENT_SECTION", payload: firstResult.entity.SchemaName });
                     datamodelDispatch({ type: "SET_CURRENT_GROUP", payload: firstResult.group.Name });
+
+                    // Set the active tab based on result type
+                    const tabIndex = getTabIndexForType(firstResult.entity, firstResult.type === 'attribute' ? 'attribute' : 'relationship');
+                    setEntityActiveTabs(prev => new Map(prev).set(firstResult.entity.SchemaName, tabIndex));
+
                     // Small delay to ensure virtual list is ready
                     setTimeout(() => {
-                        // Always scroll to attribute since we have attribute results
-                        scrollToAttribute(firstResult.entity.SchemaName, firstResult.attribute.SchemaName);
+                        if (firstResult.type === 'attribute') {
+                            scrollToAttribute(firstResult.entity.SchemaName, firstResult.attribute.SchemaName);
+                        } else {
+                            scrollToRelationship(firstResult.entity.SchemaName, firstResult.relationship.RelationshipSchema);
+                        }
                     }, 100);
                 } else {
-                    // Fallback to entity results
+                    // Fallback to entity results if no attributes/relationships found
                     const entityResults = messageData.filter((item): item is { type: 'entity'; group: GroupType; entity: EntityType } =>
                         item.type === 'entity'
                     );
@@ -314,7 +467,7 @@ function DatamodelViewContent() {
 
         worker.addEventListener("message", handleMessage);
         return () => worker.removeEventListener("message", handleMessage);
-    }, [datamodelDispatch, datamodelDataDispatch, groups, scrollToSection, scrollToAttribute]);
+    }, [datamodelDispatch, datamodelDataDispatch, groups, scrollToSection, scrollToAttribute, scrollToRelationship, getTabIndexForType]);
 
     if (!groups) {
         return (
@@ -356,8 +509,9 @@ function DatamodelViewContent() {
                     initialLocalValue={initialLocalValue}
                     currentIndex={currentSearchIndex}
                     totalResults={totalResults}
+                    onSearchScopeChange={handleSearchScopeChange}
                 />
-                <List setCurrentIndex={setCurrentSearchIndex} />
+                <List setCurrentIndex={setCurrentSearchIndex} entityActiveTabs={entityActiveTabs} />
             </div>
         </div>
     );

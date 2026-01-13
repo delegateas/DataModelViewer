@@ -18,6 +18,7 @@ import { highlightMatch } from "../datamodelview/List";
 import { Box, Button, FormControl, InputAdornment, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography, useTheme } from "@mui/material"
 import { ClearRounded, SearchRounded, Visibility, VisibilityOff, ArrowUpwardRounded, ArrowDownwardRounded } from "@mui/icons-material"
 import { useEntityFiltersDispatch } from "@/contexts/EntityFiltersContext"
+import { useDatamodelData } from "@/contexts/DatamodelDataContext"
 
 type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'displayName' | 'schemaName' | 'type' | 'description' | null
@@ -37,6 +38,7 @@ export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttri
 
     const theme = useTheme();
     const entityFiltersDispatch = useEntityFiltersDispatch();
+    const { searchScope } = useDatamodelData();
 
     // Report filter state changes to context
     useEffect(() => {
@@ -144,7 +146,10 @@ export const Attributes = ({ entity, search = "", onVisibleCountChange }: IAttri
     }
 
     const sortedAttributes = getSortedAttributes();
-    const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
+    // Only highlight if search scope includes columns
+    // Use internal search query first, or parent search if column scopes are enabled
+    const highlightTerm = searchQuery ||
+        (search && (searchScope.columnNames || searchScope.columnDescriptions || searchScope.columnDataTypes) ? search : "");
 
     // Notify parent of visible count changes
     useEffect(() => {
@@ -432,9 +437,9 @@ function getAttributeComponent(entity: EntityType, attribute: AttributeType, hig
         case 'ChoiceAttribute':
             return <ChoiceAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'DateTimeAttribute':
-            return <DateTimeAttribute key={key} attribute={attribute} />;
+            return <DateTimeAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'GenericAttribute':
-            return <GenericAttribute key={key} attribute={attribute} />;
+            return <GenericAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'IntegerAttribute':
             return <IntegerAttribute key={key} attribute={attribute} />;
         case 'LookupAttribute':
@@ -442,11 +447,11 @@ function getAttributeComponent(entity: EntityType, attribute: AttributeType, hig
         case 'DecimalAttribute':
             return <DecimalAttribute key={key} attribute={attribute} />;
         case 'StatusAttribute':
-            return <StatusAttribute key={key} attribute={attribute} />;
+            return <StatusAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'StringAttribute':
-            return <StringAttribute key={key} attribute={attribute} />;
+            return <StringAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'BooleanAttribute':
-            return <BooleanAttribute key={key} attribute={attribute} />;
+            return <BooleanAttribute key={key} attribute={attribute} highlightMatch={highlightMatch} highlightTerm={highlightTerm} />;
         case 'FileAttribute':
             return <FileAttribute key={key} attribute={attribute} />;
         default:

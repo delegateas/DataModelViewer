@@ -3,18 +3,28 @@
 import { SecurityRole, PrivilegeDepth } from "@/lib/Types";
 import { AccountTreeRounded, BlockRounded, BusinessRounded, PeopleRounded, PersonRounded, RemoveRounded } from "@mui/icons-material";
 import { Tooltip, Box, Typography, Paper, useTheme } from "@mui/material";
+import React from "react";
+import { useEntityFilters } from "@/contexts/EntityFiltersContext";
 
-export function SecurityRoles({ roles }: { roles: SecurityRole[] }) {
+export function SecurityRoles({ roles, highlightMatch, highlightTerm, highlightSecurityRole }: { roles: SecurityRole[], highlightMatch?: (text: string, term: string) => string | React.JSX.Element, highlightTerm?: string, highlightSecurityRole?: boolean }) {
+    const { selectedSecurityRoles } = useEntityFilters();
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
             {roles.map(role => (
-                <SecurityRoleRow key={role.Name} role={role} />
+                <SecurityRoleRow
+                    key={role.Name}
+                    role={role}
+                    highlightMatch={highlightMatch}
+                    highlightTerm={highlightTerm}
+                    shouldHighlight={highlightSecurityRole && selectedSecurityRoles.includes(role.Name)}
+                />
             ))}
         </Box>
     );
 }
 
-function SecurityRoleRow({ role }: { role: SecurityRole }) {
+function SecurityRoleRow({ role, highlightMatch, highlightTerm, shouldHighlight }: { role: SecurityRole, highlightMatch?: (text: string, term: string) => string | React.JSX.Element, highlightTerm?: string, shouldHighlight?: boolean }) {
     const theme = useTheme();
 
     return (
@@ -27,10 +37,12 @@ function SecurityRoleRow({ role }: { role: SecurityRole }) {
                 justifyContent: 'space-between',
                 gap: 1,
                 p: 2,
-                backgroundColor: theme.palette.mode === 'dark'
-                    ? 'rgba(255, 255, 255, 0.02)'
-                    : 'rgba(0, 0, 0, 0.02)',
-                borderColor: 'border.main',
+                backgroundColor: shouldHighlight
+                    ? (theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.15)' : 'rgba(25, 118, 210, 0.08)')
+                    : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)'),
+                borderColor: shouldHighlight ? 'primary.main' : 'border.main',
+                borderWidth: shouldHighlight ? 2 : 1,
+                boxShadow: shouldHighlight ? '0 0 0 3px rgba(25, 118, 210, 0.1)' : 'none',
                 width: '100%',
             }}
         >
@@ -43,7 +55,7 @@ function SecurityRoleRow({ role }: { role: SecurityRole }) {
                     color: 'text.primary'
                 }}
             >
-                {role.Name}
+                {highlightMatch && highlightTerm ? highlightMatch(role.Name, highlightTerm) : role.Name}
             </Typography>
             <Box
                 sx={{

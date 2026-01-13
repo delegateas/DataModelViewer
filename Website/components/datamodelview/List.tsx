@@ -8,10 +8,12 @@ import { AttributeType, EntityType, GroupType } from "@/lib/Types";
 import { updateURL } from "@/lib/url-utils";
 import { copyToClipboard, generateGroupLink } from "@/lib/clipboard-utils";
 import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useEntityFilters } from "@/contexts/EntityFiltersContext";
 import { Box, CircularProgress, debounce, Tooltip } from '@mui/material';
 
 interface IListProps {
     setCurrentIndex: (index: number) => void;
+    entityActiveTabs: Map<string, number>;
 }
 
 // Helper to highlight search matches
@@ -22,14 +24,25 @@ export function highlightMatch(text: string, search: string) {
     return <>{text.slice(0, idx)}<mark className="bg-yellow-200 text-black px-0.5 rounded">{text.slice(idx, idx + search.length)}</mark>{text.slice(idx + search.length)}</>;
 }
 
-export const List = ({ setCurrentIndex }: IListProps) => {
+export const List = ({ setCurrentIndex, entityActiveTabs }: IListProps) => {
     const dispatch = useDatamodelViewDispatch();
     const { currentSection, loadingSection } = useDatamodelView();
     const { groups, filtered, search } = useDatamodelData();
+    const { selectedSecurityRoles } = useEntityFilters();
     const { showSnackbar } = useSnackbar();
     const parentRef = useRef<HTMLDivElement | null>(null);
     // used to relocate section after search/filter
     const [sectionVirtualItem, setSectionVirtualItem] = useState<string | null>(null);
+
+    // Helper function to check if entity has access from selected security roles
+    const hasSecurityRoleAccess = useCallback((entity: EntityType): boolean => {
+        if (selectedSecurityRoles.length === 0) return false;
+
+        return entity.SecurityRoles.some(role =>
+            selectedSecurityRoles.includes(role.Name) &&
+            (role.Read !== null && role.Read >= 0) // Has any read access
+        );
+    }, [selectedSecurityRoles]);
 
     const handleCopyGroupLink = useCallback(async (groupName: string) => {
         const link = generateGroupLink(groupName);
@@ -43,7 +56,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
 
     // Only recalculate items when filtered or search changes
     const flatItems = useMemo(() => {
-        if (filtered && filtered.length > 0) return filtered.filter(item => item.type !== 'attribute');
+        if (filtered && filtered.length > 0) return filtered.filter(item => item.type !== 'attribute' && item.type !== 'relationship');
 
         const lowerSearch = search.trim().toLowerCase();
         const items: Array<
@@ -54,6 +67,13 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             // Filter entities in this group
             const filteredEntities = group.Entities.filter((entity: EntityType) => {
                 const typedEntity = entity;
+
+                // If security roles are selected, only show entities with access
+                if (selectedSecurityRoles.length > 0) {
+                    const hasAccess = hasSecurityRoleAccess(typedEntity);
+                    if (!hasAccess) return false;
+                }
+
                 if (!lowerSearch) return true;
                 // Match entity schema or display name
                 const entityMatch = typedEntity.SchemaName.toLowerCase().includes(lowerSearch) ||
@@ -73,7 +93,7 @@ export const List = ({ setCurrentIndex }: IListProps) => {
             }
         }
         return items;
-    }, [filtered, search, groups]);
+    }, [filtered, search, groups, selectedSecurityRoles, hasSecurityRoleAccess]);
 
     const debouncedOnChange = debounce((instance, sync) => {
         if (!sync) {
@@ -192,6 +212,29 @@ export const List = ({ setCurrentIndex }: IListProps) => {
         }
     }, [scrollToSection]);
 
+    const scrollToRelationship = useCallback((sectionId: string, relSchema: string) => {
+        const relId = `rel-${sectionId}-${relSchema}`;
+
+        // Helper function to attempt scrolling to relationship with retries
+        const attemptScroll = (attemptsLeft: number) => {
+            const relationshipLocation = document.getElementById(relId);
+
+            if (relationshipLocation) {
+                // Relationship found, scroll to it
+                relationshipLocation.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (attemptsLeft > 0) {
+                // Relationship not rendered yet, retry after delay
+                setTimeout(() => attemptScroll(attemptsLeft - 1), 100);
+            } else {
+                // Give up after all retries, just scroll to section
+                scrollToSection(sectionId);
+            }
+        };
+
+        // Start attempting to scroll with 5 retries (total 500ms wait time)
+        attemptScroll(5);
+    }, [scrollToSection]);
+
     const scrollToGroup = useCallback((groupName: string) => {
         const groupIndex = flatItems.findIndex(item =>
             item.type === 'group' && item.group.Name === groupName
@@ -214,9 +257,10 @@ export const List = ({ setCurrentIndex }: IListProps) => {
     useEffect(() => {
         dispatch({ type: 'SET_SCROLL_TO_SECTION', payload: scrollToSection });
         dispatch({ type: 'SET_SCROLL_TO_ATTRIBUTE', payload: scrollToAttribute });
+        dispatch({ type: 'SET_SCROLL_TO_RELATIONSHIP', payload: scrollToRelationship });
         dispatch({ type: 'SET_SCROLL_TO_GROUP', payload: scrollToGroup });
         dispatch({ type: 'SET_RESTORE_SECTION', payload: restoreSection });
-    }, [dispatch, scrollToSection, scrollToAttribute, scrollToGroup]);
+    }, [dispatch, scrollToSection, scrollToAttribute, scrollToRelationship, scrollToGroup, restoreSection]);
 
     const smartScrollToIndex = useCallback((index: number) => {
         rowVirtualizer.scrollToIndex(index, { align: 'start' });
@@ -301,6 +345,8 @@ export const List = ({ setCurrentIndex }: IListProps) => {
                                             entity={item.entity}
                                             group={item.group}
                                             search={search}
+                                            activeTab={entityActiveTabs.get(item.entity.SchemaName)}
+                                            highlightSecurityRole={selectedSecurityRoles.length > 0 && hasSecurityRoleAccess(item.entity)}
                                         />
                                     </div>
                                 )}

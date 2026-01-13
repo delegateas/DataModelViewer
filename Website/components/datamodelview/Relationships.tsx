@@ -31,7 +31,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
 
     const dispatch = useDatamodelViewDispatch();
     const { scrollToSection } = useDatamodelView();
-    const { groups } = useDatamodelData();
+    const { groups, searchScope } = useDatamodelData();
 
     // Helper function to check if an entity is in the solution
     const isEntityInSolution = (entitySchemaName: string): boolean => {
@@ -147,7 +147,10 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
     ]
 
     const sortedRelationships = getSortedRelationships();
-    const highlightTerm = searchQuery || search; // Use internal search or parent search for highlighting
+    // Only highlight if search scope includes relationships
+    // Use internal search query first, or parent search if relationships scope is enabled
+    const highlightTerm = searchQuery ||
+        (search && searchScope.relationships ? search : "");
 
     // Notify parent of visible count changes
     useEffect(() => {
@@ -393,6 +396,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                             {sortedRelationships.map((relationship, index) =>
                                 <TableRow
                                     key={relationship.RelationshipSchema}
+                                    id={`rel-${entity.SchemaName}-${relationship.RelationshipSchema}`}
                                     className="transition-colors duration-150 border-b"
                                     sx={{
                                         '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)' },
@@ -405,7 +409,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                                     }}
                                 >
                                     <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                        {highlightMatch(relationship.Name, highlightTerm)}
+                                        {relationship.Name}
                                     </TableCell>
                                     <TableCell className="py-1 md:py-1.5">
                                         {isEntityInSolution(relationship.TableSchema) ? (
@@ -430,13 +434,13 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                                                     }
                                                 }}
                                             >
-                                                {highlightMatch(relationship.TableSchema, highlightTerm)}
+                                                {relationship.TableSchema}
                                             </Button>
                                         ) : (
                                             <Chip
                                                 key={relationship.TableSchema}
                                                 icon={<ContentPasteOffRounded className="w-2 h-2 md:w-3 md:h-3" />}
-                                                label={highlightMatch(relationship.TableSchema, highlightTerm)}
+                                                label={relationship.TableSchema}
                                                 size="small"
                                                 disabled
                                                 sx={{
@@ -452,7 +456,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                                         )}
                                     </TableCell>
                                     <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                        {relationship.LookupDisplayName}
+                                        {highlightMatch(relationship.LookupDisplayName, highlightTerm)}
                                     </TableCell>
                                     <TableCell className="py-1 md:py-1.5 text-xs md:text-sm">
                                         {relationship.RelationshipType}
@@ -461,7 +465,7 @@ export const Relationships = ({ entity, search = "", onVisibleCountChange }: IRe
                                         <CascadeConfiguration config={relationship.CascadeConfiguration} />
                                     </TableCell>
                                     <TableCell className="break-words py-1 md:py-1.5 text-xs md:text-sm">
-                                        {relationship.RelationshipSchema}
+                                        {highlightMatch(relationship.RelationshipSchema, highlightTerm)}
                                         {relationship.IntersectEntitySchemaName &&
                                             (<Typography variant="body2" className="text-xs md:text-sm text-secondary"><b>Intersecting table:</b> {relationship.IntersectEntitySchemaName}</Typography>)}
                                     </TableCell>

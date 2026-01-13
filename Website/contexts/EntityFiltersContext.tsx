@@ -9,14 +9,17 @@ export interface EntityFilterState {
 
 interface EntityFiltersState {
     filters: Map<string, EntityFilterState>; // Map of entitySchemaName -> filter state
+    selectedSecurityRoles: string[]; // Global security role filter
 }
 
 type EntityFiltersAction =
     | { type: "SET_ENTITY_FILTERS"; entitySchemaName: string; filters: EntityFilterState }
-    | { type: "CLEAR_ENTITY_FILTERS"; entitySchemaName: string };
+    | { type: "CLEAR_ENTITY_FILTERS"; entitySchemaName: string }
+    | { type: "SET_SECURITY_ROLES"; roles: string[] };
 
 const initialState: EntityFiltersState = {
     filters: new Map(),
+    selectedSecurityRoles: [],
 };
 
 const EntityFiltersContext = createContext<EntityFiltersState>(initialState);
@@ -33,6 +36,9 @@ const entityFiltersReducer = (state: EntityFiltersState, action: EntityFiltersAc
             const newFilters = new Map(state.filters);
             newFilters.delete(action.entitySchemaName);
             return { ...state, filters: newFilters };
+        }
+        case "SET_SECURITY_ROLES": {
+            return { ...state, selectedSecurityRoles: action.roles };
         }
         default:
             return state;

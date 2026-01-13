@@ -24,6 +24,14 @@ export const HomeView = ({ }: IHomeViewProps) => {
     // Carousel data
     const carouselItems: CarouselItem[] = [
         {
+            image: '/insights.jpg',
+            title: 'New Search features!',
+            text: 'Enhanced global search with customizable scope filters—search across attributes, descriptions, data types, relationships, and more. New security role impersonation lets you filter entities by access permissions, making it easy to understand what data different roles can see. All filters are shareable via URL for seamless collaboration.',
+            type: '(v2.3.1) Feature Update',
+            actionlabel: 'Try It Now',
+            action: () => router.push('/metadata')
+        },
+        {
             image: '/MSAuthentication.jpg',
             title: 'Microsoft Entra ID Authentication!',
             text: 'Enhanced security with Microsoft Entra ID (Azure AD) authentication. Support for group-based access control, allowing administrators to restrict access to specific security groups. Seamlessly integrates with your organization\'s identity provider for secure single sign-on (SSO).',
@@ -44,22 +52,6 @@ export const HomeView = ({ }: IHomeViewProps) => {
             type: '(v2.2.0) Feature',
             actionlabel: 'Go to Diagrams',
             action: () => router.push('/diagram')
-        },
-        {
-            image: '/insights.jpg',
-            title: 'Insights are here!',
-            text: "Get insights into your solutions, entities and attributes with the new Insights feature. Analyze your solutions' relationships and shared components to optimize your environment. See bad practices and get recommendations to improve your data model.",
-            type: '(v2.1.0) Feature Release',
-            actionlabel: 'Go to Insights',
-            action: () => router.push('/insights')
-        },
-        {
-            image: '/processes.jpg',
-            title: 'Webresource support!',
-            text: "View your attributes used inside your JS webresources in the Processes Explorer. Now supports the getAttribute method with more to come soon.",
-            type: '(v2.0.1) Feature update',
-            actionlabel: 'Try it out',
-            action: () => router.push('/processes')
         },
     ];
 
