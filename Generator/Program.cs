@@ -59,15 +59,16 @@ services.AddSingleton<RecordMappingService>();
 services.AddSingleton<DataverseService>();
 services.AddSingleton<WorkflowService>();
 services.AddSingleton<SolutionComponentService>();
+services.AddSingleton<SolutionComponentExtractor>();
 
 // Build service provider
 var serviceProvider = services.BuildServiceProvider();
 
 // Resolve and use DataverseService
 var dataverseService = serviceProvider.GetRequiredService<DataverseService>();
-var (entities, warnings) = await dataverseService.GetFilteredMetadata();
+var (entities, warnings, solutionComponents) = await dataverseService.GetFilteredMetadata();
 
-var websiteBuilder = new WebsiteBuilder(configuration, entities, warnings);
+var websiteBuilder = new WebsiteBuilder(configuration, entities, warnings, solutionComponents);
 websiteBuilder.AddData();
 
 // Token provider function

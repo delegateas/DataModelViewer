@@ -11,14 +11,19 @@ internal class WebsiteBuilder
     private readonly IConfiguration configuration;
     private readonly IEnumerable<Record> records;
     private readonly IEnumerable<SolutionWarning> warnings;
-    private readonly IEnumerable<Solution> solutions;
+    private readonly IEnumerable<SolutionComponentCollection> solutionComponents;
     private readonly string OutputFolder;
 
-    public WebsiteBuilder(IConfiguration configuration, IEnumerable<Record> records, IEnumerable<SolutionWarning> warnings)
+    public WebsiteBuilder(
+        IConfiguration configuration,
+        IEnumerable<Record> records,
+        IEnumerable<SolutionWarning> warnings,
+        IEnumerable<SolutionComponentCollection>? solutionComponents = null)
     {
         this.configuration = configuration;
         this.records = records;
         this.warnings = warnings;
+        this.solutionComponents = solutionComponents ?? Enumerable.Empty<SolutionComponentCollection>();
 
         // Assuming execution in bin/xxx/net8.0
         OutputFolder = configuration["OutputFolder"] ?? Path.Combine(System.Reflection.Assembly.GetExecutingAssembly().Location, "../../../../../Website/generated");
@@ -27,7 +32,7 @@ internal class WebsiteBuilder
     internal void AddData()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("import { GroupType, SolutionWarningType } from \"@/lib/Types\";");
+        sb.AppendLine("import { GroupType, SolutionWarningType, SolutionComponentCollectionType } from \"@/lib/Types\";");
         sb.AppendLine("");
         sb.AppendLine($"export const LastSynched: Date = new Date('{DateTimeOffset.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}');");
         var logoUrl = configuration.GetValue<string?>("Logo", defaultValue: null);
@@ -63,6 +68,15 @@ internal class WebsiteBuilder
         foreach (var warning in warnings)
         {
             sb.AppendLine($"  {JsonConvert.SerializeObject(warning)},");
+        }
+        sb.AppendLine("]");
+
+        // SOLUTION COMPONENTS (for insights)
+        sb.AppendLine("");
+        sb.AppendLine("export let SolutionComponents: SolutionComponentCollectionType[] = [");
+        foreach (var collection in solutionComponents)
+        {
+            sb.AppendLine($"  {JsonConvert.SerializeObject(collection)},");
         }
         sb.AppendLine("]");
 
