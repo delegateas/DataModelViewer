@@ -163,6 +163,9 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
         };
     }, [solutions]);
 
+    // Collapsed state for component groups in summary panel
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
     // Group components by type for summary panel tree view
     const groupedComponents = useMemo(() => {
         if (!selectedSolution) return null;
@@ -181,6 +184,45 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
 
         return grouped;
     }, [selectedSolution]);
+
+    // Reset collapsed state when selecting a new cell, with smart expand logic
+    React.useEffect(() => {
+        if (selectedSolution && groupedComponents) {
+            const totalComponents = selectedSolution.Components.length;
+            if (totalComponents <= 10) {
+                // Expand all if small number of components
+                setCollapsedGroups(new Set());
+            } else {
+                // Collapse all by default for larger sets
+                setCollapsedGroups(new Set(Object.keys(groupedComponents)));
+            }
+        }
+    }, [selectedSolution?.Solution1, selectedSolution?.Solution2]);
+
+    // Toggle individual group collapse state
+    const handleToggleGroup = (label: string) => {
+        setCollapsedGroups(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(label)) {
+                newSet.delete(label);
+            } else {
+                newSet.add(label);
+            }
+            return newSet;
+        });
+    };
+
+    // Expand all groups
+    const handleExpandAllGroups = () => {
+        setCollapsedGroups(new Set());
+    };
+
+    // Collapse all groups
+    const handleCollapseAllGroups = () => {
+        if (groupedComponents) {
+            setCollapsedGroups(new Set(Object.keys(groupedComponents)));
+        }
+    };
 
     const onCellSelect = (cellData: HeatMapCell) => {
         const solution1 = cellData.serieId as string;
@@ -427,23 +469,57 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                             <Box className="max-h-96 overflow-y-auto">
                                 {selectedSolution.Components.length > 0 && groupedComponents ? (
                                     <Box>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-                                            Shared Components: {selectedSolution.Components.length}
-                                        </Typography>
-                                        {Object.entries(groupedComponents).map(([typeLabel, comps]) => (
-                                            <Box key={typeLabel} className="mb-3">
-                                                <Typography variant="body2" className="font-semibold" sx={{ color: 'primary.main' }}>
-                                                    {typeLabel} ({comps.length})
-                                                </Typography>
-                                                <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
-                                                    {comps.map(comp => (
-                                                        <li key={comp.ObjectId}>
-                                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                                {comp.Name}
-                                                            </Typography>
-                                                        </li>
-                                                    ))}
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                {Object.keys(groupedComponents).length} types, {selectedSolution.Components.length} components
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                <Button size="small" onClick={handleExpandAllGroups} sx={{ minWidth: 'auto', px: 1, py: 0, fontSize: '0.75rem' }}>
+                                                    Expand
+                                                </Button>
+                                                <Button size="small" onClick={handleCollapseAllGroups} sx={{ minWidth: 'auto', px: 1, py: 0, fontSize: '0.75rem' }}>
+                                                    Collapse
+                                                </Button>
+                                            </Box>
+                                        </Box>
+                                        {Object.entries(groupedComponents)
+                                            .sort((a, b) => a[1].length - b[1].length)
+                                            .map(([typeLabel, comps]) => (
+                                            <Box key={typeLabel} className="mb-1">
+                                                <Box
+                                                    onClick={() => handleToggleGroup(typeLabel)}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        cursor: 'pointer',
+                                                        py: 0.5,
+                                                        px: 0.5,
+                                                        borderRadius: 1,
+                                                        '&:hover': {
+                                                            backgroundColor: 'action.hover'
+                                                        }
+                                                    }}
+                                                >
+                                                    {collapsedGroups.has(typeLabel) ? (
+                                                        <ExpandMoreIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                                                    ) : (
+                                                        <ExpandLessIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                                                    )}
+                                                    <Typography variant="body2" className="font-semibold" sx={{ color: 'primary.main' }}>
+                                                        {typeLabel} ({comps.length})
+                                                    </Typography>
                                                 </Box>
+                                                <Collapse in={!collapsedGroups.has(typeLabel)}>
+                                                    <Box component="ul" sx={{ pl: 4, mt: 0.5, mb: 0 }}>
+                                                        {comps.map(comp => (
+                                                            <li key={comp.ObjectId}>
+                                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                                    {comp.Name}
+                                                                </Typography>
+                                                            </li>
+                                                        ))}
+                                                    </Box>
+                                                </Collapse>
                                             </Box>
                                         ))}
                                     </Box>
