@@ -478,21 +478,53 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                                 ]}
                                 onClick={(cell: HeatMapCell) => onCellSelect(cell)}
                                 hoverTarget="cell"
-                                tooltip={({ cell }: { cell: HeatMapCell }) => (
-                                    <Box sx={{
-                                        background: theme.palette.background.paper,
-                                        padding: '9px 12px',
-                                        border: `1px solid ${theme.palette.divider}`,
-                                        borderRadius: 1
-                                    }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                            {cell.serieId} × {cell.data.x}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                            {cell.serieId === cell.data.x ? 'Same solution' : `${cell.value} shared components`}
-                                        </Typography>
-                                    </Box>
-                                )}
+                                tooltip={({ cell }: { cell: HeatMapCell }) => {
+                                    // Get the shared components for this cell to show type breakdown
+                                    const solution1 = cell.serieId;
+                                    const solution2 = cell.data.x;
+                                    const i = solutionMatrix.solutionNames.indexOf(solution1);
+                                    const j = solutionMatrix.solutionNames.indexOf(solution2);
+
+                                    let typeBreakdown: Record<string, number> = {};
+                                    if (solution1 !== solution2 && i !== -1 && j !== -1) {
+                                        const matrixIndex = i * solutionMatrix.solutionNames.length + j;
+                                        const sharedComponents = solutionMatrix.matrix[matrixIndex].sharedComponents;
+
+                                        // Group by component type
+                                        sharedComponents.forEach(comp => {
+                                            const label = getComponentTypeLabel(comp.ComponentType);
+                                            typeBreakdown[label] = (typeBreakdown[label] || 0) + 1;
+                                        });
+                                    }
+
+                                    const sortedTypes = Object.entries(typeBreakdown).sort((a, b) => b[1] - a[1]);
+
+                                    return (
+                                        <Box sx={{
+                                            background: theme.palette.background.paper,
+                                            padding: '9px 12px',
+                                            border: `1px solid ${theme.palette.divider}`,
+                                            borderRadius: 1,
+                                            maxWidth: 280
+                                        }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                {cell.serieId} × {cell.data.x}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                {cell.serieId === cell.data.x ? 'Same solution' : `${cell.value} shared components`}
+                                            </Typography>
+                                            {sortedTypes.length > 0 && (
+                                                <Box sx={{ mt: 1, pt: 1, borderTop: `1px solid ${theme.palette.divider}` }}>
+                                                    {sortedTypes.map(([label, count]) => (
+                                                        <Typography key={label} variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                            {label}: {count}
+                                                        </Typography>
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    );
+                                }}
                                 theme={{
                                     text: {
                                         fill: theme.palette.text.primary
