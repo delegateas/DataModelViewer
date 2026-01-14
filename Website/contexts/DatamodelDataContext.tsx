@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, ReactNode } from "react";
-import { AttributeType, EntityType, GroupType, RelationshipType, SolutionWarningType } from "@/lib/Types";
+import { AttributeType, EntityType, GroupType, RelationshipType, SolutionWarningType, SolutionComponentCollectionType } from "@/lib/Types";
 import { useSearchParams } from "next/navigation";
 import { SearchScope } from "@/components/datamodelview/TimeSlicedSearch";
 
@@ -25,6 +25,7 @@ interface DatamodelDataState extends DataModelAction {
   entityMap?: Map<string, EntityType>;
   warnings: SolutionWarningType[];
   solutionCount: number;
+  solutionComponents: SolutionComponentCollectionType[];
   globalOptionSets: Record<string, GlobalOptionSetUsage>;
   search: string;
   searchScope: SearchScope;
@@ -40,6 +41,7 @@ const initialState: DatamodelDataState = {
   groups: [],
   warnings: [],
   solutionCount: 0,
+  solutionComponents: [],
   globalOptionSets: {},
   search: "",
   searchScope: {
@@ -67,6 +69,8 @@ const datamodelDataReducer = (state: DatamodelDataState, action: any): Datamodel
       return { ...state, warnings: action.payload };
     case "SET_SOLUTION_COUNT":
       return { ...state, solutionCount: action.payload };
+    case "SET_SOLUTION_COMPONENTS":
+      return { ...state, solutionComponents: action.payload };
     case "SET_GLOBAL_OPTION_SETS":
       return { ...state, globalOptionSets: action.payload };
     case "SET_SEARCH":
@@ -98,6 +102,7 @@ export const DatamodelDataProvider = ({ children }: { children: ReactNode }) => 
       dispatch({ type: "SET_ENTITIES", payload: e.data.entityMap || new Map() });
       dispatch({ type: "SET_WARNINGS", payload: e.data.warnings || [] });
       dispatch({ type: "SET_SOLUTION_COUNT", payload: e.data.solutionCount || 0 });
+      dispatch({ type: "SET_SOLUTION_COMPONENTS", payload: e.data.solutionComponents || [] });
       dispatch({ type: "SET_GLOBAL_OPTION_SETS", payload: e.data.globalOptionSets || {} });
       worker.terminate();
     };

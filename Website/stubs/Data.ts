@@ -1,7 +1,7 @@
 /// Used in github workflow to generate stubs for data
 /// This file is a stub and should not be modified directly.
 
-import { GroupType, SolutionWarningType } from "@/lib/Types";
+import { GroupType, SolutionWarningType, SolutionComponentCollectionType } from "@/lib/Types";
 
 export const LastSynched: Date = new Date();
 export const Logo: string | null = null;
@@ -114,5 +114,7 @@ export let Groups: GroupType[] = [
 ];
 
 export let SolutionWarnings: SolutionWarningType[] = [];
+
+export let SolutionComponents: SolutionComponentCollectionType[] = [];
 
 export const GlobalOptionSets: Record<string, { Name: string; DisplayName: string; Usages: { EntitySchemaName: string; EntityDisplayName: string; AttributeSchemaName: string; AttributeDisplayName: string }[] }> = {};

@@ -1,5 +1,5 @@
 import { EntityType } from '@/lib/Types';
-import { Groups, SolutionWarnings, SolutionCount, GlobalOptionSets } from '../../generated/Data';
+import { Groups, SolutionWarnings, SolutionCount, SolutionComponents, GlobalOptionSets } from '../../generated/Data';
 
 self.onmessage = function () {
   const entityMap = new Map<string, EntityType>();
@@ -8,5 +8,12 @@ self.onmessage = function () {
       entityMap.set(entity.SchemaName, entity);
     });
   });
-  self.postMessage({ groups: Groups, entityMap: entityMap, warnings: SolutionWarnings, solutionCount: SolutionCount, globalOptionSets: GlobalOptionSets });
+  self.postMessage({
+    groups: Groups,
+    entityMap: entityMap,
+    warnings: SolutionWarnings,
+    solutionCount: SolutionCount,
+    solutionComponents: SolutionComponents,
+    globalOptionSets: GlobalOptionSets
+  });
 }; 
