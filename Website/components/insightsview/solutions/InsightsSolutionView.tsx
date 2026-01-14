@@ -283,6 +283,100 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
         return { availableTypes: types, unmappedTypes: unmapped };
     }, [solutionComponents]);
 
+    // ===== TYPES TO SOLUTIONS OVERVIEW =====
+
+    // State for section expansion
+    const [typesOverviewExpanded, setTypesOverviewExpanded] = useState(true);
+
+    // State for collapsed types and components within types
+    const [collapsedTypes, setCollapsedTypes] = useState<Set<SolutionComponentTypeEnum>>(new Set());
+
+    // State for "shared only" filter - default to true (only show components in multiple solutions)
+    const [showSharedOnly, setShowSharedOnly] = useState(true);
+
+    // Build hierarchical data: Component Type → Specific Component → Solutions it appears in
+    const typesToComponents = useMemo(() => {
+        // Build map: componentType -> objectId -> { component, solutions[] }
+        const typeMap = new Map<SolutionComponentTypeEnum, Map<string, { component: SolutionComponentDataType; solutions: string[] }>>();
+
+        solutionComponents.forEach(collection => {
+            collection.Components.forEach(comp => {
+                // Only include enabled types
+                if (!enabledComponentTypes.has(comp.ComponentType)) return;
+
+                if (!typeMap.has(comp.ComponentType)) {
+                    typeMap.set(comp.ComponentType, new Map());
+                }
+                const componentMap = typeMap.get(comp.ComponentType)!;
+
+                if (!componentMap.has(comp.ObjectId)) {
+                    componentMap.set(comp.ObjectId, { component: comp, solutions: [] });
+                }
+                componentMap.get(comp.ObjectId)!.solutions.push(collection.SolutionName);
+            });
+        });
+
+        // Convert to array and sort
+        const result = Array.from(typeMap.entries())
+            .map(([type, components]) => {
+                let componentsArray = Array.from(components.values());
+
+                // Apply "shared only" filter if enabled
+                if (showSharedOnly) {
+                    componentsArray = componentsArray.filter(c => c.solutions.length > 1);
+                }
+
+                // Sort alphabetically by component name
+                componentsArray.sort((a, b) => a.component.Name.localeCompare(b.component.Name));
+
+                const sharedCount = componentsArray.filter(c => c.solutions.length > 1).length;
+
+                return {
+                    componentType: type,
+                    typeLabel: getComponentTypeLabel(type),
+                    totalCount: componentsArray.length,
+                    sharedCount: sharedCount,
+                    components: componentsArray
+                };
+            })
+            // Filter out types with no components (when showSharedOnly and no shared components)
+            .filter(t => t.components.length > 0)
+            // Sort alphabetically by type label
+            .sort((a, b) => a.typeLabel.localeCompare(b.typeLabel));
+
+        return result;
+    }, [solutionComponents, enabledComponentTypes, showSharedOnly]);
+
+    // Collapse all types when data/filters change
+    React.useEffect(() => {
+        const allTypes = new Set(typesToComponents.map(t => t.componentType));
+        setCollapsedTypes(allTypes);
+    }, [typesToComponents]);
+
+    // Toggle type collapse
+    const handleToggleTypeCollapse = (type: SolutionComponentTypeEnum) => {
+        setCollapsedTypes(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(type)) {
+                newSet.delete(type);
+            } else {
+                newSet.add(type);
+            }
+            return newSet;
+        });
+    };
+
+    // Expand all types
+    const handleExpandAllTypesOverview = () => {
+        setCollapsedTypes(new Set());
+    };
+
+    // Collapse all types
+    const handleCollapseAllTypesOverview = () => {
+        const allTypes = new Set(typesToComponents.map(t => t.componentType));
+        setCollapsedTypes(allTypes);
+    };
+
     return (
         <Grid container spacing={2} className="p-4">
             <Grid size={12}>
@@ -621,6 +715,138 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                             Select a cell in the matrix to see details about shared components between solutions.
                         </Typography>
                     )}
+                </Paper>
+            </Grid>
+
+            {/* Component Types Overview Section */}
+            <Grid size={12}>
+                <Paper className="p-6 rounded-2xl" elevation={2}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="h6" className="font-semibold">
+                                Component Types Overview
+                            </Typography>
+                            <Tooltip title="See which specific components exist across your solutions. For each component type, view individual components and which solutions they appear in." arrow placement="right">
+                                <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                    <Box sx={{ width: 18, height: 18 }}>{InfoIcon}</Box>
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Tooltip title="When enabled, only shows components that appear in 2 or more solutions. Disable to see all components." arrow placement="bottom">
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            size="small"
+                                            checked={showSharedOnly}
+                                            onChange={(e) => setShowSharedOnly(e.target.checked)}
+                                        />
+                                    }
+                                    label={
+                                        <Typography variant="body2">
+                                            Shared only
+                                        </Typography>
+                                    }
+                                    sx={{ mr: 1 }}
+                                />
+                            </Tooltip>
+                            <Button size="small" onClick={handleExpandAllTypesOverview}>Expand All</Button>
+                            <Button size="small" onClick={handleCollapseAllTypesOverview}>Collapse All</Button>
+                            <IconButton
+                                onClick={() => setTypesOverviewExpanded(!typesOverviewExpanded)}
+                                size="small"
+                            >
+                                {typesOverviewExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                            </IconButton>
+                        </Box>
+                    </Box>
+
+                    <Collapse in={typesOverviewExpanded}>
+                        {typesToComponents.length === 0 ? (
+                            <Box sx={{ py: 4, textAlign: 'center' }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                    {enabledComponentTypes.size === 0
+                                        ? 'Select component types in the filter panel above to see the overview.'
+                                        : 'No components match the selected filters.'}
+                                </Typography>
+                            </Box>
+                        ) : (
+                            <Box sx={{ maxHeight: 600, overflow: 'auto' }}>
+                                {typesToComponents.map(typeData => (
+                                    <Box key={typeData.componentType} sx={{ mb: 1 }}>
+                                        {/* Type header - clickable */}
+                                        <Box
+                                            onClick={() => handleToggleTypeCollapse(typeData.componentType)}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                cursor: 'pointer',
+                                                py: 1,
+                                                px: 1,
+                                                borderRadius: 1,
+                                                backgroundColor: 'action.hover',
+                                                '&:hover': {
+                                                    backgroundColor: 'action.selected'
+                                                }
+                                            }}
+                                        >
+                                            {collapsedTypes.has(typeData.componentType) ? (
+                                                <ExpandMoreIcon sx={{ fontSize: 20, mr: 1 }} />
+                                            ) : (
+                                                <ExpandLessIcon sx={{ fontSize: 20, mr: 1 }} />
+                                            )}
+                                            <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                                                {typeData.typeLabel}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary', ml: 1 }}>
+                                                ({typeData.totalCount} {typeData.totalCount === 1 ? 'component' : 'components'}{typeData.sharedCount > 0 && `, ${typeData.sharedCount} shared`})
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Components under this type */}
+                                        <Collapse in={!collapsedTypes.has(typeData.componentType)}>
+                                            <Box sx={{ pl: 3, borderLeft: `2px solid`, borderColor: 'divider', ml: 1.5, mt: 0.5 }}>
+                                                {typeData.components.map(({ component, solutions }) => (
+                                                    <Box
+                                                        key={component.ObjectId}
+                                                        sx={{
+                                                            py: 0.5,
+                                                            px: 1,
+                                                            mb: 0.25
+                                                        }}
+                                                    >
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                                                            <Typography variant="body2">
+                                                                {component.Name}
+                                                            </Typography>
+                                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                                →
+                                                            </Typography>
+                                                            {solutions.map((sol) => (
+                                                                <Typography
+                                                                    key={sol}
+                                                                    variant="caption"
+                                                                    sx={{
+                                                                        backgroundColor: '#efefef',
+                                                                        px: 1,
+                                                                        py: 0.25,
+                                                                        borderRadius: 1,
+                                                                        color: 'text.secondary'
+                                                                    }}
+                                                                >
+                                                                    {sol}
+                                                                </Typography>
+                                                            ))}
+                                                        </Box>
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        </Collapse>
+                                    </Box>
+                                ))}
+                            </Box>
+                        )}
+                    </Collapse>
                 </Paper>
             </Grid>
         </Grid>
