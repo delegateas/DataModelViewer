@@ -1,3 +1,0 @@
-- 5231: Types To Solutions Overview 
-    - Must answer the question "Which solutions have plugin assemblies, and which plugins are in each solution"
-    - each type -> what solutions they are in -> the specific names. 

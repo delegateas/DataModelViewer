@@ -1,2 +1,0 @@
-- 5412: *mouse over - solution relations datamatrix 
-    - types shared in dialog box
