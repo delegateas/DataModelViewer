@@ -1,5 +1,5 @@
 import { EntityType } from '@/lib/Types';
-import { Groups, SolutionWarnings, SolutionCount, SolutionComponents } from '../../generated/Data';
+import { Groups, SolutionWarnings, SolutionCount, SolutionComponents, GlobalOptionSets } from '../../generated/Data';
 
 self.onmessage = function () {
   const entityMap = new Map<string, EntityType>();
@@ -13,6 +13,7 @@ self.onmessage = function () {
     entityMap: entityMap,
     warnings: SolutionWarnings,
     solutionCount: SolutionCount,
-    solutionComponents: SolutionComponents
+    solutionComponents: SolutionComponents,
+    globalOptionSets: GlobalOptionSets
   });
 }; 

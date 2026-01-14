@@ -278,6 +278,7 @@ export type ChoiceAttributeType = BaseAttribute & {
     AttributeType: "ChoiceAttribute",
     Type: "Single" | "Multi",
     DefaultValue: number | null,
+    GlobalOptionSetName: string | null,
     Options: {
         Name: string,
         Value: number,

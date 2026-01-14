@@ -72,7 +72,7 @@ namespace Generator
             this.solutionComponentService = solutionComponentService;
         }
 
-        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<SolutionComponentCollection>)> GetFilteredMetadata()
+        public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<SolutionComponentCollection>, Dictionary<string, GlobalOptionSetUsage>)> GetFilteredMetadata()
         {
             // used to collect warnings for the insights dashboard
             var warnings = new List<SolutionWarning>();
@@ -249,6 +249,46 @@ namespace Generator
                 workflowDependencies = new Dictionary<Guid, List<WorkflowInfo>>();
             }
 
+            /// BUILD GLOBAL OPTION SET USAGE MAP
+            var globalOptionSetUsages = new Dictionary<string, GlobalOptionSetUsage>();
+            foreach (var entMeta in entitiesInSolutionMetadata)
+            {
+                var relevantAttributes = entMeta.Attributes.Where(attr => attributesInSolution.Contains(attr.MetadataId!.Value));
+                foreach (var attr in relevantAttributes)
+                {
+                    string? globalOptionSetName = null;
+                    string? globalOptionSetDisplayName = null;
+
+                    if (attr is PicklistAttributeMetadata picklist && picklist.OptionSet?.IsGlobal == true)
+                    {
+                        globalOptionSetName = picklist.OptionSet.Name;
+                        globalOptionSetDisplayName = picklist.OptionSet.DisplayName.ToLabelString();
+                    }
+                    else if (attr is MultiSelectPicklistAttributeMetadata multiSelect && multiSelect.OptionSet?.IsGlobal == true)
+                    {
+                        globalOptionSetName = multiSelect.OptionSet.Name;
+                        globalOptionSetDisplayName = multiSelect.OptionSet.DisplayName.ToLabelString();
+                    }
+
+                    if (globalOptionSetName != null)
+                    {
+                        if (!globalOptionSetUsages.ContainsKey(globalOptionSetName))
+                        {
+                            globalOptionSetUsages[globalOptionSetName] = new GlobalOptionSetUsage(
+                                globalOptionSetName,
+                                globalOptionSetDisplayName ?? globalOptionSetName,
+                                new List<GlobalOptionSetUsageReference>());
+                        }
+
+                        globalOptionSetUsages[globalOptionSetName].Usages.Add(new GlobalOptionSetUsageReference(
+                            entMeta.SchemaName,
+                            entMeta.DisplayName.ToLabelString(),
+                            attr.SchemaName,
+                            attr.DisplayName.ToLabelString()));
+                    }
+                }
+            }
+
             var records =
                 entitiesInSolutionMetadata
                 .Select(entMeta =>
@@ -350,7 +390,7 @@ namespace Generator
             }
 
             logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] GetFilteredMetadata completed");
-            return (records, warnings, solutionComponentCollections);
+            return (records, warnings, solutionComponentCollections, globalOptionSetUsages);
         }
     }
 

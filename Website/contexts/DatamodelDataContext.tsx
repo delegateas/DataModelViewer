@@ -9,12 +9,24 @@ interface DataModelAction {
   getEntityDataBySchemaName: (schemaName: string) => EntityType | undefined;
 }
 
+export interface GlobalOptionSetUsage {
+  Name: string;
+  DisplayName: string;
+  Usages: {
+    EntitySchemaName: string;
+    EntityDisplayName: string;
+    AttributeSchemaName: string;
+    AttributeDisplayName: string;
+  }[];
+}
+
 interface DatamodelDataState extends DataModelAction {
   groups: GroupType[];
   entityMap?: Map<string, EntityType>;
   warnings: SolutionWarningType[];
   solutionCount: number;
   solutionComponents: SolutionComponentCollectionType[];
+  globalOptionSets: Record<string, GlobalOptionSetUsage>;
   search: string;
   searchScope: SearchScope;
   filtered: Array<
@@ -30,6 +42,7 @@ const initialState: DatamodelDataState = {
   warnings: [],
   solutionCount: 0,
   solutionComponents: [],
+  globalOptionSets: {},
   search: "",
   searchScope: {
     columnNames: true,
@@ -58,6 +71,8 @@ const datamodelDataReducer = (state: DatamodelDataState, action: any): Datamodel
       return { ...state, solutionCount: action.payload };
     case "SET_SOLUTION_COMPONENTS":
       return { ...state, solutionComponents: action.payload };
+    case "SET_GLOBAL_OPTION_SETS":
+      return { ...state, globalOptionSets: action.payload };
     case "SET_SEARCH":
       return { ...state, search: action.payload };
     case "SET_SEARCH_SCOPE":
@@ -88,6 +103,7 @@ export const DatamodelDataProvider = ({ children }: { children: ReactNode }) => 
       dispatch({ type: "SET_WARNINGS", payload: e.data.warnings || [] });
       dispatch({ type: "SET_SOLUTION_COUNT", payload: e.data.solutionCount || 0 });
       dispatch({ type: "SET_SOLUTION_COMPONENTS", payload: e.data.solutionComponents || [] });
+      dispatch({ type: "SET_GLOBAL_OPTION_SETS", payload: e.data.globalOptionSets || {} });
       worker.terminate();
     };
     worker.postMessage({});
