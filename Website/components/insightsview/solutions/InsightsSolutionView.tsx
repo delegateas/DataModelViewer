@@ -26,6 +26,28 @@ const getComponentTypeLabel = (type: SolutionComponentTypeEnum): string => {
     return ComponentTypeLabels[type] || `Unknown (${type})`;
 };
 
+// Component types that should show the related table as a prefix
+const ComponentTypesWithRelatedTable = new Set([
+    SolutionComponentTypeEnum.Attribute,      // Column
+    SolutionComponentTypeEnum.Relationship,   // Relationship
+    SolutionComponentTypeEnum.SystemForm,     // Form
+    SolutionComponentTypeEnum.EntityKey,      // Key
+    SolutionComponentTypeEnum.SavedQuery,     // View
+]);
+
+// Helper to check if component has related table info
+const hasRelatedTable = (comp: SolutionComponentDataType): boolean => {
+    return ComponentTypesWithRelatedTable.has(comp.ComponentType) && !!comp.RelatedTable;
+};
+
+// Helper to get sort key for components (related table + name for applicable types)
+const getComponentSortKey = (comp: SolutionComponentDataType): string => {
+    if (ComponentTypesWithRelatedTable.has(comp.ComponentType) && comp.RelatedTable) {
+        return `${comp.RelatedTable}\0${comp.Name}`;
+    }
+    return comp.Name;
+};
+
 // Get all types that are in any category (known/mapped types)
 const getAllCategorizedTypes = (): Set<SolutionComponentTypeEnum> => {
     const allTypes = new Set<SolutionComponentTypeEnum>();
@@ -191,9 +213,9 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
             grouped[label].push(comp);
         });
 
-        // Sort each group by name
+        // Sort each group by related table (if applicable) then by name
         Object.keys(grouped).forEach(key => {
-            grouped[key].sort((a, b) => a.Name.localeCompare(b.Name));
+            grouped[key].sort((a, b) => getComponentSortKey(a).localeCompare(getComponentSortKey(b)));
         });
 
         return grouped;
@@ -326,8 +348,8 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                     componentsArray = componentsArray.filter(c => c.solutions.length > 1);
                 }
 
-                // Sort alphabetically by component name
-                componentsArray.sort((a, b) => a.component.Name.localeCompare(b.component.Name));
+                // Sort by related table (if applicable) then by component name
+                componentsArray.sort((a, b) => getComponentSortKey(a.component).localeCompare(getComponentSortKey(b.component)));
 
                 const sharedCount = componentsArray.filter(c => c.solutions.length > 1).length;
 
@@ -694,6 +716,11 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                                                         {comps.map(comp => (
                                                             <li key={comp.ObjectId}>
                                                                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                                    {hasRelatedTable(comp) && (
+                                                                        <Typography component="span" variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic', mr: 0.5 }}>
+                                                                            {comp.RelatedTable}:
+                                                                        </Typography>
+                                                                    )}
                                                                     {comp.Name}
                                                                 </Typography>
                                                             </li>
@@ -817,6 +844,11 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                                                     >
                                                         <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
                                                             <Typography variant="body2">
+                                                                {hasRelatedTable(component) && (
+                                                                    <Typography component="span" variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic', mr: 0.5 }}>
+                                                                        {component.RelatedTable}:
+                                                                    </Typography>
+                                                                )}
                                                                 {component.Name}
                                                             </Typography>
                                                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>

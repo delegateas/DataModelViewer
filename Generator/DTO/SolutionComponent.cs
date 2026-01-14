@@ -62,7 +62,8 @@ public record SolutionComponentData(
     string SchemaName,
     SolutionComponentType ComponentType,
     Guid ObjectId,
-    bool IsExplicit);
+    bool IsExplicit,
+    string? RelatedTable = null);
 
 /// <summary>
 /// Collection of solution components grouped by solution.

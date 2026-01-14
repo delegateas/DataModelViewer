@@ -102,6 +102,7 @@ export type SolutionComponentDataType = {
     ComponentType: SolutionComponentTypeEnum;
     ObjectId: string;
     IsExplicit: boolean;
+    RelatedTable?: string | null;
 }
 
 /// Collection of solution components grouped by solution

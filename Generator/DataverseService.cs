@@ -305,6 +305,27 @@ namespace Generator
                         r => r.MetadataId!.Value,
                         r => r.SchemaName);
 
+                // Build entity lookups for attributes, relationships, and keys (maps component ID to parent entity name)
+                var attributeEntityLookup = entitiesInSolutionMetadata
+                    .SelectMany(e => e.Attributes.Where(a => a.MetadataId.HasValue)
+                        .Select(a => (AttributeId: a.MetadataId!.Value, EntityName: e.DisplayName.ToLabelString() ?? e.LogicalName)))
+                    .ToDictionary(x => x.AttributeId, x => x.EntityName);
+
+                var relationshipEntityLookup = entitiesInSolutionMetadata
+                    .SelectMany(e => e.ManyToManyRelationships.Cast<RelationshipMetadataBase>()
+                        .Concat(e.OneToManyRelationships)
+                        .Concat(e.ManyToOneRelationships)
+                        .Where(r => r.MetadataId.HasValue)
+                        .Select(r => (RelationshipId: r.MetadataId!.Value, EntityName: e.DisplayName.ToLabelString() ?? e.LogicalName)))
+                    .DistinctBy(x => x.RelationshipId)
+                    .ToDictionary(x => x.RelationshipId, x => x.EntityName);
+
+                var keyEntityLookup = entitiesInSolutionMetadata
+                    .SelectMany(e => (e.Keys ?? Array.Empty<EntityKeyMetadata>())
+                        .Where(k => k.MetadataId.HasValue)
+                        .Select(k => (KeyId: k.MetadataId!.Value, EntityName: e.DisplayName.ToLabelString() ?? e.LogicalName)))
+                    .ToDictionary(x => x.KeyId, x => x.EntityName);
+
                 // Build solution name lookup
                 var solutionNameLookup = solutionLookup.ToDictionary(
                     kvp => kvp.Key,
@@ -315,7 +336,10 @@ namespace Generator
                     solutionNameLookup,
                     entityNameLookup,
                     attributeNameLookup,
-                    relationshipNameLookup);
+                    relationshipNameLookup,
+                    attributeEntityLookup,
+                    relationshipEntityLookup,
+                    keyEntityLookup);
 
                 logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Extracted components for {solutionComponentCollections.Count} solutions");
             }
