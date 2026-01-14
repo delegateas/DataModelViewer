@@ -81,6 +81,9 @@ export const enum SolutionComponentTypeEnum {
     CustomAPI = 10240,
     CustomAPIRequestParameter = 10241,
     CustomAPIResponseProperty = 10242,
+    RequirementResourcePreference = 10019,
+    RequirementStatus = 10020,
+    SchedulingParameter = 10025,
     PluginPackage = 10639,
     OrganizationSetting = 10563,
     AppAction = 10645,
@@ -160,6 +163,11 @@ export const ComponentTypeCategories: Record<string, SolutionComponentTypeEnum[]
         SolutionComponentTypeEnum.OrganizationSetting,
         SolutionComponentTypeEnum.AISkillConfig,
     ],
+    'Scheduling': [
+        SolutionComponentTypeEnum.RequirementResourcePreference,
+        SolutionComponentTypeEnum.RequirementStatus,
+        SolutionComponentTypeEnum.SchedulingParameter,
+    ],
 };
 
 /// Human-readable labels for component types
@@ -202,6 +210,9 @@ export const ComponentTypeLabels: Record<SolutionComponentTypeEnum, string> = {
     [SolutionComponentTypeEnum.DVFileSearchAttribute]: 'DV File Search Attr',
     [SolutionComponentTypeEnum.DVFileSearchEntity]: 'DV File Search Entity',
     [SolutionComponentTypeEnum.AISkillConfig]: 'AI Skill Config',
+    [SolutionComponentTypeEnum.RequirementResourcePreference]: 'Resource Preference',
+    [SolutionComponentTypeEnum.RequirementStatus]: 'Requirement Status',
+    [SolutionComponentTypeEnum.SchedulingParameter]: 'Scheduling Parameter',
 };
 
 export const enum RequiredLevel {

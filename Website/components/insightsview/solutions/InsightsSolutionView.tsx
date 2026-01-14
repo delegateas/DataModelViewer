@@ -21,6 +21,20 @@ interface HeatMapCell {
     value: number | null;
 }
 
+// Helper to get label for component type, with fallback for unmapped types
+const getComponentTypeLabel = (type: SolutionComponentTypeEnum): string => {
+    return ComponentTypeLabels[type] || `Unknown (${type})`;
+};
+
+// Get all types that are in any category (known/mapped types)
+const getAllCategorizedTypes = (): Set<SolutionComponentTypeEnum> => {
+    const allTypes = new Set<SolutionComponentTypeEnum>();
+    Object.values(ComponentTypeCategories).forEach(types => {
+        types.forEach(t => allTypes.add(t));
+    });
+    return allTypes;
+};
+
 const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
     const { solutionComponents } = useDatamodelData();
     const theme = useTheme();
@@ -55,10 +69,10 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
         });
     };
 
-    // Select all component types
+    // Select all component types (including unmapped ones)
     const handleSelectAll = () => {
-        const allTypes = Object.values(ComponentTypeCategories).flat();
-        setEnabledComponentTypes(new Set(allTypes));
+        // Include all available types from the data (both categorized and unmapped)
+        setEnabledComponentTypes(new Set(availableTypes));
     };
 
     // Clear all component types
@@ -172,7 +186,7 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
 
         const grouped: Record<string, SolutionComponentDataType[]> = {};
         selectedSolution.Components.forEach(comp => {
-            const label = ComponentTypeLabels[comp.ComponentType] || 'Unknown';
+            const label = getComponentTypeLabel(comp.ComponentType);
             if (!grouped[label]) grouped[label] = [];
             grouped[label].push(comp);
         });
@@ -246,15 +260,27 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
         }
     }
 
-    // Get all available component types from the data
-    const availableTypes = useMemo(() => {
+    // Get all available component types from the data, and identify unmapped ones
+    const { availableTypes, unmappedTypes } = useMemo(() => {
         const types = new Set<SolutionComponentTypeEnum>();
         solutionComponents.forEach(collection => {
             collection.Components.forEach(comp => {
                 types.add(comp.ComponentType);
             });
         });
-        return types;
+
+        // Find types that exist in data but aren't in any category
+        const categorizedTypes = getAllCategorizedTypes();
+        const unmapped: SolutionComponentTypeEnum[] = [];
+        types.forEach(t => {
+            if (!categorizedTypes.has(t)) {
+                unmapped.push(t);
+            }
+        });
+        // Sort unmapped by numeric value for consistent display
+        unmapped.sort((a, b) => a - b);
+
+        return { availableTypes: types, unmappedTypes: unmapped };
     }, [solutionComponents]);
 
     return (
@@ -338,6 +364,34 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                                         </Grid>
                                     );
                                 })}
+                                {/* Show unmapped/unknown component types in "Other" category */}
+                                {unmappedTypes.length > 0 && (
+                                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key="Other">
+                                        <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1, fontWeight: 'bold' }}>
+                                            Other
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                            {unmappedTypes.map(type => (
+                                                <FormControlLabel
+                                                    key={type}
+                                                    control={
+                                                        <Checkbox
+                                                            size="small"
+                                                            checked={enabledComponentTypes.has(type)}
+                                                            onChange={(e) => handleToggleType(type, e.target.checked)}
+                                                        />
+                                                    }
+                                                    label={
+                                                        <Typography variant="body2">
+                                                            {getComponentTypeLabel(type)}
+                                                        </Typography>
+                                                    }
+                                                    sx={{ marginY: -0.5 }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Grid>
+                                )}
                             </Grid>
                         </Box>
                     </Collapse>

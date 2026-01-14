@@ -12,6 +12,8 @@ Known Elements:
 
 Code snippet from other program to reference various component types.
 
+MIGHT BE INCOMPLETE LIST BELOW
+
 ```
 private static readonly Dictionary<int, string> ComponentTypeNames = new()
     {
