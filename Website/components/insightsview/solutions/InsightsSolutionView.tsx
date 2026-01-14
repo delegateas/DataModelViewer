@@ -601,7 +601,7 @@ const InsightsSolutionView = ({ }: InsightsSolutionViewProps) => {
                                     const i = solutionMatrix.solutionNames.indexOf(solution1);
                                     const j = solutionMatrix.solutionNames.indexOf(solution2);
 
-                                    let typeBreakdown: Record<string, number> = {};
+                                    const typeBreakdown: Record<string, number> = {};
                                     if (solution1 !== solution2 && i !== -1 && j !== -1) {
                                         const matrixIndex = i * solutionMatrix.solutionNames.length + j;
                                         const sharedComponents = solutionMatrix.matrix[matrixIndex].sharedComponents;
