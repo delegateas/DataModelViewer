@@ -30,7 +30,7 @@
 #   - EntraIdAllowedGroups (comma-separated list of Entra ID group object IDs)
 #
 # Optional variables (for custom naming):
-#   - AppServiceName (custom App Service name, defaults to wa-{WebsiteName} if not provided)
+#   - AzureServiceNameTemplate (naming template with {resourcetype} placeholder, e.g., "d365ce-dev-erp-{resourcetype}")
 
 trigger: none
 pr: none
@@ -100,7 +100,7 @@ stages:
               websitePassword: $(WebsitePassword)
               websiteSessionSecret: $(WebsiteSessionSecret)
               websiteName: $(WebsiteName)
-              appServiceName: ${{ coalesce(variables.AppServiceName, '') }}
+              resourceNameTemplate: '$(AzureServiceNameTemplate)'
               adoOrganizationUrl: $(System.CollectionUri)
               adoProjectName: $(System.TeamProject)
               adoRepositoryName: ${{ coalesce(variables.AdoRepositoryName, '') }}
