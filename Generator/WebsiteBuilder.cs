@@ -82,7 +82,7 @@ internal class WebsiteBuilder
         {
             sb.AppendLine($"  {JsonConvert.SerializeObject(collection)},");
         }
-        sb.AppendLine("]");
+        sb.AppendLine("] as const;");
 
         // GLOBAL OPTION SETS
         sb.AppendLine("");
