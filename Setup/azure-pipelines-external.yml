@@ -30,7 +30,7 @@
 #   - EntraIdAllowedGroups (comma-separated list of Entra ID group object IDs)
 #
 # Optional variables (for custom naming):
-#   - ResourceNameTemplate (naming template with {resourcetype} placeholder, e.g., "d365ce-dev-erp-{resourcetype}")
+#   - AzureServiceNameTemplate (naming template with {resourcetype} placeholder, e.g., "d365ce-dev-erp-{resourcetype}")
 
 trigger: none
 pr: none
@@ -100,7 +100,7 @@ stages:
               websitePassword: $(WebsitePassword)
               websiteSessionSecret: $(WebsiteSessionSecret)
               websiteName: $(WebsiteName)
-              resourceNameTemplate: ${{ coalesce(variables.ResourceNameTemplate, '') }}
+              resourceNameTemplate: ${{ coalesce(variables.AzureServiceNameTemplate, '') }}
               adoOrganizationUrl: $(System.CollectionUri)
               adoProjectName: $(System.TeamProject)
               adoRepositoryName: ${{ coalesce(variables.AdoRepositoryName, '') }}
