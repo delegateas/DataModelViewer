@@ -4,6 +4,9 @@ param websitePassword string
 @secure()
 param sessionSecret string
 
+@description('Custom name for the App Service. If not provided, defaults to wa-{solutionId}')
+param appServiceName string = ''
+
 param adoOrganizationUrl string = ''
 param adoProjectName string = ''
 param adoRepositoryName string = ''
@@ -28,6 +31,7 @@ param entraIdAllowedGroups string = ''
 param disablePasswordAuth bool = false
 
 var location = resourceGroup().location
+var resolvedAppServiceName = empty(appServiceName) ? 'wa-${solutionId}' : appServiceName
 
 @description('Create an App Service Plan')
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
@@ -44,7 +48,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
 
 @description('Create a Web App')
 resource webApp 'Microsoft.Web/sites@2021-02-01' = {
-  name: 'wa-${solutionId}'
+  name: resolvedAppServiceName
   location: location
   identity: {
     type: 'SystemAssigned'
@@ -70,7 +74,7 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
         }
         {
           name: 'NEXTAUTH_URL'
-          value: 'https://wa-${solutionId}.azurewebsites.net'
+          value: 'https://${resolvedAppServiceName}.azurewebsites.net'
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
@@ -119,5 +123,6 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
 
 @description('Output the web app name and managed identity info')
 output webAppName string = webApp.name
+output webAppUrl string = 'https://${webApp.properties.defaultHostName}'
 output managedIdentityPrincipalId string = webApp.identity.principalId
 output managedIdentityClientId string = webApp.identity.tenantId

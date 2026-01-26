@@ -28,6 +28,9 @@
 #   - EnableEntraIdAuth (string: 'true' or 'false', default: 'false')
 #   - DisablePasswordAuth (string: 'true' or 'false', default: 'false')
 #   - EntraIdAllowedGroups (comma-separated list of Entra ID group object IDs)
+#
+# Optional variables (for custom naming):
+#   - AppServiceName (custom App Service name, defaults to wa-{WebsiteName} if not provided)
 
 trigger: none
 pr: none
@@ -97,6 +100,7 @@ stages:
               websitePassword: $(WebsitePassword)
               websiteSessionSecret: $(WebsiteSessionSecret)
               websiteName: $(WebsiteName)
+              appServiceName: ${{ coalesce(variables.AppServiceName, '') }}
               adoOrganizationUrl: $(System.CollectionUri)
               adoProjectName: $(System.TeamProject)
               adoRepositoryName: ${{ coalesce(variables.AdoRepositoryName, '') }}
