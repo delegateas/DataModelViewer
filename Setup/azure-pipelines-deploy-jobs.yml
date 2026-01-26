@@ -23,6 +23,9 @@ parameters:
   - name: websiteName
     type: string
     default: ''
+  - name: appServiceName
+    type: string
+    default: ''
   - name: adoOrganizationUrl
     type: string
     default: ''
@@ -69,6 +72,7 @@ steps:
           --parameters websitePassword="${{ parameters.websitePassword }}" `
           --parameters sessionSecret="${{ parameters.websiteSessionSecret }}" `
           --parameters solutionId="${{ parameters.websiteName }}" `
+          --parameters appServiceName="${{ parameters.appServiceName }}" `
           --parameters adoOrganizationUrl="${{ parameters.adoOrganizationUrl }}" `
           --parameters adoProjectName="${{ parameters.adoProjectName }}" `
           --parameters adoRepositoryName="${{ parameters.adoRepositoryName }}" `
