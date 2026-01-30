@@ -14,19 +14,16 @@ public class AttributeAccessVisitor : CSharpSyntaxWalker
 {
     private readonly EntityMetadataParser _metadataParser;
     private readonly HashSet<string> _entityClassNames;
-    private readonly Dictionary<string, List<AttributeUsage>> _accesses = new();
-    private readonly bool _verbose;
+    private Dictionary<string, Dictionary<string, List<AttributeUsage>>> _attributeUsages = new();
     private ComponentType _componentType = ComponentType.Plugin;
+    private string _componentName = "";
 
     // Track lambda parameters to know which variables represent entities
     private readonly Dictionary<string, string> _lambdaParameterTypes = new();
 
-    public IReadOnlyDictionary<string, List<AttributeUsage>> Accesses => _accesses;
-
-    public AttributeAccessVisitor(EntityMetadataParser metadataParser, bool verbose = false)
+    public AttributeAccessVisitor(EntityMetadataParser metadataParser)
     {
         _metadataParser = metadataParser;
-        _verbose = verbose;
         _entityClassNames = metadataParser.GetAllEntities()
             .Select(e => e.ClassName)
             .ToHashSet();
@@ -41,14 +38,14 @@ public class AttributeAccessVisitor : CSharpSyntaxWalker
     }
 
     /// <summary>
-    /// Analyzes a syntax tree and returns all detected attribute accesses
+    /// Analyzes a syntax tree and adds all detected attribute accesses directly to the provided dictionary.
     /// </summary>
-    public Dictionary<string, List<AttributeUsage>> Analyze(SyntaxTree syntaxTree)
+    public void Analyze(SyntaxTree syntaxTree, string componentName, Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
     {
-        _accesses.Clear();
         _lambdaParameterTypes.Clear();
+        _componentName = componentName;
+        _attributeUsages = attributeUsages;
         Visit(syntaxTree.GetRoot());
-        return _accesses;
     }
 
     /// <summary>
@@ -471,14 +468,19 @@ public class AttributeAccessVisitor : CSharpSyntaxWalker
     private void RecordAccess(string entityLogicalName, string attributeLogicalName,
         AccessPatternType pattern, OperationType operationType, string usage, Location location)
     {
-        if (!_accesses.ContainsKey(entityLogicalName))
+        if (!_attributeUsages.ContainsKey(entityLogicalName))
         {
-            _accesses[entityLogicalName] = new List<AttributeUsage>();
+            _attributeUsages[entityLogicalName] = new Dictionary<string, List<AttributeUsage>>();
         }
 
-        _accesses[entityLogicalName].Add(new AttributeUsage(
-            Name: attributeLogicalName,
-            Usage: usage,
+        if (!_attributeUsages[entityLogicalName].ContainsKey(attributeLogicalName))
+        {
+            _attributeUsages[entityLogicalName][attributeLogicalName] = new List<AttributeUsage>();
+        }
+
+        _attributeUsages[entityLogicalName][attributeLogicalName].Add(new AttributeUsage(
+            Name: _componentName,
+            Usage: $"{_componentName}: {usage}",
             OperationType: operationType,
             ComponentType: _componentType,
             IsFromDependencyAnalysis: true

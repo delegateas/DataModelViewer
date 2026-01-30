@@ -244,7 +244,7 @@ namespace Generator
                     var entities = metadataParser.GetAllEntities();
                     logger.LogInformation("Parsed {EntityCount} entities from XrmContext.cs", entities.Count);
 
-                    var pluginSteps = new List<PluginStepInfo>();
+                    // Analyze plugin registrations
                     if (!string.IsNullOrEmpty(pluginProjectPath))
                     {
                         foreach (var path in pluginProjectPath.Split(";"))
@@ -255,7 +255,29 @@ namespace Generator
                                 logger.LogInformation("Analyzing plugin registrations in {Path}", pluginPath);
                                 var pluginAnalyzer = new PluginRegistrationAnalyzer(metadataParser);
                                 var steps = await pluginAnalyzer.AnalyzeDirectoryAsync(pluginPath);
-                                pluginSteps.AddRange(steps);
+
+                                // Add plugin filtered attributes and image attributes to attributeUsages
+                                foreach (var step in steps)
+                                {
+                                    var componentType = step.ClassName.Contains("CustomAPI") ? ComponentType.CustomAPI : ComponentType.Plugin;
+                                    var operationType = AttributeUsage.MapSdkMessageToOperationType(step.EventOperation);
+
+                                    foreach (var attr in step.FilteredAttributes)
+                                    {
+                                        AddAttributeUsage(attributeUsages, step.EntityLogicalName, attr,
+                                            new AttributeUsage(step.ClassName, $"{step.ClassName}: Filtered ({step.EventOperation})", operationType, componentType, true));
+                                    }
+
+                                    foreach (var image in step.Images)
+                                    {
+                                        foreach (var attr in image.Attributes)
+                                        {
+                                            AddAttributeUsage(attributeUsages, step.EntityLogicalName, attr,
+                                                new AttributeUsage(step.ClassName, $"{step.ClassName}: {image.ImageType} Image", OperationType.Read, componentType, true));
+                                        }
+                                    }
+                                }
+
                                 logger.LogInformation("Found {StepCount} plugin step registrations in {Path}", steps.Count, pluginPath);
                             }
                             else
@@ -265,7 +287,7 @@ namespace Generator
                         }
                     }
 
-                    var businessLogic = new List<BusinessLogicInfo>();
+                    // Analyze business logic
                     if (!string.IsNullOrEmpty(logicProjectPath))
                     {
                         foreach (var path in logicProjectPath.Split(";"))
@@ -275,9 +297,8 @@ namespace Generator
                             {
                                 logger.LogInformation("Analyzing business logic in {Path}", logicPath);
                                 var logicAnalyzer = new BusinessLogicAnalyzer(metadataParser);
-                                var logic = await logicAnalyzer.AnalyzeDirectoryAsync(logicPath);
-                                businessLogic.AddRange(logic);
-                                logger.LogInformation("Found {LogicCount} business logic files in {Path}", logic.Count, logicPath);
+                                var count = await logicAnalyzer.AnalyzeDirectoryAsync(logicPath, attributeUsages);
+                                logger.LogInformation("Analyzed {LogicCount} business logic files in {Path}", count, logicPath);
                             }
                             else
                             {
@@ -286,13 +307,8 @@ namespace Generator
                         }
                     }
 
-                    logger.LogInformation("Generating manifest");
-                    var manifestWriter = new ManifestWriter();
-                    var manifest = manifestWriter.CreateManifest(pluginSteps, businessLogic, "DataModelViewer.Analysis.Manifest");
                     stopwatch.Stop();
-
-                    await manifestWriter.WriteToFileAsync(manifest, "dmv-analysis-manifest.json");
-                    logger.LogInformation("Analysis completed in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                    logger.LogInformation("Code analysis completed in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 }
             }
 
@@ -476,6 +492,25 @@ namespace Generator
 
             logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] GetFilteredMetadata completed");
             return (records, warnings, solutionComponentCollections, globalOptionSetUsages);
+        }
+
+        private static void AddAttributeUsage(
+            Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages,
+            string entityName,
+            string attributeName,
+            AttributeUsage usage)
+        {
+            if (!attributeUsages.ContainsKey(entityName))
+            {
+                attributeUsages[entityName] = new Dictionary<string, List<AttributeUsage>>();
+            }
+
+            if (!attributeUsages[entityName].ContainsKey(attributeName))
+            {
+                attributeUsages[entityName][attributeName] = new List<AttributeUsage>();
+            }
+
+            attributeUsages[entityName][attributeName].Add(usage);
         }
     }
 

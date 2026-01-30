@@ -1,5 +1,4 @@
-﻿using Generator.DTO.Dependencies;
-using Generator.DTO.Dependencies.Plugins;
+using Generator.DTO.Dependencies;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -11,48 +10,40 @@ namespace Generator.Services.Plugins;
 public class BusinessLogicAnalyzer
 {
     private readonly EntityMetadataParser _metadataParser;
-    private readonly bool _verbose;
 
-    public BusinessLogicAnalyzer(EntityMetadataParser metadataParser, bool verbose = false)
+    public BusinessLogicAnalyzer(EntityMetadataParser metadataParser)
     {
         _metadataParser = metadataParser;
-        _verbose = verbose;
     }
 
     /// <summary>
-    /// Analyzes all business logic files in a directory
+    /// Analyzes all business logic files in a directory and adds usages directly to attributeUsages.
+    /// Returns the number of files analyzed.
     /// </summary>
-    public async Task<List<BusinessLogicInfo>> AnalyzeDirectoryAsync(string businessLogicDirectory)
+    public async Task<int> AnalyzeDirectoryAsync(
+        string businessLogicDirectory,
+        Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
     {
-        var results = new List<BusinessLogicInfo>();
-
         var csFiles = Directory.GetFiles(businessLogicDirectory, "*.cs", SearchOption.AllDirectories)
             .Where(f => !f.Contains("obj") && !f.Contains("bin"));
 
+        int count = 0;
         foreach (var file in csFiles)
         {
-            try
-            {
-                var businessLogicInfo = await AnalyzeFileAsync(file);
-                if (businessLogicInfo != null)
-                {
-                    results.Add(businessLogicInfo);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (_verbose)
-                    Console.WriteLine($"Error analyzing {file}: {ex.Message}");
-            }
+            if (await AnalyzeFileAsync(file, attributeUsages))
+                count++;
         }
 
-        return results;
+        return count;
     }
 
     /// <summary>
-    /// Analyzes a single business logic file
+    /// Analyzes a single business logic file and adds usages directly to attributeUsages.
+    /// Returns true if the file contained a class that was analyzed.
     /// </summary>
-    public async Task<BusinessLogicInfo?> AnalyzeFileAsync(string filePath)
+    public async Task<bool> AnalyzeFileAsync(
+        string filePath,
+        Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
     {
         var sourceText = await File.ReadAllTextAsync(filePath);
         var syntaxTree = CSharpSyntaxTree.ParseText(sourceText);
@@ -63,27 +54,15 @@ public class BusinessLogicAnalyzer
             .OfType<ClassDeclarationSyntax>()
             .FirstOrDefault();
 
-        if (classDecl == null) return null;
+        if (classDecl == null) return false;
 
         var className = classDecl.Identifier.Text;
-        var fullName = SyntaxHelpers.GetFullTypeName(classDecl);
 
-        // Use AttributeAccessVisitor to find all attribute accesses
-        var visitor = new AttributeAccessVisitor(_metadataParser, _verbose);
-
+        // Use AttributeAccessVisitor to find all attribute accesses and add directly to attributeUsages
+        var visitor = new AttributeAccessVisitor(_metadataParser);
         visitor.SetComponentType(ComponentType.Plugin);
+        visitor.Analyze(syntaxTree, className, attributeUsages);
 
-        var accesses = visitor.Analyze(syntaxTree);
-
-        var info = new BusinessLogicInfo(
-            ClassName: className,
-            FullName: fullName,
-            FilePath: filePath
-        )
-        {
-            AttributeAccesses = accesses
-        };
-
-        return info;
+        return true;
     }
 }
