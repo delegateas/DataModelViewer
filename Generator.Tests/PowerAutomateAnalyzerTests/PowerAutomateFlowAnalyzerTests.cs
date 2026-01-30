@@ -1,4 +1,5 @@
 using Generator.DTO;
+using Generator.DTO.Dependencies;
 using Generator.DTO.Warnings;
 using Generator.Tests.PowerAutomateAnalyzerTests.Builders;
 using Generator.Tests.PowerAutomateAnalyzerTests.Builders.Connectors.OpenApiConnection;

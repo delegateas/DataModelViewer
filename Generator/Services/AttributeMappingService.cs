@@ -1,5 +1,6 @@
 using Generator.DTO;
 using Generator.DTO.Attributes;
+using Generator.DTO.Dependencies;
 using Generator.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xrm.Sdk.Metadata;

@@ -1,4 +1,4 @@
-﻿using Generator.DTO;
+﻿using Generator.DTO.Dependencies;
 using Generator.DTO.Warnings;
 using Microsoft.Xrm.Sdk.Metadata;
 

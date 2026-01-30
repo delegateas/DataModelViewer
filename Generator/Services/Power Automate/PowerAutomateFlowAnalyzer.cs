@@ -1,4 +1,5 @@
 using Generator.DTO;
+using Generator.DTO.Dependencies;
 using Generator.DTO.Warnings;
 using Generator.Services.PowerAutomate.Analyzers;
 using Generator.Services.PowerAutomate.Extractors;

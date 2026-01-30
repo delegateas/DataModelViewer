@@ -1,4 +1,5 @@
 using Generator.DTO;
+using Generator.DTO.Dependencies;
 using Generator.DTO.Warnings;
 using Generator.Services.WebResources.Extractors;
 using Microsoft.PowerPlatform.Dataverse.Client;

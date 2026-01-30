@@ -1,4 +1,5 @@
-﻿using Microsoft.Xrm.Sdk;
+﻿using Generator.DTO.Dependencies;
+using Microsoft.Xrm.Sdk;
 
 namespace Generator.DTO;
 

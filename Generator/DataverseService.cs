@@ -1,5 +1,7 @@
 ﻿using Generator.DTO;
 using Generator.DTO.Attributes;
+using Generator.DTO.Dependencies;
+using Generator.DTO.Dependencies.Plugins;
 using Generator.DTO.Warnings;
 using Generator.Extensions;
 using Generator.Queries;
@@ -7,16 +9,20 @@ using Generator.Services;
 using Generator.Services.Plugins;
 using Generator.Services.PowerAutomate;
 using Generator.Services.WebResources;
+using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
+using PluginDependencyAnalyzer.Analysis;
 using System.Diagnostics;
 
 namespace Generator
 {
     internal class DataverseService
     {
+        private readonly IConfiguration configuration;
         private readonly ILogger<DataverseService> logger;
         private readonly EntityMetadataService entityMetadataService;
         private readonly SolutionService solutionService;
@@ -41,7 +47,8 @@ namespace Generator
             SolutionComponentService solutionComponentService,
             SolutionComponentExtractor solutionComponentExtractor,
             WorkflowService workflowService,
-            RelationshipService relationshipService)
+            RelationshipService relationshipService,
+            IConfiguration configuration)
         {
             this.logger = logger;
             this.entityMetadataService = entityMetadataService;
@@ -56,10 +63,6 @@ namespace Generator
             // Register all analyzers with their query functions
             analyzerRegistrations = new List<IAnalyzerRegistration>
             {
-                new AnalyzerRegistration<SDKStep>(
-                    new PluginAnalyzer(client),
-                    solutionIds => client.GetSDKMessageProcessingStepsAsync(solutionIds),
-                    "Plugins"),
                 new AnalyzerRegistration<PowerAutomateFlow>(
                     new PowerAutomateFlowAnalyzer(client),
                     solutionIds => client.GetPowerAutomateFlowsAsync(solutionIds),
@@ -69,7 +72,21 @@ namespace Generator
                     solutionIds => client.GetWebResourcesAsync(solutionIds),
                     "WebResources")
             };
+
+            if (configuration.GetValue<bool>("CodeAnalysis:Enabled"))
+                logger.LogInformation($"CodeAnalyzer ENABLED: Running analysis of codebase.");
+            else
+            {
+                logger.LogInformation($"CodeAnalyzer DISABLED: Only using plugin sdk message steps from environment.");
+                analyzerRegistrations.Add(
+                    new AnalyzerRegistration<SDKStep>(
+                        new PluginAnalyzer(client),
+                        solutionIds => client.GetSDKMessageProcessingStepsAsync(solutionIds),
+                        "Plugins"));
+            }
+
             this.solutionComponentService = solutionComponentService;
+            this.configuration = configuration;
         }
 
         public async Task<(IEnumerable<Record>, IEnumerable<SolutionWarning>, IEnumerable<SolutionComponentCollection>, Dictionary<string, GlobalOptionSetUsage>)> GetFilteredMetadata()
@@ -210,6 +227,66 @@ namespace Generator
             var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
             foreach (var registration in analyzerRegistrations)
                 await registration.RunAnalysisAsync(solutionIds, attributeUsages, warnings, logger, entitiesInSolutionMetadata.ToList());
+            if (configuration.GetValue<bool>("CodeAnalysis:Enabled"))
+            {
+                var xrmContextPath = configuration.GetValue<string>("CodeAnalysis:XrmContextPath");
+                var pluginProjectPath = configuration.GetValue<string>("CodeAnalysis:PluginProjectPaths");
+                var logicProjectPath = configuration.GetValue<string>("CodeAnalysis:LogicPaths");
+
+                if (!string.IsNullOrEmpty(xrmContextPath)
+                    || !string.IsNullOrEmpty(pluginProjectPath)
+                    || !string.IsNullOrEmpty(logicProjectPath))
+                {
+                    var stopwatch = Stopwatch.StartNew();
+                    logger.LogInformation("Discovering types from parsing XrmContext.cs");
+                    var metadataParser = new EntityMetadataParser();
+                    await metadataParser.ParseAsync(xrmContextPath);
+                    var entities = metadataParser.GetAllEntities();
+                    logger.LogInformation($"Parsed {entities.Count} entities from XrmContext.cs");
+
+                    var pluginSteps = new List<PluginStepInfo>();
+                    foreach (var path in pluginProjectPath.Split(";"))
+                    {
+                        var pluginPath = Directory.GetCurrentDirectory() + path;
+                        if (Directory.Exists(pluginPath))
+                        {
+                            logger.LogInformation("Analyzing Pluginregistrations");
+                            var pluginAnalyzer = new PluginRegistrationAnalyzer(metadataParser);
+                            pluginSteps = await pluginAnalyzer.AnalyzeDirectoryAsync(pluginPath);
+                            logger.LogInformation($"Found {pluginSteps.Count} plugin step registrations");
+                        }
+                        else
+                        {
+                            logger.LogWarning($"Plugin path {pluginPath} does not exist, skipping plugin analysis.");
+                        }
+                    }
+
+                    var businessLogic = new List<BusinessLogicInfo>();
+                    foreach (var path in logicProjectPath.Split(";"))
+                    {
+                        var logicPath = Directory.GetCurrentDirectory() + path;
+                        if (Directory.Exists(logicPath))
+                        {
+                            logger.LogInformation("Analyzing Business Logic");
+                            var logicAnalyzer = new BusinessLogicAnalyzer(metadataParser);
+                            businessLogic = await logicAnalyzer.AnalyzeDirectoryAsync(logicPath);
+                            logger.LogInformation($"Found {businessLogic.Count} business logic files");
+                        }
+                        else
+                        {
+                            logger.LogWarning($"Logic path {logicPath} does not exist, skipping logic analysis.");
+                        }
+                    }
+
+                    logger.LogInformation($"Generating manifest");
+                    var manifestWriter = new ManifestWriter();
+                    var manifest = manifestWriter.CreateManifest(pluginSteps, businessLogic, "DataModelViewer.Analysis.Manifest");
+                    stopwatch.Stop();
+
+                    await manifestWriter.WriteToFileAsync(manifest, "dmv-analysis-manifest.json");
+                    logger.LogInformation($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms\n");
+                }
+            }
 
             /// WORKFLOW DEPENDENCIES
             Dictionary<Guid, List<WorkflowInfo>> workflowDependencies;

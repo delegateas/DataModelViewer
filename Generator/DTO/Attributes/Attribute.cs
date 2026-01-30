@@ -1,4 +1,5 @@
-﻿using Generator.Extensions;
+﻿using Generator.DTO.Dependencies;
+using Generator.Extensions;
 using Microsoft.Xrm.Sdk.Metadata;
 
 namespace Generator.DTO.Attributes;

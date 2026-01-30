@@ -1,4 +1,4 @@
-using Generator.DTO;
+using Generator.DTO.Dependencies;
 
 namespace Generator.Services.PowerAutomate.Models;
 

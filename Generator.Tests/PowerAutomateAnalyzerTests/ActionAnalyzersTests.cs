@@ -1,4 +1,4 @@
-using Generator.DTO;
+using Generator.DTO.Dependencies;
 using Generator.Services.PowerAutomate.Analyzers;
 using Generator.Tests.PowerAutomateAnalyzerTests.Builders.Connectors.OpenApiConnection;
 using Newtonsoft.Json.Linq;

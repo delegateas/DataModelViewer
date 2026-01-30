@@ -1,4 +1,6 @@
-﻿namespace Generator.DTO;
+﻿using Generator.DTO.Dependencies;
+
+namespace Generator.DTO;
 
 public record PowerAutomateFlow(
     string Id,

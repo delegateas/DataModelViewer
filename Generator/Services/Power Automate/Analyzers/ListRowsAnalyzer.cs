@@ -1,4 +1,4 @@
-using Generator.DTO;
+using Generator.DTO.Dependencies;
 using Generator.Services.PowerAutomate.Models;
 using Newtonsoft.Json.Linq;
 

@@ -1,9 +1,10 @@
-﻿namespace Generator.DTO;
+﻿namespace Generator.DTO.Dependencies;
 
 public enum ComponentType
 {
     PowerAutomateFlow,
     Plugin,
+    CustomAPI,
     WebResource,
     WorkflowActivity,
     CustomApi,

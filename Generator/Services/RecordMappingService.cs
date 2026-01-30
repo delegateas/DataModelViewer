@@ -1,5 +1,6 @@
 using Generator.DTO;
 using Generator.DTO.Attributes;
+using Generator.DTO.Dependencies;
 using Generator.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
