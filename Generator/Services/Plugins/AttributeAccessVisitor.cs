@@ -471,8 +471,6 @@ public class AttributeAccessVisitor : CSharpSyntaxWalker
     private void RecordAccess(string entityLogicalName, string attributeLogicalName,
         AccessPatternType pattern, OperationType operationType, string usage, Location location)
     {
-        var lineSpan = location.GetLineSpan();
-
         if (!_accesses.ContainsKey(entityLogicalName))
         {
             _accesses[entityLogicalName] = new List<AttributeUsage>();

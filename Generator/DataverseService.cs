@@ -9,13 +9,11 @@ using Generator.Services;
 using Generator.Services.Plugins;
 using Generator.Services.PowerAutomate;
 using Generator.Services.WebResources;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
-using PluginDependencyAnalyzer.Analysis;
 using System.Diagnostics;
 
 namespace Generator
@@ -74,10 +72,10 @@ namespace Generator
             };
 
             if (configuration.GetValue<bool>("CodeAnalysis:Enabled"))
-                logger.LogInformation($"CodeAnalyzer ENABLED: Running analysis of codebase.");
+                logger.LogInformation("CodeAnalyzer ENABLED: Running analysis of codebase.");
             else
             {
-                logger.LogInformation($"CodeAnalyzer DISABLED: Only using plugin sdk message steps from environment.");
+                logger.LogInformation("CodeAnalyzer DISABLED: Only using plugin sdk message steps from environment.");
                 analyzerRegistrations.Add(
                     new AnalyzerRegistration<SDKStep>(
                         new PluginAnalyzer(client),
@@ -233,58 +231,68 @@ namespace Generator
                 var pluginProjectPath = configuration.GetValue<string>("CodeAnalysis:PluginProjectPaths");
                 var logicProjectPath = configuration.GetValue<string>("CodeAnalysis:LogicPaths");
 
-                if (!string.IsNullOrEmpty(xrmContextPath)
-                    || !string.IsNullOrEmpty(pluginProjectPath)
-                    || !string.IsNullOrEmpty(logicProjectPath))
+                if (string.IsNullOrEmpty(xrmContextPath))
+                {
+                    logger.LogWarning("CodeAnalysis:XrmContextPath is not configured, skipping code analysis.");
+                }
+                else if (!string.IsNullOrEmpty(pluginProjectPath) || !string.IsNullOrEmpty(logicProjectPath))
                 {
                     var stopwatch = Stopwatch.StartNew();
                     logger.LogInformation("Discovering types from parsing XrmContext.cs");
                     var metadataParser = new EntityMetadataParser();
                     await metadataParser.ParseAsync(xrmContextPath);
                     var entities = metadataParser.GetAllEntities();
-                    logger.LogInformation($"Parsed {entities.Count} entities from XrmContext.cs");
+                    logger.LogInformation("Parsed {EntityCount} entities from XrmContext.cs", entities.Count);
 
                     var pluginSteps = new List<PluginStepInfo>();
-                    foreach (var path in pluginProjectPath.Split(";"))
+                    if (!string.IsNullOrEmpty(pluginProjectPath))
                     {
-                        var pluginPath = Directory.GetCurrentDirectory() + path;
-                        if (Directory.Exists(pluginPath))
+                        foreach (var path in pluginProjectPath.Split(";"))
                         {
-                            logger.LogInformation("Analyzing Pluginregistrations");
-                            var pluginAnalyzer = new PluginRegistrationAnalyzer(metadataParser);
-                            pluginSteps = await pluginAnalyzer.AnalyzeDirectoryAsync(pluginPath);
-                            logger.LogInformation($"Found {pluginSteps.Count} plugin step registrations");
-                        }
-                        else
-                        {
-                            logger.LogWarning($"Plugin path {pluginPath} does not exist, skipping plugin analysis.");
+                            var pluginPath = Directory.GetCurrentDirectory() + path;
+                            if (Directory.Exists(pluginPath))
+                            {
+                                logger.LogInformation("Analyzing plugin registrations in {Path}", pluginPath);
+                                var pluginAnalyzer = new PluginRegistrationAnalyzer(metadataParser);
+                                var steps = await pluginAnalyzer.AnalyzeDirectoryAsync(pluginPath);
+                                pluginSteps.AddRange(steps);
+                                logger.LogInformation("Found {StepCount} plugin step registrations in {Path}", steps.Count, pluginPath);
+                            }
+                            else
+                            {
+                                logger.LogWarning("Plugin path {PluginPath} does not exist, skipping plugin analysis.", pluginPath);
+                            }
                         }
                     }
 
                     var businessLogic = new List<BusinessLogicInfo>();
-                    foreach (var path in logicProjectPath.Split(";"))
+                    if (!string.IsNullOrEmpty(logicProjectPath))
                     {
-                        var logicPath = Directory.GetCurrentDirectory() + path;
-                        if (Directory.Exists(logicPath))
+                        foreach (var path in logicProjectPath.Split(";"))
                         {
-                            logger.LogInformation("Analyzing Business Logic");
-                            var logicAnalyzer = new BusinessLogicAnalyzer(metadataParser);
-                            businessLogic = await logicAnalyzer.AnalyzeDirectoryAsync(logicPath);
-                            logger.LogInformation($"Found {businessLogic.Count} business logic files");
-                        }
-                        else
-                        {
-                            logger.LogWarning($"Logic path {logicPath} does not exist, skipping logic analysis.");
+                            var logicPath = Directory.GetCurrentDirectory() + path;
+                            if (Directory.Exists(logicPath))
+                            {
+                                logger.LogInformation("Analyzing business logic in {Path}", logicPath);
+                                var logicAnalyzer = new BusinessLogicAnalyzer(metadataParser);
+                                var logic = await logicAnalyzer.AnalyzeDirectoryAsync(logicPath);
+                                businessLogic.AddRange(logic);
+                                logger.LogInformation("Found {LogicCount} business logic files in {Path}", logic.Count, logicPath);
+                            }
+                            else
+                            {
+                                logger.LogWarning("Logic path {LogicPath} does not exist, skipping logic analysis.", logicPath);
+                            }
                         }
                     }
 
-                    logger.LogInformation($"Generating manifest");
+                    logger.LogInformation("Generating manifest");
                     var manifestWriter = new ManifestWriter();
                     var manifest = manifestWriter.CreateManifest(pluginSteps, businessLogic, "DataModelViewer.Analysis.Manifest");
                     stopwatch.Stop();
 
                     await manifestWriter.WriteToFileAsync(manifest, "dmv-analysis-manifest.json");
-                    logger.LogInformation($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms\n");
+                    logger.LogInformation("Analysis completed in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 }
             }
 

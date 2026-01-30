@@ -1,6 +1,7 @@
 ﻿using Generator.DTO.Dependencies;
 using Generator.DTO.Dependencies.Plugins;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Generator.Services.Plugins;
 
@@ -59,13 +60,13 @@ public class BusinessLogicAnalyzer
 
         // Get the class name from the file
         var classDecl = root.DescendantNodes()
-            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
+            .OfType<ClassDeclarationSyntax>()
             .FirstOrDefault();
 
         if (classDecl == null) return null;
 
         var className = classDecl.Identifier.Text;
-        var fullName = GetFullTypeName(classDecl);
+        var fullName = SyntaxHelpers.GetFullTypeName(classDecl);
 
         // Use AttributeAccessVisitor to find all attribute accesses
         var visitor = new AttributeAccessVisitor(_metadataParser, _verbose);
@@ -84,31 +85,5 @@ public class BusinessLogicAnalyzer
         };
 
         return info;
-    }
-
-    private static string GetFullTypeName(Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax classDecl)
-    {
-        var parts = new List<string> { classDecl.Identifier.Text };
-
-        var parent = classDecl.Parent;
-        while (parent != null)
-        {
-            if (parent is Microsoft.CodeAnalysis.CSharp.Syntax.NamespaceDeclarationSyntax ns)
-            {
-                parts.Insert(0, ns.Name.ToString());
-            }
-            else if (parent is Microsoft.CodeAnalysis.CSharp.Syntax.FileScopedNamespaceDeclarationSyntax fsns)
-            {
-                parts.Insert(0, fsns.Name.ToString());
-            }
-            else if (parent is Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax parentClass)
-            {
-                parts.Insert(0, parentClass.Identifier.Text);
-            }
-
-            parent = parent.Parent;
-        }
-
-        return string.Join(".", parts);
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace PluginDependencyAnalyzer.Analysis;
+namespace Generator.Services.Plugins;
 
 public class PluginRegistrationAnalyzer
 {
@@ -84,7 +84,7 @@ public class PluginRegistrationAnalyzer
         var results = new List<PluginStepInfo>();
 
         var className = classDecl.Identifier.Text;
-        var fullName = GetFullTypeName(classDecl);
+        var fullName = SyntaxHelpers.GetFullTypeName(classDecl);
 
         // Find Manager/Service usage for the entire class (shared across all steps)
         var (usesManager, usesService) = ParseManagerServiceUsage(classDecl);
@@ -370,29 +370,4 @@ public class PluginRegistrationAnalyzer
         return expression.ToString();
     }
 
-    private static string GetFullTypeName(ClassDeclarationSyntax classDecl)
-    {
-        var parts = new List<string> { classDecl.Identifier.Text };
-
-        var parent = classDecl.Parent;
-        while (parent != null)
-        {
-            if (parent is NamespaceDeclarationSyntax ns)
-            {
-                parts.Insert(0, ns.Name.ToString());
-            }
-            else if (parent is FileScopedNamespaceDeclarationSyntax fsns)
-            {
-                parts.Insert(0, fsns.Name.ToString());
-            }
-            else if (parent is ClassDeclarationSyntax parentClass)
-            {
-                parts.Insert(0, parentClass.Identifier.Text);
-            }
-
-            parent = parent.Parent;
-        }
-
-        return string.Join(".", parts);
-    }
 }

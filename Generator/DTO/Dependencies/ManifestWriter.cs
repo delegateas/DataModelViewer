@@ -95,7 +95,7 @@ public class ManifestWriter
                 IsFromDependencyAnalysis: true,
                 ComponentName: bl.ClassName
             )).Select(x => (e.Key, x)));
-            allUsages.Concat(mapped);
+            allUsages.AddRange(mapped);
         }
 
         // Group by entity
