@@ -231,6 +231,7 @@ export const enum CalculationMethods {
 export enum ComponentType {
     PowerAutomateFlow,
     Plugin,
+    CustomAPI,
     WebResource,
     WorkflowActivity,
     CustomApi,
