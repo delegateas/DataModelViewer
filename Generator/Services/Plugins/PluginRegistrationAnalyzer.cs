@@ -239,17 +239,34 @@ public class PluginRegistrationAnalyzer
     {
         foreach (var arg in invocation.ArgumentList.Arguments)
         {
-            // Parse lambda expressions: x => x.PropertyName
-            if (arg.Expression is SimpleLambdaExpressionSyntax lambda)
+            // Handle collection expression: [ent => ent.Prop1, ent => ent.Prop2, ...]
+            if (arg.Expression is CollectionExpressionSyntax collectionExpr)
             {
-                var propertyName = ExtractPropertyFromLambda(lambda);
-                if (propertyName != null)
+                foreach (var element in collectionExpr.Elements)
                 {
-                    var logicalName = _metadataParser.GetAttributeLogicalName(entityClassName, propertyName);
-                    if (logicalName != null)
-                        filteredAttributes.Add(logicalName);
+                    if (element is ExpressionElementSyntax exprElement &&
+                        exprElement.Expression is SimpleLambdaExpressionSyntax lambda)
+                    {
+                        AddAttributeFromLambda(lambda, entityClassName, filteredAttributes);
+                    }
                 }
             }
+            // Handle direct lambda expressions: x => x.PropertyName
+            else if (arg.Expression is SimpleLambdaExpressionSyntax lambda)
+            {
+                AddAttributeFromLambda(lambda, entityClassName, filteredAttributes);
+            }
+        }
+    }
+
+    private void AddAttributeFromLambda(SimpleLambdaExpressionSyntax lambda, string entityClassName, List<string> attributes)
+    {
+        var propertyName = ExtractPropertyFromLambda(lambda);
+        if (propertyName != null)
+        {
+            var logicalName = _metadataParser.GetAttributeLogicalName(entityClassName, propertyName);
+            if (logicalName != null)
+                attributes.Add(logicalName);
         }
     }
 
@@ -266,18 +283,25 @@ public class PluginRegistrationAnalyzer
             ImageType: imageType
         );
 
-        // Remaining arguments might be attribute lambdas
+        // Remaining arguments might be attribute lambdas or a collection of lambdas
         for (int i = 1; i < args.Count; i++)
         {
-            if (args[i].Expression is SimpleLambdaExpressionSyntax lambda)
+            // Handle collection expression: [ent => ent.Prop1, ent => ent.Prop2, ...]
+            if (args[i].Expression is CollectionExpressionSyntax collectionExpr)
             {
-                var propertyName = ExtractPropertyFromLambda(lambda);
-                if (propertyName != null)
+                foreach (var element in collectionExpr.Elements)
                 {
-                    var logicalName = _metadataParser.GetAttributeLogicalName(entityClassName, propertyName);
-                    if (logicalName != null)
-                        imageInfo.Attributes.Add(logicalName);
+                    if (element is ExpressionElementSyntax exprElement &&
+                        exprElement.Expression is SimpleLambdaExpressionSyntax lambda)
+                    {
+                        AddAttributeFromLambda(lambda, entityClassName, imageInfo.Attributes);
+                    }
                 }
+            }
+            // Handle direct lambda expression
+            else if (args[i].Expression is SimpleLambdaExpressionSyntax lambda)
+            {
+                AddAttributeFromLambda(lambda, entityClassName, imageInfo.Attributes);
             }
         }
 
