@@ -24,8 +24,12 @@ public class BusinessLogicAnalyzer
         string businessLogicDirectory,
         Dictionary<string, Dictionary<string, List<AttributeUsage>>> attributeUsages)
     {
-        var csFiles = Directory.GetFiles(businessLogicDirectory, "*.cs", SearchOption.AllDirectories)
-            .Where(f => !f.Contains("obj") && !f.Contains("bin"));
+
+        var root = Path.GetFullPath(businessLogicDirectory);
+
+        var csFiles = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Split(Path.DirectorySeparatorChar).Contains("obj")
+                     && !f.Split(Path.DirectorySeparatorChar).Contains("bin"));
 
         int count = 0;
         foreach (var file in csFiles)

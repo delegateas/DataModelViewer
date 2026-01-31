@@ -1,5 +1,4 @@
 ﻿using Generator.DTO.Dependencies.Plugins;
-using Generator.Services.Plugins;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -24,8 +23,11 @@ public class PluginRegistrationAnalyzer
     {
         var results = new List<PluginStepInfo>();
 
-        var csFiles = Directory.GetFiles(pluginsDirectory, "*.cs", SearchOption.AllDirectories)
-            .Where(f => !f.Contains("obj") && !f.Contains("bin"));
+        var root = Path.GetFullPath(pluginsDirectory);
+
+        var csFiles = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Split(Path.DirectorySeparatorChar).Contains("obj")
+                     && !f.Split(Path.DirectorySeparatorChar).Contains("bin"));
 
         foreach (var file in csFiles)
         {

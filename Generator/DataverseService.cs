@@ -1,7 +1,6 @@
 ﻿using Generator.DTO;
 using Generator.DTO.Attributes;
 using Generator.DTO.Dependencies;
-using Generator.DTO.Dependencies.Plugins;
 using Generator.DTO.Warnings;
 using Generator.Extensions;
 using Generator.Queries;
@@ -240,7 +239,7 @@ namespace Generator
                     var stopwatch = Stopwatch.StartNew();
                     logger.LogInformation("Discovering types from parsing XrmContext.cs");
                     var metadataParser = new EntityMetadataParser();
-                    await metadataParser.ParseAsync(xrmContextPath);
+                    await metadataParser.ParseAsync(Directory.GetCurrentDirectory() + xrmContextPath);
                     var entities = metadataParser.GetAllEntities();
                     logger.LogInformation("Parsed {EntityCount} entities from XrmContext.cs", entities.Count);
 
