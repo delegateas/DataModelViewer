@@ -31,6 +31,15 @@
 #
 # Optional variables (for custom naming):
 #   - AzureServiceNameTemplate (naming template with {resourcetype} placeholder, e.g., "d365ce-dev-erp-{resourcetype}")
+#
+# Optional variables (for static code analysis):
+#   - CodeAnalysis:RepositoryUrl
+#   - CodeAnalysis:RepositoryBranch
+#   - CodeAnalysis:Plugin:Enabled
+#   - CodeAnalysis:Plugin:XrmContextPath
+#   - CodeAnalysis:Plugin:PluginProjectPaths
+#   - CodeAnalysis:Plugin:LogicPaths
+#   - CodeAnalysis:PreScriptCommand
 
 trigger: none
 pr: none

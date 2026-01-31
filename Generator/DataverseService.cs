@@ -70,11 +70,11 @@ namespace Generator
                     "WebResources")
             };
 
-            if (configuration.GetValue<bool>("CodeAnalysis:Enabled"))
-                logger.LogInformation("CodeAnalyzer ENABLED: Running analysis of codebase.");
+            if (configuration.GetValue<bool>("CodeAnalysis:Plugin:Enabled"))
+                logger.LogInformation("Plugin analysis ENABLED: Running plugin analysis of codebase.");
             else
             {
-                logger.LogInformation("CodeAnalyzer DISABLED: Only using plugin sdk message steps from environment.");
+                logger.LogInformation("Plugin analysis DISABLED: Only using plugin sdk message steps from environment.");
                 analyzerRegistrations.Add(
                     new AnalyzerRegistration<SDKStep>(
                         new PluginAnalyzer(client),
@@ -224,15 +224,15 @@ namespace Generator
             var attributeUsages = new Dictionary<string, Dictionary<string, List<AttributeUsage>>>();
             foreach (var registration in analyzerRegistrations)
                 await registration.RunAnalysisAsync(solutionIds, attributeUsages, warnings, logger, entitiesInSolutionMetadata.ToList());
-            if (configuration.GetValue<bool>("CodeAnalysis:Enabled"))
+            if (configuration.GetValue<bool>("CodeAnalysis:Plugin:Enabled"))
             {
-                var xrmContextPath = configuration.GetValue<string>("CodeAnalysis:XrmContextPath");
-                var pluginProjectPath = configuration.GetValue<string>("CodeAnalysis:PluginProjectPaths");
-                var logicProjectPath = configuration.GetValue<string>("CodeAnalysis:LogicPaths");
+                var xrmContextPath = configuration.GetValue<string>("CodeAnalysis:Plugin:XrmContextPath");
+                var pluginProjectPath = configuration.GetValue<string>("CodeAnalysis:Plugin:PluginProjectPaths");
+                var logicProjectPath = configuration.GetValue<string>("CodeAnalysis:Plugin:LogicPaths");
 
                 if (string.IsNullOrEmpty(xrmContextPath))
                 {
-                    logger.LogWarning("CodeAnalysis:XrmContextPath is not configured, skipping code analysis.");
+                    logger.LogWarning("CodeAnalysis:Plugin:XrmContextPath is not configured, skipping code analysis.");
                 }
                 else if (!string.IsNullOrEmpty(pluginProjectPath) || !string.IsNullOrEmpty(logicProjectPath))
                 {

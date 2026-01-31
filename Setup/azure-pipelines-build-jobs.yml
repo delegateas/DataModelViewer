@@ -25,6 +25,78 @@ parameters:
     default: ''
 
 steps:
+  # Clone source code repository for analysis (if enabled)
+  - pwsh: |
+      $enabled = "$(CodeAnalysis_Plugin_Enabled)"
+      $repoUrl = "$(CodeAnalysis_RepositoryUrl)"
+      
+      # Check if variables are actually set (unresolved variables contain the literal $(...) text)
+      $isEnabled = $enabled -eq 'true'
+      $hasRepoUrl = $repoUrl -and $repoUrl -notmatch '^\$\(CodeAnalysis_RepositoryUrl\)$'
+      
+      if ($isEnabled -and $hasRepoUrl) {
+        Write-Host "Code Analysis is enabled. Cloning source repository..."
+        $branch = "$(CodeAnalysis_RepositoryBranch)"
+        if (-not $branch -or $branch -match '^\$\(') { $branch = "main" }
+        
+        $targetPath = "$(Build.SourcesDirectory)/_source_repo"
+        
+        # Clone using System.AccessToken for authentication
+        $repoUrlWithAuth = $repoUrl -replace 'https://', "https://oauth2:$(System.AccessToken)@"
+        git clone --branch $branch --single-branch --depth 1 $repoUrlWithAuth $targetPath
+        
+        if ($LASTEXITCODE -eq 0) {
+          Write-Host "Successfully cloned source repository to $targetPath"
+          Write-Host "##vso[task.setvariable variable=SourceRepoPath]$targetPath"
+        } else {
+          Write-Host "##vso[task.logissue type=warning]Failed to clone source repository"
+        }
+      } else {
+        Write-Host "Code Analysis is not enabled or repository URL not configured. Skipping source repo clone."
+      }
+    displayName: "Clone Source Repository (if Code Analysis enabled)"
+    continueOnError: true
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  # Run pre-script command in source repository (if configured)
+  - pwsh: |
+      $preScriptCommand = "$(CodeAnalysis_Plugin_PreScriptCommand)"
+      $sourceRepoPath = "$(SourceRepoPath)"
+      
+      # Check if variable is set and source repo exists
+      $hasCommand = $preScriptCommand -and $preScriptCommand -notmatch '^\$\(CodeAnalysis_Plugin_PreScriptCommand\)$'
+      $hasSourceRepo = $sourceRepoPath -and (Test-Path $sourceRepoPath)
+      
+      if ($hasCommand -and $hasSourceRepo) {
+        Write-Host "Running pre-script command: $preScriptCommand"
+        Write-Host "Working directory: $sourceRepoPath"
+        
+        Push-Location $sourceRepoPath
+        try {
+          # Execute the command using bash for cross-platform compatibility
+          bash -c "$preScriptCommand"
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Pre-script command completed successfully"
+          } else {
+            Write-Host "##vso[task.logissue type=warning]Pre-script command exited with code $LASTEXITCODE"
+          }
+        } finally {
+          Pop-Location
+        }
+      } elseif ($hasCommand -and -not $hasSourceRepo) {
+        Write-Host "##vso[task.logissue type=warning]Pre-script command configured but source repository not available"
+      } else {
+        Write-Host "No pre-script command configured. Skipping."
+      }
+    displayName: "Run Pre-Script Command (if configured)"
+    continueOnError: true
+    env:
+      AZURE_TENANT_ID: ${{ parameters.azureTenantId }}
+      AZURE_CLIENT_ID: ${{ parameters.azureClientId }}
+      AZURE_CLIENT_SECRET: ${{ parameters.azureClientSecret }}
+      DataverseUrl: ${{ parameters.dataverseUrl }}
+
   - task: UseDotNet@2
     displayName: "Use .Net 8"
     inputs:
@@ -45,6 +117,12 @@ steps:
       AZURE_CLIENT_ID: ${{ parameters.azureClientId }}
       AZURE_CLIENT_SECRET: ${{ parameters.azureClientSecret }}
       DataverseUrl: ${{ parameters.dataverseUrl }}
+      # Code Analysis configuration (read from pipeline variables)
+      CodeAnalysis_Enabled: $(CodeAnalysis_Plugin_Enabled)
+      CodeAnalysis_SourceRepoPath: $(SourceRepoPath)
+      CodeAnalysis_XrmContextPath: $(CodeAnalysis_Plugin_XrmContextPath)
+      CodeAnalysis_PluginPaths: $(CodeAnalysis_Plugin_PluginPaths)
+      CodeAnalysis_LogicPaths: $(CodeAnalysis_Plugin_LogicPaths)
 
   - script: npx tsx scripts/downloadWikiContent.ts
     workingDirectory: $(Build.SourcesDirectory)/Website
