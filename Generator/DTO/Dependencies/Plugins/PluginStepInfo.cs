@@ -18,6 +18,11 @@ public record PluginStepInfo(
 {
     public List<string> FilteredAttributes { get; set; } = new();
     public List<ImageInfo> Images { get; set; } = new();
+
+    /// <summary>
+    /// Attributes detected from the plugin's execution logic (reads/writes on entity variables)
+    /// </summary>
+    public List<string> UsedAttributesInLogic { get; set; } = new();
 }
 
 public record ImageInfo(

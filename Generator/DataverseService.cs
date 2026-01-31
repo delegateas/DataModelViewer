@@ -252,7 +252,8 @@ namespace Generator
                             if (Directory.Exists(pluginPath))
                             {
                                 logger.LogInformation("Analyzing plugin registrations in {Path}", pluginPath);
-                                var pluginAnalyzer = new PluginRegistrationAnalyzer(metadataParser);
+                                var verbose = logger.IsEnabled(LogLevel.Debug);
+                                var pluginAnalyzer = new PluginRegistrationAnalyzer(metadataParser, verbose);
                                 var steps = await pluginAnalyzer.AnalyzeDirectoryAsync(pluginPath);
 
                                 // Add plugin filtered attributes and image attributes to attributeUsages
@@ -274,6 +275,13 @@ namespace Generator
                                             AddAttributeUsage(attributeUsages, step.EntityLogicalName, attr,
                                                 new AttributeUsage(step.ClassName, $"{step.ClassName}: {image.ImageType} Image", OperationType.Read, componentType, true));
                                         }
+                                    }
+
+                                    // Add attributes used in plugin logic (from Execute method analysis)
+                                    foreach (var attr in step.UsedAttributesInLogic)
+                                    {
+                                        AddAttributeUsage(attributeUsages, step.EntityLogicalName, attr,
+                                            new AttributeUsage(step.ClassName, $"{step.ClassName}: Used in Logic ({step.EventOperation})", operationType, componentType, true));
                                     }
                                 }
 
