@@ -4,6 +4,9 @@ param websitePassword string
 @secure()
 param sessionSecret string
 
+@description('Resource naming template with {resourcetype} placeholder. Example: "d365ce-dev-erp-{resourcetype}" creates "d365ce-dev-erp-wa" for web app and "d365ce-dev-erp-asp" for app service plan. If not provided, defaults to "{resourcetype}-{solutionId}".')
+param resourceNameTemplate string = ''
+
 param adoOrganizationUrl string = ''
 param adoProjectName string = ''
 param adoRepositoryName string = ''
@@ -28,10 +31,12 @@ param entraIdAllowedGroups string = ''
 param disablePasswordAuth bool = false
 
 var location = resourceGroup().location
+var resolvedAppServicePlanName = empty(resourceNameTemplate) ? 'asp-${solutionId}' : replace(resourceNameTemplate, '{resourcetype}', 'asp')
+var resolvedWebAppName = empty(resourceNameTemplate) ? 'wa-${solutionId}' : replace(resourceNameTemplate, '{resourcetype}', 'wa')
 
 @description('Create an App Service Plan')
 resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
-  name: 'asp-${solutionId}'
+  name: resolvedAppServicePlanName
   location: location
   sku: {
     name: 'F1'
@@ -44,7 +49,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
 
 @description('Create a Web App')
 resource webApp 'Microsoft.Web/sites@2021-02-01' = {
-  name: 'wa-${solutionId}'
+  name: resolvedWebAppName
   location: location
   identity: {
     type: 'SystemAssigned'
@@ -70,7 +75,7 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
         }
         {
           name: 'NEXTAUTH_URL'
-          value: 'https://wa-${solutionId}.azurewebsites.net'
+          value: 'https://${resolvedWebAppName}.azurewebsites.net'
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
@@ -119,5 +124,6 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
 
 @description('Output the web app name and managed identity info')
 output webAppName string = webApp.name
+output webAppUrl string = 'https://${webApp.properties.defaultHostName}'
 output managedIdentityPrincipalId string = webApp.identity.principalId
 output managedIdentityClientId string = webApp.identity.tenantId

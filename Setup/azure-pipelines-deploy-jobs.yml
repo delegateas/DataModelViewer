@@ -23,6 +23,9 @@ parameters:
   - name: websiteName
     type: string
     default: ''
+  - name: resourceNameTemplate
+    type: string
+    default: ''
   - name: adoOrganizationUrl
     type: string
     default: ''
@@ -61,7 +64,17 @@ steps:
       inlineScript: |
         # Create resource group
         az group create --name ${{ parameters.azureResourceGroupName }} --location ${{ parameters.azureLocation }}
-        
+
+        # Debug: Show resource naming configuration
+        $resourceNameTemplate = "${{ parameters.resourceNameTemplate }}"
+        if ($resourceNameTemplate) {
+          Write-Host "Using resource name template: $resourceNameTemplate"
+          Write-Host "  App Service Plan: $($resourceNameTemplate -replace '\{resourcetype\}', 'asp')"
+          Write-Host "  Web App: $($resourceNameTemplate -replace '\{resourcetype\}', 'wa')"
+        } else {
+          Write-Host "Using default naming: asp-${{ parameters.websiteName }}, wa-${{ parameters.websiteName }}"
+        }
+
         # Deploy bicep template
         $jsonResult = az deployment group create `
           --resource-group ${{ parameters.azureResourceGroupName }} `
@@ -69,6 +82,7 @@ steps:
           --parameters websitePassword="${{ parameters.websitePassword }}" `
           --parameters sessionSecret="${{ parameters.websiteSessionSecret }}" `
           --parameters solutionId="${{ parameters.websiteName }}" `
+          --parameters resourceNameTemplate="${{ parameters.resourceNameTemplate }}" `
           --parameters adoOrganizationUrl="${{ parameters.adoOrganizationUrl }}" `
           --parameters adoProjectName="${{ parameters.adoProjectName }}" `
           --parameters adoRepositoryName="${{ parameters.adoRepositoryName }}" `
