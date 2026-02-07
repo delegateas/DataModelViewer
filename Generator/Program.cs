@@ -8,8 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerPlatform.Dataverse.Client;
 
+var featuresJsonPath = Environment.GetEnvironmentVariable("FEATURES_JSON_PATH");
+
 var configuration =
     new ConfigurationBuilder()
+    .AddJsonFile(featuresJsonPath ?? "features.json", optional: true)
     .AddEnvironmentVariables()
     .AddJsonFile("appsettings.local.json", optional: true)
     .Build();
