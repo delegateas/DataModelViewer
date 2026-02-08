@@ -10,8 +10,13 @@ using Microsoft.PowerPlatform.Dataverse.Client;
 
 var featuresJsonPath = Environment.GetEnvironmentVariable("FEATURES_JSON_PATH");
 
-Console.WriteLine($"Using features configuration from: {featuresJsonPath ?? "features.json"}");
-
+// Load order (last wins):
+// 1. features.json (feature defaults from consumer repo)
+// 2. Environment variables (pipeline secrets + variable group overrides win over JSON)
+// 3. appsettings.local.json (local dev overrides — wins over everything)
+//
+// Note: .NET env var convention uses __ (double underscore) for nested keys.
+// E.g. CodeAnalysis__Plugin__Enabled maps to CodeAnalysis:Plugin:Enabled
 var configuration =
     new ConfigurationBuilder()
     .AddJsonFile(featuresJsonPath ?? "features.json", optional: true)
@@ -19,18 +24,6 @@ var configuration =
     .AddJsonFile("appsettings.local.json", optional: true)
     .Build();
 var verbose = configuration.GetValue("Verbosity", LogLevel.Warning);
-
-foreach (var item in configuration.AsEnumerable())
-{
-    try
-    {
-        Console.WriteLine($"{item.Key}: {item.Value?.ToString().Substring(0, 6)}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error processing {item.Key}: {ex.Message}");
-    }
-}
 
 // Set up dependency injection
 var services = new ServiceCollection();
