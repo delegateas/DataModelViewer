@@ -10,6 +10,8 @@ using Microsoft.PowerPlatform.Dataverse.Client;
 
 var featuresJsonPath = Environment.GetEnvironmentVariable("FEATURES_JSON_PATH");
 
+Console.WriteLine($"Using features configuration from: {featuresJsonPath ?? "features.json"}");
+
 var configuration =
     new ConfigurationBuilder()
     .AddJsonFile(featuresJsonPath ?? "features.json", optional: true)
@@ -17,6 +19,11 @@ var configuration =
     .AddJsonFile("appsettings.local.json", optional: true)
     .Build();
 var verbose = configuration.GetValue("Verbosity", LogLevel.Warning);
+
+foreach (var item in configuration.AsEnumerable())
+{
+    Console.WriteLine($"{item.Key}: {item.Value?.ToString().Substring(0, 8)}");
+}
 
 // Set up dependency injection
 var services = new ServiceCollection();
