@@ -22,7 +22,14 @@ var verbose = configuration.GetValue("Verbosity", LogLevel.Warning);
 
 foreach (var item in configuration.AsEnumerable())
 {
-    Console.WriteLine($"{item.Key}: {item.Value?.ToString().Substring(0, 8)}");
+    try
+    {
+        Console.WriteLine($"{item.Key}: {item.Value?.ToString().Substring(0, 6)}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error processing {item.Key}: {ex.Message}");
+    }
 }
 
 // Set up dependency injection
