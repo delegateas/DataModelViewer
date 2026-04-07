@@ -82,8 +82,8 @@ namespace Generator
             IEnumerable<ComponentInfo> solutionComponents;
             try
             {
-                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Calling solutionComponentService.GetAllSolutionComponents()");
-                solutionComponents = solutionComponentService.GetAllSolutionComponents(solutionIds);
+                logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Calling solutionComponentService.GetAllSolutionComponentsAsync()");
+                solutionComponents = await solutionComponentService.GetAllSolutionComponentsAsync(solutionIds);
                 logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieved {solutionComponents.Count()} solution components");
             }
             catch (Exception ex)
@@ -219,7 +219,7 @@ namespace Generator
 
                 // Get workflow dependencies for attributes (returns attribute ObjectId -> list of workflow ObjectIds)
                 var explicitComponentsList = solutionComponents.ToList();
-                var workflowDependencyMap = solutionComponentService.GetWorkflowDependenciesForAttributes(
+                var workflowDependencyMap = await solutionComponentService.GetWorkflowDependenciesForAttributesAsync(
                     explicitComponentsList.Where(c => c.ComponentType == 2).Select(c => new SolutionComponentInfo(
                         c.ObjectId,
                         c.SolutionComponentId ?? Guid.Empty,

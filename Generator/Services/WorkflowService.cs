@@ -38,9 +38,9 @@ namespace Generator.Services
                 }
             };
 
-            var results = await client.RetrieveMultipleAsync(query);
+            var results = await client.RetrieveAllAsync(query);
 
-            return results.Entities.ToDictionary(
+            return results.ToDictionary(
                 e => e.Id,
                 e => new WorkflowInfo(
                     e.Id,

@@ -43,8 +43,8 @@ namespace Generator.Services
                     }
                 };
 
-                var webresources = await client.RetrieveMultipleAsync(query);
-                iconNameToSvg = webresources.Entities.ToDictionary(x => x.GetAttributeValue<string>("name"), x => x.GetAttributeValue<string>("content"));
+                var webresources = await client.RetrieveAllAsync(query);
+                iconNameToSvg = webresources.ToDictionary(x => x.GetAttributeValue<string>("name"), x => x.GetAttributeValue<string>("content"));
             }
 
             var logicalNameToSvg =

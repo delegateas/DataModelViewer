@@ -71,9 +71,9 @@ public static class PluginQueries
 
 
         //if (solutionIds is not null) query.Criteria.Conditions.Add(new ConditionExpression("solutionid", ConditionOperator.In, solutionIds));
-        var result = await service.RetrieveMultipleAsync(query);
+        var result = await service.RetrieveAllAsync(query);
 
-        var steps = result.Entities.Select(e =>
+        var steps = result.Select(e =>
         {
             var sdkMessageId = e.GetAttributeValue<AliasedValue>("step.sdkmessageid")?.Value as EntityReference;
             var sdkStepName = e.GetAttributeValue<AliasedValue>("step.name")?.Value as string;

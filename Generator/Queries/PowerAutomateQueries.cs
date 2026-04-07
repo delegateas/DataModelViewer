@@ -42,9 +42,9 @@ public static class PowerAutomateQueries
             }
         };
 
-        var result = await service.RetrieveMultipleAsync(query);
+        var result = await service.RetrieveAllAsync(query);
 
-        var flows = result.Entities.Select(e =>
+        var flows = result.Select(e =>
         {
             return new PowerAutomateFlow(
                 e.GetAttributeValue<AliasedValue>("flow.workflowid").Value as string,

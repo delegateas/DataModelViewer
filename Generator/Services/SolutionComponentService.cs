@@ -65,7 +65,7 @@ public class SolutionComponentService
         _logger = logger;
     }
 
-    public IEnumerable<ComponentInfo> GetAllSolutionComponents(List<Guid> solutionIds)
+    public async Task<IEnumerable<ComponentInfo>> GetAllSolutionComponentsAsync(List<Guid> solutionIds)
     {
         _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Getting all solution components for solutions: {string.Join(", ", solutionIds)}");
         var allComponents = new HashSet<ComponentInfo>();
@@ -74,7 +74,7 @@ public class SolutionComponentService
         IEnumerable<SolutionComponentInfo> explicitComponents;
         try
         {
-            explicitComponents = GetExplicitComponents(solutionIds);
+            explicitComponents = await GetExplicitComponentsAsync(solutionIds);
             _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Found {explicitComponents.Count()} explicit components");
         }
         catch (Exception ex)
@@ -118,7 +118,7 @@ public class SolutionComponentService
                 _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieving component information for {requiredNodeIds.Count} dependency nodes");
 
                 // Retrieve component node information
-                var componentNodes = GetComponentNodes(requiredNodeIds);
+                var componentNodes = await GetComponentNodesAsync(requiredNodeIds);
                 _logger.LogInformation($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] Retrieved {componentNodes.Count} component nodes");
 
                 // Add required components as implicit
@@ -152,7 +152,7 @@ public class SolutionComponentService
         return allComponents;
     }
 
-    private IEnumerable<SolutionComponentInfo> GetExplicitComponents(List<Guid> solutionIds)
+    private async Task<IEnumerable<SolutionComponentInfo>> GetExplicitComponentsAsync(List<Guid> solutionIds)
     {
         var query = new QueryExpression("solutioncomponent")
         {
@@ -167,16 +167,16 @@ public class SolutionComponentService
             }
         };
 
-        return _client.RetrieveMultiple(query).Entities
-                .Select(e => new SolutionComponentInfo(
-                    e.GetAttributeValue<Guid>("objectid"),
-                    e.GetAttributeValue<Guid>("solutioncomponentid"),
-                    e.GetAttributeValue<OptionSetValue>("componenttype").Value,
-                    e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1,
-                    e.GetAttributeValue<EntityReference>("solutionid")));
+        var entities = await _client.RetrieveAllAsync(query);
+        return entities.Select(e => new SolutionComponentInfo(
+            e.GetAttributeValue<Guid>("objectid"),
+            e.GetAttributeValue<Guid>("solutioncomponentid"),
+            e.GetAttributeValue<OptionSetValue>("componenttype").Value,
+            e.Contains("rootcomponentbehavior") ? e.GetAttributeValue<OptionSetValue>("rootcomponentbehavior").Value : -1,
+            e.GetAttributeValue<EntityReference>("solutionid")));
     }
 
-    private List<ComponentNodeInfo> GetComponentNodes(List<Guid> nodeIds)
+    private async Task<List<ComponentNodeInfo>> GetComponentNodesAsync(List<Guid> nodeIds)
     {
         if (!nodeIds.Any())
         {
@@ -198,8 +198,8 @@ public class SolutionComponentService
 
         try
         {
-            var response = _client.RetrieveMultiple(query);
-            foreach (var entity in response.Entities)
+            var entities = await _client.RetrieveAllAsync(query);
+            foreach (var entity in entities)
             {
                 results.Add(new ComponentNodeInfo(
                     entity.GetAttributeValue<Guid>("dependencynodeid"),
@@ -374,7 +374,7 @@ public class SolutionComponentService
     /// </summary>
     /// <param name="attributeComponents">List of attribute components to check for dependencies</param>
     /// <returns>Dictionary mapping attribute ObjectId to list of workflow ObjectIds that depend on it</returns>
-    public Dictionary<Guid, List<Guid>> GetWorkflowDependenciesForAttributes(IEnumerable<SolutionComponentInfo> attributeComponents)
+    public async Task<Dictionary<Guid, List<Guid>>> GetWorkflowDependenciesForAttributesAsync(IEnumerable<SolutionComponentInfo> attributeComponents)
     {
         var workflowDependencies = new Dictionary<Guid, List<Guid>>();
 
@@ -406,7 +406,7 @@ public class SolutionComponentService
             return workflowDependencies;
 
         // Retrieve component node information for all nodes
-        var allNodes = GetComponentNodes(allNodeIds);
+        var allNodes = await GetComponentNodesAsync(allNodeIds);
 
         // Filter to only workflow components (type 29)
         var workflowNodes = allNodes.Where(n => n.ComponentType == 29).ToList();
