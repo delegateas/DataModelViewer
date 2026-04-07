@@ -64,7 +64,7 @@ internal class WebsiteBuilder
             sb.AppendLine("  },");
         }
 
-        sb.AppendLine("]");
+        sb.AppendLine("] as const;");
 
         // WARNINGS
         sb.AppendLine("");
