@@ -43,7 +43,7 @@ public static class WebResourceQueries
             }
         };
 
-        var results = (await service.RetrieveMultipleAsync(query)).Entities;
+        var results = await service.RetrieveAllAsync(query);
 
         var webResources = results.Select(e =>
         {

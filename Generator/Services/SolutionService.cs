@@ -34,7 +34,7 @@ namespace Generator.Services
             }
             var solutionNames = solutionNameArg.Split(",").Select(x => x.Trim().ToLower()).ToList();
 
-            var resp = await client.RetrieveMultipleAsync(new QueryExpression("solution")
+            var entities = await client.RetrieveAllAsync(new QueryExpression("solution")
             {
                 ColumnSet = new ColumnSet("publisherid", "friendlyname", "uniquename", "solutionid"),
                 Criteria = new FilterExpression(LogicalOperator.And)
@@ -46,7 +46,7 @@ namespace Generator.Services
                 }
             });
 
-            return (resp.Entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList(), resp.Entities.ToList());
+            return (entities.Select(e => e.GetAttributeValue<Guid>("solutionid")).ToList(), entities);
         }
 
         /// <summary>
@@ -73,8 +73,8 @@ namespace Generator.Services
                 }
             };
 
-            var publishers = await client.RetrieveMultipleAsync(publisherQuery);
-            return publishers.Entities.ToDictionary(
+            var publishers = await client.RetrieveAllAsync(publisherQuery);
+            return publishers.ToDictionary(
                 p => p.GetAttributeValue<Guid>("publisherid"),
                 p => (
                     Name: p.GetAttributeValue<string>("friendlyname") ?? "Unknown Publisher",

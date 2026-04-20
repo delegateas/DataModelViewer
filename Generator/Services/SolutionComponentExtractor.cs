@@ -170,8 +170,8 @@ public class SolutionComponentExtractor
 
         try
         {
-            var response = await _client.RetrieveMultipleAsync(query);
-            foreach (var entity in response.Entities)
+            var entities = await _client.RetrieveAllAsync(query);
+            foreach (var entity in entities)
             {
                 var componentType = entity.GetAttributeValue<OptionSetValue>("componenttype")?.Value ?? 0;
                 var objectId = entity.GetAttributeValue<Guid>("objectid");
@@ -315,8 +315,8 @@ public class SolutionComponentExtractor
                 }
             };
 
-            var response = await _client.RetrieveMultipleAsync(query);
-            foreach (var entity in response.Entities)
+            var entities = await _client.RetrieveAllAsync(query);
+            foreach (var entity in entities)
             {
                 var id = entity.GetAttributeValue<Guid>(primaryKey);
                 var name = entity.GetAttributeValue<string>(nameColumn) ?? id.ToString();

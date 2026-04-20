@@ -64,9 +64,9 @@ namespace Generator.Services
                 }
             };
 
-            var roles = await client.RetrieveMultipleAsync(query);
+            var roles = await client.RetrieveAllAsync(query);
 
-            var rolePrivileges = roles.Entities.Select(e =>
+            var rolePrivileges = roles.Select(e =>
             {
                 var name = e.GetAttributeValue<string>("name");
                 var depth = (PrivilegeDepth)e.GetAttributeValue<AliasedValue>("rolepriv.privilegedepthmask").Value;

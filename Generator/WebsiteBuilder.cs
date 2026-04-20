@@ -2,7 +2,6 @@
 using Generator.DTO.Warnings;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using System.Collections.Generic;
 using System.Text;
 
 namespace Generator;
@@ -64,7 +63,7 @@ internal class WebsiteBuilder
             sb.AppendLine("  },");
         }
 
-        sb.AppendLine("]");
+        sb.AppendLine("] as const;");
 
         // WARNINGS
         sb.AppendLine("");
@@ -73,7 +72,7 @@ internal class WebsiteBuilder
         {
             sb.AppendLine($"  {JsonConvert.SerializeObject(warning)},");
         }
-        sb.AppendLine("]");
+        sb.AppendLine("] as const;");
 
         // SOLUTION COMPONENTS (for insights)
         sb.AppendLine("");
