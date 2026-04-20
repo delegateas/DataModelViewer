@@ -1,3 +1,10 @@
+No commits found or error getting commits
+## [2.3.4] - 2026-04-20
+
+### Changed
+- Manual release
+
+
 ## [2.3.1] - 2026-01-13
 
 ### Features
