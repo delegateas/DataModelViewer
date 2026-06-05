@@ -1,3 +1,10 @@
+## [2.3.5] - 2026-06-05
+
+### Other Changes
+
+* changed actions so they are not blocked by branch protection. You must now label PR for release ([7edf131](https://github.com/delegateas/DataModelViewer/commit/7edf131))
+
+
 No commits found or error getting commits
 ## [2.3.4] - 2026-04-20
 

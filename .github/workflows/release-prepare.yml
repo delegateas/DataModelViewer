@@ -1,0 +1,205 @@
+name: Release (Prepare)
+
+# Opt-in release preparation that runs DURING a pull request.
+#
+# Add one of these labels to a PR to prepare a release:
+#   release:patch | release:minor | release:major
+#
+# The workflow bumps Website/package.json + .release-please-manifest.json,
+# regenerates the changelog, and commits the result to the PR branch.
+# No direct push to main happens here (branch protection is respected) and
+# no tag is created. Tagging is handled by release-publish.yml after merge.
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  # Serialize per-PR so re-labeling doesn't race itself.
+  group: release-prepare-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    # Only react to release:* labels.
+    if: startsWith(github.event.label.name, 'release:')
+    steps:
+      - name: Parse release type from label
+        id: parse
+        run: |
+          LABEL="${{ github.event.label.name }}"
+          TYPE="${LABEL#release:}"
+          case "$TYPE" in
+            patch|minor|major) ;;
+            *)
+              echo "::error::Unsupported release label '$LABEL'. Use release:patch, release:minor or release:major."
+              exit 1
+              ;;
+          esac
+          echo "release_type=$TYPE" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip if release already prepared on this branch
+        id: guard
+        run: |
+          LAST_MSG=$(git log -1 --pretty=format:%s)
+          if echo "$LAST_MSG" | grep -q '^chore(release):'; then
+            echo "Release commit already present on branch head — skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.guard.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Prepare release commit
+        if: steps.guard.outputs.skip != 'true'
+        id: prepare
+        env:
+          RELEASE_TYPE: ${{ steps.parse.outputs.release_type }}
+          REPO: ${{ github.repository }}
+        run: |
+          npm install semver
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          CURRENT_VERSION=$(jq -r '.Website' .release-please-manifest.json)
+          echo "Current version: $CURRENT_VERSION"
+
+          NEXT_VERSION=$(node -e "
+            const semver = require('semver');
+            console.log(semver.inc('$CURRENT_VERSION', process.env.RELEASE_TYPE));
+          ")
+          echo "Next version: $NEXT_VERSION"
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+
+          # Bump package + manifest
+          (cd Website && npm version "$NEXT_VERSION" --no-git-tag-version)
+          jq --arg version "$NEXT_VERSION" '.Website = $version' .release-please-manifest.json > temp.json && mv temp.json .release-please-manifest.json
+
+          # Generate enhanced changelog from commits since the last release tag
+          cat > generate_changelog.js << 'EOF'
+          const { execSync } = require('child_process');
+
+          function generateChangelog(lastTag, nextVersion, repo) {
+            let commits = [];
+            try {
+              const range = lastTag ? `${lastTag}..HEAD` : 'HEAD';
+              const output = execSync(`git log ${range} --pretty=format:"%h|%s"`).toString();
+              commits = output.split('\n').filter(line => line.trim()).map(line => {
+                const idx = line.indexOf('|');
+                return { hash: line.slice(0, idx), message: line.slice(idx + 1) };
+              });
+            } catch (error) {
+              return `## [${nextVersion}] - ${new Date().toISOString().split('T')[0]}\n\n### Changed\n- Manual release\n\n`;
+            }
+
+            const categories = {
+              'Features': [],
+              'Bug Fixes': [],
+              'Performance Improvements': [],
+              'UI/UX Improvements': [],
+              'Code Refactoring': [],
+              'Other Changes': []
+            };
+
+            commits.forEach(commit => {
+              const { hash, message } = commit;
+              const link = `([${hash}](https://github.com/${repo}/commit/${hash}))`;
+              let cleanMessage = message
+                .replace(/^(feat|feature):\s*/i, '')
+                .replace(/^(fix|bugfix):\s*/i, '')
+                .replace(/^(perf|performance):\s*/i, '')
+                .replace(/^(style|ui|ux):\s*/i, '')
+                .replace(/^(refactor|refact):\s*/i, '')
+                .replace(/^chore:\s*/i, '');
+
+              if (message.match(/^feat|feature|add|implement|new/i) || message.includes('PBI')) {
+                categories['Features'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/^fix|bug|resolve|correct/i)) {
+                categories['Bug Fixes'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/perf|performance|optim|speed|fast/i)) {
+                categories['Performance Improvements'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/ui|ux|style|design|visual|appearance/i)) {
+                categories['UI/UX Improvements'].push(`* ${cleanMessage} ${link}`);
+              } else if (message.match(/refactor|restructure|reorganize|clean/i)) {
+                categories['Code Refactoring'].push(`* ${cleanMessage} ${link}`);
+              } else if (!message.match(/^merge|^chore\(release\)/i)) {
+                categories['Other Changes'].push(`* ${cleanMessage} ${link}`);
+              }
+            });
+
+            let changelog = `## [${nextVersion}] - ${new Date().toISOString().split('T')[0]}\n\n`;
+            Object.entries(categories).forEach(([category, items]) => {
+              if (items.length > 0) {
+                changelog += `### ${category}\n\n`;
+                items.forEach(item => { changelog += `${item}\n`; });
+                changelog += '\n';
+              }
+            });
+
+            if (Object.values(categories).every(cat => cat.length === 0)) {
+              changelog += `### Changed\n\n* Release ${nextVersion}\n\n`;
+            }
+
+            return changelog;
+          }
+
+          console.log(generateChangelog(process.argv[2], process.argv[3], process.argv[4]));
+          EOF
+
+          git fetch --tags
+          LAST_TAG="website-v$CURRENT_VERSION"
+          if ! git rev-parse -q --verify "refs/tags/$LAST_TAG" >/dev/null; then
+            LAST_TAG=""
+          fi
+
+          node generate_changelog.js "$LAST_TAG" "$NEXT_VERSION" "$REPO" > temp_changelog.md
+
+          if [ -f "Website/CHANGELOG.md" ]; then
+            cat temp_changelog.md Website/CHANGELOG.md > temp_full_changelog.md
+            mv temp_full_changelog.md Website/CHANGELOG.md
+          else
+            mv temp_changelog.md Website/CHANGELOG.md
+          fi
+
+          rm -f generate_changelog.js temp_changelog.md
+
+          git add Website/package.json Website/package-lock.json Website/CHANGELOG.md .release-please-manifest.json
+          git commit -m "chore(release): release $NEXT_VERSION
+
+          Release type: $RELEASE_TYPE
+          Previous version: $CURRENT_VERSION
+          New version: $NEXT_VERSION"
+
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+
+      - name: Comment on PR
+        if: steps.guard.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.prepare.outputs.version }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `🚀 **Release \`v${version}\` prepared** on this branch.\n\nThe version bump and changelog have been committed. When this PR is merged, tag \`website-v${version}\` and a GitHub Release will be created automatically.`
+            });

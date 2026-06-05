@@ -1,0 +1,70 @@
+name: Release (Publish)
+
+# Runs AFTER a release-labeled PR is merged into main.
+#
+# Detects that the merged PR carried a release:* label, then creates the
+# annotated tag (website-vX.Y.Z) and a GitHub Release. The version is read
+# from .release-please-manifest.json on main, so it works regardless of
+# whether the PR was merged with a merge commit or squashed.
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.pull_request.merged == true &&
+      contains(join(github.event.pull_request.labels.*.name, ','), 'release:')
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+
+      - name: Read version and prepare tag
+        id: version
+        run: |
+          VERSION=$(jq -r '.Website' .release-please-manifest.json)
+          TAG="website-v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          git fetch --tags
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists — nothing to publish."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract latest changelog section
+        if: steps.version.outputs.exists != 'true'
+        id: notes
+        run: |
+          # Grab everything from the first "## [" heading up to the next one.
+          awk '/^## \[/{c++} c==1' Website/CHANGELOG.md > release_notes.md
+          echo "Release notes:"
+          cat release_notes.md
+
+      - name: Create tag and GitHub Release
+        if: steps.version.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "$TAG" -m "Release $VERSION"
+          git push origin "refs/tags/$TAG"
+
+          gh release create "$TAG" \
+            --title "Release $VERSION" \
+            --notes-file release_notes.md
