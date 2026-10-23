@@ -1,3 +1,14 @@
+## [2.3.6] - 2026-10-23
+
+### Bug Fixes
+
+* fix(website): follow lookup links outside search results ([5056753](https://github.com/context-and-oss/DataModelViewer/commit/5056753))
+
+### Other Changes
+
+* Keep metadata navigation stable during scrolling ([970673a](https://github.com/context-and-oss/DataModelViewer/commit/970673a))
+
+
 ## [2.3.5] - 2026-06-05
 
 ### Other Changes
